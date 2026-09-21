@@ -60,7 +60,7 @@ export const serverRuntimeManifestSchema = z
 export function currentServerTarget(): ServerTarget {
   const target = `${platform}-${arch}`;
   if (!supportedServerTargets.includes(target as ServerTarget)) {
-    throw new Error(`Unsupported ZCode Server target: ${target}`);
+    throw new Error(`Unsupported FreeCodeZ Server target: ${target}`);
   }
   return target as ServerTarget;
 }

@@ -6299,9 +6299,9 @@ const enUS: Record<string, string> = {
   "automations.runs.nextPage": "Next",
   // CUA (Computer Use)
   "chat.cuaReadiness.toolsNotLoaded":
-    "ZCode Computer Use is still preparing — its tools aren't loaded yet ({count} loaded). Grant the permissions below; tools appear once the helper is ready.",
+    "FreeCodeZ Computer Use is still preparing — its tools aren't loaded yet ({count} loaded). Grant the permissions below; tools appear once the helper is ready.",
   "chat.cuaReadiness.toolsPreparing":
-    "ZCode Computer Use is still preparing — its tools aren't loaded yet. Grant the permissions below; tools appear once the helper is ready.",
+    "FreeCodeZ Computer Use is still preparing — its tools aren't loaded yet. Grant the permissions below; tools appear once the helper is ready.",
   "chat.toolCall.cua.requestAccess": "Check Computer Use access",
   "chat.toolCall.cua.appName": "Computer Use",
   "chat.toolCall.cua.group.completedLabel": "Computer Use",
