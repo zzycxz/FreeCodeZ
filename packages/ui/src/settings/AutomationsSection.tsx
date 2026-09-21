@@ -1,4 +1,3 @@
-import { useCodingPlanEntryGate } from "@/settings/CodingPlanEntryButton.js";
 /* eslint-disable max-lines -- 定时任务主视图集中维护列表、创建/编辑整页路由与启停/删除操作，集中更利于交互一致。 */
 import {
   useCallback,
@@ -10,22 +9,6 @@ import {
   type SVGProps,
 } from "react";
 import { CircleCheck, RotateCcw, TriangleAlert } from "lucide-react";
-import {
-  AUTOMATION_CREATE_LIMIT,
-  BUILTIN_MODEL_PROVIDER_IDS,
-  TID_AUTOMATION_ACTION_DELETE,
-  TID_AUTOMATION_ACTION_TOGGLE,
-  TID_AUTOMATION_CARD,
-  TID_AUTOMATION_CARD_MENU,
-  TID_AUTOMATIONS_LIST,
-  TID_AUTOMATIONS_STATUS_FILTER,
-  TID_OFFPEAK_CREATE_BUTTON,
-  TID_OFFPEAK_TAB,
-  isAutomationCreateLimitError,
-  resolveWorkspaceKey,
-  type ZCodeAutomation,
-  type ZCodeOffPeakTask,
-} from "@zcode/shared";
 import { Button } from "@/components/ui/button.js";
 import {
   DropdownMenu,
@@ -43,14 +26,7 @@ import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { useServices } from "@/hooks/useServices.js";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
-import {
-  OFF_PEAK_CREATE_TOOLTIP_CLASSNAME,
-  formatOffPeakRemainingWait,
-  resolveOffPeakCreateBlockReason,
-  type OffPeakCreateBlockReason,
-} from "@/settings/offPeakUiPresentation.js";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
-import { useOffPeakEligibility } from "@/hooks/useOffPeakEligibility.js";
 import { useSettings } from "@/hooks/useSettingService.js";
 import { logger } from "@/logger.js";
 import {
@@ -61,20 +37,6 @@ import {
   useAutomationManagementStore,
   type AutomationRunNowResult,
 } from "@/store/automationManagementStore.js";
-import {
-  isCurrentOffPeakCodingPlanSupported,
-  resolveOffPeakCreateErrorMessageId,
-  useOffPeakTaskStore,
-  type OffPeakCreateDraft,
-} from "@/store/offPeakTaskStore.js";
-import {
-  createAndReportOffPeakTask,
-  freezeOffPeakCreateTelemetrySnapshot,
-  reportOffPeakCreateResult,
-} from "@/lib/offPeakTelemetry.js";
-import { OffPeakTaskList } from "@/settings/OffPeakTaskList.js";
-import { OffPeakTemplateIcon } from "@/settings/OffPeakTemplateIcon.js";
-import { OffPeakEditView, type OffPeakEditSubmit } from "@/settings/OffPeakEditView.js";
 import {
   formatAutomationCardNextRun,
   hasAutomationFailureState,
@@ -97,7 +59,6 @@ import {
   AutomationRunNowIcon,
   AutomationTrashIcon,
 } from "@/settings/AutomationDesignPrimitives.js";
-import { useCodingPlanUpgradeDialog } from "@/settings/CodingPlanUpgradeDialogProvider.js";
 import { SETTINGS_FRAME_CONTENT_CLASSNAME } from "@/settings/SettingsPageParts.js";
 import { useTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceTab } from "@/store/tabStore.js";
@@ -143,6 +104,112 @@ import {
   type SavedWorkflowsOpenTarget,
 } from "@/settings/saved-workflows/SavedWorkflowsSection.js";
 import { AutomationTemplateSkeletonGrid } from "@/settings/AutomationTemplateSkeletonGrid.js";
+
+import {
+  AUTOMATION_CREATE_LIMIT,
+  BUILTIN_MODEL_PROVIDER_IDS,
+  TID_AUTOMATION_ACTION_DELETE,
+  TID_AUTOMATION_ACTION_TOGGLE,
+  TID_AUTOMATION_CARD,
+  TID_AUTOMATION_CARD_MENU,
+  TID_AUTOMATIONS_LIST,
+  TID_AUTOMATIONS_STATUS_FILTER,
+  TID_OFFPEAK_CREATE_BUTTON,
+  TID_OFFPEAK_TAB,
+  isAutomationCreateLimitError,
+  resolveWorkspaceKey,
+  type ZCodeAutomation,
+} from "@zcode/shared";
+// ---- FreeCodeZ fork 惯性桩(P2 §4.5/§4.10):账号/闲时链已删,注入恒关快照 ----
+// 组件原设计即支持"灰度关闭时优雅隐藏闲时 UI";桩返回空任务+灰度关后,
+// Idle tab/闲时模板/创建入口在运行时自然不渲染。后续清扫阶段可做物理删除。
+interface OffPeakCreateDraft extends Record<string, any> {}
+type OffPeakEditSubmit = Record<string, any>;
+interface ZCodeOffPeakTask extends Record<string, any> { offPeakTaskId: string; workspaceKey: string; createdAt: number }
+type OffPeakCreateBlockReason = "plan" | "quota" | "unavailable" | null;
+const OFF_PEAK_CREATE_TOOLTIP_CLASSNAME = "";
+function useOffPeakEligibility(_s?: unknown, _r?: unknown): void {}
+const OFF_PEAK_INERT_SNAPSHOT: Record<string, unknown> & {
+  tasks: ZCodeOffPeakTask[];
+  loading: boolean;
+  operationId: string | null;
+} & Record<string, any> = {
+  tasks: [] as ZCodeOffPeakTask[],
+  loading: false,
+  grayConfig: undefined as { enabled: boolean; codingPlanActive?: boolean } | undefined,
+  codingPlanSupport: undefined as unknown,
+  takeNumberAvailability: undefined as { canTakeNumber?: boolean; nextTakeAt?: number } | undefined,
+  takeNumberAvailabilityStatus: "idle" as const,
+  operationId: null as string | null,
+  refresh: async (..._a: unknown[]) => {},
+  refreshCodingPlanSupport: async (..._a: unknown[]) => {},
+  refreshTakeNumberAvailability: async (..._a: unknown[]) => {},
+  createTask: async () => ({ ok: false as const }),
+  updateTask: async () => ({ ok: false as const }),
+  pauseTask: async () => ({ ok: false as const }),
+  continueTask: async () => ({ ok: false as const }),
+  cancelTask: async () => ({ ok: false as const }),
+  deleteTask: async () => ({ ok: false as const }),
+  deleteHistory: async () => ({ ok: false as const }),
+  consumePendingCreateDraft: () => undefined,
+  pendingCreateDraft: null,
+};
+/* eslint-disable @typescript-eslint/no-explicit-any -- 惯性桩 */
+function useOffPeakTaskStore<T>(selector: (state: any) => T): T {
+  return selector(OFF_PEAK_INERT_SNAPSHOT);
+}
+useOffPeakTaskStore.getState = () => OFF_PEAK_INERT_SNAPSHOT;
+function isCurrentOffPeakCodingPlanSupported(_a: unknown, _b: unknown): boolean {
+  return false;
+}
+function resolveOffPeakCreateErrorMessageId(_e: unknown): string {
+  return "offPeak.create.failed";
+}
+function formatOffPeakRemainingWait(_n: number, _now: number, _i: unknown): string {
+  return "";
+}
+function resolveOffPeakCreateBlockReason(_i: unknown): OffPeakCreateBlockReason {
+  return null;
+}
+function createAndReportOffPeakTask(..._a: unknown[]): Promise<never> {
+  return Promise.reject(new Error("off-peak removed"));
+}
+function freezeOffPeakCreateTelemetrySnapshot(..._a: unknown[]): null {
+  return null;
+}
+function reportOffPeakCreateResult(..._a: unknown[]): void {}
+function useCodingPlanUpgradeDialog(): { openCodingPlanUpgrade: (_options?: unknown) => void } {
+  return { openCodingPlanUpgrade: () => {} };
+}
+function useCodingPlanEntryGate(): { status: "hidden" | "loading" | "error"; label: string | null; retry: () => void } {
+  return { status: "hidden", label: null, retry: () => {} };
+}
+/* eslint-disable @typescript-eslint/no-unused-vars -- 惯性桩组件 */
+function OffPeakEditView(props: {
+  editing: ZCodeOffPeakTask | null;
+  initialDraft: OffPeakCreateDraft | null;
+  [key: string]: any;
+}): null {
+  void props;
+  return null;
+}
+function OffPeakTaskList(props: {
+  tasks: readonly ZCodeOffPeakTask[];
+  busyOperationId: string | null;
+  onOpen: (task: ZCodeOffPeakTask) => void;
+  onPause: (task: ZCodeOffPeakTask) => void;
+  onContinue: (task: ZCodeOffPeakTask) => void;
+  [key: string]: any;
+}): null {
+  void props;
+  return null;
+}
+function OffPeakTemplateIcon(props: { [key: string]: any }): null {
+  void props;
+  return null;
+}
+// ---- 桩结束 ----
+
 
 interface AutomationsSectionProps {
   workspacePath?: string | null;
@@ -527,7 +594,9 @@ export function AutomationsSection({
 }: AutomationsSectionProps) {
   const { intl, locale } = useZCodeIntl();
   const platform = usePlatform();
-  const { clientScenesService, offPeakTaskService, zcodeAgentService } = useServices();
+  const { clientScenesService, zcodeAgentService } = useServices();
+  // FreeCodeZ fork:offPeakTaskService 已从 accessor 删除;惯性桩持有 undefined 引用即可(所有调用落空快照)。
+  const offPeakTaskService = undefined as never;
   const confirmDialog = useConfirmDialog();
   const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
   const providerSettingsRead = useProviderSettingsView();
@@ -642,7 +711,10 @@ export function AutomationsSection({
   const hasVisibleTaskCards =
     tab === "scheduled" ? automations.length > 0 : offPeakTasks.length > 0;
   const visibleAutomations = filterAutomationsByStatus(automations, statusFilter);
-  const visibleOffPeakTasks = filterOffPeakTasksByStatus(offPeakTasks, statusFilter);
+  const visibleOffPeakTasks = filterOffPeakTasksByStatus(
+    offPeakTasks as never,
+    statusFilter,
+  ) as unknown as readonly ZCodeOffPeakTask[];
   const { showOffPeakTemplates, showScheduledTemplates } = resolveAutomationTemplateVisibility({
     hasAnyTasks,
     offPeakCreationEnabled,
@@ -903,7 +975,7 @@ export function AutomationsSection({
       // review：refresh 不 reject，失败只写 store.error；把它随就绪信号一起带出。
       setOffPeakNavRefreshed({
         id: openAutomationId ?? null,
-        error: useOffPeakTaskStore.getState().error ?? null,
+        error: null,
       });
     });
     return () => {
@@ -1372,7 +1444,7 @@ export function AutomationsSection({
   if (view.mode === "offpeak-create" || view.mode === "offpeak-edit") {
     const editingTask =
       view.mode === "offpeak-edit"
-        ? (offPeakTasks.find((task) => task.offPeakTaskId === view.task.offPeakTaskId) ?? view.task)
+        ? (offPeakTasks.find((task: ZCodeOffPeakTask) => task.offPeakTaskId === view.task.offPeakTaskId) ?? view.task)
         : null;
     return (
       <>
@@ -1394,10 +1466,10 @@ export function AutomationsSection({
           onBack={() => setView({ mode: "list" })}
           onSubmit={handleOffPeakSubmit}
           onOpenSession={onOpenSession}
-          onDelete={(task) => void handleOffPeakDelete(task)}
-          onDeleteHistory={(task) => void handleOffPeakDeleteHistory(task)}
-          onPause={(task) => void offPeakPause(task.offPeakTaskId, offPeakTaskService)}
-          onContinue={(task) => void offPeakContinue(task.offPeakTaskId, offPeakTaskService)}
+          onDelete={(task: ZCodeOffPeakTask) => void handleOffPeakDelete(task)}
+          onDeleteHistory={(task: ZCodeOffPeakTask) => void handleOffPeakDeleteHistory(task)}
+          onPause={(task: ZCodeOffPeakTask) => void offPeakPause(task.offPeakTaskId, offPeakTaskService)}
+          onContinue={(task: ZCodeOffPeakTask) => void offPeakContinue(task.offPeakTaskId, offPeakTaskService)}
           showToast={toast}
         />
       </>
@@ -1616,12 +1688,12 @@ export function AutomationsSection({
                       tasks={visibleOffPeakTasks}
                       busyOperationId={offPeakOperationId}
                       onOpen={handleOffPeakOpen}
-                      onPause={(task) => void offPeakPause(task.offPeakTaskId, offPeakTaskService)}
-                      onContinue={(task) =>
+                      onPause={(task: ZCodeOffPeakTask) => void offPeakPause(task.offPeakTaskId, offPeakTaskService)}
+                      onContinue={(task: ZCodeOffPeakTask) =>
                         void offPeakContinue(task.offPeakTaskId, offPeakTaskService)
                       }
-                      onCancel={(task) => void handleOffPeakCancel(task)}
-                      onDelete={(task) => void handleOffPeakDelete(task)}
+                      onCancel={(task: ZCodeOffPeakTask) => void handleOffPeakCancel(task)}
+                      onDelete={(task: ZCodeOffPeakTask) => void handleOffPeakDelete(task)}
                       onOpenSession={handleOffPeakOpenSession}
                     />
                   )}
