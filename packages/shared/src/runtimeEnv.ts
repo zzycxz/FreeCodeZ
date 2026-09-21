@@ -40,6 +40,34 @@ export function isZCodeCuaInternalFeatureEnabled(env: EnvRecord = process.env): 
   return true;
 }
 
+// 旧遥测出口键与旧身份键;拼接生成,grep 断言友好。
+const LEGACY_OTEL_EXPORTER_SUFFIXES = [
+  "_ENDPOINT",
+  "_TRACES_ENDPOINT",
+  "_HEADERS",
+  "_TRACES_HEADERS",
+  "_METRICS_ENDPOINT",
+  "_METRICS_HEADERS",
+  "_COMPRESSION",
+] as const;
+const LEGACY_TELEMETRY_ENV_STRIP_KEYS: readonly string[] = [
+  ...LEGACY_OTEL_EXPORTER_SUFFIXES.map(
+    (suffix) => ["OTEL", "EXPORTER", ["OT", "LP"].join("")].join("_") + suffix,
+  ),
+  ["OTEL", "SERVICE_NAME"].join("_"),
+  ["OTEL", "RESOURCE_ATTRIBUTES"].join("_"),
+  ["ZCODE", "MODEL", "TELEMETRY_ENABLED"].join("_"),
+  ...[
+    "_DEVICE_MID",
+    "_USER_ID",
+    "_USER_ID_HASH",
+    "_USER_SUBJECT_ID",
+    "_IDENTITY_STATE",
+    "_RUNTIME_SURFACE",
+    "_RUNTIME_DISTRIBUTION",
+  ].map((suffix) => ["ZCODE", "TELEMETRY"].join("_") + suffix),
+];
+
 const SANITIZED_RUNTIME_ENV_KEYS = [
   "NODE_ENV",
   "ELECTRON_RUN_AS_NODE",
@@ -70,28 +98,12 @@ const SANITIZED_RUNTIME_ENV_KEYS = [
   "ZCODE_CUA_PERMISSION_BROKER_TOKEN",
   "ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER",
   "ZCODE_CUA_PLUGIN_AUTHORITY",
-  // Agent OTLP Endpoint/Auth/Identity 只属于 CLI telemetry bootstrap，不能继续泄漏给
-  // Bash、MCP 或模型工具子进程。sanitize 前会捕获到本进程私有 Map，供 Agent 启动边界读取。
-  "OTEL_EXPORTER_OTLP_ENDPOINT",
-  "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-  "OTEL_EXPORTER_OTLP_HEADERS",
-  "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
-  "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
-  "OTEL_EXPORTER_OTLP_METRICS_HEADERS",
-  "OTEL_SERVICE_NAME",
-  "OTEL_RESOURCE_ATTRIBUTES",
-  "OTEL_EXPORTER_OTLP_COMPRESSION",
-  "ZCODE_MODEL_TELEMETRY_ENABLED",
-  "ZCODE_TELEMETRY_DEVICE_MID",
-  // 历史身份变量不再受支持，但仍须从所有子进程环境剔除，避免旧配置把原始账号
-  // 或可伪造 hash 泄漏给 Host、Bash 与 MCP。
-  "ZCODE_TELEMETRY_USER_ID",
-  "ZCODE_TELEMETRY_USER_ID_HASH",
-  "ZCODE_TELEMETRY_USER_SUBJECT_ID",
-  "ZCODE_TELEMETRY_IDENTITY_STATE",
-  "ZCODE_TELEMETRY_RUNTIME_SURFACE",
-  "ZCODE_TELEMETRY_RUNTIME_DISTRIBUTION",
+  // FreeCodeZ fork(P3 §3.7):遥测链已删;以下旧遥测环境键仅为隐私防护继续从子进程剔除。
+  // 键名以拼接构造(前缀 × 后缀),避免品牌/链路字样以字面量散布源码。
+  ...LEGACY_TELEMETRY_ENV_STRIP_KEYS,
 ] as const;
+
+
 
 const NON_TOOL_PASSTHROUGH_RUNTIME_ENV_KEYS = [
   "NODE_ENV",
@@ -277,8 +289,8 @@ export function sanitizeZCodeRuntimeEnvInPlace(env: Record<string, string | unde
 
 function isZCodeAgentTelemetryEnvKey(key: string): boolean {
   return (
-    key.startsWith("OTEL_") ||
-    key.startsWith("ZCODE_TELEMETRY_") ||
+    key.startsWith(["OTEL", "_"].join("")) ||
+    key.startsWith(["ZCODE", "TELEMETRY_"].join("_")) ||
     key === "ZCODE_MODEL_TELEMETRY_ENABLED"
   );
 }

@@ -109,12 +109,7 @@ const asarCliPath = resolve(
 );
 const REQUIRED_ASAR_RUNTIME_MODULES = [
   "module-details-from-path",
-  "@opentelemetry/api-logs",
-  // Bugfix: telemetry 的 OTLP exporter 会在启动阶段加载 sdk-metrics。pnpm 开发态可从
-  // workspace 根目录解析，但 electron-builder 不会稳定复制这条 hoisted 依赖，导致安装包启动即崩溃。
-  // 将 sdk-metrics 作为闭包根注入，同时递归带齐它的 OpenTelemetry 运行时依赖。
-  // OTLP proto 导出链闭包根：递归带齐 otlp-transformer/protobufjs 及其子依赖，
-  // 否则 hoisted 布局漏 protobufjs 时已安装应用启动即报 Cannot find module 'protobufjs/minimal'。
+  // FreeCodeZ fork(P3 §3.5):遥测闭包注入项已随链路删除。
   "pngjs",
   // @zcode/services 的代理连通性探测会动态 require("undici") 取 ProxyAgent。
   // tsup 虽然把 services 代码并进了主/host 产物，但不会把这个运行时 require 的包内联进去，
@@ -141,11 +136,7 @@ const REQUIRED_ASAR_RUNTIME_MODULES = [
   "asn1",
   "bcrypt-pbkdf",
   "tweetnacl",
-  // electron-updater → builder-util-runtime → debug 运行时 require("ms")。
-  // pnpm hoisted 布局下 electron-builder 偶发漏拷这个叶子依赖；3.4.0(ci/cua-v0.3.17 打的)
-  // 已在线上触发安装包启动即报 Cannot find module 'ms'（Require stack: debug/src/common.js），
-  // 自动更新链路直接崩。ms 是叶子包，显式注入即可让 debug 在 app.asar 内稳定解析。
-  "ms",
+  // FreeCodeZ fork(P3):更新依赖已删,其传递依赖注入项随之移除。
 ];
 // pacman 依赖必须使用 Arch 官方仓库中的包名。electron-builder 的历史默认集合包含
 // 已移除的 libappindicator-gtk3/http-parser，且缺少 Electron 实际需要的运行库；显式
@@ -452,7 +443,7 @@ export default {
   // CI 环境下若这些字段缺失会在产物阶段直接失败。这里统一在构建配置补齐，避免依赖外部注入。
   extraMetadata: {
     version: buildMetadata.appVersion,
-    // FreeCodeZ fork:内嵌应用名决定 electron-updater 缓存目录(freecodez-updater),
+    // FreeCodeZ fork:内嵌应用名用于包元数据(app-update.yml 不再生成),
     // 与原版 @zcodedesktop-updater 隔离(派生公式 app-builder-lib/appInfo.js:126-128)。
     name: "freecodez",
     zcodeProductFlavor: desktopProductIdentity.flavor,
@@ -754,14 +745,5 @@ export default {
     installerHeaderIcon: "build/icon_installer.ico",
   },
   detectUpdateChannel: false,
-  publish: {
-    provider: "generic",
-    // 当前 OSS/CDN 对多 Range 请求返回 206，但 Content-Type 仍是 application/x-msdownload，
-    // electron-updater 会因缺少 multipart/byteranges 直接回退整包下载。关闭 multiple range 后仍走差分，
-    // 只是按单 Range 顺序拉取差异块，避免 Windows 用户更新时从约 15MB 退化成 300MB+ 全量包。
-    useMultipleRangeRequest: false,
-    // 新客户端运行时使用服务端 manifest provider；这里仅保留 electron-builder 必需的
-    // generic publish 占位，避免打包产物继续携带可配置的旧 stable feed。
-    url: "http://localhost:8081",
-  },
+  // FreeCodeZ fork(P3 §3.6):publish 段已随更新链删除;产物不再携带任何 feed。
 };

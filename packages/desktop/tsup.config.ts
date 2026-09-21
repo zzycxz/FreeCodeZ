@@ -166,7 +166,7 @@ export default defineConfig([
       // producer 的 JS broker 必须跟随 services 一起内联，原生 addon 仍只存在于独立 Helper。
       "@zcode/zcode-cua",
     ],
-    // OTLP 端点与鉴权只在运行时读取；构建环境中的凭据不能写进公开安装包。
+    // 构建环境中的凭据不能写进公开安装包。
     define: createSharedDefines(),
     // main/host 同时 watch 且共享 out 根目录时，默认 chunk 命名会互相覆盖，
     // 可能让 main 的 import 指向被 host 刚重写的 chunk，触发“缺少命名导出”的偶发启动报错。

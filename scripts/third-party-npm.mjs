@@ -82,6 +82,19 @@ export function assertProductionGraphs(lockedProjects, installedProjects) {
 
 export async function readWorkspaceProductionGraph(root) {
   root = await realpath(root);
+  // FreeCodeZ fork(构建环境):Windows 下并发执行两次 pnpm ls 会触发 EMFILE;
+  // 存在预捕获文件时直接读取(由 pnpm -r ls --json 重定向生成,内容等价)。
+  const cacheBase = process.env.FCZ_PNPM_LS_CACHE_DIR?.trim();
+  if (cacheBase) {
+    const [lockedRaw, actualRaw] = await Promise.all([
+      readFile(join(cacheBase, "pnpm-ls-locked.json"), "utf8"),
+      readFile(join(cacheBase, "pnpm-ls.json"), "utf8"),
+    ]);
+    const locked = JSON.parse(lockedRaw);
+    const actual = JSON.parse(actualRaw);
+    const required = assertProductionGraphs(locked, actual);
+    return { required, projects: actual };
+  }
   // 修复：pnpm ls 默认读取安装快照，不能把旧图与当前锁文件哈希拼成有效声明。
   const [locked, actual] = await Promise.all(
     [true, false].map(async (lockfileOnly) => {

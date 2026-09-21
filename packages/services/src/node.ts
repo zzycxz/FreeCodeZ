@@ -124,8 +124,14 @@ export type {
 export { createFileWatcherService } from "./fileWatcher/fileWatcherService.js";
 export { ensureDeviceMid } from "./device/deviceMid.js";
 export type { EnsureDeviceMidOptions } from "./device/deviceMid.js";
-export { createTelemetryCore, ensureTelemetryDeviceMid } from "./telemetry/telemetryCore.js";
-export type { EnsureTelemetryDeviceMidOptions } from "./telemetry/telemetryCore.js";
+// FreeCodeZ fork(P3 §3.3):数仓事件核已删(物理删除);导出面以本地 no-op 保留。
+export function createTelemetryCore(..._a: unknown[]): { reportEvent: () => Promise<void>; flushPendingReports: () => Promise<void> } & Record<string, any> {
+  return { reportEvent: async () => {}, flushPendingReports: async () => {} } as never;
+}
+export async function ensureTelemetryDeviceMid(..._a: unknown[]): Promise<string | null> {
+  return null;
+}
+export type EnsureTelemetryDeviceMidOptions = Record<string, unknown>;
 export { importLegacyPersonalProviderConfig } from "./model-provider/legacyPersonalProviderConfigImporter.js";
 export {
   createProviderConfigRuntime,
@@ -1850,10 +1856,8 @@ export function createLocalServices(options: {
           [BROKER_UNAVAILABLE_ENV]: "broker_unavailable: helper lifecycle is disposed",
         };
       }
-      const telemetryEnv = getCapturedZCodeAgentTelemetryEnv();
-      const telemetryConfigured = Boolean(
-        telemetryEnv.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || telemetryEnv.OTEL_EXPORTER_OTLP_ENDPOINT,
-      );
+      // FreeCodeZ fork(P3 §3.2):导出链已删,遥测恒为未配置。
+      const telemetryConfigured = false;
       // FreeCodeZ fork:无登录态,遥测不再关联用户画像(P3 将整删)。
       const telemetryProfile = null;
       const telemetryDeviceMid = telemetryConfigured
@@ -1876,13 +1880,7 @@ export function createLocalServices(options: {
         // 上面 cuaProductHelperEnv 已完成代际校验与 unavailable 兜底，取代 staging 侧
         // 直接调用 buildCuaProductHelperAgentEnv 的旧路径。
         ...cuaProductHelperEnv,
-        ...buildAgentTelemetrySpawnEnv({
-          deviceMid: telemetryDeviceMid,
-          runtimeSurface: options?.agentRuntimeContext?.runtimeSurface ?? "remote_workspace_host",
-          telemetryEnv,
-          // FreeCodeZ fork:遥测不再关联用户(无登录态;P3 将整删遥测)。
-          userId: undefined,
-        }),
+        // FreeCodeZ fork(P3 §3.2):Agent 遥测 spawn env 注入已删(恒空)。
         ...createNodeProviderRuntimePathEnv({
           // Built-in Active 路径按当前 Endpoint 隔离，不能通过同步的固定路径
           // getter 读取；Agent spawn 必须等待本轮 Endpoint Source 完成解析和物化。

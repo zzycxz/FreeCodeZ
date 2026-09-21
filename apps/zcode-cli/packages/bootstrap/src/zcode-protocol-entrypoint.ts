@@ -172,14 +172,10 @@ export async function runZCodeProtocolAgent(
       signal: options.lifecycle?.signal,
       logger,
       disposeLate: () => shutdownZCodeTelemetry(),
-      create: () =>
-        prepareZCodeTelemetryEnv(runtimeEnv, {
-          cliVersion: options.version,
-          productVersion: options.env?.ZCODE_APP_VERSION,
-          runtimeSurface,
-        }),
+      create: () => prepareZCodeTelemetryEnv(runtimeEnv),
     });
-    const telemetryDeviceMid = telemetryEnv.ZCODE_TELEMETRY_DEVICE_MID;
+    // FreeCodeZ fork(P3):遥测 env 准备恒返回原 env。
+    const telemetryDeviceMid = undefined as string | undefined;
     mcpTelemetryTracker =
       configResult.config.features.mcp === false
         ? undefined
@@ -265,7 +261,6 @@ export async function runZCodeProtocolAgent(
           env: {
             ...telemetryEnv,
             ...appOptions.env,
-            ...(telemetryDeviceMid ? { ZCODE_TELEMETRY_DEVICE_MID: telemetryDeviceMid } : {}),
           },
           ...(nodeReplBrowserBroker ? { nodeReplBrowserBroker } : {}),
           ...(mcpConnectionPool
@@ -380,7 +375,7 @@ function resolveProtocolRuntimeSurface(
   env: NodeJS.ProcessEnv,
 ): "desktop_local_host" | "remote_workspace_host" {
   // Bug 根因：入口曾无条件覆盖 Host 注入值，远程 SSH/WSL/容器 Trace 被归入本地 Desktop。
-  return env.ZCODE_TELEMETRY_RUNTIME_SURFACE?.trim() === "remote_workspace_host"
+  return false // FreeCodeZ fork(P3):遥测运行面标记已删
     ? "remote_workspace_host"
     : "desktop_local_host";
 }

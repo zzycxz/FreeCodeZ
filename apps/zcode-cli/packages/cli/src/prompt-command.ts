@@ -134,7 +134,7 @@ export const runPrompt = async (
       await runCliCleanupWithTimeout(async () => targetApp?.close?.(), cleanupTimeoutMs);
       // Browser process 由 CLI adapter 持有；App close 悬空或失败也必须继续回收 Chromium。
       await runCliCleanupWithTimeout(async () => browserRuntime?.close(), cleanupTimeoutMs);
-      // Bug 根因：App.close 只结束 Session 并 flush，共享 OTLP Owner 过去没有进程级终态。
+      // Bug 根因：App.close 只结束 Session 并 flush，共享遥测 Owner 过去没有进程级终态。
       // 单次 prompt 是最外层生命周期，必须与 prepare 对称 shutdown。
       await runCliCleanupWithTimeout(async () => shutdownTelemetry?.(), cleanupTimeoutMs);
       providerRegistryRuntime?.dispose();

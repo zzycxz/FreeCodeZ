@@ -24,7 +24,6 @@ import {
   type AmendWorkflowRunSettingsInput,
   type ResumeSessionResult,
 } from "@zcode/core";
-import { createModelTelemetry } from "@zcode/telemetry";
 import {
   createRootTraceContext,
   traceContextToLogContext,
@@ -191,10 +190,12 @@ export async function createZCodeApp(options: ZCodeAppOptions): Promise<ZCodeApp
     ...traceContextToLogContext(traceContext),
     module: "adapters.model",
   });
-  const modelTelemetry = createModelTelemetry({
-    owner: options.telemetryOwner,
-    sessionId,
-  });
+  // FreeCodeZ fork(P3 §3.2):遥测包已删;statusSink/agentExecution/shutdown 均为空实现。
+  const modelTelemetry = {
+    statusSink: undefined as undefined,
+    agentExecution: undefined as unknown as import("@zcode/contracts").AgentExecutionTelemetryPort,
+    shutdown: async () => {},
+  };
   let nodeReplBrowserBroker: NodeReplBrowserBroker | undefined;
   let ownedNodeReplBrowserBroker: NodeReplBrowserBroker | undefined;
   let providerModelRuntime: ApiProviderModelRuntime | undefined;
