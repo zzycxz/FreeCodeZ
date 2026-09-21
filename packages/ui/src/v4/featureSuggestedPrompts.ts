@@ -8,7 +8,8 @@ import presentationsIcon from "@/assets/plugin-icons/presentations.png";
 import spreadsheetsIcon from "@/assets/plugin-icons/spreadsheets.png";
 import type { DraftSuggestedPromptItem } from "@/v4/draftSuggestedPromptItems.js";
 
-const ASSETS = "https://cdn-zcode.z.ai/zcode/official-plugin/assets";
+// FreeCodeZ fork(P4 §3.1):CDN 图标移除,占位由 UI fallback 处理。
+const ASSETS = "";
 
 type FeatureRecommendedPrompt = DraftSuggestedPromptItem & {
   mode: "office" | "coding";

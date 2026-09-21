@@ -31,10 +31,11 @@ export const DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS: ReadonlySet<string> = new Set(
 
 export const DEFAULT_PLUGIN_MARKETPLACES: DefaultPluginMarketplace[] = [
   {
-    // ZCode 官方唯一市场：本地 seed 分片与 CDN 分片在 Agent storage 内合并。
-    // CDN manifest 的 name 必须与该 canonical id 一致。
+    // FreeCodeZ fork(P4 §3.1 方案 b):官方市场目录冻结为随包内置快照
+    // (config/plugin-marketplace/official-snapshot.json),不再回连 cdn-zcode;
+    // 个人来源(git/zip/本地目录)不受影响。
     id: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
-    source: "https://cdn-zcode.z.ai/zcode/official-plugin/marketplace.json",
+    source: "bundled:official-plugin-marketplace",
     name: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
     description: "Official ZCode plugins marketplace: built-in and community plugins for ZCode.",
     pluginCount: 0,

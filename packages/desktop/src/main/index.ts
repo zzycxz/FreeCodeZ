@@ -70,7 +70,6 @@ import {
   DEFAULT_LOCALE,
   ZCODE_VERSION,
   ZCODE_TELEMETRY_ENABLED,
-  ZCODE_ARMS_RUM_ENDPOINT,
   buildZCodeEndpointUrls,
   resolveZCodeEndpointOrigin,
   shouldEnableE2ETestBridge,

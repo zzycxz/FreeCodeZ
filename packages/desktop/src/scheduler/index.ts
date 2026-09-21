@@ -12,18 +12,15 @@ import {
   AutomationRepo,
   computeAutomationNextRunAt,
   isOneShotAutomation,
-  OffPeakTaskRepo,
 } from "@zcode/services/node";
 import {
   resolveWorkspaceKey,
   type ZCodeAutomation,
   type ZCodeAutomationTrigger,
   type ZCodeAutomationRun,
-  type ZCodeOffPeakTask,
 } from "@zcode/shared";
 import type { MainToSchedulerMessage, SchedulerToMainMessage } from "./schedulerProtocol.js";
 import { settleManualClaimForDispatchResult } from "./manualClaimRelease.js";
-import { settleOffPeakDispatchResult } from "./offPeakDispatchSettlement.js";
 import {
   startSchedulerResourceTelemetry,
   type SchedulerResourceTelemetry,
@@ -50,7 +47,18 @@ const repo = new AutomationRepo();
 const inFlight = new Map<string, InFlight>();
 
 // ---- 闲时任务（off-peak）----
-const offPeakRepo = new OffPeakTaskRepo();
+// FreeCodeZ fork(P2 §4.10):闲时任务链已删;scheduler 的闲时轮询/结算全部短路。
+type ZCodeOffPeakTask = { offPeakTaskId: string };
+const offPeakRepo = {
+  async claimDue(): Promise<never[]> {
+    return [];
+  },
+  async countActive(): Promise<number> {
+    return 0;
+  },
+  async releaseClaim(..._a: unknown[]): Promise<void> {},
+  close(): void {},
+};
 /** 进程内退避表：offPeakTaskId → 下次允许派发时间/已失败次数。scheduler 重启即重置，无害。 */
 const offPeakRetryAt = new Map<string, number>();
 const offPeakRetryAttempts = new Map<string, number>();
@@ -233,33 +241,6 @@ async function reportOffPeakActiveCount(): Promise<void> {
 
 // ---- 闲时任务派发 ----
 
-/**
- * 认领后派发闲时任务。退避中的任务立即释放认领等下轮（进程内退避表；每轮 claim+release
- * 两次写，任务数小、WAL 下开销可忽略——若退避任务成规模再把退避下沉进 claimDue）。
- */
-async function handleOffPeakClaimed(task: ZCodeOffPeakTask, now: number): Promise<void> {
-  const retryAt = offPeakRetryAt.get(task.offPeakTaskId) ?? 0;
-  if (retryAt > now) {
-    await offPeakRepo.releaseClaim(task.offPeakTaskId, { now });
-    return;
-  }
-  offPeakInFlight.add(task.offPeakTaskId);
-  const request: SchedulerToMainMessage = {
-    type: "offpeak-dispatch-request",
-    offPeakTaskId: task.offPeakTaskId,
-    prompt: task.prompt,
-    permissionMode: task.permissionMode,
-    modelSelection: task.modelSelection,
-    ...(task.conversationId ? { conversationId: task.conversationId } : {}),
-    ...(task.sessionId ? { sessionId: task.sessionId } : {}),
-    ...(task.serverTicketId ? { serverTicketId: task.serverTicketId } : {}),
-    workspacePath: task.workspacePath,
-    ...(task.workspaceIdentity ? { workspaceIdentity: task.workspaceIdentity } : {}),
-  };
-  parentPort?.postMessage(request);
-  log("info", `off-peak dispatch requested task=${task.offPeakTaskId}`);
-}
-
 async function settleDispatchResult(
   msg: Extract<MainToSchedulerMessage, { type: "cron-dispatch-result" }>,
 ): Promise<void> {
@@ -389,44 +370,9 @@ parentPort?.on("message", (event: Electron.MessageEvent) => {
   }
   if (msg.type === "offpeak-dispatch-result") {
     offPeakInFlight.delete(msg.offPeakTaskId);
-    void settleOffPeakDispatchResult(
-      {
-        repo: offPeakRepo,
-        retryAt: offPeakRetryAt,
-        retryAttempts: offPeakRetryAttempts,
-        now: Date.now,
-        log,
-      },
-      msg,
-    ).catch((error) => {
-      log(
-        "error",
-        `settle off-peak dispatch result failed task=${msg.offPeakTaskId}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    });
-    return;
-  }
-  if (msg.type === "scheduler-wake") {
-    log("info", `manual run wake requested automation=${msg.automationId}`);
-    requestTick();
+    // FreeCodeZ fork:闲时结算已删。
   }
 });
-
-async function main(): Promise<void> {
-  await repo.ensureReady();
-  // 闲时任务中断恢复：scheduler 是 app 单例、先于任何派发启动——此刻 DB 里的
-  // running 必属上一个 app 实例残留，安全置回 queued（session 保留供 resume 续跑）。
-  try {
-    const recovered = await offPeakRepo.recoverInterrupted(Date.now());
-    if (recovered > 0) {
-      log("info", `off-peak recovered ${recovered} interrupted task(s) back to queued`);
-    }
-  } catch (error) {
-    log(
-      "error",
-      `off-peak recoverInterrupted failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
   schedulerReady = true;
   log("info", "cron scheduler started");
   requestTick();
@@ -435,7 +381,6 @@ async function main(): Promise<void> {
   resourceTelemetry = startSchedulerResourceTelemetry({
     postMessage: (message) => parentPort?.postMessage(message),
   });
-}
 
 void main().catch((error) => {
   log(

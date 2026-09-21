@@ -451,7 +451,8 @@ function resolveChangelogUrl(
   // 帮助菜单里的外链以前只有固定英文地址，切到中文界面后仍会落到英文 changelog。
   // 这里统一收口到主进程按当前应用语言分流，避免菜单模板里手写分支后续再出现多处不一致。
   const origin = buildZCodeEndpointUrls(endpointOrigin).origin;
-  return locale === "zh-CN" ? `${origin}/cn/changelog` : `${origin}/en/changelog`;
+  // FreeCodeZ fork(P4 §3.2):changelog 不再指向官方站。
+  return "https://freecodez.local/changelog";
 }
 
 export async function openChangelog(

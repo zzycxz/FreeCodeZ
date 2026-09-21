@@ -1,6 +1,8 @@
 import type { ZCodeEnv } from "./env.js";
 
-export const DEFAULT_ZCODE_ENDPOINT_ORIGIN = "https://zcode.z.ai";
+// FreeCodeZ fork(P4 §3.2):默认端点改为占位域;账号/分享/强更等消费方已删,
+// 该 origin 仅作端点解析的兜底常量(ZCODE_BASE_URL 自建部署能力保留,规格书 P2 §4.9)。
+export const DEFAULT_ZCODE_ENDPOINT_ORIGIN = "https://freecodez.local";
 export const DEFAULT_BIGMODEL_API_ORIGIN = "https://bigmodel.cn";
 export const DEFAULT_ZAI_OAUTH_ORIGIN = "https://chat.z.ai";
 export const DEFAULT_ZAI_BUSINESS_BASE_URL = "https://api.z.ai";

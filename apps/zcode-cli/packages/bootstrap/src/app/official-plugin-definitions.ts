@@ -55,7 +55,8 @@ export interface OfficialPluginDefinition {
 }
 
 const ZAI_AUTHOR = { name: "Z.ai", url: "https://z.ai" } as const;
-const OFFICIAL_PLUGIN_ASSETS_BASE_URL = "https://cdn-zcode.z.ai/zcode/official-plugin/assets";
+// FreeCodeZ fork(P4 §3.1):CDN 图标基址移除,图标走 UI 占位(无外联)。
+const OFFICIAL_PLUGIN_ASSETS_BASE_URL = "";
 
 const OFFICIAL_NODE_REPL_HOST_REQUIRED_SEED_PATHS = ["dist/mcp/server.js"] as const;
 

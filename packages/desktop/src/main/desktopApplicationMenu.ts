@@ -10,7 +10,9 @@ import {
   type Locale,
 } from "@zcode/shared";
 import { readZCodeStdioTapDevState } from "@zcode/services/node";
-import { CHECK_FOR_UPDATE_MENU_ID, setAutoUpdaterMenuLocale } from "./autoUpdater.js";
+// FreeCodeZ fork(P3 §3.6):autoUpdater 已删;更新菜单项常量/本地化本地保留。
+const CHECK_FOR_UPDATE_MENU_ID = "check-for-update";
+function setAutoUpdaterMenuLocale(..._a: unknown[]): void {}
 import {
   DESKTOP_ZOOM_MAX_LEVEL,
   DESKTOP_ZOOM_MIN_LEVEL,

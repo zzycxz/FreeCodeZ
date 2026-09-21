@@ -68,3 +68,19 @@ AI 生成的代码、命令、解释、文件和建议可能存在错误、遗�
 ## 四、第三方许可与版权声明
 
 本仓库第一方代码依照根 [LICENSE](LICENSE) 采用 Apache-2.0；该许可不替其他权利人新增授权，也不覆盖第三方软件、复制代码、原生二进制、字体、图标、网页素材及其他资源的独立条款。具体依赖包详见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。受第三方版权、许可及再分发条件等约束，不承诺提供官方产品的全部功能及活动政策，具体以实际发布的源码和构建产物为准。
+
+---
+
+FreeCodeZ Fork Statement (2026-09)
+==================================
+
+FreeCodeZ is a modified fork of ZCode (Apache-2.0). Modifications began in
+September 2026 and include: product renaming and identity separation, removal
+of the OAuth login / account subscription chains, removal of the official
+model-request gateway, removal of telemetry (ARMS RUM / OTLP / warehouse
+events), removal of the auto-update chain, localization of the official plugin
+marketplace catalog and static assets, and neutralization of official hosted
+MCP integrations. FreeCodeZ is not endorsed by or affiliated with the original
+ZCode authors. Downstream distributors must retain this notice together with
+the original LICENSE and THIRD-PARTY-NOTICES.md (regenerated to reflect the
+current dependency set).
