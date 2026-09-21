@@ -1940,10 +1940,10 @@ app.whenReady().then(async () => {
   logWindowsBundledRuntimeIntegrityDiagnostic();
 
   // 启动自动更新检查（后台执行，不阻塞主界面）
-  // Preview 身份无论连接哪个后端都不自动更新：stable feed 上只分发正式 ZCode 安装包，
-  // 不向 Preview 渠道提供更新。
+  // FreeCodeZ fork:更新 feed 仍指向 zcode.z.ai,改名包自动更新会把官方 ZCode 安装包
+  // 当作更新拉下;P1 先整体禁用,P3 决定自建 feed 或手动分发(规格书 P1 §1.3/§4.5)。
   void initAutoUpdater({
-    enabled: ZCODE_PRODUCT_FLAVOR === "production",
+    enabled: false,
     onBeforeQuitAndInstall: async () => {
       notifyStabilityLifecycle("update_install");
       await prepareAppQuit("auto-update quitAndInstall", "update-install");
@@ -2185,8 +2185,11 @@ app.whenReady().then(async () => {
   // 是面向打包发布客户端的安全门，对未打包 dev 运行时无意义。打包版 app.isPackaged === true，
   // gate 照常生效，对真实用户零影响。
   const skipForceUpdateForLocalDevRuntime = !app.isPackaged;
+  // FreeCodeZ fork:强更 gate 每次启动回连 zcode.z.ai 且可能被官方版本策略远程阻断;
+  // P1 禁用,P3 随更新链整删(规格书 P1 §1.3/§4.5)。保持三元结构与日志分支不动。
+  const forceUpdateGuardEnabled = false;
   const forceUpdateGuardResult =
-    ZCODE_PRODUCT_FLAVOR === "production" && !skipForceUpdateForLocalDevRuntime
+    forceUpdateGuardEnabled && ZCODE_PRODUCT_FLAVOR === "production" && !skipForceUpdateForLocalDevRuntime
       ? await maybeBlockStartupForForceUpdate({
           locale: currentApplicationLocale,
           logger,
