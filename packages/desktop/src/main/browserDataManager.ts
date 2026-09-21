@@ -27,7 +27,8 @@ import {
 import type { LinuxChromePasswordStore } from "./chromeInstallationCandidates.js";
 import type { WindowsChromeAppBoundKeyReader } from "./windowsChromeAppBoundKey.js";
 
-export const EMBEDDED_BROWSER_PARTITION = "persist:zcode-embedded-browser";
+// FreeCodeZ fork:partition 换名放弃旧会话态(fork 无历史包袱),与原版浏览数据隔离(规格书 P1 §3#18)。
+export const EMBEDDED_BROWSER_PARTITION = "persist:freecodez-embedded-browser";
 const CACHE_STORAGE_TYPES: Electron.ClearStorageDataOptions["storages"] = [
   "shadercache",
   "serviceworkers",

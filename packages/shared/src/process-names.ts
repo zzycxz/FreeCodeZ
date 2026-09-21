@@ -1,4 +1,5 @@
-const ZCODE_PROCESS_PREFIX = "zcode";
+// FreeCodeZ fork:进程名前缀换名(任务管理器可见);导出函数名 formatZCode* 为内部标识不动(规格书 P1 §4.6)。
+const ZCODE_PROCESS_PREFIX = "freecodez";
 const MAX_PROCESS_NAME_SEGMENT_LENGTH = 24;
 
 function sanitizeProcessNameSegment(value: string | null | undefined): string | null {
@@ -49,7 +50,8 @@ export function formatZCodeHostProcessName(label?: string): string {
 
 export function formatZCodeRendererProcessName(windowTitle?: string): string {
   const normalizedTitle = windowTitle?.trim();
-  if (!normalizedTitle || normalizedTitle === "ZCode") {
+  // FreeCodeZ fork:窗口标题判别字面量与 runtimeApplicationName/productName 联动,漏改则远程窗口进程名分派失配。
+  if (!normalizedTitle || normalizedTitle === "FreeCodeZ") {
     return joinZCodeProcessName("renderer", "main");
   }
 
@@ -57,7 +59,7 @@ export function formatZCodeRendererProcessName(windowTitle?: string): string {
     return joinZCodeProcessName("renderer", "resource-manager");
   }
 
-  const remoteWindowPrefix = "ZCode - ";
+  const remoteWindowPrefix = "FreeCodeZ - ";
   if (normalizedTitle.startsWith(remoteWindowPrefix)) {
     return joinZCodeProcessName(
       "renderer",

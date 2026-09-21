@@ -59,7 +59,7 @@ const DISPOSE_FORCE_KILL_MS = 1_500;
 
 export function spawnCronScheduler(deps: CronSchedulerDeps): CronSchedulerHandle {
   const child = electronUtilityProcess.fork(schedulerModulePath, [], {
-    serviceName: "zcode-cron-scheduler",
+    serviceName: "freecodez-cron-scheduler",
     execArgv: ["--no-warnings"],
     env: {
       ...buildHostProcessEnv(deps.hostProcessLocalEnv),

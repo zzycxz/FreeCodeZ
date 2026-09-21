@@ -4,12 +4,13 @@ import { join } from "node:path";
 import { spawn } from "node:child_process";
 import type { Locale } from "@zcode/shared";
 
-const WORKFLOW_NAME = "Open in ZCode.workflow";
+// FreeCodeZ fork:workflow 名与文案换名,与原版右键 workflow 并排共存(规格书 P1 §3#22)。
+const WORKFLOW_NAME = "Open in FreeCodeZ.workflow";
 const WORKFLOW_BUNDLE_ID = "app.freecodez.app.finder-open-workflow";
 const WORKFLOW_VERSION = "5";
 const SERVICES_MENU_LABELS: Record<Locale, string> = {
-  "zh-CN": "在ZCode中打开",
-  "en-US": "Open in ZCode",
+  "zh-CN": "在 FreeCodeZ 中打开",
+  "en-US": "Open in FreeCodeZ",
 };
 
 const workflowScript = `first=""

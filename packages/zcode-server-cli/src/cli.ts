@@ -154,7 +154,7 @@ async function runServe(
         else
           stdout(
             io,
-            `ZCode Server ${existing.state} at ${existing.host ?? ""}:${existing.port ?? ""}`,
+            `FreeCodeZ Server ${existing.state} at ${existing.host ?? ""}:${existing.port ?? ""}`,
           );
         return 0;
       }
@@ -225,14 +225,14 @@ async function runServe(
       () => {
         if (childEarlyExit) {
           throw new Error(
-            `ZCode Server daemon exited before ready (code=${childEarlyExit.code ?? "null"} signal=${childEarlyExit.signal ?? "none"}); check ${layout.statusFile} for details`,
+            `FreeCodeZ Server daemon exited before ready (code=${childEarlyExit.code ?? "null"} signal=${childEarlyExit.signal ?? "none"}); check ${layout.statusFile} for details`,
           );
         }
       },
       serviceStarted,
     );
     if (json) stdout(io, started);
-    else stdout(io, `ZCode Server ${started.state} at ${started.host ?? ""}:${started.port ?? ""}`);
+    else stdout(io, `FreeCodeZ Server ${started.state} at ${started.host ?? ""}:${started.port ?? ""}`);
     process.stdin.pause();
     process.stdin.destroy();
     return 0;
@@ -292,7 +292,7 @@ async function runServe(
     throw error;
   }
   if (json) stdout(io, status);
-  else stdout(io, `ZCode Server ${status.state} at ${status.host ?? ""}:${status.port ?? ""}`);
+  else stdout(io, `FreeCodeZ Server ${status.state} at ${status.host ?? ""}:${status.port ?? ""}`);
   await new Promise<void>((resolve) => {
     foregroundStopped = resolve;
     if (!daemon) {
@@ -365,7 +365,7 @@ async function runUninstall(
   json: boolean,
   layout: ReturnType<typeof resolveServerLayout>,
 ): Promise<number> {
-  const first = await (io.confirm?.("Type DELETE to uninstall ZCode Server: ") ??
+  const first = await (io.confirm?.("Type DELETE to uninstall FreeCodeZ Server: ") ??
     Promise.resolve(""));
   if (first !== "DELETE") throw new Error("Uninstall cancelled");
   const second = await (io.confirm?.("Type DELETE again to confirm: ") ?? Promise.resolve(""));

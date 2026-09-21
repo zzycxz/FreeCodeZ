@@ -148,7 +148,7 @@ export function BrowserViewportSurface({
             ref={handleWebviewRef}
             allowpopups={"" as unknown as boolean}
             src={isResidencyRestore ? BROWSER_VIEW_RESTORE_BOOTSTRAP_URL : DEFAULT_BROWSER_URL}
-            partition="persist:zcode-embedded-browser"
+            partition="persist:freecodez-embedded-browser"
             nodeintegrationinsubframes="true"
             data-browser-compositor-scale={isResponsiveMode ? desktopZoomFactor : undefined}
             data-browser-layout-scale={isResponsiveMode ? responsiveGuestLayoutScale : undefined}
