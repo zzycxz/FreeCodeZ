@@ -1,9 +1,8 @@
+// FreeCodeZ fork:远端内置目录链(zcode-builtin-download / remote-synchronizer /
+// endpoint-scoped source)已删除,active 配置直接取打包内置(规格书 P2 §4.4)。
 export * from "./zcode-builtin-provider-config-source.js";
 export * from "./zcode-builtin-release.js";
-export * from "./zcode-builtin-download.js";
-export * from "./zcode-builtin-remote-synchronizer.js";
 export * from "./zcode-builtin-cache-paths.js";
-export * from "./endpoint-scoped-zcode-builtin-source.js";
 export * from "./zcode-builtin-provider-config-materializer.js";
 export * from "./model-selection-config-repository.js";
 export * from "./personal-provider-config-repository.js";

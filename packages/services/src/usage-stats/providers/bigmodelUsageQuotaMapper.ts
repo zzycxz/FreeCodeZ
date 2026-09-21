@@ -1,4 +1,7 @@
-import { isActivePersonalCodingPlan } from "#src/bigmodel/codingPlanEntitlement.js";
+// FreeCodeZ fork:codingPlanEntitlement 已删(规格书 P2);personal coding plan 视为恒活跃。
+function isActivePersonalCodingPlan(level: unknown): boolean {
+  return level === "personal";
+}
 import type { UsageQuotaLimit, UsageQuotaUsageDetail } from "@zcode/shared";
 
 interface BigModelSubscriptionListItem {
