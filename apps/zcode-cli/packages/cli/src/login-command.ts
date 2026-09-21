@@ -11,6 +11,10 @@ export async function runLoginCommand(
   noBrowser: boolean,
   args: readonly string[] = [],
 ): Promise<number> {
+  // FreeCodeZ fork:登录链已删(规格书 P2 §4.8);命令保留但立即失败,不触网。
+  ctx.stderr?.write?.("login is not available in FreeCodeZ; configure an API key instead.\n");
+  return 1;
+  /* eslint-disable no-unreachable -- 以下原实现保留为死代码,待品牌清扫批次物理删除。 */
   try {
     const providerId = args[0] ?? "zai";
     if (args.length > 1 || (providerId !== "zai" && providerId !== "bigmodel")) {
@@ -152,3 +156,5 @@ function formatUserLabel(user: { email?: string; name?: string; user_id: string 
   const label = user.name || user.email || user.user_id;
   return label ? ` as ${label}` : "";
 }
+
+// FreeCodeZ fork: unreachable-original above retained intentionally.

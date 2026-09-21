@@ -171,7 +171,21 @@ function createServerInfo(options: HttpServerOptions): ServerRemoteInfo {
       : {}),
     version: ZCODE_VERSION,
     protocolVersion: SERVER_REMOTE_PROTOCOL_VERSION,
-    authRequired: options.authRequired ?? Boolean(readTrimmedEnv("ZCODE_SERVER_TOKEN")),
+    // FreeCodeZ fork:非回环绑定必须显式 token,否则拒绝启动(规格书 P2 §4.11)——
+    // 该服务器暴露 File/Git/Terminal RPC,无鉴权默认值曾是 RCE 误配置向量。
+    authRequired:
+      options.authRequired ??
+      (() => {
+        const token = readTrimmedEnv("ZCODE_SERVER_TOKEN");
+        const bindHost = options.host ?? "127.0.0.1";
+        const isLoopback = ["127.0.0.1", "::1", "localhost"].includes(bindHost.trim().toLowerCase());
+        if (!token && !isLoopback) {
+          throw new Error(
+            "ZCODE_SERVER_TOKEN is required when binding a non-loopback host (FreeCodeZ safety guard)",
+          );
+        }
+        return Boolean(token);
+      })(),
     workspaces: resolveServerWorkspaces(options),
     capabilities: {
       desktopContinuous: true,
@@ -181,7 +195,7 @@ function createServerInfo(options: HttpServerOptions): ServerRemoteInfo {
   };
 }
 
-const zcodeLiteTokenCookieName = "zcode_lite_token";
+const zcodeLiteTokenCookieName = "freecodez_lite_token"; // FreeCodeZ fork(P2 §4.11)
 
 const staticMimeTypes: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
@@ -294,7 +308,7 @@ function staticContentType(filePath: string): string {
 
 export function createHttpServer(
   services: ServiceCollection,
-  port = 3030,
+  port = 0, // FreeCodeZ fork:默认随机端口+回写,防与原版/其他工具撞 3030(规格书 P2 §4.11)
   options: HttpServerOptions = {},
 ) {
   const app = new Hono();

@@ -13,13 +13,14 @@ import { ModelApiActorKind, ModelApiOperation, ModelRequestSessionType } from "@
 import { isOpenCodeGoBaseUrl } from "./opencode-session.js";
 import type { ModelStatusContext } from "./runner-status.js";
 
-const MODEL_TRACE_HEADER = "x-zcode-trace-id";
+// FreeCodeZ fork:归因头换名,不向第三方厂商暴露 zcode 标识(规格书 P2 §4.9)。
+const MODEL_TRACE_HEADER = "x-freecodez-trace-id";
 const MODEL_REQUEST_HEADER = "x-request-id";
 const MODEL_SESSION_HEADER = "x-session-id";
 const MODEL_QUERY_HEADER = "x-query-id";
 // Coding Plan 服务端使用该请求级 Header 区分 main/subagent/other 来源。
 // 它不是 Provider 静态能力或鉴权材料，必须由调用上下文生成并覆盖同名静态 Header。
-const MODEL_SESSION_TYPE_HEADER = "x-zcode-session-type";
+const MODEL_SESSION_TYPE_HEADER = "x-freecodez-session-type";
 const SESSION_ID_INTERNAL_PREFIX = "sess_";
 const SESSION_ID_SUBAGENT_PREFIX = "subagent_agent_";
 const QUERY_ID_INTERNAL_PREFIX = "query_";

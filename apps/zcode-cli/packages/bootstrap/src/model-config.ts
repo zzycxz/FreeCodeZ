@@ -60,7 +60,7 @@ function buildCliZCodeSourceHeaders(
     "X-Release-Channel": resolveRuntimeZCodeEnv(env),
     "X-Client-Language": locale ?? "unknown",
     "X-Client-Timezone": timezone ?? "unknown",
-    "X-ZCode-Agent": "glm",
+    "X-FreeCodeZ-Agent": "glm",
     ...createRuntimePlatformHeaders(),
   };
 }
