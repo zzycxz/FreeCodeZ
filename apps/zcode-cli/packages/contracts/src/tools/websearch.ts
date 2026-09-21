@@ -117,7 +117,9 @@ export const WEBSEARCH_PROVIDER_NATIVE_SPEC: ProviderNativeToolSpec = {
   kind: "provider_native",
   logicalName: "WebSearch",
   providerToolName: "web_search",
-  fallback: "disabled",
+  // FreeCodeZ fork(P6 §3.2):混合策略——端点无原生搜索时落客户端商业 key 链
+  // (Brave→Exa→Linkup),不再硬禁用。
+  fallback: "client",
 };
 
 export const WEBSEARCH_TOOL_CONTRACT: ToolContractDeclaration = {

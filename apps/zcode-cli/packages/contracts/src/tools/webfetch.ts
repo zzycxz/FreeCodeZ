@@ -13,6 +13,8 @@ import { toToolJsonSchema } from "./json-schema.js";
 export const WebFetchInputSchema = z.object({
   url: z.string().url().describe("The URL to fetch content from"),
   prompt: z.string().describe("The prompt to run on the fetched content"),
+  // FreeCodeZ fork(P6 §3.3):format 参数扩展契约;markdown=正文抽取+转换,默认 markdown。
+  format: z.enum(["text", "markdown"]).optional().describe("Output format (default markdown)"),
 });
 
 export type WebFetchInput = z.infer<typeof WebFetchInputSchema>;

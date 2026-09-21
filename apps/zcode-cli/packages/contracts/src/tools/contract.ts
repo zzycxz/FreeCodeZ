@@ -81,7 +81,7 @@ export interface ProviderNativeToolSpec {
   providerToolName: string;
   providerIds?: string[];
   args?: Record<string, unknown>;
-  fallback: "disabled";
+  fallback: "disabled" | "client";
 }
 
 export interface ToolPermissionSpec {

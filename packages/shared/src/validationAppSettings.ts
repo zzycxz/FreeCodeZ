@@ -429,6 +429,12 @@ const appSettingsObjectSchema = z.object({
   httpProxy: nonEmptyStringSchema.optional(),
   httpProxyNoProxy: nonEmptyStringSchema.optional(),
   httpProxyCaCertPath: nonEmptyStringSchema.optional(),
+  // FreeCodeZ fork(P6 §6.2):搜索/视觉能力设置。key 一律走加密凭据仓库,
+  // settings 只存开关与模型引用。
+  searchSummaryMode: z.enum(["on", "off", "vlm"]).default("on"),
+  searchSafeSearch: z.enum(["off", "moderate", "strict"]).default("moderate"),
+  searchCountry: z.string().max(8).optional(),
+  visionUnderstandModel: nonEmptyStringSchema.optional(),
   embeddedBrowserAllowInsecureCertificates: z.boolean().default(false),
   embeddedBrowserViewportPreference: embeddedBrowserViewportPreferenceSchema.default(
     DEFAULT_EMBEDDED_BROWSER_VIEWPORT_PREFERENCE,
@@ -500,6 +506,10 @@ export const appSettingsPatchSchema = z.object({
   httpProxy: nonEmptyStringSchema.optional(),
   httpProxyNoProxy: nonEmptyStringSchema.optional(),
   httpProxyCaCertPath: nonEmptyStringSchema.optional(),
+  searchSummaryMode: z.enum(["on", "off", "vlm"]).optional(),
+  searchSafeSearch: z.enum(["off", "moderate", "strict"]).optional(),
+  searchCountry: z.string().max(8).optional(),
+  visionUnderstandModel: nonEmptyStringSchema.optional(),
   embeddedBrowserAllowInsecureCertificates: z.boolean().optional(),
   embeddedBrowserViewportPreference: embeddedBrowserViewportPreferenceSchema.optional(),
   computerUseComposerEntryHidden: z.boolean().optional(),

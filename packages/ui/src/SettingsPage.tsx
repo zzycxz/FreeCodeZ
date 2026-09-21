@@ -1677,6 +1677,23 @@ export function SettingsPage({
                             httpProxy={httpProxy}
                             httpProxyNoProxy={httpProxyNoProxy}
                             httpProxyCaCertPath={httpProxyCaCertPath}
+                            searchSummaryMode={sharedSettings?.searchSummaryMode ?? "on"}
+                            onSearchSummaryModeChange={(mode) =>
+                              runUserAction({
+                                input: {
+                                  featureId: "settings.search",
+                                  action: "toggle_search_summary",
+                                  trigger: "select",
+                                },
+                                operation: () => updateSharedSettings({ searchSummaryMode: mode }),
+                                completed: { resultSource: "setting_service" },
+                                failureStage: "setting_service",
+                              })
+                            }
+                            onSearchProviderKeySave={async (provider, key) => {
+                              // P6 §6.2:搜索 key 一律走加密凭据仓库,不进 settings 明文。
+                              await services.credentialService.save(`search:${provider}`, key);
+                            }}
                             defaultHomeDir={defaultHomeDir}
                             showIntegratedTerminalShell={hostPlatform === "win32"}
                             setLocalePreference={handleFooterLocaleChange}

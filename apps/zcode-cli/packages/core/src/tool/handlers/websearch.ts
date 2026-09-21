@@ -24,6 +24,7 @@ import {
 import type { ToolEntry, ToolHandler } from "../types.js";
 import { auxiliaryModelOptions } from "../../model/auxiliary-model-options.js";
 import { buildWebSearchOutput, formatWebSearchModelContent } from "./websearch-results.js";
+import { runWebSearchFallback } from "./websearch-fallback.js";
 import { webSearchTraceFromContext } from "./websearch-support.js";
 
 const WEBSEARCH_TOOL_NAME = "WebSearch";
@@ -68,10 +69,20 @@ const webSearchHandler: ToolHandler<WebSearchInput, WebSearchOutput> = async (in
     });
   }
 
+  // FreeCodeZ fork(P6 §3.2 混合策略):原生优先;端点无原生搜索时落客户端
+  // 商业 key 链(Brave→Exa→Linkup),无可用源才报配置引导错误。
   if (!model.properties.supportsNativeWebSearch) {
+    const fallback = await runWebSearchFallback({
+      query: input.query,
+      abortSignal: context.abortSignal,
+      startedAt,
+    });
+    if (fallback) return fallback.output;
     throw createCoreError(
       CoreErrorType.ConfigurationError,
-      "Current model does not support native WebSearch",
+      "Current model endpoint has no native web search, and no client search provider key is "
+        + "configured. Configure one of BRAVE_API_KEY / EXA_API_KEY / LINKUP_API_KEY (or the "
+        + "search:brave / search:exa / search:linkup credentials) to enable the fallback chain.",
       {
         context: { toolCallId: context.toolCallId, toolName: WEBSEARCH_TOOL_NAME },
         recoverable: true,

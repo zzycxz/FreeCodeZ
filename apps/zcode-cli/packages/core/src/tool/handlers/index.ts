@@ -28,6 +28,8 @@ import { globToolEntry } from "./glob.js";
 import { grepToolEntry } from "./grep.js";
 import { webFetchToolEntry } from "./webfetch.js";
 import { webSearchToolEntry } from "./websearch.js";
+import { imageSearchToolEntry } from "./image-search.js";
+import { imageUnderstandToolEntry, viewImageToolEntry } from "./image-understand.js";
 import {
   agentToolEntry,
   createAgentToolEntry,
@@ -83,6 +85,9 @@ export const builtInTools: ToolEntry[] = [
   grepToolEntry,
   webFetchToolEntry,
   webSearchToolEntry,
+  imageSearchToolEntry,
+  imageUnderstandToolEntry,
+  viewImageToolEntry,
   todoReadToolEntry,
   todoWriteToolEntry,
   cronCreateToolEntry,

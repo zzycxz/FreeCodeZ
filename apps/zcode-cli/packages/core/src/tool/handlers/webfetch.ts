@@ -61,6 +61,7 @@ const webFetchHandler: ToolHandler = async (input, context) => {
           context,
           originalUrl: cacheKey,
           url: normalizedUrl,
+          format: parsed.format,
         })
       : {
           fetched: cached,
@@ -102,11 +103,13 @@ async function fetchFreshContent(options: {
   context: ToolExecutionContext;
   originalUrl: string;
   url: URL;
+  format?: "text" | "markdown";
 }): Promise<FreshWebFetchContent> {
   const fetched = await fetchAndExtractContent({
     context: options.context,
     originalUrl: options.originalUrl,
     url: options.url,
+    format: options.format,
   });
   return {
     fetched,

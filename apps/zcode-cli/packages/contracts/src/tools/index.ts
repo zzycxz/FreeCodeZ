@@ -29,6 +29,8 @@ export * from "./task-stop.js";
 export * from "./read-session-context.js";
 export * from "./submit-result.js";
 export * from "./websearch.js";
+export * from "./image-search.js";
+export * from "./image-understand.js";
 export * from "./workflow.js";
 export * from "./create-workflow.js";
 // 修订入口：名字常量被 core 的

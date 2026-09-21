@@ -28,6 +28,7 @@ export async function fetchAndExtractContent(options: {
   context: ToolExecutionContext;
   originalUrl: string;
   url: URL;
+  format?: "text" | "markdown";
 }): Promise<FetchAndExtractContentResult> {
   const httpClientPort = options.context.httpClientPort;
   if (!httpClientPort) {
@@ -162,7 +163,11 @@ export async function fetchAndExtractContent(options: {
   }
 
   const contentType = readHeader(response.headers, "content-type") ?? "";
-  const content = extractReadableContent(response.body, contentType);
+  const content = extractReadableContent(
+    response.body,
+    contentType,
+    options.format ?? "markdown",
+  );
   const artifact = await maybePersistRawContent(content, contentType, options.context);
 
   return {

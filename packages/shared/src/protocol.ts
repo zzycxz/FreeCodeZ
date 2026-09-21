@@ -259,6 +259,11 @@ export interface AppSettings {
   httpProxyNoProxy?: string;
   /** 自定义 PEM 根证书路径；下次启动 app/agent 时用于 renderer 校验与 agent NODE_EXTRA_CA_CERTS。 */
   httpProxyCaCertPath?: string;
+  // FreeCodeZ fork(P6 §6.2):搜索/视觉设置;key 走加密凭据仓库不在此处。
+  searchSummaryMode?: "on" | "off" | "vlm";
+  searchSafeSearch?: "off" | "moderate" | "strict";
+  searchCountry?: string;
+  visionUnderstandModel?: string;
   /**
    * 内置浏览器忽略 HTTPS 证书校验错误（自签名、过期、域名不匹配等），用于访问内网测试站点。
    * 只影响内置浏览器出口，不影响 ZCode 自身对后端与模型 API 的请求。默认关闭，重启后生效。

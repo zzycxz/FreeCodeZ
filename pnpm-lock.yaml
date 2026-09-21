@@ -353,6 +353,9 @@ importers:
 
   apps/zcode-cli/packages/core:
     dependencies:
+      '@zcode/adapters':
+        specifier: workspace:*
+        version: link:../adapters
       '@zcode/contracts':
         specifier: workspace:*
         version: link:../contracts
