@@ -7,7 +7,7 @@ const COMMANDS_DIR = "commands";
 const GIT_MARKER = ".git";
 const HOME_PREFIX = "~/";
 const PRIORITY_STEP = 10;
-const ZCODE_DIR = ".zcode";
+const ZCODE_DIR = ".freecodez";
 const AGENTS_DIR = ".agents";
 
 export interface CustomCommandRootResolutionOptions {

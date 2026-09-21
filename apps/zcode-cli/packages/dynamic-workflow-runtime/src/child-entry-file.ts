@@ -44,7 +44,7 @@ export interface ChildEntryFile {
 
 /** 项目内的入口文件目录。 */
 export function workflowRunsDir(cwd: string): string {
-  return join(cwd, ".zcode", "workflow-runs");
+  return join(cwd, ".freecodez", "workflow-runs");
 }
 
 /** 回落目录（OS 临时目录下，跨项目共用）。 */

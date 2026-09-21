@@ -41,10 +41,10 @@ export function getDataBaseDir(): string {
 
 /** {dataBaseDir}/.zcode */
 export function getZCodeDataRootDir(): string {
-  return join(getDataBaseDir(), ".zcode");
+  return join(getDataBaseDir(), ".freecodez");
 }
 
-/** 非项目对话共享的真实工作目录；默认 ~/.zcode/workspace/default。 */
+/** 非项目对话共享的真实工作目录；默认 ~/.freecodez/workspace/default。 */
 export function getConversationWorkspaceDir(): string {
   return join(getZCodeDataRootDir(), "workspace", "default");
 }
@@ -117,6 +117,11 @@ function collectWindowsForbiddenAppInstallDirs(
     programFilesX86 ? win32.join(programFilesX86, "ZCode") : null,
     programW6432 ? win32.join(programW6432, "ZCode") : null,
     localAppData ? win32.join(localAppData, "Programs", "ZCode") : null,
+    // FreeCodeZ fork:追加自身安装目录,防数据目录误选进安装区;保留 ZCode 条目防误装进原版目录(规格书 P1 §4.2 B1)。
+    programFiles ? win32.join(programFiles, "FreeCodeZ") : null,
+    programFilesX86 ? win32.join(programFilesX86, "FreeCodeZ") : null,
+    programW6432 ? win32.join(programW6432, "FreeCodeZ") : null,
+    localAppData ? win32.join(localAppData, "Programs", "FreeCodeZ") : null,
   ];
   const seen = new Set<string>();
   const result: string[] = [];
@@ -182,7 +187,7 @@ export function getGitCheckpointIndexRootDir(): string {
   return join(getZCodeDataRootDir(), "git-checkpoint-index");
 }
 
-/** ~/.zcode/v2/tasks-index.sqlite */
+/** ~/.freecodez/v2/tasks-index.sqlite */
 export function getTasksIndexDatabasePath(): string {
   return join(getAppConfigDir(), "tasks-index.sqlite");
 }
@@ -200,12 +205,12 @@ export function getWorkspaceHash(workspacePath: string, workspaceIdentity?: stri
     .slice(0, 12);
 }
 
-/** ~/.zcode/v2/sessions/{workspaceHash} */
+/** ~/.freecodez/v2/sessions/{workspaceHash} */
 function getTaskSessionDir(workspacePath: string, workspaceIdentity?: string): string {
   return join(getAppConfigDir(), "sessions", getWorkspaceHash(workspacePath, workspaceIdentity));
 }
 
-/** ~/.zcode/v2/sessions/{workspaceHash}/{taskId}.json */
+/** ~/.freecodez/v2/sessions/{workspaceHash}/{taskId}.json */
 export function getLegacyTaskSessionSnapshotPath(
   workspacePath: string,
   taskId: string,
@@ -214,7 +219,7 @@ export function getLegacyTaskSessionSnapshotPath(
   return join(getTaskSessionDir(workspacePath, workspaceIdentity), `${taskId}.json`);
 }
 
-/** ~/.zcode/v2/sessions/{workspaceHash}/{taskId}.deleted.json */
+/** ~/.freecodez/v2/sessions/{workspaceHash}/{taskId}.deleted.json */
 export function getLegacyDeletedTaskSessionSnapshotPath(
   workspacePath: string,
   taskId: string,
@@ -229,8 +234,8 @@ export function getLegacyDeletedTaskSessionSnapshotPath(
  * state must only live at the default homedir location.
  */
 export async function copyDataDirectory(oldBaseDir: string, newBaseDir: string): Promise<void> {
-  const oldDir = join(oldBaseDir, ".zcode", "v2");
-  const newDir = join(newBaseDir, ".zcode", "v2");
+  const oldDir = join(oldBaseDir, ".freecodez", "v2");
+  const newDir = join(newBaseDir, ".freecodez", "v2");
   await cp(oldDir, newDir, {
     recursive: true,
     force: false,

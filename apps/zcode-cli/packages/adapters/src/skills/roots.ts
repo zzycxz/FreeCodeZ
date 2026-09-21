@@ -7,7 +7,7 @@ const GIT_MARKER = ".git";
 const HOME_PREFIX = "~/";
 const PRIORITY_STEP = 10;
 const SKILLS_DIR = "skills";
-const ZCODE_DIR = ".zcode";
+const ZCODE_DIR = ".freecodez";
 const AGENTS_DIR = ".agents";
 
 export interface SkillRootResolutionOptions {

@@ -22,7 +22,7 @@ export interface McpSourceDescriptor {
 export const MCP_SOURCE_DESCRIPTORS: McpSourceDescriptor[] = [
   {
     source: "zcodeagentmcp",
-    configDirSegments: [".zcode", "cli"],
+    configDirSegments: [".freecodez", "cli"],
     fileName: "config.json",
     format: "json",
     configKeyName: "mcp.servers",
