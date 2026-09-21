@@ -180,7 +180,7 @@ function createSettingsMutationTarget(
     refresh: (reason) => registryService.refresh(reason),
     refreshSources: async (reason) => {
       const sourceResults = await Promise.allSettled([
-        configRuntime.refreshZCodeBuiltin({ force: true }),
+        configRuntime.refreshZCodeBuiltin(),
         accountSource.refresh?.(reason) ?? Promise.resolve(),
       ]);
       const snapshot = await registryService.refresh(reason);

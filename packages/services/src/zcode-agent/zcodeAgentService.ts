@@ -2707,8 +2707,6 @@ export function createZCodeAgentService(
   }
 
   function disposeLocalState(): void {
-    accountProviderConfigUnsubscribe?.();
-    accountProviderConfigUnsubscribe = undefined;
     modelSelectionSubscription?.dispose();
     modelSelectionSubscription = undefined;
     memoryDiagnostics.dispose();
@@ -2767,8 +2765,6 @@ export function createZCodeAgentService(
     remoteSessionId?: string;
   }): boolean {
     return false; // FreeCodeZ fork: Off-Peak 已删
-    if (params.remoteSessionId) return false;
-    return !params.workspaceIdentity || !isRemoteWorkspaceIdentity(params.workspaceIdentity);
   }
 
   /**
@@ -2833,16 +2829,6 @@ export function createZCodeAgentService(
         payload: {
           ...payload,
           toolDisallowlist: mergeAutomationMutationToolDenylist(payload.toolDisallowlist ?? []),
-        },
-      };
-    }
-    if (payload.offPeakTaskId) {
-      // 闲时派发轮同型纵深——只 deny OffPeakCreate（OffPeakList 只读保留）。
-      return {
-        ...envelope,
-        payload: {
-          ...payload,
-          toolDisallowlist: mergeOffPeakMutationToolDenylist(payload.toolDisallowlist ?? []),
         },
       };
     }

@@ -49,7 +49,21 @@ export function createUsageStatsService(
     env: dependencies.env,
   });
 
+  const resetUnsupported = () => new Error("coding_plan_reset_not_supported");
   return {
+    async getCodingPlanResetStatus(): Promise<never> {
+      // FreeCodeZ fork:额度重置依赖已删的 zcode JWT/OAuth(规格书 P2 §4.6)。
+      throw resetUnsupported();
+    },
+    async requestCodingPlanResetOpportunity(): Promise<never> {
+      throw resetUnsupported();
+    },
+    async useCodingPlanReset(): Promise<never> {
+      throw resetUnsupported();
+    },
+    async markCodingPlanResetHistoryRead(): Promise<void> {
+      throw resetUnsupported();
+    },
     async getAppUsageSnapshot(request: AppUsageRequest): Promise<AppUsageSnapshot> {
       // App Usage 现读取 agent 数据库真实统计（model_usage/turn_usage/tool_usage），
       // 经 ZCode Protocol usage/stats 取回。不再读本地 session JSON 估算。

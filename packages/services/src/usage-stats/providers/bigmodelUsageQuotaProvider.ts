@@ -490,11 +490,10 @@ function readNonEmptyString(value: unknown): string | null {
 }
 
 function formatUnixSecondsAsIso(value: number | string | null | undefined): string | null {
-  const numericValue = parseUnixSeconds(value);
-  if (numericValue === null) {
+  const numericValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numericValue)) {
     return null;
   }
-
   return new Date(numericValue * 1000).toISOString();
 }
 
@@ -506,11 +505,6 @@ function buildUsageMonitorUrl(
 ): string {
   const url = new URL(resolved.quotaUrl);
   url.pathname = url.pathname.replace(/\/quota\/limit$/, `/${endpoint}`);
-  if (resolved.teamContext) {
-    // BigModel Team Plan 的 monitor 用量接口和 quota/limit 一样按 type=2 路由。
-    // 只带团队项目 key/header 时仍会落到个人 Coding Plan 分支并返回不存在套餐。
-    url.searchParams.set("type", "2");
-  }
   url.searchParams.set("startTime", startTime);
   url.searchParams.set("endTime", endTime);
   return url.toString();
@@ -527,7 +521,7 @@ function buildCreditUsageMonitorUrl(
   url.pathname = url.pathname.replace(/\/usage\/quota\/limit$/, `/credit-usage/${endpoint}`);
   // Team Plan 的 quota/limit 仍用 type=2，但 credit-usage 使用 type=3；
   // 继续沿用 type=2 会触发后端“仅企业主账号可查询企业汇总数据”分支。
-  url.searchParams.set("type", resolved.teamContext ? "3" : "1");
+  url.searchParams.set("type", "1");
   url.searchParams.set("startTime", startTime);
   url.searchParams.set("endTime", endTime);
   if (usageType) {
