@@ -278,7 +278,7 @@ async function runTimedAsync(label, fn) {
 
 function resolveAppAsarPath(context) {
   if (context.electronPlatformName === "darwin") {
-    const appName = `${context.packager?.appInfo?.productFilename ?? "ZCode"}.app`;
+    const appName = `${context.packager?.appInfo?.productFilename ?? "FreeCodeZ"}.app`;
     return resolve(context.appOutDir, appName, "Contents", "Resources", "app.asar");
   }
 
@@ -287,7 +287,7 @@ function resolveAppAsarPath(context) {
 
 function resolvePackagedResourcesDir(context) {
   if (context.electronPlatformName === "darwin") {
-    const appName = `${context.packager?.appInfo?.productFilename ?? "ZCode"}.app`;
+    const appName = `${context.packager?.appInfo?.productFilename ?? "FreeCodeZ"}.app`;
     return resolve(context.appOutDir, appName, "Contents", "Resources");
   }
 
@@ -455,11 +455,15 @@ export default {
   // CI 环境下若这些字段缺失会在产物阶段直接失败。这里统一在构建配置补齐，避免依赖外部注入。
   extraMetadata: {
     version: buildMetadata.appVersion,
+    // FreeCodeZ fork:内嵌应用名决定 electron-updater 缓存目录(freecodez-updater),
+    // 与原版 @zcodedesktop-updater 隔离(派生公式 app-builder-lib/appInfo.js:126-128)。
+    name: "freecodez",
     zcodeProductFlavor: desktopProductIdentity.flavor,
-    homepage: "https://zcode.z.ai",
+    // 占位:deb/rpm fpm 元数据校验需要非空,正式值待定(规格书 P1 §9-1)。
+    homepage: "https://freecodez.local",
     author: {
-      name: "ZCode",
-      email: "dev@zcode.z.ai",
+      name: "FreeCodeZ",
+      email: "dev@freecodez.local",
     },
   },
   // macOS 签名阶段会对 Electron Framework 下每个语言包逐个 codesign。
@@ -649,9 +653,9 @@ export default {
   protocols: [
     {
       // 协议处理器的展示名之前使用小写 scheme，打包产物里的协议描述无法体现产品名。
-      // 展示名跟随安装包身份；scheme 仍保持 zcode，因此两个应用中最后注册者会成为默认 handler。
+      // 展示名跟随安装包身份；FreeCodeZ fork 把 scheme 换为 freecodez://，与原版 zcode:// 互不抢注。
       name: desktopProductIdentity.productName,
-      schemes: ["zcode"],
+      schemes: ["freecodez"],
     },
   ],
   mac: {
@@ -700,7 +704,7 @@ export default {
     // 与 /usr/share/icons/hicolor/*/apps/zcode.png 保持一致。
     executableName: desktopProductIdentity.linuxExecutableName,
     category: "Development",
-    maintainer: "ZCode <dev@zcode.z.ai>",
+    maintainer: "FreeCodeZ <dev@freecodez.local>",
   },
   deb: {
     // 生产版与 Preview 必须是两个 dpkg package；只改可执行名仍会让安装器把另一版本当成升级替换。
