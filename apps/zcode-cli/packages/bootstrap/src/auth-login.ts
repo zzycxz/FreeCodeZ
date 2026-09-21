@@ -284,9 +284,11 @@ export async function logoutZCodeCli(
 ): Promise<LogoutZCodeCliResult> {
   const credentialStore =
     options.credentialStore ?? createSharedZCodeCredentialStore({ env: options.env });
-  const providerIds = (await readStandaloneCodingPlanProviders(options.env ?? process.env)).map(
-    ({ providerId }) => providerId,
-  );
+  const providerIds = (
+    (await readStandaloneCodingPlanProviders(options.env ?? process.env)) as Array<{
+      providerId: string;
+    }>
+  ).map(({ providerId }) => providerId);
   const identityKeys = providerIds.map(standaloneAccountIdentityCredentialKey);
   const identities = await credentialStore.loadMany(identityKeys);
   const dynamicApiKeyKeys = providerIds.flatMap((providerId) => {

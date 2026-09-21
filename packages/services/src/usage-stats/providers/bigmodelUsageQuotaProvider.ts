@@ -54,7 +54,6 @@ import { normalizeLimits, pickPrimaryLimit } from "./bigmodelUsageQuotaMapper.js
 
 const BIGMODEL_QUOTA_PATH = "/api/monitor/usage/quota/limit";
 const CODING_PLAN_RESET_BASE_PATH = "/api/v1/coding-plan/reset";
-const ZCODE_JWT_TOKEN_KEY = "zcodejwttoken";
 const ZAI_OAUTH_ACCESS_TOKEN_KEY = "oauth:zai:access_token";
 const BIGMODEL_OAUTH_ACCESS_TOKEN_KEY = "oauth:bigmodel:access_token";
 const REQUEST_TIMEOUT_MS = 15_000;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { modelConfigDataSchema } from "@zcode/shared/model-config";
-import { providerConfigDataSchema, zhipuAccountAccessDataSchema } from "./provider-data-schema.js";
+import { providerConfigDataSchema } from "./provider-data-schema.js";
 import { ModelConfig, ModelConfigRules } from "./model-config.js";
 import {
   ApiKeyAccessConfig,
@@ -9,7 +9,6 @@ import {
   ProviderConfigMap,
   ProviderTemplate,
   ProviderTemplateMap,
-  ZhipuAccountAccessConfig,
 } from "./provider-config.js";
 import {
   builtinModelConfigRulesSchema,
@@ -23,11 +22,8 @@ import {
   type ProviderTemplateConfigRuleData,
 } from "./rule-data-schema.js";
 
-const accountProviderConfigSchema = providerConfigDataSchema
-  .pick({ builtinModelIds: true })
-  .extend({
-    access: zhipuAccountAccessDataSchema.pick({ type: true, entitled: true }).nullable().optional(),
-  });
+// FreeCodeZ fork(P2 §4.2):账号 provider 配置 schema 随账号体系删除;仅保留模型 id 映射兼容形状。
+const accountProviderConfigSchema = providerConfigDataSchema.pick({ builtinModelIds: true });
 
 export function parseProviderConfigMap(input: unknown): ProviderConfigMap {
   return createProviderRules(z.array(providerConfigRuleSchema).parse(input));
@@ -148,9 +144,7 @@ function createProviderConfig(config: z.infer<typeof providerConfigDataSchema>):
     access:
       config.access == null
         ? config.access
-        : config.access.type !== "zhipu-account"
-          ? new ApiKeyAccessConfig(config.access)
-          : new ZhipuAccountAccessConfig(config.access),
+        : new ApiKeyAccessConfig(config.access),
     api: config.api == null ? config.api : new ProviderApiConfig(config.api),
   });
 }

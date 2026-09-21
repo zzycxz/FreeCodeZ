@@ -3,16 +3,13 @@ import { ConfigOverlay, type ConfigValidationIssue } from "../config-overlay.js"
 import type { z } from "zod";
 import {
   completeApiKeyAccessDataSchema,
-  completeZhipuAccountAccessDataSchema,
   completeProviderApiDataSchema,
   completeProviderConfigDataSchema,
   type providerApiTypeDataSchema,
   type providerGroupDataSchema,
-  type zhipuAccountModeDataSchema,
   type providerVisibilityDataSchema,
   type providerLogoDataSchema,
   type apiKeyAccessDataSchema,
-  type zhipuAccountAccessDataSchema,
   type providerAccessDataSchema,
   type providerApiDataSchema,
   type providerConfigDataSchema,
@@ -25,7 +22,6 @@ import type { ProviderConfigRuleData } from "./rule-data-schema.js";
 
 export type ProviderApiType = z.infer<typeof providerApiTypeDataSchema>;
 export type ProviderGroup = z.infer<typeof providerGroupDataSchema>;
-export type ZhipuAccountMode = z.infer<typeof zhipuAccountModeDataSchema>;
 
 export type ApiKeyAccessConfigInput = Omit<ApiKeyAccessConfigObject, "type"> & {
   readonly type?: ApiKeyAccessConfigObject["type"];
@@ -69,49 +65,8 @@ export class ApiKeyAccessConfig extends ConfigOverlay<ApiKeyAccessConfig> {
   }
 }
 
-export type ZhipuAccountAccessConfigInput = Omit<ZhipuAccountAccessConfigObject, "type">;
 
-export type ZhipuAccountAccessConfigObject = Readonly<z.infer<typeof zhipuAccountAccessDataSchema>>;
-
-export class ZhipuAccountAccessConfig extends ConfigOverlay<ZhipuAccountAccessConfig> {
-  readonly type = "zhipu-account" as const;
-  readonly accountType?: ZhipuAccountAccessConfigInput["accountType"];
-  readonly mode?: ZhipuAccountAccessConfigInput["mode"];
-  readonly entitled?: ZhipuAccountAccessConfigInput["entitled"];
-
-  constructor(input: ZhipuAccountAccessConfigInput = {}) {
-    super();
-    this.accountType = input.accountType;
-    this.mode = input.mode;
-    this.entitled = input.entitled;
-    Object.freeze(this);
-  }
-
-  overlay(next: ZhipuAccountAccessConfig): ZhipuAccountAccessConfig {
-    return new ZhipuAccountAccessConfig({
-      accountType: this.overlayValue(this.accountType, next.accountType),
-      mode: this.overlayValue(this.mode, next.mode),
-      entitled: this.overlayValue(this.entitled, next.entitled),
-    });
-  }
-
-  validateComplete(path: readonly string[] = []): readonly ConfigValidationIssue[] {
-    return validateConfigSchema(completeZhipuAccountAccessDataSchema, this.toJSON(), path);
-  }
-
-  toJSON(): ZhipuAccountAccessConfigObject {
-    return {
-      type: this.type,
-      ...objectWithoutUndefined({
-        accountType: this.accountType,
-        mode: this.mode,
-        entitled: this.entitled,
-      }),
-    };
-  }
-}
-
-export type ProviderAccessConfig = ApiKeyAccessConfig | ZhipuAccountAccessConfig;
+export type ProviderAccessConfig = ApiKeyAccessConfig;
 
 export type ProviderAccessConfigObject = Readonly<z.infer<typeof providerAccessDataSchema>>;
 
@@ -119,7 +74,7 @@ export type ProviderAccessConfigObject = Readonly<z.infer<typeof providerAccessD
 export function isApiKeyAccess<T extends { readonly type: string }>(
   access: T | null | undefined,
 ): access is Extract<T, { readonly type: ApiKeyAccessConfigObject["type"] }> {
-  return access?.type === "api-key" || access?.type === "zhipu-coding-plan-api-key";
+  return access?.type === "api-key";
 }
 
 export type ProviderVisibility = z.infer<typeof providerVisibilityDataSchema>;
@@ -499,13 +454,7 @@ function overlayProviderAccess(
   if (next === undefined) return current;
   if (next === null || current === undefined || current === null) return next;
   if (current.type !== next.type) return next;
-  switch (current.type) {
-    case "api-key":
-    case "zhipu-coding-plan-api-key":
-      return current.overlay(next as ApiKeyAccessConfig);
-    case "zhipu-account":
-      return current.overlay(next as ZhipuAccountAccessConfig);
-  }
+  return current.overlay(next as ApiKeyAccessConfig);
 }
 
 function objectWithoutUndefined<T extends object>(input: T): T {

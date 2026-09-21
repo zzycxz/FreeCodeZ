@@ -133,11 +133,8 @@ export function resolveCodingPlanEntryPlanStateFromProviderSettings(
   if (!view) {
     return resolveCodingPlanEntryPlanState({});
   }
-  const accountProviders = view.providers.filter(
-    (provider) =>
-      provider.effectiveConfig.access?.type === "zhipu-account" &&
-      provider.effectiveConfig.access.entitled === true,
-  );
+  // FreeCodeZ fork(P2 §4.2):账号 access 已删,账号 provider 恒为空集。
+  const accountProviders: Array<{ providerId: string }> = [];
   const codingPlanProvider = accountProviders.find(
     (provider) =>
       provider.providerId === BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan ||

@@ -1,4 +1,3 @@
-export * from "./account-provider-resolution.js";
 export * from "./account-provider-service.js";
 export * from "./account-provider-state.js";
 export * from "./config-overlay.js";

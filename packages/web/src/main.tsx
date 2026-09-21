@@ -95,7 +95,7 @@ function isWebOAuthCallback(params: URLSearchParams): boolean {
   );
 }
 
-function renderWebAuthCallbackPage(): void {
+function renderWebAuthCallbackPage(_params?: Record<string, unknown>): void {
   document.title = "ZCode - Sign In";
   const callbackState = parseOAuthState(
     new URLSearchParams(window.location.search).get("state") ?? "",
@@ -104,7 +104,7 @@ function renderWebAuthCallbackPage(): void {
   root.render(
     <WebCallbackPage
       authService={webAuthService}
-      onSuccess={({ appReturnTo }) => {
+      onSuccess={({ appReturnTo }: { appReturnTo?: string }) => {
         window.location.replace(appReturnTo ?? "/");
       }}
       onRetry={() => {

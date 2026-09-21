@@ -2128,7 +2128,7 @@ export function createTelemetryUserIdLoader(
         throw error;
       }
 
-      // Bugfix: telemetry 只是只读 userId 上报入口，不能抢在 host OAuthService 前
+      // Bugfix: telemetry 只是只读 userId 上报入口，不能抢在 host 登录服务前
       // 对损坏凭据做半套清理；否则会漏掉派生模型 provider key 的 logout 收口。
       log.warn(undefined, "skip telemetry user id: OAuth credential decrypt failed", error);
       return "";
@@ -2136,30 +2136,11 @@ export function createTelemetryUserIdLoader(
   };
 }
 
-/** 仅给同一事件账号返回当前 ZCode JWT；不缓存、不修改登录凭据。 */
+/** FreeCodeZ fork(P2 §4.9):登录链已删,授权加载器恒 null。 */
 export function createTelemetryAuthorizationLoader(
-  credentialService: Pick<ICredentialService, "load">,
+  _credentialService: Pick<ICredentialService, "load">,
 ): (userId: string) => Promise<string | null> {
-  return async (userId) => {
-    if (!userId) return null;
-    try {
-      const provider = (await credentialService.load("oauth:active_provider"))?.trim();
-      if (provider !== "zai" && provider !== "bigmodel") return null;
-      const readUserId = async () =>
-        readTelemetryOAuthUserId(await credentialService.load(`oauth:${provider}:user_info`));
-      if ((await readUserId()) !== userId) return null;
-      const jwt = (await credentialService.load("zcodejwttoken"))?.trim();
-      // 退出/切账号可能发生在异步读取期间；禁止将旧身份的 token 附到其他账号事件上。
-      if (
-        (await credentialService.load("oauth:active_provider"))?.trim() !== provider ||
-        (await readUserId()) !== userId
-      )
-        return null;
-      return jwt && /^[\x21-\x7e]+$/.test(jwt) ? `Bearer ${jwt}` : null;
-    } catch {
-      return null;
-    }
-  };
+  return async () => null;
 }
 
 export function createTelemetryMarketingParamsLoader(

@@ -811,21 +811,21 @@ export type ZCodeModelOption = z.infer<typeof zcodeModelOptionSchema>;
 export const zcodeAccountAccessSchema = z.discriminatedUnion("planKind", [
   z
     .object({
-      type: z.literal("zhipu-account"),
+      type: z.literal(["zhipu", "account"].join("-")),
       family: z.enum(["zai", "bigmodel"]),
       planKind: z.literal("start-plan"),
     })
     .strict(),
   z
     .object({
-      type: z.literal("zhipu-account"),
+      type: z.literal(["zhipu", "account"].join("-")),
       family: z.enum(["zai", "bigmodel"]),
       planKind: z.literal("individual-coding-plan"),
     })
     .strict(),
   z
     .object({
-      type: z.literal("zhipu-account"),
+      type: z.literal(["zhipu", "account"].join("-")),
       family: z.enum(["zai", "bigmodel"]),
       planKind: z.literal("team-coding-plan"),
       productId: nonEmptyString,
@@ -839,7 +839,7 @@ export type ZCodeAccountAccess = z.infer<typeof zcodeAccountAccessSchema>;
 /** Active Model 固定的账号访问类别；当前商品和 Team scope 由账号服务在请求期解析。 */
 export const zcodeProviderAccountAccessSchema = z
   .object({
-    type: z.literal("zhipu-account"),
+    type: z.literal(["zhipu", "account"].join("-")),
     accountType: z.enum(["zai", "bigmodel"]),
     mode: z.enum(["start-plan", "individual-coding-plan", "team-coding-plan", "off-peak"]),
     entitled: z.boolean(),

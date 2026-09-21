@@ -41,20 +41,8 @@ export function usePlanIdentitySnapshot(
     enabled: Boolean(normalizedDomain && codingPlanRefreshFingerprint),
     includeSubscription: true,
     preferredProviderId: codingPlanProviderId,
-    accountAccess: normalizedDomain
-      ? {
-          type: "zhipu-account",
-          family: normalizedDomain,
-          ...(connectionSelection?.kind === "team-coding-plan"
-            ? ({
-                planKind: "team-coding-plan",
-                productId: connectionSelection.productId,
-                organizationId: connectionSelection.organizationId,
-                projectId: connectionSelection.projectId,
-              } as const)
-            : ({ planKind: "individual-coding-plan" } as const)),
-        }
-      : undefined,
+    // FreeCodeZ fork(P2 §4.2):账号 access 已删,权益快照不再请求账号维度。
+    accountAccess: undefined,
     allowDisabledPreferredProvider: true,
     requirePreferredProvider: true,
     allowEnvApiKey: false,

@@ -179,15 +179,7 @@ export function parseProcessAccountProviderConfigSnapshot(input: {
   }
   const providers = parseAccountProviderConfigMap(input.providers);
   for (const [providerId, provider] of providers.entries()) {
-    // 仅约束托管 Worker 的普通账号信封；独立 CLI、API 和闲时不需要 current。
-    if (
-      isBuiltinModelProviderId(providerId) &&
-      provider.access?.type === "zhipu-account" &&
-      provider.access.entitled &&
-      typeof input.states?.[providerId]?.current !== "boolean"
-    ) {
-      throw new Error(`Account State 缺少 current: ${providerId}`);
-    }
+    // FreeCodeZ fork(P2 §4.2):账号信封校验已随账号体系删除。
   }
   return Object.freeze({
     revision,

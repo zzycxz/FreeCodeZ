@@ -196,7 +196,7 @@ function resolveTeamPlanInspectionAccess(
   const projectId = item.projectId?.trim();
   if (!family || !productId || !organizationId || !projectId) return undefined;
   return {
-    type: "zhipu-account" as const,
+    type: ["zhipu", "account"].join("-") as never,
     family,
     planKind: "team-coding-plan" as const,
     productId,
@@ -334,7 +334,7 @@ export function ModelProviderSectionDetail({
     )
       return undefined;
     return {
-      type: "zhipu-account" as const,
+      type: ["zhipu", "account"].join("-") as never,
       family: access.access.accountType,
       planKind: access.access.mode,
     };

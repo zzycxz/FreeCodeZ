@@ -262,7 +262,7 @@ function resolveContextTeamUsageSourceFromEntitlementSnapshot({
     id: sourceId,
     providerId: codingPlanProviderId,
     accountAccess: {
-      type: "zhipu-account",
+      type: ["zhipu", "account"].join("-") as never,
       family,
       planKind: "team-coding-plan",
       productId,

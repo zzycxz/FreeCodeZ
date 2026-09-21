@@ -147,9 +147,8 @@ export class AiSdkModelAdapter {
     const resolved = {
       ...boundResolution.resolved,
       properties,
-      ...(options.providerConfig.access.type === "zhipu-account"
-        ? { accountAccess: options.providerConfig.access }
-        : {}),
+      // FreeCodeZ fork(P2 §4.2):账号 access 已删。
+
     };
     const optionSpecs = options.modelConfig.optionSpecs;
     const toLegacyRequest = (request: ModelExecutionRequest): AiSdkModelTextRequest => {
@@ -161,32 +160,15 @@ export class AiSdkModelAdapter {
       const shouldAttachReasoningTelemetry = request.options.reasoningLevel !== undefined;
       const selectedReasoningLevel = request.options.reasoningLevel;
       const requestAuthDependency = options.requestDependencies?.requestAuth;
-      const requestAuthRequired =
-        options.providerConfig.access.type === "zhipu-account" &&
-        options.providerConfig.access.mode === "off-peak";
+      // FreeCodeZ fork(P2 §4.2):账号鉴权请求恒不需要。
+      const requestAuthRequired = false;
       // 调用级 runtime header Port 只服务绑定完整 Account Access 的账号型 Model；
       // 普通 API-key Model 若也消费该 Port，会把静态鉴权误送到 Host 刷新并在请求前失败。
       // Off-Peak Model 始终使用创建时注入的执行作用域 Source，不依赖账号服务。
-      const refreshRuntimeHeadersBeforeAttempt = requestAuthRequired
-        ? async (input: ModelRequestAuthSourceInput) => {
-            const requestAuth = await requestAuthDependency?.source?.resolve(input);
-            if (!hasRequestAuth(requestAuth)) {
-              throw new ModelProtocolError(
-                ModelErrorCode.ModelRequestAuthMissing,
-                `Model request auth is unavailable: ${resolved.providerId}/${resolved.modelId}`,
-              );
-            }
-            return { headersApplied: true, requestAuth };
-          }
-        : options.providerConfig.access.type === "zhipu-account"
-          ? (contextRefreshRuntimeHeadersBeforeAttempt ??
-            (async () => {
-              throw new ModelProtocolError(
-                ModelErrorCode.ModelRequestAuthMissing,
-                `Account model request auth is unavailable: ${resolved.providerId}/${resolved.modelId}`,
-              );
-            }))
-          : undefined;
+      // FreeCodeZ fork(P2 §4.2):账号 runtime header 刷新链已删。
+      const refreshRuntimeHeadersBeforeAttempt = undefined;
+      void requestAuthDependency;
+      void contextRefreshRuntimeHeadersBeforeAttempt;
       return {
         messages: request.messages,
         tools: request.tools,
@@ -207,17 +189,7 @@ export class AiSdkModelAdapter {
               },
             }
           : {}),
-        ...(refreshRuntimeHeadersBeforeAttempt
-          ? {
-              refreshRuntimeHeadersBeforeAttempt: (input) =>
-                refreshRuntimeHeadersBeforeAttempt({
-                  ...input,
-                  ...(options.providerConfig.access.type === "zhipu-account"
-                    ? { accountAccess: options.providerConfig.access }
-                    : {}),
-                }),
-            }
-          : {}),
+        // FreeCodeZ fork(P2 §4.2):账号 runtime header 链已删,该分支恒空。
       };
     };
     const resolveForRequest = (
@@ -238,9 +210,6 @@ export class AiSdkModelAdapter {
               }),
             ),
             properties,
-            ...(options.providerConfig.access.type === "zhipu-account"
-              ? { accountAccess: options.providerConfig.access }
-              : {}),
           })
         : () => ({
             ...boundResolution.resolveRequest({
@@ -250,9 +219,6 @@ export class AiSdkModelAdapter {
               },
             }),
             properties,
-            ...(options.providerConfig.access.type === "zhipu-account"
-              ? { accountAccess: options.providerConfig.access }
-              : {}),
           });
     };
     return createModel({

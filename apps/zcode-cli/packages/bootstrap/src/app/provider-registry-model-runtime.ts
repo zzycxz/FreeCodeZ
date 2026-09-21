@@ -76,16 +76,8 @@ export class ApiProviderModelRuntime {
       modelId: registryModel.modelId,
       providerConfig: provider.config,
       modelConfig: config,
-      ...(provider.config.access.type === "zhipu-account" &&
-      provider.config.access.mode === "off-peak"
-        ? {
-            requestDependencies: {
-              requestAuth: {
-                source: target.requestDependencies?.requestAuth?.source,
-              },
-            },
-          }
-        : {}),
+      // FreeCodeZ fork(P2 §4.2):off-peak requestDependencies 分支已删。
+
       options: {
         reasoningLevel: normalReasoningLevel,
       },

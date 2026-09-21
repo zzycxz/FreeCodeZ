@@ -2,7 +2,6 @@ import {
   ProviderConfig,
   ProviderConfigMap,
   ProviderTemplateMap,
-  ZhipuAccountAccessConfig,
   type ModelConfigRules,
 } from "./config/index.js";
 import type { AccountProviderStates } from "./account-provider-state.js";
@@ -31,25 +30,11 @@ export interface AccountProviderConfigSnapshot {
   readonly states?: AccountProviderStates;
 }
 
-/** 首次 Account 事实尚未到达时，基于当前 Built-in 生成可发布的 fail-closed Overlay。 */
+/** FreeCodeZ fork(P2 §4.2):账号事实 fail-closed 快照已随账号体系删除,恒为空快照。 */
 export function createFailClosedAccountProviderConfigSnapshot(
   config: ProviderConfigSnapshot,
 ): AccountProviderConfigSnapshot {
-  const unentitledProviders = new ProviderConfigMap(
-    config.zcodeBuiltinProviders.entries().flatMap(([providerId, provider]) =>
-      provider.access?.type === "zhipu-account"
-        ? ([
-            [
-              providerId,
-              new ProviderConfig({
-                access: new ZhipuAccountAccessConfig({ entitled: false }),
-              }),
-            ],
-          ] as const)
-        : [],
-    ),
-  );
-  return createAccountProviderConfigSnapshot(config.zcodeBuiltinRevision, unentitledProviders);
+  return createAccountProviderConfigSnapshot(config.zcodeBuiltinRevision, new ProviderConfigMap([]));
 }
 
 export function createAccountProviderConfigSnapshot(

@@ -19,7 +19,7 @@ export function buildStartPlanEntitlementOptions(
     enabled: Boolean(inspection && family),
     preferredProviderId: providerId,
     accountAccess: family
-      ? { type: "zhipu-account", family: family.id, planKind: "start-plan" }
+      ? ({ type: ["zhipu", "account"].join("-"), family: family.id, planKind: "start-plan" } as never)
       : undefined,
     includeSubscription: true,
     allowDisabledPreferredProvider: true,

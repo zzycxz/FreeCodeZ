@@ -20,7 +20,7 @@ export const SHARED_ZCODE_CREDENTIAL_KEYS = {
   zaiAccessToken: "oauth:zai:access_token",
   zaiRefreshToken: "oauth:zai:refresh_token",
   zaiUserInfo: "oauth:zai:user_info",
-  zcodeJwtToken: "zcodejwttoken",
+  zcodeJwtToken: "legacy:zcode-jwt", // FreeCodeZ fork(P2 §4.9):旧 JWT 键已废弃,不再读写
 } as const;
 
 export interface SharedZCodeCredentialStoreOptions {

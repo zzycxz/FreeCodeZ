@@ -273,8 +273,9 @@ function printHelp() {
   -h, --help              查看帮助
 
 示例:
-  pnpm dep:refs packages/services/src/oauth/oauthService.ts:createOAuthService
-  pnpm dep:refs --list-exports packages/services/src/oauth/oauthService.ts
+  # FreeCodeZ fork(P2):示例命令改用现存的 git 服务。
+  pnpm dep:refs packages/services/src/git/gitService.ts:createGitService
+  pnpm dep:refs --list-exports packages/services/src/git/gitService.ts
 
 推荐用法:
   1. 先跑 pnpm knip 拿到 unused exports 列表（瞬秒）

@@ -249,7 +249,7 @@ export function ModelProviderSection({
   const platform = usePlatform();
   const { modelSelectionService, credentialService } = useServices();
   // FreeCodeZ fork:登录链已删(P2);登出为本地 no-op。
-const oauthService = { logout: async () => {}, getActiveProvider: async () => null } as unknown as { logout: (...a: unknown[]) => Promise<void>; getActiveProvider: () => Promise<null> };
+const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: async () => null } as unknown as { logout: (...a: unknown[]) => Promise<void>; getActiveProvider: () => Promise<null> };
   const {
     modelProviders,
     providerTemplates,
@@ -284,8 +284,7 @@ const oauthService = { logout: async () => {}, getActiveProvider: async () => nu
       (providerSettingsView?.providers ?? [])
         .filter(
           (provider) =>
-            provider.effectiveConfig.access?.type === "zhipu-account" &&
-            provider.effectiveConfig.access.entitled === true,
+            false, // FreeCodeZ fork(P2 §4.2):账号 access 已删
         )
         .map((provider) => provider.providerId),
     );
@@ -835,7 +834,7 @@ const oauthService = { logout: async () => {}, getActiveProvider: async () => nu
         const nextProviderFamilyDomain = resolveLogoutProviderFamilyDomain({
           currentDomain: sharedSettings?.providerFamilyDomain,
         });
-        await oauthService.logout(providerId);
+        await legacyAccountSessionStub.logout(providerId);
         // Coding Plan 官网 webview 使用独立持久 partition，provider Unlink 也属于账号边界。
         if (typeof platform.executeDesktopCommand === "function") {
           await platform.executeDesktopCommand(DesktopCommandIds.ClearCodingPlanWebviewStorage);
@@ -865,7 +864,7 @@ const oauthService = { logout: async () => {}, getActiveProvider: async () => nu
       }
     },
     [
-      oauthService,
+      legacyAccountSessionStub,
       platform,
       updateSharedSettings,
       sharedSettings?.providerFamilyDomain,
