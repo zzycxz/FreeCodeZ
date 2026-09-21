@@ -1,5 +1,6 @@
-const DEEP_LINK_SCHEME = "zcode";
-const DEEP_LINK_RE = /\bzcode:(?:\/\/|\/)?[^\s"'<>]+/i;
+// FreeCodeZ fork:深链协议 zcode:// → freecodez://,与原版互不抢注(规格书 P1 §4.3)。
+const DEEP_LINK_SCHEME = "freecodez";
+const DEEP_LINK_RE = /\bfreecodez:(?:\/\/|\/)?[^\s"'<>]+/i;
 const OAUTH_CALLBACK_HOSTS = new Set(["oauth"]);
 const PAYMENT_CALLBACK_HOST = "payment";
 const WORKSPACE_OPEN_HOST = "workspace";
