@@ -314,7 +314,7 @@ export function buildUsageStatsSnapshotFromMonitor(
     },
     models,
     source: "bigmodel-monitor",
-    tools: buildToolUsages(toolData),
+    tools: [], // FreeCodeZ fork(P7 §3.5):工具计量区已删(套餐链统计对 fork 用户恒 0)
   };
 }
 
@@ -842,61 +842,3 @@ function normalizeCodingPlanAxisValue(
   return value;
 }
 
-function buildToolUsages(toolData: BigModelUsageToolUsagePayload): UsageStatsToolUsage[] {
-  const tools: UsageStatsToolUsage[] = [];
-
-  const definitions: Array<{
-    toolCode: string;
-    displayName: string;
-    daily?: number[];
-    total?: number;
-  }> = [
-    {
-      toolCode: "network-search",
-      displayName: "联网搜索 MCP",
-      daily: toolData.networkSearchCount,
-      total: toolData.totalUsage?.totalNetworkSearchCount,
-    },
-    {
-      toolCode: "web-reader",
-      displayName: "网页读取 MCP",
-      daily: toolData.webReadMcpCount,
-      total: toolData.totalUsage?.totalWebReadMcpCount,
-    },
-    {
-      toolCode: "zread",
-      displayName: "开源仓库 MCP",
-      daily: toolData.zreadMcpCount,
-      total: toolData.totalUsage?.totalZreadMcpCount,
-    },
-  ];
-
-  for (const def of definitions) {
-    const dailyCalls = Array.isArray(def.daily) ? def.daily : [];
-    const totalCalls =
-      typeof def.total === "number"
-        ? def.total
-        : dailyCalls.reduce((sum, value) => sum + (value ?? 0), 0);
-    tools.push({
-      toolCode: def.toolCode,
-      displayName: def.displayName,
-      totalCalls,
-      dailyCalls,
-    });
-  }
-
-  // search-mcp 没有按天数据,只有合计;有数值时单独追加一条。
-  const totalSearchMcp = toolData.totalUsage?.totalSearchMcpCount ?? 0;
-  if (totalSearchMcp > 0) {
-    tools.push({
-      toolCode: "search-mcp",
-      // 该接口同时有 network-search 和 search-mcp 两个搜索类统计项。
-      // 网页截图只明确了前者叫“联网搜索 MCP”，这里保留 Search MCP 避免两个搜索项重名。
-      displayName: "Search MCP",
-      totalCalls: totalSearchMcp,
-      dailyCalls: [],
-    });
-  }
-
-  return tools;
-}

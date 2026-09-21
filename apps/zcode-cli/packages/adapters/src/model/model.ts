@@ -164,7 +164,10 @@ function validateRequestProperties(properties: ModelProperties, request: ModelRe
     if (!Array.isArray(message.content)) continue;
     for (const block of message.content) {
       if (block.type === "image" && !properties.inputFormat.supportsImage) {
-        throw invalidRequest("Model does not support image input");
+        // FreeCodeZ fork(P7 §3.4 D2):结构化标识供 UI 本地化与"切换视觉模型"动作接线。
+        throw invalidRequest("Model does not support image input", {
+          errorCode: "image_input_unsupported",
+        });
       }
       if (
         block.type === "file" &&

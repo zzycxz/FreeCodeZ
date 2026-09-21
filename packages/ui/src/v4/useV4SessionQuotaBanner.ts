@@ -21,7 +21,6 @@ import {
   resolveQuotaBannerUpgradeProviderId,
   shouldOfferQuotaBannerUpgrade,
 } from "@/v4/sessionQuotaBannerState.js";
-import type { McpUnavailableNotice } from "@/v4/mcpUnavailableBannerNotice.js";
 import { logger } from "@/logger.js";
 import { sessionQuotaBannerDismissalStore } from "@/v4/sessionQuotaBannerDismissalStore.js";
 import { startPlanQuotaReminderStore } from "@/v4/startPlanQuotaReminderStore.js";
@@ -55,7 +54,6 @@ export function useV4SessionQuotaBanner(params: {
    * 官方 Server MCP 不可用的事实。由调用方从 conversation rows 解析——它是会话事件的投影，
    * 与 entitlement 服务无关，不放进这个 hook 里取。
    */
-  mcpUnavailableNotice?: McpUnavailableNotice | null;
 }) {
   const activeProviderId = params.providerId?.trim() || null;
   const modelId = params.modelId?.trim() || null;
@@ -117,9 +115,6 @@ export function useV4SessionQuotaBanner(params: {
         ...(serverProviderLimited
           ? { serverProviderLimitedMessage: params.error?.message ?? null }
           : {}),
-        ...(params.mcpUnavailableNotice
-          ? { mcpUnavailableNotice: params.mcpUnavailableNotice }
-          : {}),
       }),
     [
       activeProviderId,
@@ -129,7 +124,6 @@ export function useV4SessionQuotaBanner(params: {
       entitlement.snapshot,
       modelId,
       params.error?.message,
-      params.mcpUnavailableNotice,
       providerLimitedCode,
       serverConcurrentLimited,
       serverProviderLimited,

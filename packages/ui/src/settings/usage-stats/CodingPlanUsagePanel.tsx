@@ -641,40 +641,31 @@ function CodingPlanActivitySection({ snapshot }: { snapshot: CodingPlanUsageSnap
 function CodingPlanUsageDetailSection({ snapshot }: { snapshot: CodingPlanUsageSnapshot }) {
   const { intl, locale } = useZCodeIntl();
   const [metric, setMetric] = useState<CodingPlanUsageDetailMetric>("credits");
-  const [subject, setSubject] = useState<CodingPlanUsageDetailSubject>("model");
   const [selectedSeriesNames, setSelectedSeriesNames] = useState<string[]>([]);
-  const activeSummary = subject === "model" ? snapshot.detail.model : snapshot.detail.tool;
+  const activeSummary = snapshot.detail.model;
   const hasCreditUsageData = hasCodingPlanCreditUsageData({
     summary: activeSummary,
     modelDataList: snapshot.modelUsage.modelDataList,
-    toolDataList: snapshot.toolUsage.toolDataList,
+    toolDataList: [],
   });
   const showDetailSummary = shouldShowCodingPlanUsageDetailSummary({
     summary: activeSummary,
-    modelDataList: subject === "model" ? snapshot.modelUsage.modelDataList : [],
-    toolDataList: subject === "tool" ? snapshot.toolUsage.toolDataList : [],
+    modelDataList: snapshot.modelUsage.modelDataList,
+    toolDataList: [],
   });
-  const activeChartMeta =
-    subject === "model"
-      ? {
-          granularity: snapshot.modelUsage.granularity,
-          xTime: snapshot.modelUsage.xTime,
-        }
-      : {
-          granularity: snapshot.toolUsage.granularity,
-          xTime: snapshot.toolUsage.xTime,
-        };
+  const activeChartMeta = {
+    granularity: snapshot.modelUsage.granularity,
+    xTime: snapshot.modelUsage.xTime,
+  };
   const allSeries = useMemo(() => {
     const series = hasCreditUsageData
       ? buildCodingPlanUsageDetailLineChartSeries({
           metric,
-          subject,
+          subject: "model",
           modelDataList: snapshot.modelUsage.modelDataList,
-          toolDataList: snapshot.toolUsage.toolDataList,
+          toolDataList: [],
         })
-      : subject === "model"
-        ? buildCodingPlanModelLineChartSeries(snapshot.modelUsage.modelDataList)
-        : buildCodingPlanToolLineChartSeries(snapshot.toolUsage.toolDataList);
+      : buildCodingPlanModelLineChartSeries(snapshot.modelUsage.modelDataList);
     return series.map((item, index) => ({
       ...item,
       color:
@@ -685,8 +676,6 @@ function CodingPlanUsageDetailSection({ snapshot }: { snapshot: CodingPlanUsageS
     hasCreditUsageData,
     metric,
     snapshot.modelUsage.modelDataList,
-    snapshot.toolUsage.toolDataList,
-    subject,
   ]);
   const selectedSeriesNameSet = useMemo(() => new Set(selectedSeriesNames), [selectedSeriesNames]);
   const visibleSeries = useMemo(
@@ -697,15 +686,7 @@ function CodingPlanUsageDetailSection({ snapshot }: { snapshot: CodingPlanUsageS
     (sum, item) => sum + item.values.reduce((itemSum, value) => itemSum + value, 0),
     0,
   );
-  const valueKind = hasCreditUsageData
-    ? metric === "credits"
-      ? "credit"
-      : subject === "model"
-        ? "token"
-        : "count"
-    : subject === "model"
-      ? "token"
-      : "count";
+  const valueKind = hasCreditUsageData ? (metric === "credits" ? "credit" : "token") : "token";
   const valueMetric = hasCreditUsageData ? metric : "usage";
   const detailUnit =
     valueKind === "token"
@@ -718,7 +699,7 @@ function CodingPlanUsageDetailSection({ snapshot }: { snapshot: CodingPlanUsageS
     setSelectedSeriesNames(
       allSeries.slice(0, MAX_SELECTED_CODING_PLAN_DETAIL_SERIES).map((item) => item.name),
     );
-  }, [allSeries, hasCreditUsageData, metric, subject, snapshot.generatedAt]);
+  }, [allSeries, hasCreditUsageData, metric, snapshot.generatedAt]);
 
   const toggleSeries = useCallback((name: string) => {
     setSelectedSeriesNames((current) => {
@@ -751,12 +732,7 @@ function CodingPlanUsageDetailSection({ snapshot }: { snapshot: CodingPlanUsageS
               <div aria-hidden="true" className="h-4 w-px bg-border" />
             </>
           ) : null}
-          <SegmentedTabs
-            value={subject}
-            options={["model", "tool"]}
-            labelIdPrefix="settings.usage.codingPlanSubject"
-            onChange={(value) => setSubject(value as CodingPlanUsageDetailSubject)}
-          />
+          {/* FreeCodeZ fork(P7 §3.5):工具用量维度已删(套餐链统计对 fork 用户恒 0),仅保留模型维度。 */}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3 text-ui-sm">
           <button
@@ -776,7 +752,7 @@ function CodingPlanUsageDetailSection({ snapshot }: { snapshot: CodingPlanUsageS
             </span>
             <span className="flex items-baseline gap-1 text-foreground">
               <span className="font-mono font-medium">
-                {formatCodingPlanDetailValue(locale, totalValue, valueMetric, subject)}
+                {formatCodingPlanDetailValue(locale, totalValue, valueMetric, "model")}
               </span>
               {detailUnit ? <span className="text-foreground-subtle">{detailUnit}</span> : null}
             </span>
@@ -807,7 +783,7 @@ function CodingPlanUsageDetailSection({ snapshot }: { snapshot: CodingPlanUsageS
                 <span className="truncate text-foreground-subtle">{item.name}:</span>
                 <span className="flex items-baseline gap-1 text-foreground">
                   <span className="font-mono font-medium">
-                    {formatCodingPlanDetailValue(locale, itemTotal, valueMetric, subject)}
+                    {formatCodingPlanDetailValue(locale, itemTotal, valueMetric, "model")}
                   </span>
                   {detailUnit ? <span className="text-foreground-subtle">{detailUnit}</span> : null}
                 </span>
@@ -825,7 +801,6 @@ function CodingPlanUsageDetailSection({ snapshot }: { snapshot: CodingPlanUsageS
               snapshot.rangeEndDate,
               snapshot.generatedAt,
               metric,
-              subject,
             ]}
             loadingDescription={intl.formatMessage({
               id: "settings.usage.codingPlanLoadingDescription",

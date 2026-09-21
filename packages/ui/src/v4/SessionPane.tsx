@@ -231,7 +231,6 @@ import { useV4Conversation } from "@/v4/V4ConversationContext.js";
 import { useConversationProjection } from "@/v4/useConversationProjection.js";
 import { usePendingCommandRecovery } from "@/v4/usePendingCommandRecovery.js";
 import { useV4SessionQuotaBanner } from "@/v4/useV4SessionQuotaBanner.js";
-import { resolveMcpUnavailableNotice } from "@/v4/mcpUnavailableBannerNotice.js";
 import { shouldFocusTimelineAfterComposerSend } from "@/v4/promptScrollFocusPolicy.js";
 import {
   hasChatLoadingBlockingActiveWork,
@@ -3942,12 +3941,6 @@ export function SessionPane({
     controlLastError && controlLastErrorKey && !dismissedErrorKeys.includes(controlLastErrorKey)
       ? toComposerUiError(snapshot?.sessionId ?? sessionId, controlLastError)
       : null;
-  // 官方 Server MCP 不可用（额度耗尽 / 无 Coding Plan）：事实来自 tool row 上的结构化标识，
-  // 与模型额度是两条独立信息通道，这里只做投影。
-  const mcpUnavailableNotice = useMemo(
-    () => resolveMcpUnavailableNotice(snapshot?.rows.window),
-    [snapshot?.rows.window],
-  );
   const quotaBanner = useV4SessionQuotaBanner({
     sessionId: snapshot?.sessionId ?? sessionId,
     error: controlLastError,
@@ -3956,7 +3949,6 @@ export function SessionPane({
     providerId: snapshot?.config.provider ?? null,
     modelId: snapshot?.config.model ?? null,
     usageStatsService: baseWorkspaceServices.usageStatsService,
-    mcpUnavailableNotice,
   });
   const composerError =
     draftModelReadinessError ??

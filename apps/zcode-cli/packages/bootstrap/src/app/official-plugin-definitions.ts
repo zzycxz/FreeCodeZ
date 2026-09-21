@@ -184,26 +184,6 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
     }),
   ),
   {
-    // 沿用原聚合文档插件的官方搜图能力，仅拆出独立开关；认证仍由官方 MCP adapter 注入。
-    defaultEnabled: true,
-    listing: {
-      author: ZAI_AUTHOR,
-      category: "productivity",
-      displayName: "Image Search",
-      displayName_i18n: { "zh-CN": "搜图" },
-      description_i18n: { "zh-CN": "查找插图与参考配图。" },
-    },
-    name: "image-search",
-    requiredSeedPaths: [".mcp.json"],
-    rootCandidates: [
-      "packages/image-search-plugin",
-      "../image-search-plugin",
-      "../../image-search-plugin",
-      "../../../image-search-plugin",
-    ],
-    version: "0.1.1",
-  },
-  {
     listing: {
       author: ZAI_AUTHOR,
       category: "developer-tools",

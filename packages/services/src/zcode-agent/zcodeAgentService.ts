@@ -64,8 +64,6 @@ import {
   zcodeProviderRuntimeHeadersCancelledSchema,
   zcodeProviderRuntimeHeadersRequestParamsSchema,
   zcodeProviderTestModelConnectivityResultSchema,
-  zcodeOfficialMcpAuthHeadersRequestParamsSchema,
-  summarizeOfficialMcpIdentityHeaders,
   zcodeProtocolEmptyResultSchema,
   zcodeProtocolMethods,
   zcodeProtocolNotifications,
@@ -2038,13 +2036,8 @@ export function createZCodeAgentService(
           return;
         }
 
-        // 官方 Server MCP 身份头：纯 RPC 中继，host 自动解析并响应。
-        // 不 emitSessionEvent、不进 pending map——该请求没有 UI 语义，renderer 不参与。
-        if (request.method === zcodeProtocolMethods.interactionRequestOfficialMcpAuthHeaders) {
-          // FreeCodeZ fork:官方托管 MCP 已删(规格书 P2 §4.5);一律不可用,fail-closed。
-          void client.respond(request.id, { ok: false, reason: "official_auth_unavailable" });
-          return;
-        }
+        // FreeCodeZ fork(P7 §3.2):官方 MCP 身份头请求的协议方法已删;
+        // 老客户端发来时走通用 unknown-method 拒绝,不再有专属 handler。
 
         // browser-use discovery：backend 在线状态与 plugin/skill 是否暴露是两层状态。
         // executor 缺省时返回空列表，禁止 facade 伪造 IAB available。

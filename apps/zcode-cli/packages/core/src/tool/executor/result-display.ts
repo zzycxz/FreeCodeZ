@@ -28,7 +28,6 @@ import { createWorkflowObservationDisplay } from "./workflow-observation-display
 // 拆到 create-workflow-display.ts 后保持既有导出面（handlers/create-workflow.ts 仍从这里 import）。
 export { createCreateWorkflowDisplay } from "./create-workflow-display.js";
 import { isRecord } from "./utils.js";
-import { parseOfficialMcpToolError, type OfficialMcpToolErrorCode } from "@zcode/shared";
 import {
   CUA_REQUEST_ACCESS_STATUS_META_KEY,
   cuaRequestAccessStatusSchema,
@@ -47,7 +46,6 @@ export function createMcpToolDisplay(
         serverName: string;
         toolName: string;
         description?: string;
-        official?: boolean;
       }
     | undefined,
   output?: unknown,
@@ -59,37 +57,14 @@ export function createMcpToolDisplay(
   const description = metadata.description
     ? boundMcpDisplayText(metadata.description, MCP_TOOL_DISPLAY_MAX_DESCRIPTION_CHARS)
     : undefined;
-  const unavailable = metadata.official ? readOfficialMcpUnavailable(output) : undefined;
   return {
     kind: "mcp_tool",
     serverName,
     toolName,
     ...(description ? { description } : {}),
-    ...(unavailable ? { unavailable } : {}),
   };
 }
 
-/**
- * 官方 Server MCP 在配额耗尽 / 无 Coding Plan 时把结构化标识渲染进 tool error content 的
- * JSON 文本（服务端 `ToolError.Error()`）。这里只读该标识，不解析普通错误文案。
- *
- * 仅在 `metadata.official` 为真时才会走到，而该标记只对 **http** 官方 MCP 置位——那种形态的
- * 响应来自已校验 origin 的 ZCode 后端。stdio 官方 MCP 与第三方 MCP 塞同样的 payload 一律忽略：
- * 它们的结果由插件进程自己产出，可以伪造一条 Coding Plan 提示误导用户去购买。
- */
-function readOfficialMcpUnavailable(
-  output: unknown,
-): { code: OfficialMcpToolErrorCode } | undefined {
-  if (!isRecord(output) || output.isError !== true || !Array.isArray(output.content)) {
-    return undefined;
-  }
-  for (const block of output.content) {
-    if (!isRecord(block) || block.type !== "text" || typeof block.text !== "string") continue;
-    const parsed = parseOfficialMcpToolError(block.text);
-    if (parsed) return { code: parsed.code };
-  }
-  return undefined;
-}
 
 export function createToolResultDisplay(
   toolName: string,

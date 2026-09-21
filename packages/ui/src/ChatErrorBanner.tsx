@@ -87,6 +87,11 @@ export function resolveChatErrorBannerDisplayMessage(
     return intl.formatMessage({ id: "zcode.error.modelSuspiciousEmpty" });
   }
 
+  // FreeCodeZ fork(P7 §3.4 D2):裸英文原文 → 本地化 + 切换模型动作。
+  if (error.code === "image_input_unsupported" || /does not support image input/i.test(error.message)) {
+    return intl.formatMessage({ id: "chat.error.imageUnsupported" });
+  }
+
   return error.code && LOCALIZED_ERROR_CODES.has(error.code)
     ? intl.formatMessage({ id: `zcode.error.${error.code}` })
     : error.message;
@@ -128,6 +133,11 @@ export function ChatErrorBanner({
   const localizedErrorMessage = resolveChatErrorBannerDisplayMessage(error, intl);
   const modelConfigMissing = isModelConfigMissingError(error);
   const hookBlocked = error.code === "fault.runtime.hookBlocked";
+  // FreeCodeZ fork(P7 §3.4 D2):图片输入不支持 → 本地化文案 + 切换视觉模型入口。
+  const imageInputUnsupported =
+    !modelConfigMissing &&
+    (error.code === "image_input_unsupported" ||
+      /does not support image input/i.test(error.message));
   if (shouldSuppressChatErrorBanner(error)) {
     return null;
   }
@@ -236,6 +246,19 @@ export function ChatErrorBanner({
               {intl.formatMessage({ id: "chat.error.setModels" })}
             </Button>
           </>
+        ) : null}
+
+        {imageInputUnsupported && onOpenModelSettings ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn(actionButtonClassName, "gap-1.5")}
+            onClick={onOpenModelSettings}
+            aria-label={intl.formatMessage({ id: "chat.error.action.switchModel" })}
+          >
+            {intl.formatMessage({ id: "chat.error.action.switchModel" })}
+          </Button>
         ) : null}
 
         {!modelConfigMissing && error.detail ? (

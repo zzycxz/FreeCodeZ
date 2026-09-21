@@ -137,8 +137,9 @@ export function getTools(this: AgentRuntimeInternal, model?: Model): ModelToolCo
   if (this.cachedTools === null) {
     this.cachedTools = filterRuntimeVisibleTools.call(this, this.registry.toContracts());
   }
+  // FreeCodeZ fork(P7 §3.1):WebSearch 恒暴露——原生/回退链分流与零 key 引导
+  // 均由 handler 决定(core/src/tool/handlers/websearch.ts),不在 tools 列表层隐藏。
   return this.cachedTools
-    .filter((tool) => tool.name !== "WebSearch" || shouldExposeWebSearch.call(this, model))
     .map((tool) =>
       projectToolModelContract(tool, this.registry.get(tool.name), {
         model,
@@ -265,10 +266,4 @@ function filterRuntimeVisibleTools(
   return orderProviderVisibleToolContracts(visibleTools);
 }
 
-function shouldExposeWebSearch(this: AgentRuntimeInternal, model?: Model): boolean {
-  // 无 Model 的调用只枚举完整注册表，供持久化和 UI 元数据使用；真实执行始终传入
-  // 当前 Active Model，并只读取其冻结的完整能力事实。
-  if (!model) return true;
-  return model.properties.supportsNativeWebSearch;
-}
 import { resolveExecutionState } from "@zcode/shared";

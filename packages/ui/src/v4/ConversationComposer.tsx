@@ -1661,6 +1661,19 @@ function ConversationComposerImpl({
 
   // ── 附件预览网格 ──
   const composerAttachments = attachmentsApi.attachments;
+  // FreeCodeZ fork(P7 §3.4 D1):文本模型 + 图片附件 → 引用提示 chip(不阻断,多模态不显示)。
+  const imageReferenceHintVisible =
+    attachmentsApi.hasImageAttachment &&
+    (() => {
+      const selected = modelSelectionView?.preferredSelection ?? null;
+      const provider = selected
+        ? modelSelectionView?.providers?.find((p) => p.providerId === selected.providerId)
+        : modelSelectionView?.providers?.[0];
+      const modelEntry = selected
+        ? provider?.models?.find((m) => m.modelId === selected.modelId)
+        : provider?.models?.[0];
+      return modelEntry?.config?.properties?.inputFormat?.supportsImage === false;
+    })();
   const orderedComposerAttachments = useMemo(() => {
     // 媒体组（图片/视频）优先、文件在后；组内保持添加顺序。
     const media: (typeof composerAttachments)[number][] = [];
@@ -1698,6 +1711,14 @@ function ConversationComposerImpl({
     }
     return (
       <div className="flex max-w-full flex-col items-start gap-2">
+        {imageReferenceHintVisible ? (
+          <div
+            className="max-w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-ui-sm text-foreground-subtle"
+            data-composer-image-reference-hint="true"
+          >
+            {intl.formatMessage({ id: "chat.composer.imageReferenceHint" })}
+          </div>
+        ) : null}
         {composerAttachments.length > 0 ? (
           <Attachments
             variant="inline"

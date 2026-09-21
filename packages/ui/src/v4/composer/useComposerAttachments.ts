@@ -77,6 +77,8 @@ interface ComposerAttachmentsApi {
   attachments: ComposerAttachmentUploadItem[];
   attachmentError: string | null;
   hasAttachments: boolean;
+  /** FreeCodeZ fork(P7 §3.4 D1):当前附件中是否含图片(供文本模型提示 chip)。 */
+  hasImageAttachment: boolean;
   hasUnreadyAttachments: boolean;
   composerDragKind: "attachment" | "workspace" | null;
   isDraggingOverComposer: boolean;
@@ -1067,6 +1069,9 @@ export function useComposerAttachments(
       attachmentError,
       composerDragKind,
       hasAttachments: attachments.length > 0,
+      hasImageAttachment: attachments.some(
+        (item) => item.mimeType?.toLowerCase().startsWith("image/") === true,
+      ),
       hasUnreadyAttachments: attachments.some((item) => item.uploadStatus !== "ready"),
       isDraggingOverComposer,
       attachmentInputRef,

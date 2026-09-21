@@ -2295,12 +2295,6 @@ const enUS: Record<string, string> = {
   "settings.mcp.failure.unexpected_disconnect": "The MCP connection was closed unexpectedly.",
   "settings.mcp.failure.oauth_authorization_failed":
     "MCP authorization was not completed or timed out. Authorize again.",
-  "settings.mcp.failure.official_origin_untrusted":
-    "The MCP server URL failed the security check. The connection was blocked.",
-  "settings.mcp.failure.not_authenticated":
-    "You are not signed in. Sign in to FreeCodeZ to use this MCP server.",
-  "settings.mcp.failure.coding_plan_required":
-    "This account has no Coding Plan. Purchase or configure a Coding Plan to use this MCP server.",
   "settings.mcp.failure.server_not_found":
     "The MCP server was not found. Check the plugin or server configuration.",
   "settings.mcp.failure.server_unavailable":
@@ -3263,7 +3257,6 @@ const enUS: Record<string, string> = {
   "settings.usage.codingPlanMetric.credits": "Credits",
   "settings.usage.codingPlanMetric.usage": "Usage",
   "settings.usage.codingPlanSubject.model": "Models",
-  "settings.usage.codingPlanSubject.tool": "Tools",
   "settings.usage.codingPlanLegendTotal": "Total",
   "settings.usage.healthTitle": "System health",
   "settings.usage.healthRange.7d": "Last 7 days",
@@ -3329,7 +3322,6 @@ const enUS: Record<string, string> = {
   "settings.usage.dailyChart.max": "Max",
   "settings.usage.modelChartTitle": "Model usage",
   "settings.usage.modelUsageTitle": "Model usage",
-  "settings.usage.toolUsageTitle": "Tool usage",
   "settings.usage.tokenTotal": "Total token usage",
   "settings.usage.timesUnit": " times",
   "settings.usage.codingPlanNotConfiguredTitle": "Coding Plan is not connected",
@@ -5408,6 +5400,8 @@ const enUS: Record<string, string> = {
   "chat.error.action.relogin": "Sign in again",
   "chat.error.action.refreshQuota": "Refresh quota",
   "chat.error.action.switchModel": "Switch model",
+  "chat.error.imageUnsupported": "The current model does not support image input. Switch to a vision model or use an image analysis tool.",
+  "chat.composer.imageReferenceHint": "The current model cannot read images directly; after sending, they will be handled as references plus a vision tool.",
   "chat.error.action.retryLater": "Try again later",
   "chat.error.copyTraceId": "Copy TraceID",
   "chat.error.copyFull": "Copy",
@@ -5439,12 +5433,6 @@ const enUS: Record<string, string> = {
     "The system is busy, and automatic retries have reached the maximum count. Please try again later or upgrade your account.",
   "chat.quota.startPlan.concurrentLimit.switchModel":
     "The current model request concurrency limit has been reached. Switch models to continue your current task.",
-  "chat.quota.mcp.quotaExhausted":
-    'FreeCodeZ MCP "{server}" has used up today\'s quota. It resets tomorrow.',
-  "chat.quota.mcp.codingPlanRequired":
-    'No FreeCodeZ MCP "{server}" quota. Sign in or get a Coding Plan to use it.',
-  "chat.quota.providerLimited":
-    "The current account quota or plan limit has been reached. Upgrade or adjust the plan to continue.",
   "chat.quota.action.upgrade": "Upgrade",
   "chat.quota.action.renew": "Renew",
   "chat.quota.action.switchModel": "Switch model",
