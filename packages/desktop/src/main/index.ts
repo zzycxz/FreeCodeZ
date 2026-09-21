@@ -4,13 +4,10 @@ import "./desktopEarlyDataBaseDirBootstrap.js";
 import "./desktopEarlyChromiumHardwareAccelerationBootstrap.js";
 import { powerMonitor, powerSaveBlocker } from "electron";
 import { crashCapturePaths } from "./appCrashCaptureBootstrap.js";
-import { armsInitPromise } from "./appARMSBootstrap.js";
 import {
   onLocalDatabaseStartupReady,
   configureDatabaseStartupQuit,
 } from "./databaseStartupRelay.js";
-import armsRum from "@arms/rum-electron";
-import { createArmsUserIdentitySync } from "./armsUserIdentity.js";
 import { ensureDesktopDeviceMidSync } from "./desktopDeviceMid.js";
 import {
   createDesktopContextPromptRollout,
@@ -85,19 +82,24 @@ import { logger } from "./logger.js";
 import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
 import { createDesktopTelemetryFetch } from "./desktopTelemetryFetch.js";
-import {
-  acknowledgePostUpdateReleaseNotes,
-  getAutoUpdaterState,
-  hydratePendingPostUpdateReleaseNotes,
-  initAutoUpdater,
-  onAutoUpdaterStateChanged,
-  refreshAutoUpdaterReleaseChannel,
-  resolveUpdateFeedSourceFromStartupConfig,
-  syncAutoUpdaterStateToWindow,
-  syncPostUpdateReleaseNotesToWindow,
-  syncReadyUpdateToWindow,
-} from "./autoUpdater.js";
 import { BroadcastHub } from "./broadcastHub.js";
+
+// ---- FreeCodeZ fork 更新链空壳(P3 §3.6):autoUpdater 已删,以下符号改为本地 no-op ----
+type AutoUpdaterStateLike = { status: string; [key: string]: unknown };
+let cachedAutoUpdaterState: AutoUpdaterStateLike = { status: "idle" };
+function getAutoUpdaterState(): AutoUpdaterStateLike {
+  return cachedAutoUpdaterState;
+}
+function refreshAutoUpdaterReleaseChannel(..._a: unknown[]): void {}
+function syncAutoUpdaterStateToWindow(..._a: unknown[]): void {}
+function syncReadyUpdateToWindow(..._a: unknown[]): void {}
+function syncPostUpdateReleaseNotesToWindow(..._a: unknown[]): void {}
+function onAutoUpdaterStateChanged(_cb: unknown): () => void {
+  return () => {};
+}
+async function hydratePendingPostUpdateReleaseNotes(..._a: unknown[]): Promise<void> {}
+// ---- 空壳结束 ----
+
 import { TaskRealtimeBus } from "./taskRealtimeBus.js";
 import { createAppLaunchGate } from "./appLaunchGate.js";
 import { createAppLaunchCoordinator } from "./appLaunchCoordinator.js";
@@ -132,7 +134,6 @@ import { applyAppIcon } from "./desktopWindowChrome.js";
 import { resolveWindowsAppUserModelIdForFlavor } from "../../scripts/desktop-product-identity.mjs";
 import type { DesktopWindowSize } from "./desktopWindowSize.js";
 import { maybeWarnArchitectureMismatch } from "./desktopArchitectureGuard.js";
-import { maybeBlockStartupForForceUpdate } from "./forceUpdateGuard.js";
 import { createWindowsDesktopTray, updateWindowsDesktopTrayMenu } from "./desktopTray.js";
 import { createWindowsCuaOperationIndicator } from "./windowsCuaOperationIndicator.js";
 import {
@@ -826,14 +827,7 @@ const rendererActionTraceBroker = createRendererActionTraceBroker({
   logger,
 });
 let disposeRendererActionTraceIpc: (() => void) | undefined;
-const armsUserIdentitySync = createArmsUserIdentitySync({
-  deviceMid,
-  // 采集停用时 SDK 未初始化，setConfig 会抛错。
-  setUser:
-    ZCODE_TELEMETRY_ENABLED && ZCODE_ARMS_RUM_ENDPOINT
-      ? (user) => armsRum.setConfig("user", user)
-      : () => {},
-});
+const armsUserIdentitySync = { refresh: () => {} }; // FreeCodeZ fork(P3):ARMS 已删
 
 function extractOpenWorkspacePathFromDeepLinkUrl(url: string): string | null {
   try {
@@ -1583,6 +1577,8 @@ function openUpdateStatusWindow() {
     modal: false,
     autoHideMenuBar: true,
     webPreferences: {
+      // FreeCodeZ fork:禁用拼写检查,防 Chromium 从默认 CDN 下载词典(规格书 P3 §3.8)。
+      spellcheck: false,
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
@@ -1939,27 +1935,7 @@ app.whenReady().then(async () => {
   await hydratePendingPostUpdateReleaseNotes(mainSettingService);
   logWindowsBundledRuntimeIntegrityDiagnostic();
 
-  // 启动自动更新检查（后台执行，不阻塞主界面）
-  // FreeCodeZ fork:更新 feed 仍指向 zcode.z.ai,改名包自动更新会把官方 ZCode 安装包
-  // 当作更新拉下;P1 先整体禁用,P3 决定自建 feed 或手动分发(规格书 P1 §1.3/§4.5)。
-  void initAutoUpdater({
-    enabled: false,
-    onBeforeQuitAndInstall: async () => {
-      notifyStabilityLifecycle("update_install");
-      await prepareAppQuit("auto-update quitAndInstall", "update-install");
-      if (process.platform === "win32") {
-        await prepareWindowsProcessesForUpdateInstall();
-      }
-    },
-    settingService: mainSettingService,
-    locale: currentApplicationLocale,
-    deviceMid,
-    resolveEndpointOrigin: resolveCurrentZCodeEndpointOrigin,
-    updateFeedSource: resolveUpdateFeedSourceFromStartupConfig({
-      argv: process.argv,
-      env: process.env,
-    }),
-  });
+  // FreeCodeZ fork:自动更新链已整删(规格书 P3 §3.6);手动分发。
 
   if (process.platform === "darwin" || process.platform === "win32") {
     app.clearRecentDocuments();
@@ -2124,7 +2100,6 @@ app.whenReady().then(async () => {
   });
 
   // 等待 ARMS 完成 init（含渲染进程注入监听），避免首窗 dom-ready 早于 SDK 注册导致无上报
-  await armsInitPromise;
 
   // ARMS init 完成后首次写入 user.name（落 device_mid）
   void armsUserIdentitySync.refresh();
@@ -2178,35 +2153,7 @@ app.whenReady().then(async () => {
   });
   registerDesktopNetworkTelemetry(logger);
 
-  // 本地未打包 dev 构建（app.isPackaged === false）必须跳过远端强制升级 gate。
-  // 原因：force-update gate 只看 ZCODE_ENV === "production"，但 dev 构建（如 dev:desktop:cua
-  // 连真实后端测 computer use）虽指向 production 后端，版本号却滞后于线上 release（feature
-  // 分支不 bump 版本），会被 release minimalVersion 误判为"需强制升级"而启动秒退。force-update
-  // 是面向打包发布客户端的安全门，对未打包 dev 运行时无意义。打包版 app.isPackaged === true，
-  // gate 照常生效，对真实用户零影响。
-  const skipForceUpdateForLocalDevRuntime = !app.isPackaged;
-  // FreeCodeZ fork:强更 gate 每次启动回连 zcode.z.ai 且可能被官方版本策略远程阻断;
-  // P1 禁用,P3 随更新链整删(规格书 P1 §1.3/§4.5)。保持三元结构与日志分支不动。
-  const forceUpdateGuardEnabled = false;
-  const forceUpdateGuardResult =
-    forceUpdateGuardEnabled && ZCODE_PRODUCT_FLAVOR === "production" && !skipForceUpdateForLocalDevRuntime
-      ? await maybeBlockStartupForForceUpdate({
-          locale: currentApplicationLocale,
-          logger,
-          endpointOrigin: await resolveCurrentZCodeEndpointOrigin(),
-          onBlocked: () => {
-            forceUpdateMainWindowCreationBlocked = true;
-          },
-        })
-      : { blocked: false };
-  if (ZCODE_PRODUCT_FLAVOR !== "production") {
-    logger.info("[force-update] Preview 跳过远端强制升级检查");
-  } else if (skipForceUpdateForLocalDevRuntime) {
-    logger.info("[force-update] 本地 dev 构建（未打包）跳过远端强制升级检查");
-  }
-  if (forceUpdateGuardResult.blocked) {
-    return;
-  }
+  // FreeCodeZ fork:强更 gate 已随更新链整删(规格书 P3 §3.6);远端版本阻断不再存在。
 
   logger.info("[startup] 创建主窗口");
   await primaryWindowCoordinator.ensurePrimaryWindow("app-ready");
