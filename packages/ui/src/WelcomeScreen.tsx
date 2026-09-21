@@ -89,7 +89,8 @@ function LoginPanel({ active, onComplete }: LoginPanelProps) {
   const loginEntryRequest = useZCodeStore((s) => s.loginEntryRequest);
   const clearLoginEntryRequest = useZCodeStore((s) => s.clearLoginEntryRequest);
   const markLoginEntryAttemptStatus = useZCodeStore((s) => s.markLoginEntryAttemptStatus);
-  const [loginMode, setLoginMode] = useState<"providers" | "apiKey">("providers");
+  // FreeCodeZ fork(P2 §4.6 单轨化):登录链已删,API Key 表单是唯一首屏。
+  const [loginMode, setLoginMode] = useState<"providers" | "apiKey">("apiKey");
   const wasActiveRef = useRef(active);
   const consumedLoginRequestRef = useRef<number | null>(null);
   const observedOAuthSuccessSeqRef = useRef(oauthSuccessSeq);
@@ -244,7 +245,7 @@ function LoginPanel({ active, onComplete }: LoginPanelProps) {
   ]);
 
   const resetApiKeyForm = useCallback(() => {
-    setLoginMode("providers");
+    setLoginMode("apiKey");
   }, []);
 
   useEffect(() => {
@@ -291,7 +292,7 @@ function LoginPanel({ active, onComplete }: LoginPanelProps) {
         {/* Root 层写入 oauthError（轮询/回调失败）后 effect 会把 useOAuth reset 回 idle，
             若只判断 status==="idle" 会让失败块和渠道按钮列表同屏、状态纠缠。
             失败期间统一由下方失败块接管（重新登录/取消），渠道列表等错误清掉后再回来。 */}
-        {status === "idle" && !oauthError && loginMode === "providers" && (
+        {false && status === "idle" && !oauthError && loginMode === "providers" && ( // FreeCodeZ fork:OAuth 渠道分支已下线
           <div className="space-y-4">
             {loadingProviders ? (
               <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-6 text-ui-base text-foreground-subtle">

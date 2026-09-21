@@ -6,7 +6,11 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { PluginDiagnostic, PluginManifest, PluginStoreListing } from "@zcode/contracts";
 import { isOfficialMarketplaceId, ZCODE_OFFICIAL_PLUGIN_MARKETPLACE } from "@zcode/contracts";
-import { DEFAULT_PLUGIN_MARKETPLACES, sanitizeZCodeRuntimeEnv } from "@zcode/shared";
+import {
+  BUNDLED_OFFICIAL_PLUGIN_MARKETPLACE_MANIFEST,
+  DEFAULT_PLUGIN_MARKETPLACES,
+  sanitizeZCodeRuntimeEnv,
+} from "@zcode/shared";
 import { loadPluginMcpServerDefinitions, resolvePluginMcpServers } from "./mcp.js";
 import {
   appendPluginSourceCleanupError,
@@ -1893,6 +1897,13 @@ function writeKnownMarketplacesSync(
 
 function defaultMarketplaceSourceFromString(source: string): MarketplaceSource {
   const trimmed = source.trim();
+  // FreeCodeZ fork(P4 §3.1):官方市场随包内置快照(shared 内嵌 manifest),零 CDN 外联。
+  if (trimmed === "bundled:official-plugin-marketplace") {
+    return {
+      source: "settings",
+      marketplace: BUNDLED_OFFICIAL_PLUGIN_MARKETPLACE_MANIFEST as unknown as PluginMarketplaceManifest,
+    };
+  }
   if (/^[^/]+\/[^/]+(?:[#@].+)?$/u.test(trimmed) && !trimmed.includes(":")) {
     const { ref, url } = splitGitHubShorthand(trimmed);
     return ref ? { source: "github", repo: url, ref } : { source: "github", repo: url };

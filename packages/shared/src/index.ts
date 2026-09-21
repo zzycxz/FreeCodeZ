@@ -257,6 +257,7 @@ export * from "./settings-errors.js";
 export * from "./app-runtime-preferences.js";
 export * from "./command-types.js";
 export * from "./plugin-marketplaces.js";
+export * from "./bundled-plugin-marketplace.js";
 export * from "./lineChangeStat.js";
 export * from "./process-names.js";
 export * from "./mcp.js";

@@ -72,7 +72,8 @@
     "tailwindcss": "^4.2.2",
     "tsup": "^8.5.0",
     "typescript": "^6.0.2",
-    "vite": "^8.0.2"
+    "vite": "^8.0.2",
+    "chromium-bidi": "0.8.0"
   },
   "productName": "FreeCodeZ"
 }

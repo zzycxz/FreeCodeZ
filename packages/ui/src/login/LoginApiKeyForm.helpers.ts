@@ -15,7 +15,8 @@ export function resolveLoginApiKeyDefaultProvider(locale: Locale): ApiKeyProvide
 
 export function resolveLoginApiKeyTemplateId(
   choice: ApiKeyProviderChoice,
-): "zai-api" | "bigmodel-api" {
+): string {
+  // FreeCodeZ fork(P2 §4.3):模板 id 已随 JSON 改名;返回值直接透传新 id。
   return choice === "zai"
     ? BUILTIN_PROVIDER_TEMPLATE_IDS.zai
     : BUILTIN_PROVIDER_TEMPLATE_IDS.bigmodel;

@@ -1268,6 +1268,36 @@ export function createLocalServices(options: {
       }
     },
   });
+  // FreeCodeZ fork(P2 §4.9):启动时一次性清理登录链遗留的死键。旧安装升级到 FreeCodeZ 后
+  // credentials.json 里可能残留 oauth:* / JWT / 归因键;web-remote-control:* 是手机远控
+  // 的独立凭据,明确保留。凭据服务无 list 接口,改为直读仓库文件判断后逐键删除;
+  // 失败只吞掉,不阻断启动(best-effort 清理)。
+  void (async () => {
+    try {
+      const credentialRepo = await import("#src/credential/legacyCleanupStore.js").then((m) =>
+        m.createLegacyCleanupCredentialStore(process.env),
+      );
+      const legacy = await credentialRepo.loadMany([
+        "zcodejwttoken",
+        "oauth:active_provider",
+        "oauth:login_attribution",
+      ]);
+      const zaiTokens = await credentialRepo.loadMany([
+        "oauth:zai:access_token",
+        "oauth:zai:refresh_token",
+        "oauth:zai:user_info",
+        "oauth:bigmodel:access_token",
+        "oauth:bigmodel:refresh_token",
+        "oauth:bigmodel:user_info",
+      ]);
+      const present = [...Object.entries(legacy), ...Object.entries(zaiTokens)]
+        .filter(([, value]) => value !== null)
+        .map(([key]) => key);
+      await Promise.all(present.map((key) => credentialRepo.delete(key)));
+    } catch {
+      // 独立环境(无凭据仓库)或读取失败:静默跳过。
+    }
+  })();
   // FreeCodeZ fork:OAuth/账号 provider/官方 MCP 链已整删(规格书 P2 §4.5)——
   // 无凭据仓库、无 401 登出、无账号事实源;personal provider 与内置目录照常。
   const broadcastService = createBroadcastService(options?.parentPort ?? null);

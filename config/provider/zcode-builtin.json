@@ -1,153 +1,9 @@
 {
   "schemaVersion": 1,
-  "revision": 31,
+  "revision": 32,
   "config": {
     "providerConfigRules": {
       "templateRules": [
-        {
-          "templateId": "zai-coding-plan",
-          "templateNameMap": {
-            "zh-CN": "Z.ai Coding Plan",
-            "en-US": "Z.ai Coding Plan"
-          },
-          "config": {
-            "access": {
-              "type": "api-key",
-              "apiKeyManagementUrl": "https://z.ai/manage-apikey/apikey-list"
-            },
-            "api": {
-              "type": "anthropic-messages",
-              "baseUrl": "https://api.z.ai/api/anthropic"
-            },
-            "builtinModelIds": [
-              "GLM-5.3",
-              "GLM-5.3-Flash"
-            ],
-            "logo": {
-              "type": "builtin",
-              "key": "zai"
-            }
-          }
-        },
-        {
-          "templateId": "zai-standard-api",
-          "templateNameMap": {
-            "zh-CN": "Z.ai API",
-            "en-US": "Z.ai API"
-          },
-          "config": {
-            "access": {
-              "type": "api-key",
-              "apiKeyManagementUrl": "https://z.ai/manage-apikey/apikey-list"
-            },
-            "api": {
-              "type": "openai-chat-completions",
-              "baseUrl": "https://api.z.ai/api/paas/v4"
-            },
-            "builtinModelIds": [
-              "GLM-5.3",
-              "GLM-5.3-Flash",
-              "GLM-5V-Turbo",
-              "GLM-5.1",
-              "GLM-5.1-Highspeed",
-              "GLM-5",
-              "GLM-5-Turbo",
-              "GLM-4.7",
-              "GLM-4.7-FlashX",
-              "GLM-4.7-Flash",
-              "GLM-4.6",
-              "GLM-4.5-Air",
-              "GLM-4.5",
-              "GLM-4.6V",
-              "GLM-4.6V-Flash",
-              "GLM-4.6V-FlashX",
-              "GLM-4.1V-Thinking-FlashX",
-              "GLM-4.1V-Thinking-Flash",
-              "GLM-4-FlashX-250414",
-              "GLM-4-Flash-250414",
-              "GLM-4V-Flash",
-              "codegeex-4",
-              "charglm-4",
-              "emohaa"
-            ],
-            "logo": {
-              "type": "builtin",
-              "key": "zai"
-            }
-          }
-        },
-        {
-          "templateId": "bigmodel-coding-plan",
-          "templateNameMap": {
-            "zh-CN": "BigModel Coding Plan",
-            "en-US": "BigModel Coding Plan"
-          },
-          "config": {
-            "access": {
-              "type": "api-key",
-              "apiKeyManagementUrl": "https://bigmodel.cn/coding-plan/personal/overview"
-            },
-            "api": {
-              "type": "anthropic-messages",
-              "baseUrl": "https://open.bigmodel.cn/api/anthropic"
-            },
-            "builtinModelIds": [
-              "GLM-5.3",
-              "GLM-5.3-Flash"
-            ],
-            "logo": {
-              "type": "builtin",
-              "key": "bigmodel"
-            }
-          }
-        },
-        {
-          "templateId": "bigmodel-standard-api",
-          "templateNameMap": {
-            "zh-CN": "BigModel API",
-            "en-US": "BigModel API"
-          },
-          "config": {
-            "access": {
-              "type": "api-key",
-              "apiKeyManagementUrl": "https://bigmodel.cn/usercenter/proj-mgmt/apikeys"
-            },
-            "api": {
-              "type": "openai-chat-completions",
-              "baseUrl": "https://open.bigmodel.cn/api/paas/v4"
-            },
-            "builtinModelIds": [
-              "GLM-5.3",
-              "GLM-5.3-Flash",
-              "GLM-5V-Turbo",
-              "GLM-5.1",
-              "GLM-5.1-Highspeed",
-              "GLM-5",
-              "GLM-5-Turbo",
-              "GLM-4.7",
-              "GLM-4.7-FlashX",
-              "GLM-4.7-Flash",
-              "GLM-4.6",
-              "GLM-4.5-Air",
-              "GLM-4.5",
-              "GLM-4.6V",
-              "GLM-4.6V-Flash",
-              "GLM-4.6V-FlashX",
-              "GLM-4.1V-Thinking-FlashX",
-              "GLM-4.1V-Thinking-Flash",
-              "GLM-4-FlashX-250414",
-              "GLM-4-Flash-250414",
-              "GLM-4V-Flash",
-              "codegeex-4",
-              "charglm-4",
-              "emohaa"
-            ],
-            "logo": {
-              "type": "builtin",
-              "key": "bigmodel"
-            }
-          }
-        },
         {
           "templateId": "moonshot-kimi",
           "templateNameMap": {
@@ -703,6 +559,150 @@
             "logo": {
               "type": "builtin",
               "key": "opencode"
+            }
+          }
+        },
+        {
+          "templateId": "zai-coding-plan",
+          "templateNameMap": {
+            "zh-CN": "Z.ai Coding Plan",
+            "en-US": "Z.ai Coding Plan"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://z.ai/manage-apikey/apikey-list"
+            },
+            "api": {
+              "type": "anthropic-messages",
+              "baseUrl": "https://api.z.ai/api/anthropic"
+            },
+            "builtinModelIds": [
+              "GLM-5.3",
+              "GLM-5.3-Flash"
+            ],
+            "logo": {
+              "type": "builtin",
+              "key": "zai"
+            }
+          }
+        },
+        {
+          "templateId": "zai-standard-api",
+          "templateNameMap": {
+            "zh-CN": "Z.ai API",
+            "en-US": "Z.ai API"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://z.ai/manage-apikey/apikey-list"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "https://api.z.ai/api/paas/v4"
+            },
+            "builtinModelIds": [
+              "GLM-5.3",
+              "GLM-5.3-Flash",
+              "GLM-5V-Turbo",
+              "GLM-5.1",
+              "GLM-5.1-Highspeed",
+              "GLM-5",
+              "GLM-5-Turbo",
+              "GLM-4.7",
+              "GLM-4.7-FlashX",
+              "GLM-4.7-Flash",
+              "GLM-4.6",
+              "GLM-4.5-Air",
+              "GLM-4.5",
+              "GLM-4.6V",
+              "GLM-4.6V-Flash",
+              "GLM-4.6V-FlashX",
+              "GLM-4.1V-Thinking-FlashX",
+              "GLM-4.1V-Thinking-Flash",
+              "GLM-4-FlashX-250414",
+              "GLM-4-Flash-250414",
+              "GLM-4V-Flash",
+              "codegeex-4",
+              "charglm-4",
+              "emohaa"
+            ],
+            "logo": {
+              "type": "builtin",
+              "key": "zai"
+            }
+          }
+        },
+        {
+          "templateId": "bigmodel-coding-plan",
+          "templateNameMap": {
+            "zh-CN": "BigModel Coding Plan",
+            "en-US": "BigModel Coding Plan"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://bigmodel.cn/coding-plan/personal/overview"
+            },
+            "api": {
+              "type": "anthropic-messages",
+              "baseUrl": "https://open.bigmodel.cn/api/anthropic"
+            },
+            "builtinModelIds": [
+              "GLM-5.3",
+              "GLM-5.3-Flash"
+            ],
+            "logo": {
+              "type": "builtin",
+              "key": "bigmodel"
+            }
+          }
+        },
+        {
+          "templateId": "bigmodel-standard-api",
+          "templateNameMap": {
+            "zh-CN": "BigModel API",
+            "en-US": "BigModel API"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://bigmodel.cn/usercenter/proj-mgmt/apikeys"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "https://open.bigmodel.cn/api/paas/v4"
+            },
+            "builtinModelIds": [
+              "GLM-5.3",
+              "GLM-5.3-Flash",
+              "GLM-5V-Turbo",
+              "GLM-5.1",
+              "GLM-5.1-Highspeed",
+              "GLM-5",
+              "GLM-5-Turbo",
+              "GLM-4.7",
+              "GLM-4.7-FlashX",
+              "GLM-4.7-Flash",
+              "GLM-4.6",
+              "GLM-4.5-Air",
+              "GLM-4.5",
+              "GLM-4.6V",
+              "GLM-4.6V-Flash",
+              "GLM-4.6V-FlashX",
+              "GLM-4.1V-Thinking-FlashX",
+              "GLM-4.1V-Thinking-Flash",
+              "GLM-4-FlashX-250414",
+              "GLM-4-Flash-250414",
+              "GLM-4V-Flash",
+              "codegeex-4",
+              "charglm-4",
+              "emohaa"
+            ],
+            "logo": {
+              "type": "builtin",
+              "key": "bigmodel"
             }
           }
         }

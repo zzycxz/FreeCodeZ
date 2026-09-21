@@ -37,10 +37,6 @@ export interface ZCodeEndpointUrls {
   origin: string;
   apiBaseUrl: string;
   webShareCallbackUrl: string;
-  zcodePlanOpenAiBaseUrl: string;
-  zcodePlanAnthropicBaseUrl: string;
-  zcodePlanBillingCurrentUrl: string;
-  zcodePlanBillingBalanceUrl: string;
 }
 
 export interface RuntimeZCodeEndpointEnv {
@@ -265,10 +261,6 @@ export function buildZCodeEndpointUrls(origin: string): ZCodeEndpointUrls {
     origin: normalizedOrigin,
     apiBaseUrl: `${normalizedOrigin}/api/v1`,
     webShareCallbackUrl: `${normalizedOrigin}/cn/share/callback`,
-    zcodePlanOpenAiBaseUrl: `${normalizedOrigin}/api/v1/zcode-plan`,
-    zcodePlanAnthropicBaseUrl: `${normalizedOrigin}/api/v1/zcode-plan/anthropic`,
-    zcodePlanBillingCurrentUrl: `${normalizedOrigin}/api/v1/zcode-plan/billing/current`,
-    zcodePlanBillingBalanceUrl: `${normalizedOrigin}/api/v1/zcode-plan/billing/balance`,
   };
 }
 
