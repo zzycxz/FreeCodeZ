@@ -247,7 +247,9 @@ export function ModelProviderSection({
   const { intl, locale } = useZCodeIntl();
   const confirmDialog = useConfirmDialog();
   const platform = usePlatform();
-  const { modelSelectionService, oauthService, credentialService } = useServices();
+  const { modelSelectionService, credentialService } = useServices();
+  // FreeCodeZ fork:登录链已删(P2);登出为本地 no-op。
+const oauthService = { logout: async () => {}, getActiveProvider: async () => null } as unknown as { logout: (...a: unknown[]) => Promise<void>; getActiveProvider: () => Promise<null> };
   const {
     modelProviders,
     providerTemplates,
@@ -421,10 +423,10 @@ export function ModelProviderSection({
   const subscribedTeamProducts = useMemo(
     () => [
       ...(authenticatedEnterpriseProducts.snapshot?.productList.filter(
-        (product) => product.subscribed === true,
+        (product: { subscribed?: boolean }) => product.subscribed === true,
       ) ?? []),
       ...(authenticatedZaiEnterpriseProducts.snapshot?.productList.filter(
-        (product) => product.subscribed === true,
+        (product: { subscribed?: boolean }) => product.subscribed === true,
       ) ?? []),
     ],
     [

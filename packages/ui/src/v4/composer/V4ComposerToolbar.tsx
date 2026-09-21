@@ -546,7 +546,7 @@ function V4ComposerModelControlsImpl({
   });
   const subscribedTeamProducts = useMemo(
     () =>
-      enterpriseProducts.snapshot?.productList.filter((product) => product.subscribed === true) ??
+      enterpriseProducts.snapshot?.productList.filter((product: { subscribed?: boolean }) => product.subscribed === true) ??
       [],
     [enterpriseProducts.snapshot?.productList],
   );

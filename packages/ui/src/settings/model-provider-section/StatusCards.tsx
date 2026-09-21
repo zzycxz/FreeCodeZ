@@ -373,7 +373,7 @@ export function CodingPlanStatusPanel({
           ? "settings.modelProvider.codingPlan.renew"
           : "settings.modelProvider.codingPlan.upgrade"
       }
-      onUpgradePlansVisibleChange={(visible) => {
+      onUpgradePlansVisibleChange={(visible: boolean) => {
         if (visible) {
           openUpgradePlans(
             purchaseInitialAudience,

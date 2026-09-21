@@ -92,7 +92,7 @@ function buildTeamCodingPlanUsageSources(
             },
           ];
 
-    return projectContexts.flatMap((projectContext, index) => {
+    return (projectContexts as never[]).flatMap((projectContext: Record<string, any>, index: number) => {
       const organizationId = projectContext.organizationId?.trim() ?? "";
       const projectId = projectContext.projectId?.trim() ?? "";
       if (!organizationId || !projectId) {
@@ -113,8 +113,8 @@ function buildTeamCodingPlanUsageSources(
       // 原 createBigModelTeamPlanConnectionKey + bigmodelCodingPlan providerId
       // 硬编码 bigmodel，zai team product 的 sourceId 用了 bigmodel 前缀、providerId 也错。
       // 按 product.family 用 family-aware key + 对应 codingPlan providerId。
-      const productFamily = resolveEnterpriseCodingPlanProductFamily(product);
-      const baseAccess = accountAccesses[productFamily];
+      const productFamily = resolveEnterpriseCodingPlanProductFamily(product) as never;
+      const baseAccess = (accountAccesses as Record<string, { mode?: string }>)[productFamily as string];
       if (baseAccess?.mode !== "team-coding-plan") {
         return [];
       }

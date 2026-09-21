@@ -535,6 +535,7 @@ function ConversationTimelineImpl({
     // 选择面板是 SessionPane 的兄弟节点，不能把 CSS 变量写在 Timeline
     // 自身，否则面板拿不到 dock 的真实边界；统一写入共享父容器供两者使用。
     const layout = syncConversationShareSelectionPanelLayout(container, dock);
+    if (!layout) return; // FreeCodeZ fork(P2):分享选择面板已下线,布局同步恒空
     const previous = shareSelectionPanelLayoutRef.current;
     if (previous?.centerYPx === layout.centerYPx && previous.maxHeightPx === layout.maxHeightPx) {
       return;

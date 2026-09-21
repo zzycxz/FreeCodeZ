@@ -18,7 +18,9 @@ export function useCodingPlanEntryPlanList(): CodingPlanEntryInventory {
   const { state, reload } = useProviderSettingsView();
   const providerSettingsView = state.status === "ready" ? state.view : null;
   const loading = state.status === "loading";
-  const { credentialService, codingPlanSubscriptionService } = useServices();
+  const { credentialService } = useServices();
+  // FreeCodeZ fork(P2):订阅服务已删;企业价格恒空。
+const codingPlanSubscriptionService = { getEnterprisePricing: async () => null } as unknown as { getEnterprisePricing: (...args: unknown[]) => Promise<{ productList: never[] } | null> };
   const user = useZCodeStore((state) => state.user);
   // 不传当前选中的团队上下文，四种 Start/个人连接分别使用已有权益缓存。
   const { entitlements, refresh } = useCodingPlanEntitlements({
@@ -52,7 +54,8 @@ export function useCodingPlanEntryPlanList(): CodingPlanEntryInventory {
               authenticated: true,
               family,
             });
-            return { token, products: result.productList };
+            // FreeCodeZ fork(P2):企业价格恒空。
+            return { token, products: result?.productList ?? [] };
           } catch (error) {
             logger.warn("[purchaseTelemetry] 读取团队套餐失败", { family, error });
             return { token, products: null };

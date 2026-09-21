@@ -24,16 +24,15 @@ function inferProviderFamilyDomainFromSelection(
 }
 
 export async function ensureProviderFamilyDomainMigration(
-  services: Pick<IServiceAccessor, "settingService" | "oauthService" | "modelSelectionService">,
+  services: Pick<IServiceAccessor, "settingService" | "modelSelectionService">,
 ): Promise<void> {
   const settings = await services.settingService.get();
   if (settings.providerFamilyDomain || settings.providerFamilyDomainMigrated) {
     return;
   }
 
-  let inferredDomain = resolveProviderFamilyDomainFromOAuthProvider(
-    await services.oauthService.getActiveProvider(),
-  );
+  // FreeCodeZ fork:无登录态,域推断恒空(规格书 P2)。
+  let inferredDomain: string | null = null;
   let selectableProviders: readonly { readonly providerId: string }[] | null = null;
 
   if (!inferredDomain) {
@@ -54,11 +53,12 @@ export async function ensureProviderFamilyDomainMigration(
     return;
   }
 
-  await services.settingService.update({
+  const migrationPatch: Record<string, unknown> = {
     ...(inferredDomain ? { providerFamilyDomain: inferredDomain } : {}),
     providerFamilyDomainUpdatedAt: Date.now(),
     providerFamilyDomainMigrated: true,
-  });
+  };
+  await services.settingService.update(migrationPatch as never);
 
   logger.info("[providerFamilyDomainMigration] provider family domain 迁移完成", {
     inferredDomain,

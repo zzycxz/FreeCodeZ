@@ -1660,19 +1660,6 @@ function exposeServicesOnMessagePort(
   if (connectionScope) {
     overrides.set(IZCodeAgentService.channelName, connectionScope.service);
   }
-  const conversationShareService = services.getOptional(IConversationShareService);
-  if (conversationShareService) {
-    // Share service 若继续持有 raw Agent，会绕过当前 MessagePort 已握手的 trusted carrier，
-    // rowsRange 会以 connection untrusted 拒绝。必须复用同一 attachment connection scope。
-    overrides.set(
-      IConversationShareService.channelName,
-      scopeConversationShareServiceForAttachment(
-        conversationShareService,
-        clientMode,
-        connectionScope?.service,
-      ),
-    );
-  }
   services.exposeOnChannelServer(server, overrides);
   let disposed = false;
   let flowUpdateChain = Promise.resolve();

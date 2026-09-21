@@ -923,7 +923,7 @@ function CodingPlanPurchaseChoiceBanners({
     title: "",
     products: enterpriseProducts.error
       ? []
-      : (enterpriseProducts.snapshot?.productList ?? []).filter((product) =>
+      : (enterpriseProducts.snapshot?.productList ?? [] as any[]).filter((product: Record<string, any>) =>
           enterpriseProducts.snapshot?.staticProductIds?.includes(product.productId),
         ),
   });
@@ -1078,8 +1078,8 @@ function resolvePurchaseChoiceBannerPrice({
   soldOutVisible?: boolean;
 }): { kind: "price"; price: number; currency: string } | { kind: "soldOut" } | null {
   if (audience === "personal") {
-    const product = products
-      .map((candidate) => ({
+    const product = (products as any[])
+      .map((candidate: any) => ({
         product: candidate,
         price: pickProductPrice(candidate),
       }))
@@ -1089,7 +1089,7 @@ function resolvePurchaseChoiceBannerPrice({
           typeof candidate.price === "number" &&
           candidate.price > 0,
       )
-      .sort((left, right) => left.price - right.price)[0];
+      .sort((left: { price: number }, right: { price: number }) => left.price - right.price)[0];
     if (product) {
       return {
         kind: "price",
@@ -1120,10 +1120,10 @@ function resolvePurchaseChoiceBannerPrice({
 function resolveEnterprisePurchaseChoiceBannerPrice(
   group: EnterpriseCodingPlanProductGroup,
 ): { kind: "price"; price: number; currency: string } | null {
-  const product = group.products
-    .map((candidate) => ({
+  const product = (group.products as any[])
+    .map((candidate: any) => ({
       product: candidate,
-      price: pickProductPrice(candidate),
+      price: pickProductPrice(candidate) as number,
     }))
     .filter(
       (
@@ -1133,7 +1133,7 @@ function resolveEnterprisePurchaseChoiceBannerPrice(
         price: number;
       } => typeof candidate.price === "number" && candidate.price > 0,
     )
-    .sort((left, right) => left.price - right.price)[0];
+    .sort((left: { price: number }, right: { price: number }) => left.price - right.price)[0];
   if (!product) {
     return null;
   }

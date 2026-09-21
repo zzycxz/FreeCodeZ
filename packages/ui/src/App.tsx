@@ -283,7 +283,7 @@ export function App({
   });
   // 闲时任务终态/等确认通知：仅桌面本地链路，main 进程按 status:taskId 去重多窗口重复。
   useOffPeakTaskNotifications({
-    offPeakTaskService: services.offPeakTaskService,
+    offPeakTaskService: undefined as never, // FreeCodeZ fork:off-peak 链已删(P2)
     platform,
     enabled: Boolean(notificationEnabled && isDesktop),
     formatMessage: intl.formatMessage,

@@ -327,7 +327,7 @@ export function useRootWorkspaceActions({
     const nextProviderFamilyDomain = resolveLogoutProviderFamilyDomain({
       currentDomain: settingsBeforeLogout.providerFamilyDomain,
     });
-    await services.oauthService.logout();
+    // FreeCodeZ fork:登录链已删,登出只清理本地设置(规格书 P2 §4.6)。
     await updateAppSettings({
       providerFamilyDomain: (nextProviderFamilyDomain ?? "") as AppSettings["providerFamilyDomain"],
       providerFamilyDomainUpdatedAt: Date.now(),
@@ -351,7 +351,6 @@ export function useRootWorkspaceActions({
     refreshProviderState,
     onProviderFamilyDomainClearedAfterLogout,
     platform,
-    services.oauthService,
     services.modelSelectionService,
     services.settingService,
     setOAuthError,

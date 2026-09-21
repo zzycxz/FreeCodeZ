@@ -553,8 +553,12 @@ export function SessionPane({
     fileRewindPreview,
   } = useV4Conversation();
   const platform = useOptionalPlatform();
-  const { conversationShareService, modelSelectionService, zcodeSessionService, zcodeTaskService } =
-    useServices();
+  const { modelSelectionService, zcodeSessionService, zcodeTaskService } = useServices();
+  // FreeCodeZ fork(P2):分享服务已删;onDynamicPublishProgress 恒无回调,发布流程不会启动。
+  const conversationShareService = { onDynamicPublishProgress: () => () => {} } as unknown as {
+    onDynamicPublishProgress: (id: string) => (cb: (progress: Record<string, any>) => void) => () => void;
+    [key: string]: any;
+  };
   const { intl, locale } = useZCodeIntl();
   const slashCommands = useSlashCommands(workspacePath, workspaceIdentity);
   const baseWorkspaceServices = useBaseWorkspaceServices();
@@ -874,7 +878,7 @@ export function SessionPane({
           },
         })
         .then(
-          (result) => {
+          (result: Record<string, any>) => {
             if (!shareActive || requestScopeKey !== sharePreflightScopeKeyRef.current) return;
             sharePreflightMetaRef.current = {
               revision: result.revision,
@@ -905,7 +909,7 @@ export function SessionPane({
             );
             for (const entry of entries) {
               sharePreflightCacheRef.current.set(
-                sharePreflightCacheKey(entry.productTurnId),
+                sharePreflightCacheKey((entry as Record<string, any>).productTurnId),
                 entry,
               );
             }
@@ -918,16 +922,16 @@ export function SessionPane({
             logger.warn("[v4-share] 会话分享预检失败", {
               sessionId,
               turnCount: missingProductTurnIds.length,
-              name: details.name,
-              kind: details.kind,
-              reasonCode: details.reasonCode,
-              issueCount: details.issueCount ?? 0,
+              name: details?.name,
+              kind: details?.kind,
+              reasonCode: details?.reasonCode,
+              issueCount: details?.issueCount ?? 0,
               message: error instanceof Error ? error.message : String(error),
             });
             if (!shareActive || requestScopeKey !== sharePreflightScopeKeyRef.current) return;
             const issues =
-              details.issues && details.issues.length > 0
-                ? details.issues
+              details?.issues && details?.issues.length > 0
+                ? details?.issues
                 : [
                     {
                       code: resolveConversationShareFallbackIssueCode(details),
@@ -3722,7 +3726,7 @@ export function SessionPane({
         workspacePath,
         contextId: importedShareContextId,
       })
-      .then((imported) => {
+      .then((imported: unknown) => {
         if (disposed) return;
         setImportedShare(imported);
       })
@@ -3741,7 +3745,7 @@ export function SessionPane({
   const importedShareArtifactNames = useMemo(
     () =>
       new Map(
-        (importedShare?.artifacts ?? []).map((artifact) => [
+        (importedShare?.artifacts ?? [] as never[]).map((artifact: Record<string, any>) => [
           artifact.artifactId,
           artifact.displayName,
         ]),
@@ -4047,7 +4051,7 @@ export function SessionPane({
     let activePhase = "collecting";
     let collectedWarnings: ConversationShareDisplayWarnings | null = null;
     const progressSubscription = conversationShareService.onDynamicPublishProgress(operationId)((
-      progress,
+      progress: Record<string, any>,
     ) => {
       activePhase = progress.phase;
       updateShareDockState(sessionId, {
@@ -4117,12 +4121,12 @@ export function SessionPane({
         resolvedMessageId === "conversationShare.publishFailed" ? undefined : resolvedMessageId;
       updateShareDockState(sessionId, {
         error:
-          details.issues && details.issues.length > 0
+          details?.issues && details?.issues.length > 0
             ? {
-                issues: details.issues,
-                issueCount: details.issueCount ?? details.issues.length,
-                omittedIssueCount: details.omittedIssueCount,
-                requestId: details.requestId,
+                issues: details?.issues,
+                issueCount: details?.issueCount ?? details?.issues.length,
+                omittedIssueCount: details?.omittedIssueCount,
+                requestId: details?.requestId,
               }
             : {
                 issues: [
@@ -4133,7 +4137,7 @@ export function SessionPane({
                   },
                 ],
                 issueCount: 1,
-                requestId: details.requestId,
+                requestId: details?.requestId,
                 messageId,
               },
       });
@@ -4144,16 +4148,16 @@ export function SessionPane({
         accessMode: shareDraft.accessMode,
         selectedProductTurnCount: productTurnIds.length,
         remoteWorkspace: Boolean(workspaceIdentity || remoteSessionId),
-        errorName: details.name,
-        kind: details.kind,
-        ...(details.reasonCode === undefined ? {} : { reasonCode: details.reasonCode }),
-        ...(details.diagnostics === undefined ? {} : { diagnostics: details.diagnostics }),
-        ...(details.status === undefined ? {} : { status: details.status }),
-        ...(details.code === undefined ? {} : { code: details.code }),
-        ...(details.requestId === undefined ? {} : { requestId: details.requestId }),
+        errorName: details?.name,
+        kind: details?.kind,
+        ...(details?.reasonCode === undefined ? {} : { reasonCode: details?.reasonCode }),
+        ...(details?.diagnostics === undefined ? {} : { diagnostics: details?.diagnostics }),
+        ...(details?.status === undefined ? {} : { status: details?.status }),
+        ...(details?.code === undefined ? {} : { code: details?.code }),
+        ...(details?.requestId === undefined ? {} : { requestId: details?.requestId }),
       });
     } finally {
-      progressSubscription.dispose();
+      (progressSubscription as unknown as { dispose?(): void })?.dispose?.();
       updateShareDockState(sessionId, { publishing: false });
     }
   }, [

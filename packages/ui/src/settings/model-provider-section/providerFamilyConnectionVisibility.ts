@@ -425,7 +425,7 @@ function appendSubscribedTeamPlanItems({
             },
           ];
 
-    return projectContexts.flatMap((projectContext) => {
+    return (projectContexts as never[]).flatMap((projectContext: Record<string, any>) => {
       const organizationId = projectContext.organizationId?.trim() ?? "";
       const projectKey = projectContext.projectId?.trim() ?? "";
       if (!organizationId || !projectKey) {

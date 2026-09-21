@@ -181,10 +181,10 @@ export function useWorkspaceSidebarFooterUsageSummaryState({
   const subscribedTeamProducts = useMemo(
     () => [
       ...(bigmodelEnterpriseProducts.snapshot?.productList.filter(
-        (product) => product.subscribed === true,
+        (product: { subscribed?: boolean }) => product.subscribed === true,
       ) ?? []),
       ...(zaiEnterpriseProducts.snapshot?.productList.filter(
-        (product) => product.subscribed === true,
+        (product: { subscribed?: boolean }) => product.subscribed === true,
       ) ?? []),
     ],
     [bigmodelEnterpriseProducts.snapshot?.productList, zaiEnterpriseProducts.snapshot?.productList],

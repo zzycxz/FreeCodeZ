@@ -262,3 +262,14 @@ export type {
   FeedbackTicketType,
 } from "@zcode/shared";
 export { IClientConfigService } from "./client-config/clientConfig.js";
+
+// FreeCodeZ fork 兼容壳(P2):以下类型仅供尚未物理删除的 UI 引用编译通过;运行时无实现。
+export type {
+  ICodingPlanSubscriptionService,
+  ConversationShareAllowedArtifact,
+  ConversationShareTurnPreflightResult,
+  ImportedConversationShare,
+  ConversationShareFailureIssue,
+  ConversationShareDisplayWarnings,
+  ConversationShareProgressPhase,
+} from "./freecodez-compat-types.js";

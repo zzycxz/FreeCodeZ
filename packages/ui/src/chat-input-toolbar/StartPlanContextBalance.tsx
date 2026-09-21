@@ -143,7 +143,7 @@ export function ChatStartPlanBalancePanel({
             type="button"
             size="xs"
             className="h-6 shrink-0 gap-1 px-2 text-ui-sm"
-            onClick={(event) => {
+            onClick={(event: { preventDefault(): void; stopPropagation(): void }) => {
               event.preventDefault();
               event.stopPropagation();
               config.onUpgradeClick?.();

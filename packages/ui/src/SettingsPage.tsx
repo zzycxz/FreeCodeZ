@@ -436,10 +436,10 @@ export function SettingsPage({
   const usageSubscribedTeamProducts = useMemo(
     () => [
       ...(usageBigmodelEnterpriseProducts.snapshot?.productList.filter(
-        (product) => product.subscribed === true,
+        (product: { subscribed?: boolean }) => product.subscribed === true,
       ) ?? []),
       ...(usageZaiEnterpriseProducts.snapshot?.productList.filter(
-        (product) => product.subscribed === true,
+        (product: { subscribed?: boolean }) => product.subscribed === true,
       ) ?? []),
     ],
     [

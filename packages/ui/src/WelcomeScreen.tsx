@@ -136,7 +136,7 @@ function LoginPanel({ active, onComplete }: LoginPanelProps) {
   );
 
   const providerNameMap = useMemo(
-    () => new Map(providers.map((provider) => [provider.id, provider.displayName])),
+    () => new Map(providers.map((provider: { id: string; displayName: string }) => [provider.id, provider.displayName])),
     [providers],
   );
 
