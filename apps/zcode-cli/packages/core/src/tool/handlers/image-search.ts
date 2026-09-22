@@ -16,7 +16,7 @@ import {
   type ImageSearchInput,
   type ImageSearchOutput,
 } from "@zcode/contracts";
-import type { ToolEntry, ToolHandler } from "../types.js";
+import type { ToolEntry, ToolExecutionContext, ToolHandler } from "../types.js";
 import {
   dedupeByNormalizedUrl,
   fetchJsonWithTimeout,
@@ -27,6 +27,21 @@ import {
 const IMAGE_SEARCH_TOOL_NAME = "ImageSearch";
 const DEFAULT_PAGE_SIZE = 10;
 const IMAGE_CACHE_TTL_MS = 45 * 60 * 1000;
+
+/**
+ * safeSearch/country → 各源参数映射(P6 §6.2 接线;纯函数可单测)。
+ * SerpAPI 只有 active/off 两档;Openverse 两参数均不支持(调用方不传)。
+ */
+export type SearchSafeSearch = "off" | "moderate" | "strict";
+
+export function serpapiSafeSearchParam(safeSearch: SearchSafeSearch): "active" | "off" {
+  return safeSearch === "off" ? "off" : "active";
+}
+
+interface RegionalSearchParams {
+  safeSearch: SearchSafeSearch;
+  country?: string;
+}
 
 // -----------------------------------------------
 // 源适配器(规格书 P6 §4.3:禁止透传源生格式,统一归一化)
@@ -93,6 +108,7 @@ async function fetchSerpapiGoogleImages(
   apiKey: string,
   page: number,
   pageSize: number,
+  regional: RegionalSearchParams,
 ): Promise<ImageResultItem[]> {
   const start = (page - 1) * pageSize;
   const url = new URL("https://serpapi.com/search.json");
@@ -100,6 +116,8 @@ async function fetchSerpapiGoogleImages(
   url.searchParams.set("q", query);
   url.searchParams.set("api_key", apiKey);
   url.searchParams.set("num", String(pageSize));
+  url.searchParams.set("safe", serpapiSafeSearchParam(regional.safeSearch));
+  if (regional.country) url.searchParams.set("gl", regional.country);
   if (start > 0) url.searchParams.set("start", String(start));
   const payload = (await fetchJsonWithTimeout(url.toString())) as {
     images_results?: Array<Record<string, unknown>>;
@@ -121,11 +139,14 @@ async function fetchBraveImages(
   apiKey: string,
   _page: number,
   pageSize: number,
+  regional: RegionalSearchParams,
 ): Promise<ImageResultItem[]> {
   // Brave Images 不分页无 offset(规格书 P6 附录 A):固定 hasMore=false 由调用方标注。
   const url = new URL("https://api.search.brave.com/res/v1/images/search");
   url.searchParams.set("q", query);
   url.searchParams.set("count", String(pageSize));
+  url.searchParams.set("safesearch", regional.safeSearch);
+  if (regional.country) url.searchParams.set("country", regional.country);
   const payload = (await fetchJsonWithTimeout(url.toString(), {
     headers: { "X-Subscription-Token": apiKey, Accept: "application/json" },
   })) as { results?: Array<Record<string, unknown>> };
@@ -192,8 +213,24 @@ const imageSearchHandler: ToolHandler<ImageSearchInput, ImageSearchOutput> = asy
   const startedAt = Date.now();
   const page = input.page ?? 1;
   const pageSize = input.pageSize ?? DEFAULT_PAGE_SIZE;
+  // FreeCodeZ fork(P6 §6.2):safeSearch/country/summaryMode 来自会话偏好;缺席取协议默认。
+  const prefs = context.searchVision;
+  const regional: RegionalSearchParams = {
+    safeSearch: prefs?.safeSearch ?? "moderate",
+    ...(prefs?.country ? { country: prefs.country } : {}),
+  };
+  const summaryMode = prefs?.summaryMode ?? "on";
   const cache = getSearchCache("image-search");
-  const cacheKey = JSON.stringify([input.query, page, pageSize, input.license ?? "any"]);
+  // 偏好影响请求参数与 caption 生成,必须进缓存键,否则改设置后 45 分钟内回旧结果。
+  const cacheKey = JSON.stringify([
+    input.query,
+    page,
+    pageSize,
+    input.license ?? "any",
+    regional.safeSearch,
+    regional.country ?? "",
+    summaryMode,
+  ]);
 
   const cached = cache.get<ImageSearchOutput>(cacheKey);
   if (cached) {
@@ -204,7 +241,11 @@ const imageSearchHandler: ToolHandler<ImageSearchInput, ImageSearchOutput> = asy
 
   // license=cc 直跳 Openverse(规格书 P6 §6.1)。
   if (input.license === "cc") {
-    const output = await runOpenverse(input.query, page, pageSize, startedAt, false);
+    const output = await finalizeOutput(
+      await runOpenverse(input.query, page, pageSize, regional, startedAt, false),
+      context,
+      summaryMode,
+    );
     cache.put(cacheKey, output, IMAGE_CACHE_TTL_MS);
     return output;
   }
@@ -212,13 +253,17 @@ const imageSearchHandler: ToolHandler<ImageSearchInput, ImageSearchOutput> = asy
   // 降级链:SerpAPI → Brave → Openverse(零 key 尾)。
   if (keys.serpapi) {
     try {
-      const output = await buildEnvelope(
-        input.query,
-        await fetchSerpapiGoogleImages(input.query, keys.serpapi, page, pageSize),
-        page,
-        pageSize,
-        startedAt,
-        { provider: "serpapi", degradedFrom: null, hasMore: true },
+      const output = await finalizeOutput(
+        await buildEnvelope(
+          input.query,
+          await fetchSerpapiGoogleImages(input.query, keys.serpapi, page, pageSize, regional),
+          page,
+          pageSize,
+          startedAt,
+          { provider: "serpapi", degradedFrom: null, hasMore: true },
+        ),
+        context,
+        summaryMode,
       );
       cache.put(cacheKey, output, IMAGE_CACHE_TTL_MS);
       return output;
@@ -228,13 +273,17 @@ const imageSearchHandler: ToolHandler<ImageSearchInput, ImageSearchOutput> = asy
   }
   if (keys.brave) {
     try {
-      const output = await buildEnvelope(
-        input.query,
-        await fetchBraveImages(input.query, keys.brave, page, pageSize),
-        page,
-        pageSize,
-        startedAt,
-        { provider: "brave", degradedFrom: keys.serpapi ? "serpapi" : null, hasMore: false },
+      const output = await finalizeOutput(
+        await buildEnvelope(
+          input.query,
+          await fetchBraveImages(input.query, keys.brave, page, pageSize, regional),
+          page,
+          pageSize,
+          startedAt,
+          { provider: "brave", degradedFrom: keys.serpapi ? "serpapi" : null, hasMore: false },
+        ),
+        context,
+        summaryMode,
       );
       cache.put(cacheKey, output, IMAGE_CACHE_TTL_MS);
       return output;
@@ -243,12 +292,17 @@ const imageSearchHandler: ToolHandler<ImageSearchInput, ImageSearchOutput> = asy
     }
   }
 
-  const output = await runOpenverse(
-    input.query,
-    page,
-    pageSize,
-    startedAt,
-    keys.serpapi || keys.brave ? true : false,
+  const output = await finalizeOutput(
+    await runOpenverse(
+      input.query,
+      page,
+      pageSize,
+      regional,
+      startedAt,
+      keys.serpapi || keys.brave ? true : false,
+    ),
+    context,
+    summaryMode,
   );
   cache.put(cacheKey, output, IMAGE_CACHE_TTL_MS);
   return output;
@@ -257,6 +311,7 @@ const imageSearchHandler: ToolHandler<ImageSearchInput, ImageSearchOutput> = asy
     query: string,
     page: number,
     pageSize: number,
+    regional: RegionalSearchParams,
     startedAt: number,
     degraded: boolean,
   ): Promise<ImageSearchOutput> {
@@ -287,6 +342,103 @@ const imageSearchHandler: ToolHandler<ImageSearchInput, ImageSearchOutput> = asy
     }
   }
 };
+
+// -----------------------------------------------
+// vlm caption 层(P6 §4.1:summary=vlm 时对 top-3 缩略图经视觉模型生成一句话描述)
+// 对齐套餐版 image_search 的服务端 caption 语义:信息密度高于 title,主模型
+// 不必逐条抓来源页。视觉模型缺席时降级为无 caption(spec §4.3),不额外报错。
+// -----------------------------------------------
+
+const VLM_CAPTION_MAX_RESULTS = 3;
+const VLM_CAPTION_IMAGE_BYTES_CAP = 1_500_000;
+
+async function fetchImageAsDataUrl(
+  url: string,
+  signal?: AbortSignal,
+): Promise<{ dataUrl: string; mime: string } | undefined> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const response = await fetch(url, { signal, redirect: "follow" });
+    if (!response.ok) return undefined;
+    const mime = response.headers.get("content-type")?.split(";")[0]?.trim() ?? "";
+    if (!mime.startsWith("image/")) return undefined;
+    const buffer = Buffer.from(await response.arrayBuffer());
+    // 缩略图体积上限:超限直接跳过,控制 VLM 输入成本。
+    if (buffer.byteLength > VLM_CAPTION_IMAGE_BYTES_CAP) return undefined;
+    return { dataUrl: `data:${mime};base64,${buffer.toString("base64")}`, mime };
+  } catch {
+    return undefined;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function describeImageWithModel(
+  model: NonNullable<ToolExecutionContext["model"]>,
+  dataUrl: string,
+  mime: string,
+  title: string,
+  signal?: AbortSignal,
+): Promise<string | undefined> {
+  try {
+    const result = model.streamText({
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text:
+                `Describe this image in one short sentence, in the same language as its title `
+                + `"${title}". Reply with the sentence only.`,
+            },
+            { type: "image", mediaType: mime, dataUrl },
+          ],
+        },
+      ],
+      abortSignal: signal,
+    });
+    let text = "";
+    for await (const event of result) {
+      if (event.type === "text_delta") text += event.text;
+      if (event.type === "error") return undefined;
+    }
+    const trimmed = text.trim().replace(/\s+/g, " ").slice(0, 200);
+    return trimmed.length > 0 ? trimmed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function finalizeOutput(
+  output: ImageSearchOutput,
+  context: ToolExecutionContext,
+  summaryMode: "on" | "off" | "vlm",
+): Promise<ImageSearchOutput> {
+  if (summaryMode !== "vlm") return output;
+  const visionModel = context.resolveSearchVisionModel?.();
+  if (!visionModel) return output;
+  const targets = output.results
+    .filter((item): item is ImageResultItem & { thumbnailUrl: string } => Boolean(item.thumbnailUrl))
+    .slice(0, VLM_CAPTION_MAX_RESULTS);
+  if (targets.length === 0) return output;
+  await Promise.all(
+    targets.map(async (item) => {
+      const image = await fetchImageAsDataUrl(item.thumbnailUrl, context.abortSignal);
+      if (!image) return;
+      const caption = await describeImageWithModel(
+        visionModel,
+        image.dataUrl,
+        image.mime,
+        item.title,
+        context.abortSignal,
+      );
+      if (caption) item.caption = caption;
+    }),
+  );
+  return output;
+}
 
 async function buildEnvelope(
   query: string,
@@ -328,8 +480,9 @@ function formatImageSearchModelContent(output: ImageSearchOutput): string {
   for (const item of output.results) {
     const dims = item.width && item.height ? ` ${item.width}x${item.height}` : "";
     const license = item.license ? ` [${item.license}]` : "";
+    const caption = item.caption ? ` — ${item.caption}` : "";
     lines.push(
-      `- ${item.title || "(untitled)"}${dims}${license}: ${item.originalUrl}`
+      `- ${item.title || "(untitled)"}${caption}${dims}${license}: ${item.originalUrl}`
         + (item.pageUrl ? ` (source: ${item.pageUrl})` : ""),
     );
   }

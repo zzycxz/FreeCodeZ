@@ -89,5 +89,23 @@ export function normalizeSettingsPatch(patch: Partial<AppSettings>): Partial<App
       trimmedProviderFamilyDomain.length > 0 ? normalizedPatch.providerFamilyDomain : undefined;
   }
 
+  if ("searchCountry" in normalizedPatch && typeof normalizedPatch.searchCountry === "string") {
+    // FreeCodeZ fork(P6 §6.2):地区为可清空的可选项;RPC 传输会吞掉 undefined,
+    // 按上面代理/字体同款先例用空串归一,否则清空后旧地区一直留在 setting.json。
+    const trimmedSearchCountry = normalizedPatch.searchCountry.trim();
+    normalizedPatch.searchCountry = trimmedSearchCountry.length > 0 ? trimmedSearchCountry : undefined;
+  }
+
+  if (
+    "visionUnderstandModel" in normalizedPatch &&
+    typeof normalizedPatch.visionUnderstandModel === "string"
+  ) {
+    // FreeCodeZ fork(P6 §6.2):视觉模型选回「跟随当前会话模型」= 清除绑定;
+    // 同上,空串归一成 undefined,patch schema 的 nonEmpty 校验在归一之后执行。
+    const trimmedVisionUnderstandModel = normalizedPatch.visionUnderstandModel.trim();
+    normalizedPatch.visionUnderstandModel =
+      trimmedVisionUnderstandModel.length > 0 ? trimmedVisionUnderstandModel : undefined;
+  }
+
   return normalizedPatch;
 }

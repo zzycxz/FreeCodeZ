@@ -21,6 +21,7 @@ import { buildRequestUserContextSection } from "./sections/request-user-context.
 import { buildCurrentDateSection } from "./sections/current-date.js";
 import { buildMemorySection } from "./sections/memory.js";
 import { buildDesktopContextSection } from "./sections/desktop.js";
+import { buildVisionGuidanceSection } from "./sections/vision-guidance.js";
 import {
   buildContextManagementSection,
   buildDynamicBehaviorSection,
@@ -146,6 +147,13 @@ export class ContextBuilder {
           );
       if (sessionGuidanceSection) {
         sections.push(sessionGuidanceSection);
+      }
+
+      // FreeCodeZ fork(P6 §4.5):文本模型会话注入图片引用引导(<60 token)。
+      // 条件只依赖模型能力,同会话内容逐字节稳定,不打断前缀缓存。
+      const visionGuidanceSection = buildVisionGuidanceSection(this.config.model);
+      if (visionGuidanceSection) {
+        sections.push(visionGuidanceSection);
       }
 
       // Memory

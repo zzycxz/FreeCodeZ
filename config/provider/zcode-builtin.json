@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 35,
+  "revision": 36,
   "config": {
     "providerConfigRules": {
       "templateRules": [
@@ -597,7 +597,11 @@
               "doubao-seed-1-6",
               "doubao-seed-1-6-thinking"
             ],
-            "category": "direct"
+            "category": "direct",
+            "logo": {
+              "type": "builtin",
+              "key": "volcengine"
+            }
           }
         },
         {
@@ -618,7 +622,11 @@
             "builtinModelIds": [
               "step-2-16k"
             ],
-            "category": "direct"
+            "category": "direct",
+            "logo": {
+              "type": "builtin",
+              "key": "stepfun"
+            }
           }
         },
         {
@@ -640,7 +648,11 @@
               "lite",
               "pro"
             ],
-            "category": "direct"
+            "category": "direct",
+            "logo": {
+              "type": "builtin",
+              "key": "xfyun"
+            }
           }
         },
         {
@@ -662,7 +674,11 @@
               "deepseek-ai/DeepSeek-V3",
               "Qwen/Qwen2.5-7B-Instruct"
             ],
-            "category": "aggregator"
+            "category": "aggregator",
+            "logo": {
+              "type": "builtin",
+              "key": "siliconflow"
+            }
           }
         },
         {
@@ -684,7 +700,11 @@
               "ernie-4.5-8k",
               "ernie-x1-32k"
             ],
-            "category": "direct"
+            "category": "direct",
+            "logo": {
+              "type": "builtin",
+              "key": "baidu-qianfan"
+            }
           }
         },
         {
@@ -706,7 +726,11 @@
               "hunyuan-turbos-latest",
               "hunyuan-lite"
             ],
-            "category": "direct"
+            "category": "direct",
+            "logo": {
+              "type": "builtin",
+              "key": "tencent-hunyuan"
+            }
           }
         },
         {
@@ -724,7 +748,11 @@
               "baseUrl": "http://127.0.0.1:11434/v1"
             },
             "builtinModelIds": [],
-            "category": "local"
+            "category": "local",
+            "logo": {
+              "type": "builtin",
+              "key": "ollama"
+            }
           }
         },
         {
@@ -742,7 +770,11 @@
               "baseUrl": "http://127.0.0.1:1234/v1"
             },
             "builtinModelIds": [],
-            "category": "local"
+            "category": "local",
+            "logo": {
+              "type": "builtin",
+              "key": "lm-studio"
+            }
           }
         },
         {
@@ -760,7 +792,11 @@
               "baseUrl": "http://127.0.0.1:8080/v1"
             },
             "builtinModelIds": [],
-            "category": "local"
+            "category": "local",
+            "logo": {
+              "type": "builtin",
+              "key": "llamacpp"
+            }
           }
         },
         {
@@ -779,7 +815,11 @@
               "baseUrlEditable": true
             },
             "builtinModelIds": [],
-            "category": "local"
+            "category": "local",
+            "logo": {
+              "type": "builtin",
+              "key": "moma"
+            }
           }
         },
         {
@@ -801,7 +841,11 @@
               "qwen3.8-max",
               "qwen3.6-flash"
             ],
-            "category": "aggregator"
+            "category": "aggregator",
+            "logo": {
+              "type": "builtin",
+              "key": "aliyun-bailian"
+            }
           }
         },
         {
@@ -823,7 +867,11 @@
               "qwen3.7-plus",
               "qwen3.6-plus"
             ],
-            "category": "aggregator"
+            "category": "aggregator",
+            "logo": {
+              "type": "builtin",
+              "key": "aliyun-bailian"
+            }
           }
         },
         {
@@ -842,7 +890,11 @@
               "baseUrl": "https://qianfan.baidubce.com/v2/tokenplan/personal"
             },
             "builtinModelIds": [],
-            "category": "aggregator"
+            "category": "aggregator",
+            "logo": {
+              "type": "builtin",
+              "key": "baidu-qianfan"
+            }
           }
         },
         {
@@ -863,7 +915,11 @@
             "builtinModelIds": [
               "tc-code-latest"
             ],
-            "category": "aggregator"
+            "category": "aggregator",
+            "logo": {
+              "type": "builtin",
+              "key": "tencent-hunyuan"
+            }
           }
         },
         {
@@ -885,7 +941,11 @@
               "step-3.7-flash",
               "step-3.5-flash"
             ],
-            "category": "aggregator"
+            "category": "aggregator",
+            "logo": {
+              "type": "builtin",
+              "key": "stepfun"
+            }
           }
         },
         {
@@ -906,7 +966,11 @@
             "builtinModelIds": [
               "astron-code-latest"
             ],
-            "category": "aggregator"
+            "category": "aggregator",
+            "logo": {
+              "type": "builtin",
+              "key": "xfyun"
+            }
           }
         }
       ],

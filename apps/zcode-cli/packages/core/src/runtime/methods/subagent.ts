@@ -279,8 +279,15 @@ export function createDefaultSubagentPort(
           toolset: builtInExplore ? "explore" : "main",
           toolAllowlist: childToolAllowlist,
           toolDisallowlist: this.config.toolDisallowlist,
-          embeddedSearchBackend: this.config.embeddedSearchBackend,
-          nativeSearchEnhancementsEnabled: this.config.nativeSearchEnhancementsEnabled,
+      embeddedSearchBackend: this.config.embeddedSearchBackend,
+      nativeSearchEnhancementsEnabled: this.config.nativeSearchEnhancementsEnabled,
+      // FreeCodeZ fork(P6 §6.2):搜索/视觉偏好结构性继承,子代理工具与主会话同一套配置。
+      searchSummaryMode: this.config.searchSummaryMode,
+      searchSafeSearch: this.config.searchSafeSearch,
+      ...(this.config.searchCountry ? { searchCountry: this.config.searchCountry } : {}),
+      ...(this.config.visionUnderstandModel
+        ? { visionUnderstandModel: this.config.visionUnderstandModel }
+        : {}),
           subagents: {
             backgroundBashMaxMs: this.config.subagents?.backgroundBashMaxMs,
             enabled: false,

@@ -194,6 +194,17 @@ export interface AgentRuntimeConfig {
   embeddedSearchBackend?: EmbeddedSearchBackend;
   /** 根 Session runtime 创建时固定；false 只关闭 Bash 的 bfs/ugrep prelude。 */
   nativeSearchEnhancementsEnabled?: boolean;
+  /**
+   * FreeCodeZ fork(P6 §6.2):搜索/视觉偏好,经 Session Runtime Preferences 透传,
+   * 工具执行器消费(image-search / websearch(-fallback) / image-understand)。
+   * 缺席时按协议默认(summary=on, safeSearch=moderate)执行,见
+   * docs/spec/search-vision-settings.md。
+   */
+  searchSummaryMode?: "on" | "off" | "vlm";
+  searchSafeSearch?: "off" | "moderate" | "strict";
+  searchCountry?: string;
+  /** providerId/modelId ref 字符串;缺席=跟随当前会话模型。 */
+  visionUnderstandModel?: string;
   memory?: MemoryRuntimeConfig;
   /** 历史恢复允许未绑定；只有完整选择才能创建本轮执行 Model。 */
   modelSelection?: ModelSelection;

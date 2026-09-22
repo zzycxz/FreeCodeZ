@@ -50,7 +50,7 @@ FreeCodeZ is modified from the ZCode source code: the Desktop, Web, and terminal
 - `WebSearch` hybrid search: native search first, falling back to client-side search (Brave / Exa / Linkup).
 - `webfetch`: output format selection and article/main content extraction.
 - `ImageUnderstand` / `ViewImage`: read images through a bound vision model, with guidance errors when no vision model is configured.
-- Settings pages gain search and vision configuration (safe search, country, summary mode, vision model binding); search API keys are stored with local encryption.
+- A dedicated "Search & Vision" settings section: safe search, country, summary mode, cross-provider vision model binding (text-model sessions can analyze images); search API keys are stored with local encryption.
 
 #### Other adaptations
 

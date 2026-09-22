@@ -1,8 +1,10 @@
 // ============================================================
 // ImageUnderstand / ViewImage Tools(P6 §3.1 条件内联已拍板)
 // image_understand:任意模型轨——读本地图片→(必要时缩放)→发给
-// 支持视觉的模型(当前模型或设置项 vision.understandModel)。
-// view_image:多模态模型的显式"看图"动作;文本模型给引导而非报错。
+// 支持视觉的模型。选取顺序(P6 §6.2 接线,docs/spec/search-vision-settings.md §4.1):
+// 绑定 VLM(searchVision.visionModelSelection,可解析且 supportsImage)
+// → 当前会话模型 → 都不行则可恢复配置引导错误(fairpeer「视觉模型」语义)。
+// view_image:仅加载图片元数据;内容分析一律走 image_understand。
 // ============================================================
 
 import { readFile, stat } from "node:fs/promises";
@@ -134,7 +136,14 @@ const imageUnderstandHandler: ToolHandler<ImageUnderstandInput, ImageUnderstandO
   const image = await loadImage(input.path);
   const dimensions = imageDimensions(image.bytes, image.mime);
 
-  const visionModel = context.model;
+  // FreeCodeZ fork(P6 §3.1 接线):绑定 VLM 优先,回退当前会话模型。
+  // resolveSearchVisionModel 解析失败(ref 失效/provider 已删)返回 undefined,
+  // 与未绑定同路——由下面的配置引导错误统一收口,不静默降级到不可用模型。
+  const boundVisionModel = context.resolveSearchVisionModel?.();
+  const visionModel =
+    boundVisionModel?.properties.inputFormat.supportsImage === true
+      ? boundVisionModel
+      : context.model;
   if (!visionModel) {
     throw createCoreError(
       CoreErrorType.ConfigurationError,
@@ -146,9 +155,11 @@ const imageUnderstandHandler: ToolHandler<ImageUnderstandInput, ImageUnderstandO
     // 场景 13(P6 §8):未配置视觉模型 → 配置引导错误,不静默失败。
     throw createCoreError(
       CoreErrorType.ConfigurationError,
-      "image_understand requires a vision-capable model. The current model does not accept "
-        + "images. Configure a multimodal model (e.g. a GLM vision model or any "
-        + "vision-capable provider model) as the active model, then retry.",
+      "image_understand requires a vision-capable model, and neither the configured "
+        + "vision model binding nor the current session model accepts images. Fix it "
+        + "either way: bind a vision model in Settings → Search & Vision (works even "
+        + "while the session model stays text-only), or switch the session to a "
+        + "multimodal model.",
       { context: { toolName: IMAGE_UNDERSTAND_TOOL_NAME, path: input.path }, recoverable: true },
     );
   }
@@ -224,10 +235,14 @@ export const imageUnderstandToolEntry: ToolEntry = {
 // ViewImage handler
 // -----------------------------------------------
 
-const viewImageHandler: ToolHandler<ViewImageInput, ViewImageOutput> = async (input) => {
+const viewImageHandler: ToolHandler<ViewImageInput, ViewImageOutput> = async (input, context) => {
   const image = await loadImage(input.path);
   const dimensions = imageDimensions(image.bytes, image.mime);
-  const modelSupportsImage = true; // 入口判定在调用方;工具层恒可读元数据。
+  // FreeCodeZ fork 诚实化:本工具只加载元数据,不把图片字节注入上下文
+  // (P6 规格里"marker 由 agent 循环转 image 内容块"的路径未实现、暂缓——
+  // 多模态模型本就内联直读,文本模型应改用 ImageUnderstand)。
+  // inlineable 如实反映当前会话模型的图片能力,不再恒为 true。
+  const modelSupportsImage = context.model?.properties.inputFormat.supportsImage === true;
   return {
     path: input.path,
     width: dimensions.width,
@@ -236,9 +251,10 @@ const viewImageHandler: ToolHandler<ViewImageInput, ViewImageOutput> = async (in
     bytes: image.bytes.byteLength,
     inlineable: modelSupportsImage,
     note:
-      `Image loaded (${image.bytes.byteLength} bytes, ${image.mime}`
+      `Image metadata loaded (${image.bytes.byteLength} bytes, ${image.mime}`
       + (dimensions.width && dimensions.height ? `, ${dimensions.width}x${dimensions.height}` : "")
-      + "). The image content is available to this conversation; describe what you need from it.",
+      + "). This tool does NOT attach the image content. To analyze what the image "
+      + "shows, call ImageUnderstand with this path and a specific prompt.",
   };
 };
 
@@ -247,8 +263,10 @@ export const viewImageToolEntry: ToolEntry = {
   metadata: {
     name: VIEW_IMAGE_TOOL_NAME,
     description:
-      "Load a local image file (≤5MB) into the conversation for direct viewing. Intended for "
-        + "multimodal models; returns file metadata and makes the image available inline.",
+      "Load a local image file's metadata (path, dimensions, size, mime). Does NOT attach the "
+      + "image content to the conversation — call ImageUnderstand with the path to analyze what "
+      + "an image shows. Multimodal session models already see pasted/Read images inline and do "
+      + "not need this tool.",
     readOnly: true,
     destructive: false,
     concurrentSafe: true,

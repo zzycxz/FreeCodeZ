@@ -143,6 +143,11 @@ interface SessionStartupPreferences {
   memoryEnabled: boolean;
   modelContextBudgetStrategy: ZCodeModelContextBudgetStrategy;
   nativeSearchEnhancementsEnabled: boolean;
+  // FreeCodeZ fork(P6 §6.2):搜索/视觉偏好随会话透传;fork 会话从父 record 继承。
+  searchSummaryMode: "on" | "off" | "vlm";
+  searchSafeSearch: "off" | "moderate" | "strict";
+  searchCountry?: string;
+  visionUnderstandModel?: string;
   resolveInitialBashShellSelection: () => Promise<ExecutionShellSelection | undefined>;
 }
 
@@ -3217,6 +3222,8 @@ async function requestSessionRuntimePreferences(
         memoryEnabled: false,
         modelContextBudgetStrategy: DEFAULT_ZCODE_MODEL_CONTEXT_BUDGET_STRATEGY,
         nativeSearchEnhancementsEnabled: true,
+        searchSummaryMode: "on",
+        searchSafeSearch: "moderate",
       };
     }
     throw error;
@@ -3235,6 +3242,12 @@ async function resolveSessionStartupPreferences(
       memoryEnabled: source.parent.memoryEnabled,
       modelContextBudgetStrategy: DEFAULT_ZCODE_MODEL_CONTEXT_BUDGET_STRATEGY,
       nativeSearchEnhancementsEnabled: source.parent.nativeSearchEnhancementsEnabled,
+      searchSummaryMode: source.parent.searchSummaryMode ?? "on",
+      searchSafeSearch: source.parent.searchSafeSearch ?? "moderate",
+      ...(source.parent.searchCountry ? { searchCountry: source.parent.searchCountry } : {}),
+      ...(source.parent.visionUnderstandModel
+        ? { visionUnderstandModel: source.parent.visionUnderstandModel }
+        : {}),
       resolveInitialBashShellSelection: async () => inheritedShellSelection,
     };
   }
@@ -3253,6 +3266,12 @@ async function resolveSessionStartupPreferences(
     memoryEnabled: runtimePreferences.memoryEnabled,
     modelContextBudgetStrategy: DEFAULT_ZCODE_MODEL_CONTEXT_BUDGET_STRATEGY,
     nativeSearchEnhancementsEnabled: runtimePreferences.nativeSearchEnhancementsEnabled,
+    searchSummaryMode: runtimePreferences.searchSummaryMode,
+    searchSafeSearch: runtimePreferences.searchSafeSearch,
+    ...(runtimePreferences.searchCountry ? { searchCountry: runtimePreferences.searchCountry } : {}),
+    ...(runtimePreferences.visionUnderstandModel
+      ? { visionUnderstandModel: runtimePreferences.visionUnderstandModel }
+      : {}),
     resolveInitialBashShellSelection: async () => {
       const executionPreferences = await requestSessionRuntimePreferences(
         context,
@@ -3343,6 +3362,15 @@ async function createRecord(
       toolDisallowlist: "toolDenylist" in params ? params.toolDenylist : undefined,
       nativeSearchEnhancementsEnabled: startupPreferences.nativeSearchEnhancementsEnabled,
       modelContextBudgetStrategy: startupPreferences.modelContextBudgetStrategy,
+      // FreeCodeZ fork(P6 §6.2):搜索/视觉偏好进 AgentRuntimeConfig,工具执行器消费。
+      searchSummaryMode: startupPreferences.searchSummaryMode,
+      searchSafeSearch: startupPreferences.searchSafeSearch,
+      ...(startupPreferences.searchCountry
+        ? { searchCountry: startupPreferences.searchCountry }
+        : {}),
+      ...(startupPreferences.visionUnderstandModel
+        ? { visionUnderstandModel: startupPreferences.visionUnderstandModel }
+        : {}),
       // Memory Settings 是现有 CLI features.memory/use 之外的总开关。只在关闭时
       // 写入 override，避免开启值反向覆盖用户已有的 CLI 禁用配置。
       ...(startupPreferences.memoryEnabled ? {} : { memory: { enabled: false } }),
@@ -3404,6 +3432,12 @@ async function createRecord(
     memoryEnabled: startupPreferences.memoryEnabled,
     modelContextBudgetStrategy: startupPreferences.modelContextBudgetStrategy,
     nativeSearchEnhancementsEnabled: startupPreferences.nativeSearchEnhancementsEnabled,
+    searchSummaryMode: startupPreferences.searchSummaryMode,
+    searchSafeSearch: startupPreferences.searchSafeSearch,
+    ...(startupPreferences.searchCountry ? { searchCountry: startupPreferences.searchCountry } : {}),
+    ...(startupPreferences.visionUnderstandModel
+      ? { visionUnderstandModel: startupPreferences.visionUnderstandModel }
+      : {}),
     ...(parentSessionId ? { parentSessionId } : {}),
     persistence: "persistence" in params ? (params.persistence ?? "immediate") : "immediate",
     protocolEventSequences: new Map(),

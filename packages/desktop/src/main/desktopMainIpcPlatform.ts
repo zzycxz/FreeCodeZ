@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- 桌面平台 IPC 集中装配，拆散会让权限边界更难审计；行数随平台能力增长。 */
-import { BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
+import { BrowserWindow, dialog, ipcMain, nativeTheme, shell } from "electron";
 import { readZCodeStdioTapDevState } from "@zcode/services/node";
 import {
   DesktopCommandIds,
@@ -182,6 +182,15 @@ export function registerPlatformIpcHandlers(options: {
   ipcMain.handle(PlatformChannels.GetZCodeStdioTapDevState, () => readZCodeStdioTapDevState());
   ipcMain.on(PlatformChannels.OpenResourceManager, () => {
     openResourceManager();
+  });
+
+  // 「获取 API Key」外链此前只有 preload 发送端、main 侧无监听——点击消息石沉大海
+  // （用户实测无反应）。这里补上注册；只放行 http/https，防 renderer 传入 file:// 等协议。
+  ipcMain.on(PlatformChannels.OpenExternal, (_event, url: unknown) => {
+    if (typeof url !== "string") return;
+    const normalized = url.trim();
+    if (!/^https?:\/\//iu.test(normalized)) return;
+    void shell.openExternal(normalized);
   });
 
   ipcMain.handle(

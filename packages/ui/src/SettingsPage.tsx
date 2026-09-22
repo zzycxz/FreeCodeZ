@@ -58,6 +58,7 @@ import { MemorySettingsSection } from "@/settings/MemorySettingsSection.js";
 import { BrowserSettingsSection } from "@/settings/BrowserSettingsSection.js";
 import { ComputerUseSection } from "@/settings/ComputerUseSection.js";
 import { ShortcutSettingsSection } from "@/settings/ShortcutSettingsSection.js";
+import { SearchVisionSection } from "@/settings/SearchVisionSection.js";
 import { MigrationSection } from "@/settings/MigrationSection.js";
 import { SETTINGS_FRAME_CONTENT_CLASSNAME } from "@/settings/SettingsPageParts.js";
 import {
@@ -1440,23 +1441,6 @@ export function SettingsPage({
                             httpProxy={httpProxy}
                             httpProxyNoProxy={httpProxyNoProxy}
                             httpProxyCaCertPath={httpProxyCaCertPath}
-                            searchSummaryMode={sharedSettings?.searchSummaryMode ?? "on"}
-                            onSearchSummaryModeChange={(mode) =>
-                              runUserAction({
-                                input: {
-                                  featureId: "settings.search",
-                                  action: "toggle_search_summary",
-                                  trigger: "select",
-                                },
-                                operation: () => updateSharedSettings({ searchSummaryMode: mode }),
-                                completed: { resultSource: "setting_service" },
-                                failureStage: "setting_service",
-                              })
-                            }
-                            onSearchProviderKeySave={async (provider, key) => {
-                              // P6 §6.2:搜索 key 一律走加密凭据仓库,不进 settings 明文。
-                              await services.credentialService.save(`search:${provider}`, key);
-                            }}
                             defaultHomeDir={defaultHomeDir}
                             showIntegratedTerminalShell={hostPlatform === "win32"}
                             setLocalePreference={handleFooterLocaleChange}
@@ -1601,6 +1585,82 @@ export function SettingsPage({
                               }
                             />
                           </ServiceProvider>
+                        ) : activeSection === "searchVision" ? (
+                          // FreeCodeZ fork(P6 §6.2):搜索/视觉偏好的专属分区,从通用页迁出。
+                          <SearchVisionSection
+                            activeWorkspacePath={activeWorkspacePath ?? null}
+                            searchSummaryMode={sharedSettings?.searchSummaryMode ?? "on"}
+                            searchSafeSearch={sharedSettings?.searchSafeSearch ?? "moderate"}
+                            searchCountry={sharedSettings?.searchCountry ?? ""}
+                            visionUnderstandModel={sharedSettings?.visionUnderstandModel ?? ""}
+                            onSearchSummaryModeChange={(mode) =>
+                              runUserAction({
+                                input: {
+                                  featureId: "settings.search",
+                                  action: "toggle_search_summary",
+                                  trigger: "select",
+                                },
+                                operation: () => updateSharedSettings({ searchSummaryMode: mode }),
+                                completed: { resultSource: "setting_service" },
+                                failureStage: "setting_service",
+                              })
+                            }
+                            onSearchSafeSearchChange={(mode) =>
+                              runUserAction({
+                                input: {
+                                  featureId: "settings.search",
+                                  action: "toggle_safe_search",
+                                  trigger: "select",
+                                },
+                                operation: () => updateSharedSettings({ searchSafeSearch: mode }),
+                                completed: { resultSource: "setting_service" },
+                                failureStage: "setting_service",
+                              })
+                            }
+                            onSearchCountryChange={(country) =>
+                              runUserAction({
+                                input: {
+                                  featureId: "settings.search",
+                                  action: "set_country",
+                                  trigger: "button",
+                                },
+                                operation: () =>
+                                  updateSharedSettings({
+                                    // 空串经 normalizeSettingsPatch 归一为 undefined;
+                                    // 直接传 undefined 会被 RPC 吞掉,旧地区清不掉。
+                                    searchCountry: country.trim(),
+                                  }),
+                                completed: { resultSource: "setting_service" },
+                                failureStage: "setting_service",
+                              })
+                            }
+                            onVisionUnderstandModelChange={(value) =>
+                              runUserAction({
+                                input: {
+                                  featureId: "settings.search",
+                                  action: "set_vision_model",
+                                  trigger: "select",
+                                },
+                                operation: () =>
+                                  updateSharedSettings({
+                                    // 空串=「跟随当前会话模型」,归一为 undefined 清除绑定。
+                                    visionUnderstandModel: value.trim(),
+                                  }),
+                                completed: { resultSource: "setting_service" },
+                                failureStage: "setting_service",
+                              })
+                            }
+                            onSearchProviderKeySave={async (provider, key) => {
+                              // P6 §6.2:搜索 key 一律走加密凭据仓库,不进 settings 明文。
+                              await services.credentialService.save(`search:${provider}`, key);
+                            }}
+                            onSearchProviderKeyDelete={async (provider) => {
+                              await services.credentialService.delete(`search:${provider}`);
+                            }}
+                            onSearchProviderKeyStatus={async (provider) =>
+                              services.credentialService.load(`search:${provider}`)
+                            }
+                          />
                         ) : activeSection === "memory" ? (
                           <ServiceProvider services={localHostServices}>
                             {/* Memory catalog 始终使用本地 Host，避免远程 workspace 误读本机数据。 */}

@@ -125,6 +125,20 @@ export interface BackgroundTaskControlPort {
   ): Promise<BackgroundTaskControlStopResult>;
 }
 
+/**
+ * FreeCodeZ fork(P6 §6.2):搜索/视觉偏好,由 runtime config 投影进工具执行上下文,
+ * handler 只读。缺席时工具按协议默认(summary=on, safeSearch=moderate)执行。
+ * 见 docs/spec/search-vision-settings.md。
+ */
+export interface SearchVisionToolPreferences {
+  /** 回退链摘要/image_search caption 开关;off=不产生任何额外模型调用。 */
+  summaryMode: "on" | "off" | "vlm";
+  safeSearch: "off" | "moderate" | "strict";
+  country?: string;
+  /** 视觉模型 ref(providerId/modelId,picker 值格式);缺席=跟随当前会话模型。 */
+  visionModelSelection?: string;
+}
+
 export interface ToolExecutionContext {
   toolCallId: string;
   /**
@@ -173,6 +187,14 @@ export interface ToolExecutionContext {
   dynamicWorkflowSnippetPort?: DynamicWorkflowSnippetPort;
   /** 模型目录端口；缺席则 ListModels 报能力缺席，CreateWorkflow 的 subagent_model 被拒。 */
   modelCatalogPort?: ModelCatalogPort;
+  /** FreeCodeZ fork(P6 §6.2):搜索/视觉偏好;image-search / websearch(-fallback) / image-understand 消费。 */
+  searchVision?: SearchVisionToolPreferences;
+  /**
+   * FreeCodeZ fork(P6 §3.1):按 searchVision.visionModelSelection 惰性解析的视觉模型
+   * (已绑 auxiliary 预算)。解析失败(未配置/ref 失效)返回 undefined,handler 回退
+   * context.model——不在这里抛错,让工具的配置引导错误统一收口。
+   */
+  resolveSearchVisionModel?: () => Model | undefined;
   runtimeTaskRegistry?: RuntimeTaskRegistry;
   readFileState?: ReadFileStateMap;
   recordReadFileStateMetadata?: (metadata: PersistedReadFileStateMetadata) => void;

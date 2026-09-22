@@ -65,9 +65,6 @@ export function GeneralSectionContent({
   httpProxy = "",
   httpProxyNoProxy = "",
   httpProxyCaCertPath = "",
-  searchSummaryMode = "on",
-  onSearchSummaryModeChange = () => {},
-  onSearchProviderKeySave = async () => {},
   defaultHomeDir,
   isDesktop,
   isWindowsDesktop,
@@ -130,9 +127,6 @@ export function GeneralSectionContent({
   httpProxy?: string;
   httpProxyNoProxy?: string;
   httpProxyCaCertPath?: string;
-  searchSummaryMode?: "on" | "off" | "vlm";
-  onSearchSummaryModeChange?: (mode: "on" | "off" | "vlm") => void | Promise<void>;
-  onSearchProviderKeySave?: (provider: "serpapi" | "brave" | "exa" | "linkup", key: string) => Promise<void>;
   defaultHomeDir: string;
   isDesktop?: boolean;
   isWindowsDesktop?: boolean;
@@ -558,32 +552,6 @@ export function GeneralSectionContent({
         />
       </SettingsGroupCard>
 
-      {/* FreeCodeZ fork(P6 §6.2):搜索与视觉能力——key 存加密凭据仓库,这里只存开关与录入。 */}
-      <SettingsGroupCard>
-        <SettingsRow
-          label="搜索结果摘要"
-          description="开启后每次搜索附带一次模型侧综合摘要(计入你的模型 key);vlm 模式对图片结果额外生成视觉描述。"
-          control={
-            <select
-              aria-label="搜索结果摘要"
-              value={searchSummaryMode}
-              onChange={(event) => {
-                void onSearchSummaryModeChange(event.target.value as "on" | "off" | "vlm");
-              }}
-              className="h-10 rounded-md border border-card-border bg-background px-3 text-ui-base"
-            >
-              <option value="on">on</option>
-              <option value="off">off</option>
-              <option value="vlm">vlm</option>
-            </select>
-          }
-        />
-        <SearchKeyRow label="SerpAPI Key(图片搜索主链)" provider="serpapi" onSave={onSearchProviderKeySave} />
-        <SearchKeyRow label="Brave Search Key(图片+网页搜索)" provider="brave" onSave={onSearchProviderKeySave} />
-        <SearchKeyRow label="Exa Key(网页搜索回退)" provider="exa" onSave={onSearchProviderKeySave} />
-        <SearchKeyRow label="Linkup Key(网页搜索尾链)" provider="linkup" onSave={onSearchProviderKeySave} />
-      </SettingsGroupCard>
-
       <SettingsGroupCard>
         {isDesktop ? (
           <>
@@ -929,52 +897,5 @@ export function GeneralSectionHeader({ localePreference }: { localePreference: L
         {intl.formatMessage({ id: `settings.locale.${localePreference}` })}
       </SettingsBadge>
     </div>
-  );
-}
-
-
-function SearchKeyRow({
-  label,
-  provider,
-  onSave,
-}: {
-  label: string;
-  provider: "serpapi" | "brave" | "exa" | "linkup";
-  onSave: (provider: "serpapi" | "brave" | "exa" | "linkup", key: string) => Promise<void>;
-}) {
-  const [value, setValue] = useState("");
-  const [saved, setSaved] = useState(false);
-  const trimmed = value.trim();
-  return (
-    <SettingsRow
-      label={label}
-      description="保存到加密凭据仓库(credentials.json);settings 导出/备份不含 key 明文。"
-      control={
-        <Button
-          type="button"
-          size="lg"
-          disabled={trimmed.length === 0}
-          onClick={() => {
-            void onSave(provider, trimmed).then(() => {
-              setValue("");
-              setSaved(true);
-              setTimeout(() => setSaved(false), 2000);
-            });
-          }}
-        >
-          {saved ? "已保存" : "保存"}
-        </Button>
-      }
-      detail={
-        <Input
-          size="lg"
-          type="password"
-          value={value}
-          placeholder="粘贴 API key…"
-          onChange={(event) => setValue(event.currentTarget.value)}
-          className="max-w-[520px] font-mono"
-        />
-      }
-    />
   );
 }

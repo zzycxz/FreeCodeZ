@@ -87,6 +87,11 @@ export interface ZCodeProtocolSessionRecord {
   memoryEnabled: boolean;
   nativeSearchEnhancementsEnabled: boolean;
   modelContextBudgetStrategy: ZCodeModelContextBudgetStrategy;
+  /** FreeCodeZ fork(P6 §6.2):搜索/视觉偏好;旧 record 无这些字段时 fork 继承取默认。 */
+  searchSummaryMode?: "on" | "off" | "vlm";
+  searchSafeSearch?: "off" | "moderate" | "strict";
+  searchCountry?: string;
+  visionUnderstandModel?: string;
   createdAt: number;
   deliveryKind?: ZCodeDeliveryKind;
   /**

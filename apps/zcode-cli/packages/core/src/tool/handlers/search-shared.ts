@@ -14,6 +14,7 @@ export interface SearchProviderKeys {
   brave?: string;
   exa?: string;
   linkup?: string;
+  anysearch?: string;
 }
 
 const CREDENTIAL_KEYS: Record<keyof SearchProviderKeys, string> = {
@@ -21,6 +22,7 @@ const CREDENTIAL_KEYS: Record<keyof SearchProviderKeys, string> = {
   brave: "search:brave",
   exa: "search:exa",
   linkup: "search:linkup",
+  anysearch: "search:anysearch",
 };
 
 const ENV_KEYS: Record<keyof SearchProviderKeys, string> = {
@@ -28,6 +30,7 @@ const ENV_KEYS: Record<keyof SearchProviderKeys, string> = {
   brave: "BRAVE_API_KEY",
   exa: "EXA_API_KEY",
   linkup: "LINKUP_API_KEY",
+  anysearch: "ANYSEARCH_API_KEY",
 };
 
 /**

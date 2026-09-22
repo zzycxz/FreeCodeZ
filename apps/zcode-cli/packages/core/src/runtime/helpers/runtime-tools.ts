@@ -7,7 +7,10 @@ import {
   registerBuiltInTools,
   traceContextToLogContext,
 } from "../deps.js";
-import type { HookRunner, SessionId, ToolExecutor, TraceContext } from "../deps.js";
+import type { HookRunner, Model, SessionId, ToolExecutor, TraceContext } from "../deps.js";
+import { parseModelPickerValue } from "@zcode/shared/model-selection";
+import { createRuntimeModel } from "../methods/runtime-model.js";
+import { auxiliaryModelOptions } from "../../model/auxiliary-model-options.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 import type { AgentRuntimeDeps } from "../types.js";
 import { resolveRuntimeEmbeddedSearchEnabled } from "../methods/embedded-search-branch.js";
@@ -151,7 +154,31 @@ function createRuntimeToolExecutor(
   hookRunner: HookRunner | undefined,
 ): ToolExecutor {
   const browserUseEnabled = resolveRuntimeBrowserUseEnabled(runtime, deps);
+  // FreeCodeZ fork(P6 §6.2):把搜索/视觉偏好从 runtime config 投影进工具执行器。
+  // 视觉模型用惰性闭包解析——registry 视图更新后新建的 Model 才看得到(与 title
+  // sidecar 同理);解析失败只回 undefined,由 ImageUnderstand 回退 context.model
+  // 并统一收口配置引导错误,不在装配期抛错阻断会话创建。
+  const visionModelSelection = runtime.config.visionUnderstandModel;
   return createToolExecutor({
+    searchVision: {
+      summaryMode: runtime.config.searchSummaryMode ?? "on",
+      safeSearch: runtime.config.searchSafeSearch ?? "moderate",
+      ...(runtime.config.searchCountry ? { country: runtime.config.searchCountry } : {}),
+      ...(visionModelSelection ? { visionModelSelection } : {}),
+    },
+    ...(visionModelSelection
+      ? {
+          resolveSearchVisionModel: (): Model | undefined => {
+            try {
+              const selection = parseModelPickerValue(visionModelSelection);
+              const base = createRuntimeModel(runtime, { selection });
+              return base.bind(auxiliaryModelOptions(base));
+            } catch {
+              return undefined;
+            }
+          },
+        }
+      : {}),
     agentTelemetry: runtime.agentTelemetry.port,
     agentTelemetryActorKind: runtime.agentTelemetry.actorKind,
     registry: runtime.registry,

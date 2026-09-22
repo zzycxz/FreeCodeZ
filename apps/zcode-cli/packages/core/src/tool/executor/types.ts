@@ -44,6 +44,7 @@ import type {
   ReadFileStateMap,
   ToolBatchEvent,
   BackgroundTaskControlPort,
+  SearchVisionToolPreferences,
   ToolExecutionResult,
   ToolRuntimeScope,
 } from "../types.js";
@@ -114,6 +115,9 @@ export interface ToolExecutorOptions {
   dynamicWorkflowSnippetPort?: DynamicWorkflowSnippetPort;
   /** 模型目录端口；缺席则 ListModels 报能力缺席，CreateWorkflow 的 subagent_model 被拒。 */
   modelCatalogPort?: ModelCatalogPort;
+  /** FreeCodeZ fork(P6 §6.2):搜索/视觉偏好与视觉模型惰性解析器(见 tool/types.ts)。 */
+  searchVision?: SearchVisionToolPreferences;
+  resolveSearchVisionModel?: () => Model | undefined;
   runtimeTaskRegistry?: RuntimeTaskRegistry;
   readFileState?: ReadFileStateMap;
   subagentBackgroundBashMaxMs?: number;
@@ -218,6 +222,9 @@ export interface ToolExecutorDeps {
   dynamicWorkflowSnippetPort?: DynamicWorkflowSnippetPort;
   /** 模型目录端口；缺席则 ListModels 报能力缺席，CreateWorkflow 的 subagent_model 被拒。 */
   modelCatalogPort?: ModelCatalogPort;
+  /** FreeCodeZ fork(P6 §6.2):搜索/视觉偏好与视觉模型惰性解析器(见 tool/types.ts)。 */
+  searchVision?: SearchVisionToolPreferences;
+  resolveSearchVisionModel?: () => Model | undefined;
   runtimeTaskRegistry?: RuntimeTaskRegistry;
   readFileState: ReadFileStateMap;
   subagentBackgroundBashMaxMs?: number;

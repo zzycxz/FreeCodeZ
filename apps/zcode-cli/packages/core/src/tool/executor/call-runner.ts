@@ -414,6 +414,10 @@ async function executeToolCallImpl(
       dynamicWorkflowRunPort: deps.dynamicWorkflowRunPort,
       dynamicWorkflowSnippetPort: deps.dynamicWorkflowSnippetPort,
       modelCatalogPort: deps.modelCatalogPort,
+      ...(deps.searchVision ? { searchVision: deps.searchVision } : {}),
+      ...(deps.resolveSearchVisionModel
+        ? { resolveSearchVisionModel: deps.resolveSearchVisionModel }
+        : {}),
       runtimeTaskRegistry: deps.runtimeTaskRegistry,
       readFileState: deps.readFileState,
       recordReadFileStateMetadata: (metadata) => {

@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox.js";
 import { Spinner } from "@/components/ui/spinner.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { useServices } from "@/hooks/useServices.js";
+import { usePlatform } from "@/hooks/usePlatform.js";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
 import { logger } from "@/logger.js";
 import { ApiKeyInput } from "./ApiKeyInput.js";
@@ -37,6 +38,8 @@ type VendorSelection =
       keyless: boolean;
       /** api.baseUrlEditable（MoMA 内网地址，§P2.5）：key 步显示平台地址输入行。 */
       baseUrlEditable: boolean;
+      /** 模板控制台地址：key 步显示「获取 API Key」外链（fairpeer docUrl 对标）。 */
+      apiKeyManagementUrl?: string;
     }
   | { kind: "custom"; providerName: string };
 
@@ -54,6 +57,7 @@ const MOBILE_SAFE_INPUT_CLASS = "text-mobile-input-safe md:text-ui-base";
 export function ProviderIntakeWizard({ onComplete, onCancel }: ProviderIntakeWizardProps) {
   const { intl, locale } = useZCodeIntl();
   const { providerSettingsService } = useServices();
+  const platform = usePlatform();
   const providerSettingsRead = useProviderSettingsView();
   const templates =
     providerSettingsRead.state.status === "ready"
@@ -102,6 +106,8 @@ export function ProviderIntakeWizard({ onComplete, onCancel }: ProviderIntakeWiz
       ? selection.displayName
       : customName.trim() ||
         intl.formatMessage({ id: "settings.modelProvider.newProviderName" });
+  const apiKeyManagementUrl =
+    selection?.kind === "template" ? selection.apiKeyManagementUrl : undefined;
 
   const resetProbe = useCallback(() => {
     setProbeState({ kind: "idle" });
@@ -320,6 +326,10 @@ export function ProviderIntakeWizard({ onComplete, onCancel }: ProviderIntakeWiz
               presetModelIds: template.config.builtinModelIds ?? [],
               keyless,
               baseUrlEditable,
+              apiKeyManagementUrl:
+                template.config.access?.type === "api-key"
+                  ? (template.config.access.apiKeyManagementUrl ?? undefined)
+                  : undefined,
             });
             if (baseUrlEditable) {
               // 平台地址草稿预填模板默认值；提交时以用户输入为准（§P2.5）。
@@ -437,8 +447,19 @@ export function ProviderIntakeWizard({ onComplete, onCancel }: ProviderIntakeWiz
               <p className="text-ui-caption text-foreground-subtle font-mono">{selection.baseUrl}</p>
             )}
           <label className="flex flex-col gap-1.5">
-            <span className="text-ui-caption font-medium">
-              {intl.formatMessage({ id: "settings.modelProvider.apiKey" })}
+            <span className="flex items-center justify-between gap-2">
+              <span className="text-ui-caption font-medium">
+                {intl.formatMessage({ id: "settings.modelProvider.apiKey" })}
+              </span>
+              {apiKeyManagementUrl && (
+                <button
+                  type="button"
+                  className="cursor-pointer rounded-sm text-ui-caption font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                  onClick={() => platform.openExternal(apiKeyManagementUrl)}
+                >
+                  {intl.formatMessage({ id: "settings.modelProvider.getApiKey" })} →
+                </button>
+              )}
             </span>
             <ApiKeyInput
               value={apiKey}

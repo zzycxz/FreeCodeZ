@@ -47,10 +47,10 @@ FreeCodeZ 修改自 ZCode 的源码：Desktop、Web、终端 Agent 的整体架�
 #### P6 能力补齐（搜索 / 抓取 / 图像理解）
 
 - `image_search` 图片搜索：SerpAPI → Brave → Openverse 三源降级，带 SQLite 缓存、URL 归一化去重与 CC 许可筛选。
-- `WebSearch` 混合搜索：优先使用原生搜索，不可用时回落到客户端搜索（Brave / Exa / Linkup）。
+- `WebSearch` 混合搜索：优先使用原生搜索，不可用时回落到客户端搜索（Brave / Exa / Linkup），回退结果附带模型侧综合摘要（可关）。
 - `webfetch` 网页抓取：支持输出格式选择与正文（article / main）提取。
 - `ImageUnderstand` / `ViewImage` 图像理解：通过绑定的视觉模型读图，未配置视觉模型时返回引导提示。
-- 设置页新增搜索与视觉配置（安全搜索、地区、摘要模式、视觉模型绑定），搜索 API 密钥本地加密存储。
+- 设置页「搜索与视觉」专属分区：安全搜索、地区、摘要模式、视觉模型绑定（跨厂商选择，文本模型会话也可看图），搜索 API 密钥本地加密存储。
 
 #### 其他适配
 

@@ -1705,6 +1705,12 @@ export const zcodeSessionRuntimePreferencesResultSchema = z
     modelContextBudgetStrategy: zcodeModelContextBudgetStrategySchema.default(
       DEFAULT_ZCODE_MODEL_CONTEXT_BUDGET_STRATEGY,
     ),
+    // FreeCodeZ fork(P6 §6.2 接线):搜索/视觉偏好转传。旧 Host 缺字段时取与
+    // AppSettings 相同的默认值,工具侧消费点见 docs/spec/search-vision-settings.md。
+    searchSummaryMode: z.enum(["on", "off", "vlm"]).default("on"),
+    searchSafeSearch: z.enum(["off", "moderate", "strict"]).default("moderate"),
+    searchCountry: z.string().trim().max(8).optional(),
+    visionUnderstandModel: nonEmptyString.optional(),
   })
   .strict();
 export type ZCodeSessionRuntimePreferencesResult = z.infer<

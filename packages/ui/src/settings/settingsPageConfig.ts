@@ -18,6 +18,7 @@ import {
   WandSparkles,
   Keyboard,
   FileSearch,
+  ScanSearch,
 } from "lucide-react";
 import { isSettingsSectionEnabled, type SettingsSectionId } from "@/lib/settingsNavigation.js";
 import type { Theme } from "@/useTheme.js";
@@ -71,6 +72,14 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     id: "modelProvider",
     icon: Package,
     titleId: "settings.modelProviderTitle",
+    groupId: "basics",
+  },
+  // FreeCodeZ fork(P6 §6.2):搜索与视觉偏好的专属分区——key 与模型引用同属
+  // “外部服务配置”心智,紧跟「模型提供方」。此前埋在通用页中部,用户不可发现。
+  {
+    id: "searchVision",
+    icon: ScanSearch,
+    titleId: "settings.searchVision.sectionTitle",
     groupId: "basics",
   },
   {

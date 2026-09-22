@@ -57,6 +57,8 @@ export class ToolExecutorImpl implements ToolExecutor {
       dynamicWorkflowRunPort: options.dynamicWorkflowRunPort,
       dynamicWorkflowSnippetPort: options.dynamicWorkflowSnippetPort,
       modelCatalogPort: options.modelCatalogPort,
+      searchVision: options.searchVision,
+      resolveSearchVisionModel: options.resolveSearchVisionModel,
       runtimeTaskRegistry: options.runtimeTaskRegistry,
       readFileState: options.readFileState ?? new Map(),
       subagentBackgroundBashMaxMs: options.subagentBackgroundBashMaxMs,

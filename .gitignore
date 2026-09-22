@@ -2,7 +2,8 @@
 /docs/
 node_modules/
 dist/
-# zcode-server-cli 发行包 staging 输出，本地组装产物不入库。
+# 打包产物 staging（桌面端 ZCODE_DESKTOP_DIST_DIR=dist-release 与 zcode-server-cli 发行包）。
+# 2026-09-22 决定：打包产物只留本地、不上传，构建目录一律不入库。
 dist-release/
 # macOS CI 按架构隔离 electron-builder 输出目录，这些仍是构建产物。
 packages/desktop/dist-*/

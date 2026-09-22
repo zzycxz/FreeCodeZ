@@ -1948,6 +1948,13 @@ export function createLocalServices(options: {
               nativeSearchEnhancementsEnabled: settings.nativeSearchEnhancementsEnabled !== false,
               memoryEnabled: settings.memoryEnabled === true,
               modelContextBudgetStrategy,
+              // FreeCodeZ fork(P6 §6.2):搜索/视觉偏好随会话透传给 agent 工具。
+              searchSummaryMode: settings.searchSummaryMode ?? "on",
+              searchSafeSearch: settings.searchSafeSearch ?? "moderate",
+              ...(settings.searchCountry ? { searchCountry: settings.searchCountry } : {}),
+              ...(settings.visionUnderstandModel
+                ? { visionUnderstandModel: settings.visionUnderstandModel }
+                : {}),
               // user-execution 只消费 Shell；共享默认策略是统一 result schema 的兼容占位，
               // 不会覆盖 runtime-materialization 阶段已经固定的 strategy。
               ...(scope === "user-execution" && settings.integratedTerminalShell

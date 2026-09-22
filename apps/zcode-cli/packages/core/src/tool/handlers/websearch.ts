@@ -71,18 +71,29 @@ const webSearchHandler: ToolHandler<WebSearchInput, WebSearchOutput> = async (in
 
   // FreeCodeZ fork(P6 §3.2 混合策略):原生优先;端点无原生搜索时落客户端
   // 商业 key 链(Brave→Exa→Linkup),无可用源才报配置引导错误。
+  // §4.1 摘要层:summaryMode=off 时不传 summaryModel,回退链零额外模型调用;
+  // on/vlm 时传会话模型做一次嵌套摘要(对齐原生路径的紧凑输出格式)。
   if (!model.properties.supportsNativeWebSearch) {
+    const summaryMode = context.searchVision?.summaryMode ?? "on";
     const fallback = await runWebSearchFallback({
       query: input.query,
       abortSignal: context.abortSignal,
       startedAt,
+      safeSearch: context.searchVision?.safeSearch,
+      ...(context.searchVision?.country ? { country: context.searchVision.country } : {}),
+      ...(summaryMode === "off" ? {} : { summaryModel: model }),
+      traceContext: context.traceContext,
+      traceId: context.traceId,
+      sessionId: context.sessionId,
+      turnId: context.turnId,
     });
     if (fallback) return fallback.output;
     throw createCoreError(
       CoreErrorType.ConfigurationError,
       "Current model endpoint has no native web search, and no client search provider key is "
-        + "configured. Configure one of BRAVE_API_KEY / EXA_API_KEY / LINKUP_API_KEY (or the "
-        + "search:brave / search:exa / search:linkup credentials) to enable the fallback chain.",
+        + "configured. Configure one of BRAVE_API_KEY / EXA_API_KEY / LINKUP_API_KEY / "
+        + "ANYSEARCH_API_KEY (or the search:brave / search:exa / search:linkup / "
+        + "search:anysearch credentials) to enable the fallback chain.",
       {
         context: { toolCallId: context.toolCallId, toolName: WEBSEARCH_TOOL_NAME },
         recoverable: true,
