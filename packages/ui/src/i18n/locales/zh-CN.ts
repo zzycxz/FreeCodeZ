@@ -2034,7 +2034,7 @@ const zhCN: Record<string, string> = {
   "settings.searchVision.sectionTitle": "搜索与视觉",
   "settings.searchVision.webSearch.title": "网页搜索",
   "settings.searchVision.webSearch.description":
-    "无原生搜索的端点按 Brave → Exa → Linkup → AnySearch 自动降级;key 加密存于本机。",
+    "无原生搜索的端点按 Brave → Exa → Linkup → AnySearch 自动降级,AnySearch 零 key 兜底;key 加密存于本机。",
   "settings.searchVision.summaryMode": "搜索结果摘要",
   "settings.searchVision.imageSearch.title": "图片搜索",
   "settings.searchVision.imageSearch.description": "SerpAPI → Brave → Openverse(零 key,仅 CC 图)",

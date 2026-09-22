@@ -2156,7 +2156,7 @@ const enUS: Record<string, string> = {
   "settings.searchVision.sectionTitle": "Search & Vision",
   "settings.searchVision.webSearch.title": "Web search",
   "settings.searchVision.webSearch.description":
-    "Endpoints without native search fall back Brave → Exa → Linkup → AnySearch; keys are stored encrypted locally.",
+    "Endpoints without native search fall back Brave → Exa → Linkup → AnySearch (zero-key tail); keys are stored encrypted locally.",
   "settings.searchVision.summaryMode": "Search result summary",
   "settings.searchVision.imageSearch.title": "Image search",
   "settings.searchVision.imageSearch.description": "SerpAPI → Brave → Openverse (zero-key, CC images only)",

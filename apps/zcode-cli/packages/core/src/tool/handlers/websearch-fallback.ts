@@ -91,9 +91,9 @@ export async function runWebSearchFallback(
   if (keys.linkup) {
     chain.push(["linkup", () => fetchLinkup(deps.query, keys.linkup!, deps.abortSignal)]);
   }
-  if (keys.anysearch) {
-    chain.push(["anysearch", () => fetchAnySearch(deps.query, keys.anysearch!, deps.abortSignal)]);
-  }
+  // AnySearch 零 key 尾链(2026-09-23,用户拍板):实测匿名可用(带无效 key 反而 401),
+  // 固定垫底——有 key 带 Bearer 归属配额,无 key 匿名,零配置下搜索不再全挂。
+  chain.push(["anysearch", () => fetchAnySearch(deps.query, keys.anysearch, deps.abortSignal)]);
   if (chain.length === 0) return null;
 
   let lastError: unknown;
@@ -240,15 +240,20 @@ async function fetchExa(
     .filter((item) => item.url.length > 0);
 }
 
-async function fetchLinkup(
+// 修复(2026-09-23):原端点误写 api.linkup.ai——该域是域名停放页(NS=afternic.com,
+// 任意子域都解析到停放 IP,443 握手即被拒),后端无 API,请求从未到达 Linkup;
+// body 误写 {query, depth} 也会被真实 API 判 400(要求 q + outputType)。
+// 正确契约对齐 fairpeer websearch.go searchLinkup:POST api.linkup.so/v1/search,
+// body {q, depth, outputType:"searchResults"},响应 {results:[{name,url,content}]}。
+export async function fetchLinkup(
   query: string,
   apiKey: string,
   signal?: AbortSignal,
 ): Promise<WebSearchResultItem[]> {
-  const payload = (await fetchJsonWithTimeout("https://api.linkup.ai/v1/search", {
+  const payload = (await fetchJsonWithTimeout("https://api.linkup.so/v1/search", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ query, depth: "standard" }),
+    body: JSON.stringify({ q: query, depth: "standard", outputType: "searchResults" }),
     ...(signal ? { signal } : {}),
   })) as { results?: Array<Record<string, unknown>> };
   return (payload.results ?? [])
@@ -260,18 +265,22 @@ async function fetchLinkup(
 }
 
 /**
- * AnySearch 尾链(第 4 位,对齐 fairpeer websearch.go 的链位与请求契约):
- * POST https://api.anysearch.com/v1/search,Bearer 鉴权,响应 {code,message,
+ * AnySearch 尾链(对齐 fairpeer websearch.go 的请求契约):
+ * POST https://api.anysearch.com/v1/search,响应 {code,message,
  * data:{results:[{title,url,snippet,content}]}};code!=0 视为失败继续降级。
+ * key 可选:零 key 匿名尾链(2026-09-23)——匿名可用,带无效 key 反而 401。
  */
-async function fetchAnySearch(
+export async function fetchAnySearch(
   query: string,
-  apiKey: string,
+  apiKey: string | undefined,
   signal?: AbortSignal,
 ): Promise<WebSearchResultItem[]> {
   const payload = (await fetchJsonWithTimeout("https://api.anysearch.com/v1/search", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: {
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ query, max_results: 10 }),
     ...(signal ? { signal } : {}),
   })) as {

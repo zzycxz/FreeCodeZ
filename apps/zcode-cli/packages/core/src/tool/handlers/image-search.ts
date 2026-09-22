@@ -68,6 +68,21 @@ function asPositiveInt(value: unknown): number | undefined {
   return Number.isInteger(n) && n > 0 ? n : undefined;
 }
 
+/**
+ * 源字段容错取主机名:完整 URL 取 hostname,裸主机名原样,垃圾丢弃,永不抛错。
+ * 修复(2026-09-23):Brave Images 的 source 曾有裸主机名形态,原实现直接
+ * new URL() 会抛 Invalid URL,把整次调用拖进降级。
+ */
+function hostnameFromUrlLike(value: unknown): string | undefined {
+  const text = asString(value);
+  if (!text) return undefined;
+  try {
+    return new URL(text).hostname;
+  } catch {
+    return /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(?::\d+)?$/i.test(text) ? text : undefined;
+  }
+}
+
 interface UrlLikeForDedupe {
   url: string;
 }
@@ -103,7 +118,7 @@ function normalizeItems(provider: string, raw: readonly RawImageResult[]): Image
   return items;
 }
 
-async function fetchSerpapiGoogleImages(
+export async function fetchSerpapiGoogleImages(
   query: string,
   apiKey: string,
   page: number,
@@ -120,8 +135,14 @@ async function fetchSerpapiGoogleImages(
   if (regional.country) url.searchParams.set("gl", regional.country);
   if (start > 0) url.searchParams.set("start", String(start));
   const payload = (await fetchJsonWithTimeout(url.toString())) as {
+    error?: unknown;
     images_results?: Array<Record<string, unknown>>;
   };
+  // 修复(2026-09-23):SerpAPI 对无 key/配额尽等错误返回 HTTP 200 + {error} 而非
+  // 4xx,只看 response.ok 会把错误 JSON 当成 images_results 缺失的空结果静默吞掉,
+  // 链失去降级机会。识别 error 字段即抛错走降级。
+  const errorText = asString(payload.error);
+  if (errorText) throw new Error(`serpapi error: ${errorText}`);
   const raw = (payload.images_results ?? []).map((entry) => ({
     title: entry.title,
     originalUrl: entry.original,
@@ -134,7 +155,7 @@ async function fetchSerpapiGoogleImages(
   return normalizeItems("serpapi", raw);
 }
 
-async function fetchBraveImages(
+export async function fetchBraveImages(
   query: string,
   apiKey: string,
   _page: number,
@@ -150,24 +171,29 @@ async function fetchBraveImages(
   const payload = (await fetchJsonWithTimeout(url.toString(), {
     headers: { "X-Subscription-Token": apiKey, Accept: "application/json" },
   })) as { results?: Array<Record<string, unknown>> };
-  const raw = (payload.results ?? []).map((entry) => ({
-    title: entry.title,
-    originalUrl: entry.url ?? entry.image,
-    thumbnailUrl:
-      typeof entry.thumbnail === "object" && entry.thumbnail !== null
-        ? ((entry.thumbnail as { src?: unknown }).src as string | undefined) ?? undefined
-        : (entry.thumbnail as string | undefined),
-    pageUrl: entry.source ?? entry.url,
-    width:
+  // 解析容错(2026-09-23,契约未实测属防御性修复):原图字段在不同 API 版本可能
+  // 位于 properties.url 或顶层 url/image,逐级回退;source 是完整 URL 时才当页面
+  // 链接用,裸主机名只进 source 展示(见 hostnameFromUrlLike)。
+  const raw = (payload.results ?? []).map((entry) => {
+    const properties =
       typeof entry.properties === "object" && entry.properties !== null
-        ? (entry.properties as { width?: unknown }).width
-        : undefined,
-    height:
-      typeof entry.properties === "object" && entry.properties !== null
-        ? (entry.properties as { height?: unknown }).height
-        : undefined,
-    source: entry.source ? new URL(String(entry.source)).hostname : undefined,
-  }));
+        ? (entry.properties as Record<string, unknown>)
+        : undefined;
+    const sourceText = asString(entry.source);
+    const sourceIsPageUrl = /^https?:\/\//i.test(sourceText ?? "");
+    return {
+      title: entry.title,
+      originalUrl: asString(properties?.url) ?? entry.url ?? entry.image,
+      thumbnailUrl:
+        typeof entry.thumbnail === "object" && entry.thumbnail !== null
+          ? ((entry.thumbnail as { src?: unknown }).src as string | undefined) ?? undefined
+          : (entry.thumbnail as string | undefined),
+      pageUrl: sourceIsPageUrl ? sourceText : entry.url,
+      width: properties?.width,
+      height: properties?.height,
+      source: hostnameFromUrlLike(entry.source),
+    };
+  });
   return normalizeItems("brave", raw);
 }
 

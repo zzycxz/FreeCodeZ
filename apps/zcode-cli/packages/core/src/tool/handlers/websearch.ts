@@ -88,10 +88,12 @@ const webSearchHandler: ToolHandler<WebSearchInput, WebSearchOutput> = async (in
       turnId: context.turnId,
     });
     if (fallback) return fallback.output;
+    // 防御路径(2026-09-23 起):回退链含 AnySearch 零 key 匿名尾链,正常不会走到这里;
+    // 仅链构造为空(实现变化)时提示补配商业 key。
     throw createCoreError(
       CoreErrorType.ConfigurationError,
-      "Current model endpoint has no native web search, and no client search provider key is "
-        + "configured. Configure one of BRAVE_API_KEY / EXA_API_KEY / LINKUP_API_KEY / "
+      "Current model endpoint has no native web search, and no fallback search source is "
+        + "available. Configure one of BRAVE_API_KEY / EXA_API_KEY / LINKUP_API_KEY / "
         + "ANYSEARCH_API_KEY (or the search:brave / search:exa / search:linkup / "
         + "search:anysearch credentials) to enable the fallback chain.",
       {

@@ -86,3 +86,137 @@ test("webfetch markdown format keeps headings and links", async () => {
   const text = extractReadableContent(new TextEncoder().encode(html), "text/html", "text");
   assert.ok(!text.includes("# Title"));
 });
+
+// 回归锁定(2026-09-23):Linkup 请求契约曾把端点写成停放域 api.linkup.ai、
+// body 字段写成 {query, depth},导致搜索永远失败。此处锁 URL + body + 响应映射。
+test("linkup request hits api.linkup.so with q/depth/outputType contract", async () => {
+  const websearchFallback = new URL(
+    "apps/zcode-cli/packages/core/src/tool/handlers/websearch-fallback.ts",
+    repoRoot,
+  );
+  const { fetchLinkup } = await import(websearchFallback.href);
+  const captured: Array<{ url: string; body: Record<string, unknown>; auth?: string }> = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
+    captured.push({
+      url: String(url),
+      body: JSON.parse(String(init?.body ?? "{}")),
+      auth: (init?.headers as Record<string, string> | undefined)?.["Authorization"],
+    });
+    return new Response(
+      JSON.stringify({ results: [{ name: "标题", url: "https://x.dev/1", content: "..." }] }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }) as typeof fetch;
+  try {
+    const items = await fetchLinkup("测试查询", "test-key");
+    assert.equal(captured.length, 1);
+    assert.equal(captured[0]!.url, "https://api.linkup.so/v1/search");
+    assert.deepEqual(captured[0]!.body, {
+      q: "测试查询",
+      depth: "standard",
+      outputType: "searchResults",
+    });
+    assert.equal(captured[0]!.auth, "Bearer test-key");
+    assert.deepEqual(items, [{ title: "标题", url: "https://x.dev/1" }]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+// 回归锁定(2026-09-23 第二批):三处搜索链健壮性修复——
+// SerpAPI 200+{error} 必须抛错走降级(曾被静默吞成空结果)。
+test("serpapi 200+error body throws so the chain can degrade", async () => {
+  const imageSearch = new URL(
+    "apps/zcode-cli/packages/core/src/tool/handlers/image-search.ts",
+    repoRoot,
+  );
+  const { fetchSerpapiGoogleImages } = await import(imageSearch.href);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ error: "Invalid API key." }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    })) as typeof fetch;
+  try {
+    await assert.rejects(
+      () => fetchSerpapiGoogleImages("q", "bad-key", 1, 10, { safeSearch: "moderate" }),
+      /serpapi error/,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+// Brave Images 解析容错:source 裸主机名不抛 Invalid URL;原图优先 properties.url;
+// pageUrl 仅在 source 是完整 URL 时采用,否则回退 url。
+test("brave images tolerates bare-host source and prefers properties.url", async () => {
+  const imageSearch = new URL(
+    "apps/zcode-cli/packages/core/src/tool/handlers/image-search.ts",
+    repoRoot,
+  );
+  const { fetchBraveImages } = await import(imageSearch.href);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(
+      JSON.stringify({
+        results: [
+          {
+            title: "a",
+            url: "https://site.example/page1",
+            source: "example.com",
+            thumbnail: { src: "https://img.example/t1.jpg" },
+            properties: { url: "https://img.example/1.jpg", width: 100, height: 50 },
+          },
+          {
+            title: "b",
+            url: "https://img.example/2.jpg",
+            source: "https://site.example/page2",
+            properties: {},
+          },
+        ],
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    )) as typeof fetch;
+  try {
+    const items = await fetchBraveImages("q", "key", 1, 10, { safeSearch: "moderate" });
+    assert.equal(items.length, 2);
+    assert.equal(items[0]!.originalUrl, "https://img.example/1.jpg");
+    assert.equal(items[0]!.source, "example.com");
+    assert.equal(items[0]!.pageUrl, "https://site.example/page1");
+    assert.equal(items[1]!.originalUrl, "https://img.example/2.jpg");
+    assert.equal(items[1]!.pageUrl, "https://site.example/page2");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+// AnySearch 零 key 尾链:无 key 匿名(不带 Authorization),有 key 带 Bearer。
+test("anysearch sends anonymous request without key and Bearer with key", async () => {
+  const websearchFallback = new URL(
+    "apps/zcode-cli/packages/core/src/tool/handlers/websearch-fallback.ts",
+    repoRoot,
+  );
+  const { fetchAnySearch } = await import(websearchFallback.href);
+  const captured: Array<{ headers: Record<string, string>; body: Record<string, unknown> }> = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (_url: string | URL, init?: RequestInit) => {
+    captured.push({
+      headers: (init?.headers as Record<string, string>) ?? {},
+      body: JSON.parse(String(init?.body ?? "{}")),
+    });
+    return new Response(
+      JSON.stringify({ code: 0, data: { results: [{ title: "T", url: "https://x.dev" }] } }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }) as typeof fetch;
+  try {
+    await fetchAnySearch("q", undefined);
+    await fetchAnySearch("q", "my-key");
+    assert.equal(captured[0]!.headers["Authorization"], undefined);
+    assert.equal(captured[1]!.headers["Authorization"], "Bearer my-key");
+    assert.deepEqual(captured[0]!.body, { query: "q", max_results: 10 });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
