@@ -60,7 +60,7 @@ FreeCodeZ 修改自 ZCode 的源码：Desktop、Web、终端 Agent 的整体架�
 - 移除官方 MCP 鉴权与配额链路（zcode_official），MCP 一律走通用标准配置。
 - 侧栏 Provider 密钥状态提示、对话错误横幅归因等体验适配。
 
-各改动的产品规则、状态归属与验收场景见 [docs/spec/](docs/spec/)。
+各改动的详细产品规则、状态归属与验收场景在内部 spec 文档中维护（不随仓库发布）。
 
 ## 初始化
 

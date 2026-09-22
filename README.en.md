@@ -60,7 +60,7 @@ FreeCodeZ is modified from the ZCode source code: the Desktop, Web, and terminal
 - Removed the official MCP authentication and quota chain (`zcode_official`); MCP is configured through the standard generic flow only.
 - Sidebar provider key status hints, chat error attribution banners, and other experience fixes.
 
-Product rules, state ownership, and acceptance scenarios for each change are documented in [docs/spec/](docs/spec/).
+Detailed product rules, state ownership, and acceptance scenarios for each change are maintained in internal specs that are not published with this repository.
 
 ## Setup
 

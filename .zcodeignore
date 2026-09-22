@@ -1,3 +1,5 @@
+# 内部调研与 spec 文档：本地维护，不随仓库发布。
+/docs/
 node_modules/
 dist/
 # zcode-server-cli 发行包 staging 输出，本地组装产物不入库。
