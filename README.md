@@ -19,6 +19,34 @@ FreeCodeZ 是 AI 编程工作台，提供桌面应用、浏览器界面和终端
 | Web / ZCode 命令行版 | 终端与浏览器工作台；将 TUI、Web、后端和 Agent 组装为独立运行包 | `pnpm dev:web`                 |
 | Agent CLI            | 在终端中使用 `zcode`，也为 Desktop 和 Web 提供 Agent 运行时    | `pnpm --filter @zcode/cli dev` |
 
+## 项目来源与改动
+
+FreeCodeZ 基于 ZCode 的源码二次开发：Desktop、Web、终端 Agent 的整体架构沿用上游，在其上去除了 GLM 套餐与账号体系，并完成了一系列能力与体验适配。GLM 不再有套餐概念，仅保留为可填 API Key 直连的模型厂商之一。
+
+### 去除 GLM 套餐与账号体系
+
+- 移除 GLM 编码套餐（Coding Plan / Start Plan）的套餐展示、计费提示与购买升级入口。
+- 移除 Z.ai 账号 OAuth 登录、网页授权回调、token 刷新等账号链路。
+- 模型接入收敛为单一 API Key 形态，通过首页与设置页的接入向导连接各模型厂商。
+
+### P6 能力补齐（搜索 / 抓取 / 图像理解）
+
+- `image_search` 图片搜索：SerpAPI → Brave → Openverse 三源降级，带 SQLite 缓存、URL 归一化去重与 CC 许可筛选。
+- `WebSearch` 混合搜索：优先使用原生搜索，不可用时回落到客户端搜索（Brave / Exa / Linkup）。
+- `webfetch` 网页抓取：支持输出格式选择与正文（article / main）提取。
+- `ImageUnderstand` / `ViewImage` 图像理解：通过绑定的视觉模型读图，未配置视觉模型时返回引导提示。
+- 设置页新增搜索与视觉配置（安全搜索、地区、摘要模式、视觉模型绑定），搜索 API 密钥本地加密存储。
+
+### 其他适配
+
+- 模型厂商接入：模板化 Provider 内置配置与接入向导，内置 Moonshot、MiniMax、DeepSeek、阿里百炼等直连预设；推理档位（reasoning effort）按厂商提供预设，并有三层兜底——请求被拒时自动降级重试、错误横幅一键修复、无档位厂商自动兼容。
+- 插件体系：内置插件随发行包种子（documents、pdf、presentations、spreadsheets、skill-creator、plugin-creator、zcode-guide、android-emulator、ios-simulator、restore-legacy-sessions），插件市场与已安装页体验对齐上游。
+- 隐私与外联：移除遥测与性能上报全链路；外联策略为上行禁止、下行允许——模型请求与资源下载正常，业务数据不外发。
+- 移除官方 MCP 鉴权与配额链路（zcode_official），MCP 一律走通用标准配置。
+- 侧栏 Provider 密钥状态提示、对话错误横幅归因等体验适配。
+
+各改动的产品规则、状态归属与验收场景见 [docs/spec/](docs/spec/)。
+
 ## 初始化
 
 准备 Git、Node.js **24.14.0** 和 pnpm **10.33.2**，版本以 [mise.toml](mise.toml) 为准。以下开发和打包命令均在仓库根目录执行。

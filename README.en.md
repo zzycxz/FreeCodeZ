@@ -19,6 +19,34 @@ FreeCodeZ is an AI coding workspace with desktop, browser, and terminal interfac
 | Web / ZCode CLI distribution | Terminal and browser workspace; packages the TUI, Web client, backend, and Agent together | `pnpm dev:web`                 |
 | Agent CLI                    | The `zcode` terminal interface, which also provides the Agent runtime for Desktop and Web | `pnpm --filter @zcode/cli dev` |
 
+## Provenance and Changes
+
+FreeCodeZ is a secondary development of the ZCode source code. The overall architecture of Desktop, Web, and the terminal Agent follows upstream, while the GLM subscription and account system have been removed and a series of capability and experience adaptations have been added. GLM is no longer a subscription product here; it remains only as one of the model providers you can connect to with an API key.
+
+### Removed: GLM subscription and account system
+
+- Removed the GLM Coding Plan / Start Plan surfaces: plan status display, billing hints, and purchase/upgrade entries.
+- Removed the Z.ai account OAuth login, web authorization callbacks, token refresh, and the rest of the account chain.
+- Model access is collapsed to a single API-key flow, connected through the intake wizard on the welcome and settings pages.
+
+### P6 capability backfill (search / fetch / image understanding)
+
+- `image_search`: a three-source fallback chain of SerpAPI → Brave → Openverse, with SQLite caching, URL-normalized deduplication, and CC-license filtering.
+- `WebSearch` hybrid search: native search first, falling back to client-side search (Brave / Exa / Linkup).
+- `webfetch`: output format selection and article/main content extraction.
+- `ImageUnderstand` / `ViewImage`: read images through a bound vision model, with guidance errors when no vision model is configured.
+- Settings pages gain search and vision configuration (safe search, country, summary mode, vision model binding); search API keys are stored with local encryption.
+
+### Other adaptations
+
+- Model provider intake: templated built-in provider configuration and an intake wizard with direct-connection presets for Moonshot, MiniMax, DeepSeek, Alibaba Model Studio, and more. Reasoning effort levels come with per-provider presets and a three-tier fallback — automatic degrade retry on rejection, one-click repair from the error banner, and transparent compatibility for providers without reasoning levels.
+- Plugin system: built-in plugins ship inside the distribution (documents, pdf, presentations, spreadsheets, skill-creator, plugin-creator, zcode-guide, android-emulator, ios-simulator, restore-legacy-sessions), with marketplace and installed-plugins pages aligned with upstream.
+- Privacy and egress: the telemetry and performance-reporting chain is removed entirely; the egress policy forbids upstream traffic while allowing downloads — model requests and asset downloads work, business data never leaves the machine.
+- Removed the official MCP authentication and quota chain (`zcode_official`); MCP is configured through the standard generic flow only.
+- Sidebar provider key status hints, chat error attribution banners, and other experience fixes.
+
+Product rules, state ownership, and acceptance scenarios for each change are documented in [docs/spec/](docs/spec/).
+
 ## Setup
 
 Install Git, Node.js **24.14.0**, and pnpm **10.33.2**. [mise.toml](mise.toml) is the source of truth for tool versions. Run all development and packaging commands below from the repository root.
