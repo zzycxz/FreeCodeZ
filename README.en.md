@@ -11,6 +11,8 @@
   <a href="README.md">简体中文</a> | English
 </p>
 
+> **Provenance**: FreeCodeZ is a **modified version of ZCode** — it is not the original ZCode. Upstream ZCode is the AI coding workspace of the GLM / Z.ai ecosystem. FreeCodeZ keeps its architecture and capabilities while removing the GLM subscription and account system and adding extensive capability, privacy, and experience adaptations. See [What's Different from ZCode](#whats-different-from-zcode) for the full comparison.
+
 FreeCodeZ is an AI coding workspace with desktop, browser, and terminal interfaces. This repository contains the clients, backend services, shared UI, and Agent CLI and runtime source code.
 
 | Interface                    | Purpose                                                                                   | Development command            |
@@ -19,17 +21,30 @@ FreeCodeZ is an AI coding workspace with desktop, browser, and terminal interfac
 | Web / ZCode CLI distribution | Terminal and browser workspace; packages the TUI, Web client, backend, and Agent together | `pnpm dev:web`                 |
 | Agent CLI                    | The `zcode` terminal interface, which also provides the Agent runtime for Desktop and Web | `pnpm --filter @zcode/cli dev` |
 
-## Provenance and Changes
+## What's Different from ZCode
 
-FreeCodeZ is a secondary development of the ZCode source code. The overall architecture of Desktop, Web, and the terminal Agent follows upstream, while the GLM subscription and account system have been removed and a series of capability and experience adaptations have been added. GLM is no longer a subscription product here; it remains only as one of the model providers you can connect to with an API key.
+FreeCodeZ is modified from the ZCode source code: the Desktop, Web, and terminal Agent architecture follows the original, GLM is no longer a subscription product here and remains only as one of the model providers you can connect to with an API key. The key differences:
 
-### Removed: GLM subscription and account system
+| Aspect                  | ZCode (original)                                                                                     | FreeCodeZ                                                                                                                                                |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Positioning             | AI coding workspace of the GLM / Z.ai ecosystem                                                      | Vendor-neutral AI coding workspace                                                                                                                       |
+| Accounts and billing    | Z.ai account OAuth login; GLM Coding Plan / Start Plan status, billing, purchase and upgrade entries | No account or subscription system; local API keys only, connected through the intake wizard                                                              |
+| Model access            | Mostly GLM-family models                                                                             | Templated direct-connection presets for Moonshot, MiniMax, DeepSeek, Alibaba Model Studio, and more                                                      |
+| Reasoning effort        | No presets or fallback                                                                               | Per-provider presets plus a three-tier fallback (auto degrade retry / one-click repair from the error banner / compatible with providers without levels) |
+| Search / fetch / vision | Incomplete (WebSearch gated, no image search or image reading tools)                                 | P6 backfill: `image_search` three-source fallback, `WebSearch` hybrid fallback, `webfetch` content extraction, `ImageUnderstand` / `ViewImage`           |
+| Plugins                 | Official marketplace with online install                                                             | 10 built-in plugins shipped inside the distribution; marketplace and installed pages aligned with the original                                           |
+| Telemetry and egress    | Telemetry and performance-reporting chains present                                                   | Telemetry fully removed; egress forbids upstream traffic while allowing downloads (model requests and asset downloads work; business data stays local)   |
+| Official MCP            | `zcode_official` authentication and quota chain                                                      | Removed; standard generic MCP configuration only                                                                                                         |
+
+### Change details
+
+#### Removed: GLM subscription and account system
 
 - Removed the GLM Coding Plan / Start Plan surfaces: plan status display, billing hints, and purchase/upgrade entries.
 - Removed the Z.ai account OAuth login, web authorization callbacks, token refresh, and the rest of the account chain.
 - Model access is collapsed to a single API-key flow, connected through the intake wizard on the welcome and settings pages.
 
-### P6 capability backfill (search / fetch / image understanding)
+#### P6 capability backfill (search / fetch / image understanding)
 
 - `image_search`: a three-source fallback chain of SerpAPI → Brave → Openverse, with SQLite caching, URL-normalized deduplication, and CC-license filtering.
 - `WebSearch` hybrid search: native search first, falling back to client-side search (Brave / Exa / Linkup).
@@ -37,7 +52,7 @@ FreeCodeZ is a secondary development of the ZCode source code. The overall archi
 - `ImageUnderstand` / `ViewImage`: read images through a bound vision model, with guidance errors when no vision model is configured.
 - Settings pages gain search and vision configuration (safe search, country, summary mode, vision model binding); search API keys are stored with local encryption.
 
-### Other adaptations
+#### Other adaptations
 
 - Model provider intake: templated built-in provider configuration and an intake wizard with direct-connection presets for Moonshot, MiniMax, DeepSeek, Alibaba Model Studio, and more. Reasoning effort levels come with per-provider presets and a three-tier fallback — automatic degrade retry on rejection, one-click repair from the error banner, and transparent compatibility for providers without reasoning levels.
 - Plugin system: built-in plugins ship inside the distribution (documents, pdf, presentations, spreadsheets, skill-creator, plugin-creator, zcode-guide, android-emulator, ios-simulator, restore-legacy-sessions), with marketplace and installed-plugins pages aligned with upstream.

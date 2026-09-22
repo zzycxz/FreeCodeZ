@@ -11,6 +11,8 @@
   简体中文 | <a href="README.en.md">English</a>
 </p>
 
+> **项目来源**：FreeCodeZ 是**修改自 ZCode** 的二次开发版本，不是原版 ZCode。原版 ZCode 是 GLM / Z.ai 生态的 AI 编程工作台；FreeCodeZ 保留其整体架构与能力，去除了 GLM 套餐与账号体系，并做了大量能力、隐私与体验适配。与原版的完整区别见 [与 ZCode 的区别](#与-zcode-的区别)。
+
 FreeCodeZ 是 AI 编程工作台，提供桌面应用、浏览器界面和终端 Agent。本仓库包含客户端、后端服务、共享 UI，以及 Agent CLI 与运行时源码。
 
 | 入口                 | 用途                                                           | 开发命令                       |
@@ -19,17 +21,30 @@ FreeCodeZ 是 AI 编程工作台，提供桌面应用、浏览器界面和终端
 | Web / ZCode 命令行版 | 终端与浏览器工作台；将 TUI、Web、后端和 Agent 组装为独立运行包 | `pnpm dev:web`                 |
 | Agent CLI            | 在终端中使用 `zcode`，也为 Desktop 和 Web 提供 Agent 运行时    | `pnpm --filter @zcode/cli dev` |
 
-## 项目来源与改动
+## 与 ZCode 的区别
 
-FreeCodeZ 基于 ZCode 的源码二次开发：Desktop、Web、终端 Agent 的整体架构沿用上游，在其上去除了 GLM 套餐与账号体系，并完成了一系列能力与体验适配。GLM 不再有套餐概念，仅保留为可填 API Key 直连的模型厂商之一。
+FreeCodeZ 修改自 ZCode 的源码：Desktop、Web、终端 Agent 的整体架构沿用原版，GLM 不再有套餐概念，仅保留为可填 API Key 直连的模型厂商之一。核心区别总结如下：
 
-### 去除 GLM 套餐与账号体系
+| 对比维度       | ZCode（原版）                                                                      | FreeCodeZ                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 定位           | GLM / Z.ai 生态的 AI 编程工作台                                                    | 多厂商通用的 AI 编程工作台                                                                               |
+| 账号与计费     | Z.ai 账号 OAuth 登录；GLM 编码套餐（Coding Plan / Start Plan）展示、计费与购买升级 | 无账号与套餐体系；仅本地 API Key，通过接入向导连接各厂商                                                 |
+| 模型接入       | 以 GLM 系模型为主                                                                  | 模板化多厂商直连预设（Moonshot、MiniMax、DeepSeek、阿里百炼等）                                          |
+| 推理档位       | 无预设与兜底                                                                       | 按厂商预设 + 三层兜底（自动降级重试 / 错误横幅一键修复 / 无档位厂商兼容）                                |
+| 搜索/抓取/视觉 | 能力不全（WebSearch 受门控，无图片搜索与读图工具）                                 | P6 补齐：`image_search` 三源、`WebSearch` 混合回落、`webfetch` 正文提取、`ImageUnderstand` / `ViewImage` |
+| 插件           | 官方插件市场在线安装                                                               | 10 个内置插件随发行包种子，市场与已安装页对齐原版                                                        |
+| 遥测与外联     | 有遥测与性能上报链路                                                               | 遥测全链路移除；外联上行禁止、下行允许（模型请求与资源下载正常，业务数据不外发）                         |
+| 官方 MCP       | zcode_official 鉴权与配额链路                                                      | 移除，一律走通用 MCP 标准配置                                                                            |
+
+### 改动明细
+
+#### 去除 GLM 套餐与账号体系
 
 - 移除 GLM 编码套餐（Coding Plan / Start Plan）的套餐展示、计费提示与购买升级入口。
 - 移除 Z.ai 账号 OAuth 登录、网页授权回调、token 刷新等账号链路。
 - 模型接入收敛为单一 API Key 形态，通过首页与设置页的接入向导连接各模型厂商。
 
-### P6 能力补齐（搜索 / 抓取 / 图像理解）
+#### P6 能力补齐（搜索 / 抓取 / 图像理解）
 
 - `image_search` 图片搜索：SerpAPI → Brave → Openverse 三源降级，带 SQLite 缓存、URL 归一化去重与 CC 许可筛选。
 - `WebSearch` 混合搜索：优先使用原生搜索，不可用时回落到客户端搜索（Brave / Exa / Linkup）。
@@ -37,7 +52,7 @@ FreeCodeZ 基于 ZCode 的源码二次开发：Desktop、Web、终端 Agent 的�
 - `ImageUnderstand` / `ViewImage` 图像理解：通过绑定的视觉模型读图，未配置视觉模型时返回引导提示。
 - 设置页新增搜索与视觉配置（安全搜索、地区、摘要模式、视觉模型绑定），搜索 API 密钥本地加密存储。
 
-### 其他适配
+#### 其他适配
 
 - 模型厂商接入：模板化 Provider 内置配置与接入向导，内置 Moonshot、MiniMax、DeepSeek、阿里百炼等直连预设；推理档位（reasoning effort）按厂商提供预设，并有三层兜底——请求被拒时自动降级重试、错误横幅一键修复、无档位厂商自动兼容。
 - 插件体系：内置插件随发行包种子（documents、pdf、presentations、spreadsheets、skill-creator、plugin-creator、zcode-guide、android-emulator、ios-simulator、restore-legacy-sessions），插件市场与已安装页体验对齐上游。
