@@ -3,6 +3,7 @@ export * from "./errors.js";
 export * from "./model-execution.js";
 export * from "./runner.js";
 export * from "./model.js";
+export * from "./reasoning-degrade-retry.js";
 export * from "./retry-policy.js";
 export * from "./workflow-model-failure-policy.js";
 export * from "./transform.js";

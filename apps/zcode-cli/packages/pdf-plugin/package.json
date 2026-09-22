@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@zcode/pdf-plugin",
+  "version": "0.1.7",
+  "private": true,
+  "license": "SEE LICENSE IN skills/pdf/LICENSE.txt",
+  "description": "PDF document production skills, published as an official ZCode plugin."
+}

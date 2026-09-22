@@ -15,7 +15,9 @@ import { ConversationShareReadonlyTimeline } from "@zcode/ui/conversation-share-
 import { renderOAuthProviderIcon } from "@zcode/ui/oauth-provider-icon";
 import { applyTheme, resolveTheme, type Theme } from "@zcode/ui/useTheme";
 import "./conversationShareLandingPage.css";
-import type { WebOAuthProviderId } from "../auth/browserOAuthCredentialRepo.js";
+// FreeCodeZ fork(model-provider-intake R1):browserOAuthCredentialRepo 已随账号族整体删除，
+// 分享页登录按钮的 provider id 只作为展示类型保留。
+type WebOAuthProviderId = string;
 import {
   buildShareImportDeepLink,
   type ConversationSharePreviewClientError,

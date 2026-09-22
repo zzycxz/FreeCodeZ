@@ -197,6 +197,13 @@ export const resolveBuildAliases = ({
     "../../packages/shared/src/zcodeEndpoint.ts",
   ),
   "@zcode/shared/node": resolve(rootDirectory, "../../packages/shared/src/node.ts"),
+  // reasoning 降级重试直连 Recovery 需要本精确 alias（esbuild 前缀改写规则同上，
+  // 漏声明会被通用 "@zcode/shared" 前缀改写成 `src/index.ts/reasoning-effort-recovery`，
+  // Desktop agent/SEA 打包失败）。
+  "@zcode/shared/reasoning-effort-recovery": resolve(
+    rootDirectory,
+    "../../packages/shared/src/reasoning-effort-recovery.ts",
+  ),
   "@zcode/shared": resolve(rootDirectory, "../../packages/shared/src/index.ts"),
   "@zcode/core": resolve(cliDirectory, "../core/dist/index.js"),
 });

@@ -29,6 +29,7 @@ import {
   type ZCodeWorkspaceRef,
 } from "@zcode/shared";
 import type { ZCodeApp, ZCodeAppOptions } from "../app/types.js";
+import type { ProviderAccessNetworkOptions } from "./provider-access-probe.js";
 import type { V4InteractionRegistry } from "../zcode-protocol-v4/interaction-registry.js";
 import type { ConversationV4Gateway } from "../zcode-protocol-v4/v4-gateway.js";
 import type { SessionResidentPool, SessionResidentPoolOptions } from "./session-resident-pool.js";
@@ -63,6 +64,8 @@ export interface ZCodeProtocolAgentDependencies {
   syncAccountProviderConfig?: (snapshot: AccountProviderConfigSnapshot) => Promise<boolean>;
   /** 连接测试前主动重读当前进程的 Config Source 并等待 Registry 发布。 */
   refreshProviderRegistry?: (reason: string) => Promise<void>;
+  /** provider/probeAccess、provider/listRemoteModels 的网络出口（D-P1.3：与会话请求代理语义一致）。 */
+  providerAccessNetwork?: ProviderAccessNetworkOptions;
 }
 
 export type ZCodeProtocolAgentResolvedDependencies = ZCodeProtocolAgentDependencies & {

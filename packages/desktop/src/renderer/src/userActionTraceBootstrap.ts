@@ -1,53 +1,14 @@
-import {
-  DISABLED_RENDERER_ACTION_TRACE_CONFIG,
-  RENDERER_ACTION_TRACE_SERVICE_NAME,
-  ZCODE_ENV,
-  ZCODE_VERSION,
-  type IPlatformService,
-  type RendererActionTraceConfigV1,
-} from "@zcode/shared";
-import { RendererUserActionTelemetry, setUserActionTelemetry } from "@zcode/ui";
+import { setUserActionTelemetry } from "@zcode/ui";
 
-export function initializeDesktopUserActionTrace(options: {
-  platform: IPlatformService;
+/**
+ * FreeCodeZ fork:渲染动作 trace 的 main 侧 IPC(rendererActionTraceIpc)与 OTel 导出链
+ * 已物理删除(2026-09-22,随 ARMS 遥测簇拆除)。埋点调用面(runUserAction 等)保留为
+ * no-op,避免几十处 UI 调用点的大范围手术;后续品牌清扫批次再统一清除调用点。
+ */
+export function initializeDesktopUserActionTrace(_options: {
+  platform: unknown;
   isLocalDevelopmentRuntime: boolean;
 }): () => void {
-  const sendBatch = options.platform.reportRendererActionTraceBatch;
-  const getConfig = options.platform.getRendererActionTraceConfig;
-  if (!sendBatch || !getConfig) {
-    setUserActionTelemetry(null);
-    return () => {};
-  }
-
-  const rendererInstanceId = crypto.randomUUID();
-  const telemetry = new RendererUserActionTelemetry({
-    config: DISABLED_RENDERER_ACTION_TRACE_CONFIG,
-    resource: {
-      serviceName: RENDERER_ACTION_TRACE_SERVICE_NAME,
-      serviceVersion: ZCODE_VERSION || "unknown",
-      deploymentEnvironment: options.isLocalDevelopmentRuntime ? "development" : ZCODE_ENV,
-      rendererInstanceId,
-    },
-    sendBatch: (batch) => sendBatch(batch),
-  });
-  setUserActionTelemetry(telemetry);
-
-  const applyConfig = (config: RendererActionTraceConfigV1) => telemetry.updateConfig(config);
-  void getConfig()
-    .then(applyConfig)
-    .catch(() => {
-      telemetry.updateConfig(DISABLED_RENDERER_ACTION_TRACE_CONFIG);
-    });
-  const disposeConfigListener = options.platform.onRendererActionTraceConfigChanged?.(applyConfig);
-  const handlePageHide = () => {
-    void telemetry.shutdown();
-  };
-  window.addEventListener("pagehide", handlePageHide, { once: true });
-
-  return () => {
-    window.removeEventListener("pagehide", handlePageHide);
-    disposeConfigListener?.();
-    setUserActionTelemetry(null);
-    void telemetry.shutdown();
-  };
+  setUserActionTelemetry(null);
+  return () => {};
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 32,
+  "revision": 35,
   "config": {
     "providerConfigRules": {
       "templateRules": [
@@ -30,7 +30,8 @@
             "logo": {
               "type": "builtin",
               "key": "moonshot-kimi"
-            }
+            },
+            "category": "direct"
           }
         },
         {
@@ -61,7 +62,8 @@
             "logo": {
               "type": "builtin",
               "key": "minimax"
-            }
+            },
+            "category": "direct"
           }
         },
         {
@@ -86,7 +88,8 @@
             "logo": {
               "type": "builtin",
               "key": "deepseek"
-            }
+            },
+            "category": "direct"
           }
         },
         {
@@ -122,7 +125,8 @@
             "logo": {
               "type": "builtin",
               "key": "alibaba-model-studio"
-            }
+            },
+            "category": "direct"
           }
         },
         {
@@ -159,7 +163,8 @@
             "logo": {
               "type": "builtin",
               "key": "alibaba-model-studio"
-            }
+            },
+            "category": "direct"
           }
         },
         {
@@ -184,7 +189,8 @@
             "logo": {
               "type": "builtin",
               "key": "xiaomi-mimo"
-            }
+            },
+            "category": "direct"
           }
         },
         {
@@ -217,7 +223,8 @@
             "logo": {
               "type": "builtin",
               "key": "openai"
-            }
+            },
+            "category": "direct"
           }
         },
         {
@@ -245,7 +252,8 @@
             "logo": {
               "type": "builtin",
               "key": "anthropic"
-            }
+            },
+            "category": "direct"
           }
         },
         {
@@ -271,7 +279,8 @@
             "logo": {
               "type": "builtin",
               "key": "xai"
-            }
+            },
+            "category": "direct"
           }
         },
         {
@@ -353,7 +362,8 @@
             "logo": {
               "type": "builtin",
               "key": "openrouter"
-            }
+            },
+            "category": "aggregator"
           }
         },
         {
@@ -391,7 +401,8 @@
             "logo": {
               "type": "builtin",
               "key": "opencode"
-            }
+            },
+            "category": "aggregator"
           }
         },
         {
@@ -422,7 +433,8 @@
             "logo": {
               "type": "builtin",
               "key": "opencode"
-            }
+            },
+            "category": "aggregator"
           }
         },
         {
@@ -447,7 +459,8 @@
             "logo": {
               "type": "builtin",
               "key": "opencode"
-            }
+            },
+            "category": "aggregator"
           }
         },
         {
@@ -484,7 +497,8 @@
             "logo": {
               "type": "builtin",
               "key": "opencode"
-            }
+            },
+            "category": "aggregator"
           }
         },
         {
@@ -522,7 +536,8 @@
             "logo": {
               "type": "builtin",
               "key": "opencode"
-            }
+            },
+            "category": "aggregator"
           }
         },
         {
@@ -559,151 +574,339 @@
             "logo": {
               "type": "builtin",
               "key": "opencode"
-            }
+            },
+            "category": "aggregator"
           }
         },
         {
-          "templateId": "zai-coding-plan",
+          "templateId": "volcengine-doubao",
           "templateNameMap": {
-            "zh-CN": "Z.ai Coding Plan",
-            "en-US": "Z.ai Coding Plan"
+            "zh-CN": "火山引擎·豆包",
+            "en-US": "Volcano Engine (Doubao)"
           },
           "config": {
             "access": {
               "type": "api-key",
-              "apiKeyManagementUrl": "https://z.ai/manage-apikey/apikey-list"
-            },
-            "api": {
-              "type": "anthropic-messages",
-              "baseUrl": "https://api.z.ai/api/anthropic"
-            },
-            "builtinModelIds": [
-              "GLM-5.3",
-              "GLM-5.3-Flash"
-            ],
-            "logo": {
-              "type": "builtin",
-              "key": "zai"
-            }
-          }
-        },
-        {
-          "templateId": "zai-standard-api",
-          "templateNameMap": {
-            "zh-CN": "Z.ai API",
-            "en-US": "Z.ai API"
-          },
-          "config": {
-            "access": {
-              "type": "api-key",
-              "apiKeyManagementUrl": "https://z.ai/manage-apikey/apikey-list"
+              "apiKeyManagementUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey"
             },
             "api": {
               "type": "openai-chat-completions",
-              "baseUrl": "https://api.z.ai/api/paas/v4"
+              "baseUrl": "https://ark.cn-beijing.volces.com/api/v3"
             },
             "builtinModelIds": [
-              "GLM-5.3",
-              "GLM-5.3-Flash",
-              "GLM-5V-Turbo",
-              "GLM-5.1",
-              "GLM-5.1-Highspeed",
-              "GLM-5",
-              "GLM-5-Turbo",
-              "GLM-4.7",
-              "GLM-4.7-FlashX",
-              "GLM-4.7-Flash",
-              "GLM-4.6",
-              "GLM-4.5-Air",
-              "GLM-4.5",
-              "GLM-4.6V",
-              "GLM-4.6V-Flash",
-              "GLM-4.6V-FlashX",
-              "GLM-4.1V-Thinking-FlashX",
-              "GLM-4.1V-Thinking-Flash",
-              "GLM-4-FlashX-250414",
-              "GLM-4-Flash-250414",
-              "GLM-4V-Flash",
-              "codegeex-4",
-              "charglm-4",
-              "emohaa"
+              "doubao-seed-1-6",
+              "doubao-seed-1-6-thinking"
             ],
-            "logo": {
-              "type": "builtin",
-              "key": "zai"
-            }
+            "category": "direct"
           }
         },
         {
-          "templateId": "bigmodel-coding-plan",
+          "templateId": "stepfun",
           "templateNameMap": {
-            "zh-CN": "BigModel Coding Plan",
-            "en-US": "BigModel Coding Plan"
+            "zh-CN": "阶跃星辰",
+            "en-US": "StepFun"
           },
           "config": {
             "access": {
               "type": "api-key",
-              "apiKeyManagementUrl": "https://bigmodel.cn/coding-plan/personal/overview"
-            },
-            "api": {
-              "type": "anthropic-messages",
-              "baseUrl": "https://open.bigmodel.cn/api/anthropic"
-            },
-            "builtinModelIds": [
-              "GLM-5.3",
-              "GLM-5.3-Flash"
-            ],
-            "logo": {
-              "type": "builtin",
-              "key": "bigmodel"
-            }
-          }
-        },
-        {
-          "templateId": "bigmodel-standard-api",
-          "templateNameMap": {
-            "zh-CN": "BigModel API",
-            "en-US": "BigModel API"
-          },
-          "config": {
-            "access": {
-              "type": "api-key",
-              "apiKeyManagementUrl": "https://bigmodel.cn/usercenter/proj-mgmt/apikeys"
+              "apiKeyManagementUrl": "https://platform.stepfun.com/interface-key"
             },
             "api": {
               "type": "openai-chat-completions",
-              "baseUrl": "https://open.bigmodel.cn/api/paas/v4"
+              "baseUrl": "https://api.stepfun.com/v1"
             },
             "builtinModelIds": [
-              "GLM-5.3",
-              "GLM-5.3-Flash",
-              "GLM-5V-Turbo",
-              "GLM-5.1",
-              "GLM-5.1-Highspeed",
-              "GLM-5",
-              "GLM-5-Turbo",
-              "GLM-4.7",
-              "GLM-4.7-FlashX",
-              "GLM-4.7-Flash",
-              "GLM-4.6",
-              "GLM-4.5-Air",
-              "GLM-4.5",
-              "GLM-4.6V",
-              "GLM-4.6V-Flash",
-              "GLM-4.6V-FlashX",
-              "GLM-4.1V-Thinking-FlashX",
-              "GLM-4.1V-Thinking-Flash",
-              "GLM-4-FlashX-250414",
-              "GLM-4-Flash-250414",
-              "GLM-4V-Flash",
-              "codegeex-4",
-              "charglm-4",
-              "emohaa"
+              "step-2-16k"
             ],
-            "logo": {
-              "type": "builtin",
-              "key": "bigmodel"
-            }
+            "category": "direct"
+          }
+        },
+        {
+          "templateId": "xfyun-spark",
+          "templateNameMap": {
+            "zh-CN": "讯飞星火",
+            "en-US": "iFlytek Spark"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://console.xfyun.cn/services"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "https://spark-api-open.xf-yun.com/v1"
+            },
+            "builtinModelIds": [
+              "lite",
+              "pro"
+            ],
+            "category": "direct"
+          }
+        },
+        {
+          "templateId": "siliconflow",
+          "templateNameMap": {
+            "zh-CN": "硅基流动",
+            "en-US": "SiliconFlow"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://cloud.siliconflow.cn/account/ak"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "https://api.siliconflow.cn/v1"
+            },
+            "builtinModelIds": [
+              "deepseek-ai/DeepSeek-V3",
+              "Qwen/Qwen2.5-7B-Instruct"
+            ],
+            "category": "aggregator"
+          }
+        },
+        {
+          "templateId": "baidu-qianfan",
+          "templateNameMap": {
+            "zh-CN": "百度千帆",
+            "en-US": "Baidu Qianfan"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://console.bce.baidu.com/iam/#/iam/apikey/list"
+            },
+            "api": {
+              "type": "anthropic-messages",
+              "baseUrl": "https://qianfan.baidubce.com/anthropic"
+            },
+            "builtinModelIds": [
+              "ernie-4.5-8k",
+              "ernie-x1-32k"
+            ],
+            "category": "direct"
+          }
+        },
+        {
+          "templateId": "tencent-hunyuan",
+          "templateNameMap": {
+            "zh-CN": "腾讯混元",
+            "en-US": "Tencent Hunyuan"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://console.cloud.tencent.com/hunyuan/start"
+            },
+            "api": {
+              "type": "anthropic-messages",
+              "baseUrl": "https://api.hunyuan.cloud.tencent.com/anthropic"
+            },
+            "builtinModelIds": [
+              "hunyuan-turbos-latest",
+              "hunyuan-lite"
+            ],
+            "category": "direct"
+          }
+        },
+        {
+          "templateId": "ollama",
+          "templateNameMap": {
+            "zh-CN": "Ollama（本地）",
+            "en-US": "Ollama (Local)"
+          },
+          "config": {
+            "access": {
+              "type": "none"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "http://127.0.0.1:11434/v1"
+            },
+            "builtinModelIds": [],
+            "category": "local"
+          }
+        },
+        {
+          "templateId": "lm-studio",
+          "templateNameMap": {
+            "zh-CN": "LM Studio（本地）",
+            "en-US": "LM Studio (Local)"
+          },
+          "config": {
+            "access": {
+              "type": "none"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "http://127.0.0.1:1234/v1"
+            },
+            "builtinModelIds": [],
+            "category": "local"
+          }
+        },
+        {
+          "templateId": "llamacpp",
+          "templateNameMap": {
+            "zh-CN": "llama.cpp（本地）",
+            "en-US": "llama.cpp (Local)"
+          },
+          "config": {
+            "access": {
+              "type": "none"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "http://127.0.0.1:8080/v1"
+            },
+            "builtinModelIds": [],
+            "category": "local"
+          }
+        },
+        {
+          "templateId": "china-mobile-moma",
+          "templateNameMap": {
+            "zh-CN": "中国移动 MoMA",
+            "en-US": "China Mobile MoMA"
+          },
+          "config": {
+            "access": {
+              "type": "api-key"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "http://moma.hq.cmcc",
+              "baseUrlEditable": true
+            },
+            "builtinModelIds": [],
+            "category": "local"
+          }
+        },
+        {
+          "templateId": "aliyun-bailian-token-plan",
+          "templateNameMap": {
+            "zh-CN": "阿里百炼 Token Plan",
+            "en-US": "Aliyun Bailian Token Plan"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://bailian.console.aliyun.com/cn-beijing?tab=plan#/efm/subscription/overview"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+            },
+            "builtinModelIds": [
+              "qwen3.8-max",
+              "qwen3.6-flash"
+            ],
+            "category": "aggregator"
+          }
+        },
+        {
+          "templateId": "aliyun-bailian-coding-plan",
+          "templateNameMap": {
+            "zh-CN": "阿里百炼 Coding Plan",
+            "en-US": "Aliyun Bailian Coding Plan"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://bailian.console.aliyun.com/cn-beijing/?tab=model#/efm/coding_plan"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "https://coding.dashscope.aliyuncs.com/v1"
+            },
+            "builtinModelIds": [
+              "qwen3.7-plus",
+              "qwen3.6-plus"
+            ],
+            "category": "aggregator"
+          }
+        },
+        {
+          "templateId": "baidu-qianfan-token-plan",
+          "templateNameMap": {
+            "zh-CN": "百度千帆 Token Plan",
+            "en-US": "Baidu Qianfan Token Plan"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://console.bce.baidu.com/iam/#/iam/apikey/list"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "https://qianfan.baidubce.com/v2/tokenplan/personal"
+            },
+            "builtinModelIds": [],
+            "category": "aggregator"
+          }
+        },
+        {
+          "templateId": "tencent-tokenhub-coding",
+          "templateNameMap": {
+            "zh-CN": "腾讯 TokenHub Coding",
+            "en-US": "Tencent TokenHub Coding"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://console.cloud.tencent.com/tokenhub/apikey"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "https://api.lkeap.cloud.tencent.com/coding/v3"
+            },
+            "builtinModelIds": [
+              "tc-code-latest"
+            ],
+            "category": "aggregator"
+          }
+        },
+        {
+          "templateId": "stepfun-step-plan",
+          "templateNameMap": {
+            "zh-CN": "阶跃 Step Plan",
+            "en-US": "StepFun Step Plan"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://platform.stepfun.com/interface-key"
+            },
+            "api": {
+              "type": "openai-chat-completions",
+              "baseUrl": "https://api.stepfun.com/step_plan/v1"
+            },
+            "builtinModelIds": [
+              "step-3.7-flash",
+              "step-3.5-flash"
+            ],
+            "category": "aggregator"
+          }
+        },
+        {
+          "templateId": "xfyun-astron-coding",
+          "templateNameMap": {
+            "zh-CN": "讯飞星辰 Coding Plan",
+            "en-US": "iFlytek Astron Coding Plan"
+          },
+          "config": {
+            "access": {
+              "type": "api-key",
+              "apiKeyManagementUrl": "https://console.xfyun.cn/services"
+            },
+            "api": {
+              "type": "anthropic-messages",
+              "baseUrl": "https://maas-coding-api.cn-huabei-1.xf-yun.com/anthropic"
+            },
+            "builtinModelIds": [
+              "astron-code-latest"
+            ],
+            "category": "aggregator"
           }
         }
       ],
@@ -4625,48 +4828,6 @@
           }
         },
         {
-          "modelId": "GLM-5-Turbo",
-          "templateId": "zai-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5-Turbo",
-          "templateId": "bigmodel-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5.3",
-          "templateId": "zai-api",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "modelId": "GLM-5.3-Flash",
-          "templateId": "zai-api",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "modelId": "GLM-5.3",
-          "templateId": "bigmodel-api",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "modelId": "GLM-5.3-Flash",
-          "templateId": "bigmodel-api",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
           "modelId": "kimi-k3",
           "templateId": "moonshot-kimi",
           "config": {
@@ -5619,342 +5780,6 @@
           }
         },
         {
-          "modelId": "GLM-5.3",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "modelId": "GLM-5.3-Flash",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "modelId": "GLM-5V-Turbo",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5.1",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5.1-Highspeed",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5-Turbo",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.7",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.7-FlashX",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.7-Flash",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.6",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.5-Air",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.5",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.6V",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.6V-Flash",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.6V-FlashX",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.1V-Thinking-FlashX",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.1V-Thinking-Flash",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4-FlashX-250414",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4-Flash-250414",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4V-Flash",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "codegeex-4",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "charglm-4",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "emohaa",
-          "templateId": "zai-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5.3",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "modelId": "GLM-5.3-Flash",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "modelId": "GLM-5V-Turbo",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5.1",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5.1-Highspeed",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-5-Turbo",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.7",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.7-FlashX",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.7-Flash",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.6",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.5-Air",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.5",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.6V",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.6V-Flash",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.6V-FlashX",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.1V-Thinking-FlashX",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4.1V-Thinking-Flash",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4-FlashX-250414",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4-Flash-250414",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "GLM-4V-Flash",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "codegeex-4",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "charglm-4",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
-          "modelId": "emohaa",
-          "templateId": "bigmodel-standard-api",
-          "config": {
-            "enabled": false
-          }
-        },
-        {
           "templateId": "openai",
           "modelId": "gpt-6-astra",
           "config": {
@@ -6158,190 +5983,7 @@
           }
         }
       ],
-      "builtinProviderModelRules": [
-        {
-          "providerId": "account:zai-individual-coding-plan",
-          "modelId": "GLM-5.3",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-individual-coding-plan",
-          "modelId": "GLM-5.3-Flash",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-individual-coding-plan",
-          "modelId": "GLM-5.2",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-individual-coding-plan",
-          "modelId": "GLM-5-Turbo",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-team-coding-plan",
-          "modelId": "GLM-5.3",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-team-coding-plan",
-          "modelId": "GLM-5.3-Flash",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-team-coding-plan",
-          "modelId": "GLM-5.2",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-team-coding-plan",
-          "modelId": "GLM-5-Turbo",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-start-plan",
-          "modelId": "GLM-5.3-Flash",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-start-plan",
-          "modelId": "GLM-5.2",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-start-plan",
-          "modelId": "GLM-5-Turbo",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-individual-coding-plan",
-          "modelId": "GLM-5.3",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-individual-coding-plan",
-          "modelId": "GLM-5.3-Flash",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-individual-coding-plan",
-          "modelId": "GLM-5.2",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-individual-coding-plan",
-          "modelId": "GLM-5-Turbo",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-team-coding-plan",
-          "modelId": "GLM-5.3",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-team-coding-plan",
-          "modelId": "GLM-5.3-Flash",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-team-coding-plan",
-          "modelId": "GLM-5.2",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-team-coding-plan",
-          "modelId": "GLM-5-Turbo",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-start-plan",
-          "modelId": "GLM-5.3-Flash",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-start-plan",
-          "modelId": "GLM-5.2",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-start-plan",
-          "modelId": "GLM-5-Turbo",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-offpeak-idle-plan",
-          "modelId": "GLM-5.3-Flash",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:zai-offpeak-idle-plan",
-          "modelId": "GLM-5.3",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-offpeak-idle-plan",
-          "modelId": "GLM-5.3-Flash",
-          "config": {
-            "enabled": true
-          }
-        },
-        {
-          "providerId": "account:bigmodel-offpeak-idle-plan",
-          "modelId": "GLM-5.3",
-          "config": {
-            "enabled": true
-          }
-        }
-      ]
+      "builtinProviderModelRules": []
     }
   }
 }

@@ -7,13 +7,16 @@ import { modelEditorControlStyle } from "@/settings/model-provider-section/model
 import { ModelOptionCheckbox } from "@/settings/model-provider-section/ProviderModelMetadataFields.js";
 
 // PDF 已经是正式的模型输入事实和可执行附件能力，旧列表漏掉它后用户无法修正该事实。
-// Audio 仍没有设置页附件入口，因此继续只在 Draft 中无损保留。
-const INPUT_MODALITY_OPTIONS = ["text", "image", "video", "pdf"] as const;
+// Audio（R4，决策 D2'）本期声明先行：勾选登记该模型的音频输入能力（schema/overlay/
+// resolver/draft 四层已有 supportsAudio），运行时附件入口与消费者随语音输入立项补齐；
+// 勾选当前不参与请求链路（media-policy 无 audio 种类）。
+const INPUT_MODALITY_OPTIONS = ["text", "image", "video", "pdf", "audio"] as const;
 
 const INPUT_MODALITY_FIELDS = {
   image: "supportsImage",
   video: "supportsVideo",
   pdf: "supportsPdf",
+  audio: "supportsAudio",
 } as const satisfies Record<Exclude<(typeof INPUT_MODALITY_OPTIONS)[number], "text">, string>;
 
 type VisibleModelFormat = (typeof INPUT_MODALITY_OPTIONS)[number];
@@ -80,6 +83,7 @@ export function ProviderModelInputModalityOptions({
     image: value.supportsImage,
     video: value.supportsVideo,
     pdf: value.supportsPdf,
+    audio: value.supportsAudio,
   };
   return (
     <div className="flex flex-wrap gap-2">

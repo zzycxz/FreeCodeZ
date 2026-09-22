@@ -2,6 +2,7 @@
 import type {
   ModelConfigRules,
   ModelId,
+  ProviderApiType,
   ProviderConfig,
   ProviderId,
   ProviderTemplateId,
@@ -11,6 +12,7 @@ import type {
 import {
   ApiKeyAccessConfig,
   ModelConfig,
+  ProviderApiConfig,
   ProviderConfigMap,
   ProviderConfig as ProviderConfigValue,
   ProviderTemplateMap,
@@ -57,6 +59,18 @@ export interface CreatePersonalProviderInput {
   readonly providerName?: string;
   readonly locale?: ProviderTemplateLocale;
   readonly initialConfig?: ProviderConfig;
+}
+
+/** 三步向导原子提交输入（spec: docs/spec/model-provider-intake-and-expansion.md §P1.R3）。 */
+export interface SetupPersonalProviderInput {
+  readonly templateId?: ProviderTemplateId;
+  readonly providerName?: string;
+  readonly locale?: ProviderTemplateLocale;
+  readonly apiKey?: string;
+  readonly apiType?: ProviderApiType;
+  readonly baseUrl?: string;
+  readonly modelIds: readonly ModelId[];
+  readonly defaultModelId: ModelId;
 }
 
 /** Facade 提供的 Host 内部成员事实；不得接受 Renderer 自报的模型名单。 */
@@ -257,6 +271,87 @@ export class ProviderConfigService implements ProviderSource<ProviderConfigSnaps
           current.providerOrder,
           providerId,
         ),
+      };
+    });
+    if (!createdProviderId) throw new Error("Personal Provider 创建失败");
+    return Object.freeze({ providerId: createdProviderId });
+  }
+
+  /**
+   * 三步向导的原子提交（spec §P1.R3/§P1.5）：创建 provider + key + 模型 + 默认模型
+   * 在同一次 Repository update 中落盘，向导完成即无空壳态。
+   */
+  async setupPersonalProvider(input: SetupPersonalProviderInput): Promise<PersonalProviderCreation> {
+    const zcodeBuiltin = await this.#zcodeBuiltinSource.read();
+    const templateId = input.templateId?.trim();
+    const template = templateId ? zcodeBuiltin.providerTemplates?.get(templateId) : undefined;
+    if (templateId && !template) throw new Error(`Provider Template 不存在: ${templateId}`);
+    const modelIds = [...new Set(input.modelIds.map((modelId) => normalizeId("modelId", modelId)))];
+    const defaultModelId = normalizeId("modelId", input.defaultModelId);
+    if (modelIds.length === 0) throw new Error("setupPersonalProvider 需要至少一个 Model");
+    if (!modelIds.includes(defaultModelId)) {
+      throw new Error(`默认 Model 必须在已选列表中: ${defaultModelId}`);
+    }
+    let createdProviderId: ProviderId | undefined;
+    await this.#updatePersonal((current) => {
+      const occupied = new Set([...zcodeBuiltin.providers.keys(), ...current.providers.keys()]);
+      const providerId = nextPersonalProviderId(occupied, templateId);
+      createdProviderId = providerId;
+      const effectiveProviders = resolvePersonalProviderBaselines(zcodeBuiltin, current.providers);
+      const label = nextPersonalProviderLabel(
+        input.providerName ??
+          (template && templateId
+            ? resolveProviderTemplateName(templateId, template, input.locale ?? "en-US")
+            : "new-provider"),
+        effectiveProviders,
+      );
+      // 模板预设模型是继承成员（builtinModelIds），向导勾选只定顺序与默认；
+      // 新发现/手敲的模型才写 personal rule（useRecommended 让 modelRules 继承能力元数据）。
+      const builtinModelIds = new Set(template?.config.builtinModelIds ?? []);
+      const personalModelIds = modelIds.filter((modelId) => !builtinModelIds.has(modelId));
+      const initial = new ProviderConfigValue({
+        ...(input.apiKey ? { access: new ApiKeyAccessConfig({ apiKey: input.apiKey }) } : {}),
+        ...(input.baseUrl
+          ? {
+              api: new ProviderApiConfig({
+                type: input.apiType ?? "openai-chat-completions",
+                baseUrl: input.baseUrl,
+              }),
+            }
+          : {}),
+        personalModelIds,
+        modelOrder: normalizeModelOrder([...builtinModelIds], personalModelIds, modelIds),
+      });
+      const providers = current.providers.setRule({
+        providerId,
+        ...(templateId ? { templateId } : {}),
+        providerName: label,
+        config: new ProviderConfigValue({
+          group: "standard-personal",
+          access: templateId ? undefined : new ApiKeyAccessConfig(),
+          personalModelIds: [],
+          modelOrder: [],
+        }).overlay(initial),
+      });
+      let models = current.models;
+      for (const modelId of personalModelIds) {
+        models = models.setExact(
+          providerId,
+          modelId,
+          new ModelConfig({ enabled: true }),
+          true,
+        );
+      }
+      return {
+        providers,
+        models,
+        providerOrder: appendCurrentProviderOrder(
+          zcodeBuiltin.providers,
+          providers,
+          current.providerOrder,
+          providerId,
+        ),
+        defaultModelSelection: { providerId, modelId: defaultModelId },
       };
     });
     if (!createdProviderId) throw new Error("Personal Provider 创建失败");

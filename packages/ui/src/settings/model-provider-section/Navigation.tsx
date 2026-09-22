@@ -21,8 +21,6 @@ import { Loader2Icon } from "lucide-react";
 import { ProviderStatusIndicator } from "./ProviderStatusIndicator.js";
 
 import {
-  resolveModelProviderFamilySpecByProviderId,
-  isStartPlanModelProviderId,
   TID_MODEL_PROVIDER_NAV_ITEM,
   testId,
 } from "@zcode/shared";
@@ -69,16 +67,6 @@ function shouldShowModelProviderGroupLoadingIndicator(params: {
     return params.presetLoading;
   }
   return params.customLoading;
-}
-
-function resolveModelProviderSideNavLabel(item: ModelProviderNavItem): string {
-  if (item.type === "preset") {
-    return resolveModelProviderFamilySpecByProviderId(item.presetId)?.label ?? item.label;
-  }
-  if (item.type === "codingPlan" && isStartPlanModelProviderId(item.presetId)) {
-    return "Start Plan";
-  }
-  return item.label;
 }
 
 function ModelProviderNavigationButton({
@@ -214,30 +202,6 @@ function SortableModelProviderNavigationButton({
         ) : null}
       </div>
     </ControlHintTooltip>
-  );
-}
-
-function PresetProviderCardNavigation({
-  group,
-  selectedNodeKey,
-  onSelectNavItem,
-}: {
-  group: ModelProviderNavGroup;
-  selectedNodeKey: string | null;
-  onSelectNavItem: (item: ModelProviderNavItem) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2 max-md:items-center max-md:gap-1">
-      {group.items.map((item) => (
-        <ModelProviderNavigationButton
-          key={item.key}
-          item={item}
-          label={resolveModelProviderSideNavLabel(item)}
-          selectedNodeKey={selectedNodeKey}
-          onSelectNavItem={onSelectNavItem}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -401,22 +365,14 @@ export function ModelProviderSectionNavigation({
                 ) : null}
               </div>
 
-              {group.id === "preset" ? (
-                <PresetProviderCardNavigation
-                  group={group}
-                  selectedNodeKey={selectedNodeKey}
-                  onSelectNavItem={onSelectNavItem}
-                />
-              ) : (
-                <SortableProviderNavigationGroup
-                  group={group}
-                  selectedNodeKey={selectedNodeKey}
-                  onSelectNavItem={onSelectNavItem}
-                  onReorderProviderIds={onReorderProviderIds}
-                  reorderableProviderIds={reorderableProviderIds}
-                  sensors={sensors}
-                />
-              )}
+              <SortableProviderNavigationGroup
+                group={group}
+                selectedNodeKey={selectedNodeKey}
+                onSelectNavItem={onSelectNavItem}
+                onReorderProviderIds={onReorderProviderIds}
+                reorderableProviderIds={reorderableProviderIds}
+                sensors={sensors}
+              />
             </div>
           ))}
       </div>

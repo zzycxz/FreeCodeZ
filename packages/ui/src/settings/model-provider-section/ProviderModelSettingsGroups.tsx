@@ -1,10 +1,17 @@
 import type { ReactNode } from "react";
 import type { ModelConfigObject } from "@zcode/provider";
+import {
+  REASONING_LEVEL_PRESETS,
+  matchReasoningLevelPreset,
+  type ReasoningLevelPreset,
+  type ReasoningLevelPresetId,
+} from "@zcode/shared/reasoning-effort-recovery";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import type { ProviderModelDraftValues } from "@/settings/model-provider-section/ProviderModelMetadata.js";
 import { JsonSlotEditor } from "@/settings/model-provider-section/ProviderModelMetadataFields.js";
 import { ProviderModelReasoningLevelEditor } from "@/settings/model-provider-section/ProviderModelReasoningLevelEditor.js";
 import { ModelConfigHelp } from "@/settings/model-provider-section/ModelConfigHelp.js";
+import { Button } from "@/components/ui/button.js";
 
 export function ModelSettingsGroup({
   group,
@@ -35,8 +42,58 @@ export function ProviderModelReasoningSettings({
 }) {
   const { intl } = useZCodeIntl();
 
+  // 档位预设（spec §2.1）：把「填档位」变成「选档位」；chips 编辑器保留为预设之上的微调。
+  const activePresetId = matchReasoningLevelPreset(draft.reasoningLevelValuesValue)?.id;
+  const suggestedPresetId: ReasoningLevelPresetId | undefined = /think|reasoner/iu.test(
+    draft.idValue,
+  )
+    ? "off-on"
+    : undefined;
+  const applyPreset = (preset: ReasoningLevelPreset) => {
+    // 离开「无档位」时复位它写入的空 map，否则档位表已换、请求仍被阻断在零参数。
+    const resetNoReasoningMap =
+      preset.mapOverride === undefined && draft.reasoningLevelMapValue.trim() === "{}";
+    onDraftChange({
+      reasoningLevelValuesValue: [...preset.values],
+      ...(preset.mapOverride !== undefined
+        ? { reasoningLevelMapValue: preset.mapOverride }
+        : resetNoReasoningMap
+          ? { reasoningLevelMapValue: "" }
+          : {}),
+    });
+  };
+
   return (
     <ModelSettingsGroup group="reasoning">
+      <div className="space-y-1">
+        <div className="block text-ui-base text-foreground-subtle">
+          {intl.formatMessage({ id: "settings.modelProvider.reasoningPreset" })}
+        </div>
+        <div className="flex flex-wrap gap-2" data-model-reasoning-presets="true">
+          {REASONING_LEVEL_PRESETS.map((preset) => {
+            // 启发式只做预选建议（spec §2.1）：ID 含 thinking/reasoner 时虚线高亮「仅开关」，
+            // 不自动提交、不改用户已保存配置。
+            const suggested =
+              suggestedPresetId === preset.id && activePresetId !== preset.id ? "true" : undefined;
+            return (
+              <Button
+                key={preset.id}
+                type="button"
+                size="sm"
+                variant={activePresetId === preset.id ? "default" : "outline"}
+                data-suggested={suggested}
+                className={suggested ? "border-dashed" : undefined}
+                title={intl.formatMessage({
+                  id: `settings.modelProvider.reasoningPresetHint.${preset.id}`,
+                })}
+                onClick={() => applyPreset(preset)}
+              >
+                {intl.formatMessage({ id: `settings.modelProvider.reasoningPreset.${preset.id}` })}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
       <div className="space-y-1">
         <div className="block text-ui-base text-foreground-subtle">
           {intl.formatMessage({ id: "settings.modelProvider.reasoningLevelsOrdered" })}

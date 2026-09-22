@@ -1,4 +1,3 @@
-import { CodingPlanEntryButton } from "@/settings/CodingPlanEntryButton.js";
 /**
  * ChatErrorBanner — 错误提示组件
  *
@@ -13,7 +12,7 @@ import {
   TID_CHAT_ERROR_BANNER,
   TID_CHAT_ERROR_HOOK_ICON,
 } from "@zcode/shared";
-import { AnchorIcon, CopyIcon, InfoIcon, RocketIcon, SettingsIcon, X } from "lucide-react";
+import { AnchorIcon, CopyIcon, InfoIcon, SettingsIcon, X } from "lucide-react";
 import { useZCodeIntl } from "./i18n/IntlProvider.js";
 import type { IntlInstance } from "./i18n/IntlProvider.js";
 import { Button } from "./components/ui/button.js";
@@ -27,6 +26,11 @@ import {
 import { cn } from "./components/lib/utils.js";
 import { toast } from "./components/ui/toast.js";
 import { useFeedbackStore } from "@/feedback/feedbackStore.js";
+import {
+  isReasoningEffortInvalidMessage,
+  type ReasoningLevelPresetId,
+} from "@zcode/shared/reasoning-effort-recovery";
+import type { ReasoningEffortFix } from "@/hooks/useReasoningEffortFix.js";
 import { getProviderBusinessErrorMessageId } from "@/lib/providerBusinessError.js";
 import { buildErrorFeedbackDescription } from "@/lib/errorFeedbackDraft.js";
 import {
@@ -50,8 +54,9 @@ const LOCALIZED_ERROR_CODES = new Set([
   MEDIA_BUDGET_CURRENT_VIDEO_TOO_LARGE_ERROR_CODE,
   // 服务层错误 message 是跨进程兜底，不能作为最终 UI 语言来源。
   // 历史任务模型不可用要按稳定 code 本地化，避免英文界面显示中文提示。
+  // FreeCodeZ fork(model-provider-intake R1):bigmodel 团队套餐成员错误码随账号族移除，
+  // 不再本地化（该错误随 bigmodel+zai 账号链一并绝迹；万一到达也回退原文）。
   "ZCODE_RUNTIME_MODEL_UNAVAILABLE",
-  "ZCODE_BIGMODEL_TEAM_PLAN_MEMBER_REQUIRED",
 ]);
 
 const MODEL_CONFIG_MISSING_CODES = new Set([
@@ -59,6 +64,17 @@ const MODEL_CONFIG_MISSING_CODES = new Set([
   "MODEL_CONFIG_MISSING",
   "ModelConfigMissing",
 ]);
+
+function isReasoningEffortInvalidError(
+  error: Pick<ZCodeUiError, "message" | "underlyingErrorMessage">,
+): boolean {
+  // 包装错误的可读 message 可能是通用文案，原始 provider 报错落在 underlyingErrorMessage；
+  // 两处都查，避免归因命中而横幅漏显修复按钮。
+  return (
+    isReasoningEffortInvalidMessage(error.message) ||
+    isReasoningEffortInvalidMessage(error.underlyingErrorMessage ?? "")
+  );
+}
 
 function isModelConfigMissingError(error: Pick<ZCodeUiError, "code" | "message">): boolean {
   // 桌面端发送前 registry 为空时，agent 会退回 CLI config 并抛 Model config is missing。
@@ -92,6 +108,11 @@ export function resolveChatErrorBannerDisplayMessage(
     return intl.formatMessage({ id: "chat.error.imageUnsupported" });
   }
 
+  // FreeCodeZ fork(reasoning-level-presets L2):推理参数被拒 → 本地化 + 一键降档修复。
+  if (isReasoningEffortInvalidError(error)) {
+    return intl.formatMessage({ id: "chat.error.reasoningEffortInvalid" });
+  }
+
   return error.code && LOCALIZED_ERROR_CODES.has(error.code)
     ? intl.formatMessage({ id: `zcode.error.${error.code}` })
     : error.message;
@@ -115,7 +136,7 @@ export function ChatErrorBanner({
   retryDisabled,
   onDismiss,
   onOpenModelSettings,
-  onOpenUpgrade,
+  reasoningEffortFix,
 }: {
   error: ZCodeUiError;
   onRetry?: () => void;
@@ -123,11 +144,12 @@ export function ChatErrorBanner({
   retryDisabled?: boolean;
   onDismiss?: () => void;
   onOpenModelSettings?: () => void;
-  onOpenUpgrade?: () => void;
+  reasoningEffortFix?: ReasoningEffortFix | null;
 }) {
   const { intl } = useZCodeIntl();
   const openFeedbackSubmit = useFeedbackStore((state) => state.openSubmit);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [reasoningFixing, setReasoningFixing] = useState<ReasoningLevelPresetId | null>(null);
   const actionButtonClassName = "shrink-0";
   const iconButtonClassName = "shrink-0";
   const localizedErrorMessage = resolveChatErrorBannerDisplayMessage(error, intl);
@@ -138,6 +160,9 @@ export function ChatErrorBanner({
     !modelConfigMissing &&
     (error.code === "image_input_unsupported" ||
       /does not support image input/i.test(error.message));
+  // FreeCodeZ fork(reasoning-level-presets L2):推理档位被拒 → 一键写回安全档位。
+  const reasoningEffortInvalid =
+    !modelConfigMissing && isReasoningEffortInvalidError(error);
   if (shouldSuppressChatErrorBanner(error)) {
     return null;
   }
@@ -159,6 +184,22 @@ export function ChatErrorBanner({
       screenshots: [],
     });
     toast(intl.formatMessage({ id: "chat.error.feedbackOpened" }));
+  };
+
+  // FreeCodeZ fork(reasoning-level-presets L2):点击后写回安全档位，成功/失败都以 toast 告知。
+  const handleReasoningFix = async (presetId: ReasoningLevelPresetId) => {
+    if (!reasoningEffortFix) return;
+    setReasoningFixing(presetId);
+    try {
+      const ok = await reasoningEffortFix.apply(presetId);
+      toast(
+        intl.formatMessage({
+          id: ok ? "chat.error.reasoningEffortFixed" : "chat.error.reasoningEffortFixFailed",
+        }),
+      );
+    } finally {
+      setReasoningFixing(null);
+    }
   };
 
   const handleCopyError = async () => {
@@ -218,22 +259,6 @@ export function ChatErrorBanner({
 
         {modelConfigMissing ? (
           <>
-            <CodingPlanEntryButton
-              type="button"
-              variant="default"
-              size="sm"
-              onClick={onOpenUpgrade}
-              className={cn(
-                actionButtonClassName,
-                "button-gradient gap-1.5 text-white hover:bg-transparent hover:opacity-90 dark:bg-[#484A58] dark:hover:bg-[#484A58]",
-              )}
-              aria-label={intl.formatMessage({
-                id: "chat.quota.action.upgrade",
-              })}
-            >
-              <RocketIcon className="size-3.5" />
-              {intl.formatMessage({ id: "chat.quota.action.upgrade" })}
-            </CodingPlanEntryButton>
             <Button
               type="button"
               variant="outline"
@@ -259,6 +284,33 @@ export function ChatErrorBanner({
           >
             {intl.formatMessage({ id: "chat.error.action.switchModel" })}
           </Button>
+        ) : null}
+
+        {reasoningEffortInvalid && reasoningEffortFix ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={reasoningFixing !== null}
+              className={actionButtonClassName}
+              onClick={() => void handleReasoningFix("off-on")}
+              aria-label={intl.formatMessage({ id: "chat.error.action.reasoningToToggle" })}
+            >
+              {intl.formatMessage({ id: "chat.error.action.reasoningToToggle" })}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={reasoningFixing !== null}
+              className={actionButtonClassName}
+              onClick={() => void handleReasoningFix("no-reasoning")}
+              aria-label={intl.formatMessage({ id: "chat.error.action.reasoningOff" })}
+            >
+              {intl.formatMessage({ id: "chat.error.action.reasoningOff" })}
+            </Button>
+          </>
         ) : null}
 
         {!modelConfigMissing && error.detail ? (

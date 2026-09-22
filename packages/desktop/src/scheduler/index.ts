@@ -108,10 +108,8 @@ async function tick(): Promise<void> {
         for (const manualRun of manualRuns) {
           await handleClaimedManual(manualRun.automation, manualRun.run);
         }
-        const offPeakClaimed = await offPeakRepo.claimDue(now);
-        for (const task of offPeakClaimed) {
-          await handleOffPeakClaimed(task, now);
-        }
+        // FreeCodeZ fork:闲时任务认领与结算已删(处理函数随闲时链一并移除),
+        // 不能再 claim,否则任务被认领后无人处理、永久滞留在 claim 态。
         // keep-awake：上报执行中计数，main 据此 + 设置决定 powerSaveBlocker。
         await reportOffPeakActiveCount();
       } catch (error) {
@@ -381,11 +379,5 @@ parentPort?.on("message", (event: Electron.MessageEvent) => {
   resourceTelemetry = startSchedulerResourceTelemetry({
     postMessage: (message) => parentPort?.postMessage(message),
   });
-
-void main().catch((error) => {
-  log(
-    "error",
-    `scheduler bootstrap failed: ${error instanceof Error ? error.message : String(error)}`,
-  );
-  process.exit(1);
-});
+// FreeCodeZ fork 修复:原 bootstrap 包装函数 main() 已被内联为上方顶层初始化,
+// 残留的 void main().catch(...) 会在启动即抛 ReferenceError,导致 scheduler 进程 exit code=1。

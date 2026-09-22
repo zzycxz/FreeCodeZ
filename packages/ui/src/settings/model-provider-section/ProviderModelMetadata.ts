@@ -155,7 +155,12 @@ export function resolveProviderModelDraftCommit({
   }
   const inheritedReasoning = inherited?.optionSpecs?.reasoningLevel;
   const reasoningLevelMap = draft.reasoningLevelMapValue.trim();
-  const effectiveReasoningMap = reasoningLevelMap || inheritedReasoning?.map;
+  // spec §2.2 映射兜底：完全手动模式没有 inherited，映射留空也应回落推荐 map
+  // （与运行时规则同一数据源），否则用户被迫手写 CEL 表达式才能保存档位。
+  const effectiveReasoningMap =
+    reasoningLevelMap ||
+    inheritedReasoning?.map ||
+    currentModel.inheritedConfig?.optionSpecs?.reasoningLevel?.map;
   if (
     !effectiveReasoningMap ||
     new EnumOptionSpecConfig({
@@ -176,6 +181,8 @@ export function resolveProviderModelDraftCommit({
       supportsImage: draft.inputFormatValue.supportsImage,
       supportsVideo: draft.inputFormatValue.supportsVideo,
       supportsPdf: draft.inputFormatValue.supportsPdf,
+      // R4（决策 D2）：audio 声明勾选必须进入保存投影，否则保存重开后丢失。
+      supportsAudio: draft.inputFormatValue.supportsAudio,
     },
     outputFormat: currentModel.config.properties?.outputFormat,
     supportsToolCall: currentModel.config.properties?.supportsToolCall,
@@ -210,7 +217,7 @@ export function resolveProviderModelDraftCommit({
     if (draft.overriddenFieldsValue?.includes(`${key}Value`))
       assignMutable(personalProperties, key, effectiveProperties[key]);
   }
-  for (const key of ["supportsImage", "supportsVideo", "supportsPdf"] as const) {
+  for (const key of ["supportsImage", "supportsVideo", "supportsPdf", "supportsAudio"] as const) {
     if (
       draft.overriddenFieldsValue?.includes(`inputFormatValue.${key}`) ||
       draft.inputFormatValue[key] !== currentModel.config.properties?.inputFormat?.[key]

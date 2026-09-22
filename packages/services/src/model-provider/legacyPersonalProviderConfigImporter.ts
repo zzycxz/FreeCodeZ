@@ -41,29 +41,18 @@ export function importLegacyPersonalProviderConfig(
   let models = ModelConfigRules.empty();
 
   for (const legacy of input.legacyProviders) {
-    const providerId = legacy.id.trim();
-    if (!providerId) continue;
+    const legacyProviderId = legacy.id.trim();
+    if (!legacyProviderId) continue;
     // 已发布 config.json 也把 builtin:* 标成 custom；保留身份必须先于 source。
-    // 只有按量 API 的 Key 是用户输入，模板关联使用当前身份；旧文件仅为回滚保留，不持续双写。
-    const apiTemplateId =
-      providerId === "builtin:bigmodel"
+    // FreeCodeZ：zai/bigmodel 预设与模板已随账号族整体下线（model-provider-intake R1），
+    // 旧按量 API Provider 降级为自包含个人 provider（稳定 ID 仅作旧数据锚点），
+    // 保留用户 API Key 与调用配置，不再关联已删除的模板；旧文件仅为回滚保留。
+    const providerId =
+      legacyProviderId === "builtin:bigmodel"
         ? BUILTIN_PROVIDER_TEMPLATE_IDS.bigmodel
-        : providerId === "builtin:zai"
+        : legacyProviderId === "builtin:zai"
           ? BUILTIN_PROVIDER_TEMPLATE_IDS.zai
-          : undefined;
-    if (apiTemplateId) {
-      const apiKey = legacy.apiKey.trim();
-      if (apiKey)
-        providers = providers.setRule({
-          providerId: apiTemplateId,
-          templateId: apiTemplateId,
-          config: new ProviderConfig({
-            group: "standard-personal",
-            access: new ApiKeyAccessConfig({ apiKey }),
-          }),
-        });
-      continue;
-    }
+          : legacyProviderId;
     if (providerId.startsWith("builtin:") || providerId.startsWith("account:")) continue;
     // Built-in 整体由当前 ZCode Built-in Config 与 Account Overlay 重建；models-dev 已
     // 退役，workspace 也不是全局 Personal 输入。只允许旧自定义 Provider 进入新文件。

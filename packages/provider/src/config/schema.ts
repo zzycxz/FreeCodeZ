@@ -4,6 +4,7 @@ import { providerConfigDataSchema } from "./provider-data-schema.js";
 import { ModelConfig, ModelConfigRules } from "./model-config.js";
 import {
   ApiKeyAccessConfig,
+  NoneAccessConfig,
   ProviderApiConfig,
   ProviderConfig,
   ProviderConfigMap,
@@ -141,10 +142,13 @@ function createTemplateRules(
 function createProviderConfig(config: z.infer<typeof providerConfigDataSchema>): ProviderConfig {
   return new ProviderConfig({
     ...config,
+    // access 判别联合按 type 分派构造（api-key | none，D-P2.1）。
     access:
       config.access == null
         ? config.access
-        : new ApiKeyAccessConfig(config.access),
+        : config.access.type === "none"
+          ? new NoneAccessConfig(config.access)
+          : new ApiKeyAccessConfig(config.access),
     api: config.api == null ? config.api : new ProviderApiConfig(config.api),
   });
 }

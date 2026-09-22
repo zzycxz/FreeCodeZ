@@ -12,7 +12,15 @@ import { Button } from "@/components/ui/button.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
-import { ProviderLogo } from "./ProviderLogo.js";
+import { ProviderLogo, hasBuiltinProviderLogo } from "./ProviderLogo.js";
+
+/** 三分组固定顺序（§P2.1-5 组内中立序）：直连 → 聚合 → 本地 → 兜底。 */
+const TEMPLATE_GROUPS = [
+  { category: "direct", labelId: "providerIntake.groupDirect" },
+  { category: "aggregator", labelId: "providerIntake.groupAggregator" },
+  { category: "local", labelId: "providerIntake.groupLocal" },
+  { category: "other", labelId: "providerIntake.groupOther" },
+] as const;
 import { useProviderDetailFeedback } from "./ProviderDetailFeedback.js";
 
 type ProviderTemplateCreate = (templateId: string) => Promise<void>;
@@ -26,7 +34,8 @@ export function ProviderTemplatePicker({
   creating,
 }: {
   templates: ProviderSettingsView["providerTemplates"];
-  onBack: () => void;
+  /** 首次打开的接入面（WelcomeScreen）无上级详情页，不传即隐藏返回按钮。 */
+  onBack?: () => void;
   onCreateFromTemplate: ProviderTemplateCreate;
   onCreateCustom: CustomProviderCreate;
   creating: boolean;
@@ -34,19 +43,6 @@ export function ProviderTemplatePicker({
   const { intl, locale } = useZCodeIntl();
   const { dismissFeedback, showFeedback } = useProviderDetailFeedback();
   const customLabel = intl.formatMessage({ id: "settings.modelProvider.newProviderName" });
-  const zhipuIds = ["bigmodel-api", "zai-api", "bigmodel-standard-api", "zai-standard-api"];
-  const groups = [
-    {
-      id: "zhipu",
-      templates: zhipuIds.flatMap((id) =>
-        templates.filter((template) => template.templateId === id),
-      ),
-    },
-    {
-      id: "other",
-      templates: templates.filter((template) => !zhipuIds.includes(template.templateId)),
-    },
-  ] as const;
   const createWithFeedback = async (create: () => Promise<void>) => {
     const feedbackKey = "provider-template-create";
     dismissFeedback(feedbackKey);
@@ -71,63 +67,89 @@ export function ProviderTemplatePicker({
   return (
     <section className="space-y-5" data-testid={TID_MODEL_PROVIDER_TEMPLATE_PICKER}>
       <div className="flex items-center gap-3">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          data-testid={TID_MODEL_PROVIDER_TEMPLATE_BACK_BUTTON}
-          aria-label={intl.formatMessage({ id: "settings.modelProvider.templatePickerBack" })}
-          onClick={onBack}
-        >
-          <ArrowLeftIcon className="size-4" aria-hidden="true" />
-        </Button>
+        {onBack ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            data-testid={TID_MODEL_PROVIDER_TEMPLATE_BACK_BUTTON}
+            aria-label={intl.formatMessage({ id: "settings.modelProvider.templatePickerBack" })}
+            onClick={onBack}
+          >
+            <ArrowLeftIcon className="size-4" aria-hidden="true" />
+          </Button>
+        ) : null}
         <h2 className="text-ui-lg font-semibold text-foreground">
           {intl.formatMessage({ id: "settings.modelProvider.templatePickerTitle" })}
         </h2>
       </div>
 
       <div className="space-y-6">
-        {groups.map((group) => (
-          <section key={group.id} data-provider-template-group={group.id} className="space-y-3">
-            <h3 className="text-ui-base font-medium text-foreground-subtle">
-              {intl.formatMessage({ id: `settings.modelProvider.templateGroup.${group.id}` })}
-            </h3>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {group.id === "other" ? (
-                <ProviderTemplateCard
-                  label={intl.formatMessage({ id: "settings.modelProvider.createCustomProvider" })}
-                  disabled={creating}
-                  testId={testId(TID_MODEL_PROVIDER_TEMPLATE_ITEM, "custom")}
-                  icon={
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-hover">
-                      <PlusIcon className="size-4" aria-hidden="true" />
-                    </span>
-                  }
-                  onClick={() => void createWithFeedback(() => onCreateCustom(customLabel))}
-                />
-              ) : null}
-              {group.templates.map((template) => {
-                const label = resolveProviderTemplateName(template.templateId, template, locale);
-                return (
-                  <ProviderTemplateCard
-                    key={template.templateId}
-                    label={label}
-                    disabled={creating}
-                    testId={testId(TID_MODEL_PROVIDER_TEMPLATE_ITEM, template.templateId)}
-                    icon={
-                      <span className="flex size-9 shrink-0 items-center justify-center">
-                        <ProviderLogo logo={template.config.logo} className="size-8" />
-                      </span>
-                    }
-                    onClick={() =>
-                      void createWithFeedback(() => onCreateFromTemplate(template.templateId))
-                    }
-                  />
-                );
-              })}
-            </div>
-          </section>
-        ))}
+        {/* 三分组（D-P2.2）：direct → aggregator → local ；组内固定模板序，不偏置品牌（§P2.1-5）。
+            分组键来自 config.category 视图透传，UI 不维护 templateId→category 映射；
+            未知 category 归兜底组防数据解析漂移。 */}
+        <section data-provider-template-group="custom" className="space-y-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <ProviderTemplateCard
+              label={intl.formatMessage({ id: "settings.modelProvider.createCustomProvider" })}
+              disabled={creating}
+              testId={testId(TID_MODEL_PROVIDER_TEMPLATE_ITEM, "custom")}
+              icon={
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-hover">
+                  <PlusIcon className="size-4" aria-hidden="true" />
+                </span>
+              }
+              onClick={() => void createWithFeedback(() => onCreateCustom(customLabel))}
+            />
+          </div>
+        </section>
+        {TEMPLATE_GROUPS.map((group) => {
+          const grouped = templates.filter(
+            (template) => (template.config.category ?? "other") === group.category,
+          );
+          if (grouped.length === 0) return null;
+          return (
+            <section
+              key={group.category}
+              data-provider-template-group={group.category}
+              className="space-y-3"
+            >
+              <h3 className="text-ui-caption font-medium text-foreground-subtle">
+                {intl.formatMessage({ id: group.labelId })}
+              </h3>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {grouped.map((template) => {
+                  const label = resolveProviderTemplateName(template.templateId, template, locale);
+                  return (
+                    <ProviderTemplateCard
+                      key={template.templateId}
+                      label={label}
+                      disabled={creating}
+                      testId={testId(TID_MODEL_PROVIDER_TEMPLATE_ITEM, template.templateId)}
+                      icon={
+                        <span className="flex size-9 shrink-0 items-center justify-center">
+                          {hasBuiltinProviderLogo(template.config.logo?.key) ? (
+                            <ProviderLogo logo={template.config.logo} className="size-8" />
+                          ) : (
+                            <span
+                              aria-hidden="true"
+                              className="flex size-9 items-center justify-center rounded-lg bg-hover text-ui-base font-semibold text-foreground-subtle"
+                            >
+                              {label.trim().charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </span>
+                      }
+                      onClick={() =>
+                        void createWithFeedback(() => onCreateFromTemplate(template.templateId))
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
     </section>
   );

@@ -53,7 +53,7 @@ export function OccupationOnboarding({
   const shortcutBindings = useEffectiveShortcutBindings();
   const requested = useZCodeStore((state) => state.newUserOnboardingOpen);
   const setRequested = useZCodeStore((state) => state.setNewUserOnboardingOpen);
-  // 登录态变化（useRootOAuthEffects 登录成功后 setUser）时按 userId 重新判定是否触发引导。
+  // R2/B1：职业引导自动触发已退役（useOnboardingTrigger 恒 false），userId 仅保留契约入参。
   const userId = useZCodeStore((state) => state.user?.id) ?? null;
   const { intl } = useZCodeIntl();
   const t = (key: string) => intl.formatMessage({ id: `occupationOnboarding.${key}` });
@@ -72,20 +72,19 @@ export function OccupationOnboarding({
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [error, setError] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-  const [needsOnboarding, markOnboarded] = useOnboardingTrigger({
+  const [, setDismissed] = useState(false);
+  // FreeCodeZ fork(model-provider-intake R2/B1):职业引导不再在冷启动自动触发（见
+  // useOnboardingTrigger），仅保留设置页手动入口；markOnboarded 保留保存后收尾契约。
+  const [, markOnboarded] = useOnboardingTrigger({
     onboardingRecord,
     userId,
     hasStoredOccupation: Boolean(settings?.onboardingOccupation),
     update,
   });
-  const onboardingVisible = requested || (needsOnboarding === true && !dismissed);
+  const onboardingVisible = requested;
   const captureEnd = useOnboardingTelemetry({
     platform,
-    visible:
-      Boolean(settings) &&
-      onboardingVisible &&
-      (requested || needsOnboarding !== null || Boolean(settings?.onboardingOccupation)),
+    visible: Boolean(settings) && onboardingVisible,
     step,
     occupation,
     mode,
@@ -209,7 +208,6 @@ export function OccupationOnboarding({
   // 判定进行中先不渲染，避免引导闪现后立即消失（判定为需引导）或先闪引导再进主界面。
   // 只有疑似首跑（settings 里也没有职业）才等待记录判定；存量用户（已有
   // onboardingOccupation）不等 RPC 直接进主界面，杜绝黑屏。
-  if (!requested && needsOnboarding === null && !settings.onboardingOccupation) return null;
   if (!onboardingVisible) return <>{children}</>;
   const save = async (skip = false) => {
     if (savingRef.current) return;

@@ -42,8 +42,6 @@ export { useOnboardingRecordService } from "./useOnboardingRecordService.js";
 export { useConfirmDialog } from "./useConfirmDialog.js";
 export { useAlertDialog } from "./useAlertDialog.js";
 
-// 凭据服务
-export { useCredentials, useAuthToken } from "./useCredentials.js";
 export { useZCodeAgentService } from "./useZCodeAgentService.js";
 
 // Git pane

@@ -52,6 +52,7 @@ import {
   readWorkspacePresentation,
   testProviderModelConnectivity,
 } from "./workspace-model-runtime.js";
+import { probeProviderAccess, listProviderRemoteModels } from "./provider-access-probe.js";
 import {
   addPluginMarketplace,
   configurePlugin,
@@ -632,6 +633,18 @@ export class ZCodeProtocolAgentServer {
         return this.cancelWorkspaceGenerateText(request.params);
       case zcodeProtocolMethods.providerTestModelConnectivity:
         return await testProviderModelConnectivity(this.context, request.params);
+      case zcodeProtocolMethods.providerProbeAccess:
+        return await probeProviderAccess(
+          request.params,
+          undefined,
+          this.context.deps.providerAccessNetwork,
+        );
+      case zcodeProtocolMethods.providerListRemoteModels:
+        return await listProviderRemoteModels(
+          request.params,
+          undefined,
+          this.context.deps.providerAccessNetwork,
+        );
       case zcodeProtocolMethods.mcpList:
         return await listMcpServers(this.context, request.params);
       case zcodeProtocolMethods.pluginsList:

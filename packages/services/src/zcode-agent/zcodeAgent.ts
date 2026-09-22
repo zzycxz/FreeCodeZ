@@ -45,6 +45,10 @@ import type {
   ZCodePluginOperationProgressNotification,
   ZCodeProviderTestModelConnectivityParams,
   ZCodeProviderTestModelConnectivityResult,
+  ZCodeProviderProbeAccessParams,
+  ZCodeProviderProbeAccessResult,
+  ZCodeProviderListRemoteModelsParams,
+  ZCodeProviderListRemoteModelsResult,
   ZCodeUserInputRequestParams,
   ZCodeUserInputResponse,
   ZCodeSessionEvent,
@@ -321,6 +325,15 @@ export interface ZCodeAgentTestModelConnectivityParams extends ZCodeAgentWorkspa
   selection: ZCodeProviderTestModelConnectivityParams["selection"];
   signal?: AbortSignal;
 }
+
+/** 接入探测/模型发现：纯端点 HTTP，无 workspace 语义（向导发生在 provider 落盘之前，§P1.5）。 */
+export type ZCodeAgentProbeProviderAccessParams = ZCodeProviderProbeAccessParams & {
+  signal?: AbortSignal;
+};
+
+export type ZCodeAgentListRemoteModelsParams = ZCodeProviderListRemoteModelsParams & {
+  signal?: AbortSignal;
+};
 
 export interface ZCodeAgentSessionRuntimePreferencesRequest extends ZCodeSessionRequestRuntimePreferencesParams {
   requestId: string;
@@ -687,6 +700,12 @@ export interface IZCodeAgentService {
   testModelConnectivity(
     params: ZCodeAgentTestModelConnectivityParams,
   ): Promise<ZCodeProviderTestModelConnectivityResult>;
+  probeProviderAccess(
+    params: ZCodeAgentProbeProviderAccessParams,
+  ): Promise<ZCodeProviderProbeAccessResult>;
+  listRemoteModels(
+    params: ZCodeAgentListRemoteModelsParams,
+  ): Promise<ZCodeProviderListRemoteModelsResult>;
   /**
    * @deprecated：send 主路径已收敛 v4 sendText 命令。仅剩两个消费点——
    * adapter 带附件输入回退（待附件命令面落地后移除）与 zcodeSessionService

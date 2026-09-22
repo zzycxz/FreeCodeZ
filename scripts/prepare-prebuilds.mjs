@@ -23,6 +23,11 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
+import {
+  assertOfficialPluginSourcesExist,
+  BROWSER_USE_PLUGIN_PACKAGE_NAME,
+  officialPluginStagingList,
+} from "./official-plugin-staging-list.mjs";
 import { resolveRemoteNativeSearchPrebuiltPlan } from "./remote-native-search-tools-config.mjs";
 import { prepareNativeSearchTools } from "./prepare-native-search-tools.mjs";
 import { stageNodeNotices, stageThirdPartyNotices } from "./third-party-notices.mjs";
@@ -72,51 +77,11 @@ export function nodeDistBase(env = process.env) {
   const mirror = env.ZCODE_NODE_DIST_MIRROR?.trim();
   return (mirror || DEFAULT_NODE_DIST_BASE).replace(/\/+$/u, "");
 }
-const BROWSER_USE_PLUGIN_PACKAGE_NAME = "@zcode/browser-use-plugin";
-// node_repl 宿主抽成独立包 @zcode/node-repl-host 之后，browser-use
-// 不再产出 dist/mcp/server.js，CUA 资产也已归 @zcode/zcode-cua-plugin。这是**第三份**平行清单
-// （另两份：packages/desktop/scripts/prepare-agent-node-bundle.mjs 的生产打包、
-// scripts/build-desktop-agent-cli.mjs 的 dev 构建），当时只改了 dev 那份，于是先后在
-// build:macos:arm64 与 build:remote:assets 上以 "missing runtime" 挂掉两次。
-// 权威归属见 bootstrap/official-plugin-definitions.ts。
-const browserUseRequiredRuntimePaths = [
-  "scripts/browser-client.mjs",
-  "docs/api.json",
-  "docs/documents.json",
-  "docs/overview.md",
-  // remote prebuild 必须和桌面 seed 使用同一录屏文档完整性合同。
-  "docs/recording.md",
-  "docs/workflow.md",
-  "skills/control-browser/SKILL.md",
-  "skills/web-gui-tester/SKILL.md",
-];
-const remoteOfficialPluginPackages = [
-  // 44b25ed46c「remove bundled plugins except browser use and cua」删掉了其余
-  // 内置插件源码，但漏改这份清单，bootstrap:with-remote 在 staging 第一个 manifest 就抛
-  // missing。此处与 packages/desktop/scripts/prepare-agent-node-bundle.mjs 的桌面 seed
-  // 清单、packages/server/src/remote/zcodeAgentOfficialPluginAssets.ts 的远端合同保持一致。
-  {
-    // 远端 shared-host 必须部署 node_repl runtime，否则只剩 skill 而没有 mcp__node_repl__js ——
-    // 该 runtime 现由 @zcode/node-repl-host 提供（见下一个条目），browser-use 只带自己的
-    // client script 与 skill/docs。
-    packageName: "@zcode/browser-use-plugin",
-    relativePath: "apps/zcode-cli/packages/browser-use-plugin",
-    requiresRuntime: true,
-    requiredRuntimePaths: browserUseRequiredRuntimePaths,
-    runtimeBuildScript: "scripts/build.mjs",
-    stagedPath: "packages/browser-use-plugin",
-  },
-  {
-    // node_repl 宿主：Browser Use 与 Computer Use 共用的 MCP runtime。远端 shared-host 缺它
-    // 就没有 mcp__node_repl__js，bua/cua 两边都会连不上。
-    packageName: "@zcode/node-repl-host",
-    relativePath: "apps/zcode-cli/packages/node-repl-host",
-    requiresRuntime: true,
-    requiredRuntimePaths: ["dist/mcp/server.js"],
-    runtimeBuildScript: "scripts/build.mjs",
-    stagedPath: "packages/node-repl-host",
-  },
-];
+// 内置插件 stage 清单已收敛为单一事实源 ./official-plugin-staging-list.mjs。
+// 历史教训：三份平行清单只改了一份，missing runtime 先后挂掉两次（上游 44b25ed46c
+// 「删源漏改清单」同款事故）；C3 机械对照见
+// packages/services/test/pluginMarketplaceParity.test.ts。
+const remoteOfficialPluginPackages = officialPluginStagingList;
 const remoteOfficialPluginTopLevelPaths = new Set([
   ".mcp.json",
   ".zcode-plugin",
@@ -453,6 +418,8 @@ function assertRemoteOfficialPluginRuntime(plugin) {
 }
 
 function stageRemoteOfficialPlugins(glmDir) {
+  // C3 构建断言（A7）：清单 ↔ 包体在场校验，缺一即失败，防「删源漏改清单」复发。
+  assertOfficialPluginSourcesExist(rootDir);
   for (const plugin of remoteOfficialPluginPackages) {
     const sourceRoot = join(rootDir, plugin.relativePath);
     const manifestPath = join(sourceRoot, ".zcode-plugin", "plugin.json");

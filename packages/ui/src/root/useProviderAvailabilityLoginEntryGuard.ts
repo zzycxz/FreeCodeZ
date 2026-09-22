@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { UserInfo } from "@zcode/shared";
 import type { ModelSelectionView } from "@zcode/services";
 import { resolveProviderAvailabilityState } from "@/lib/modelProviderAvailability.js";
 import { logger } from "@/logger.js";
@@ -12,9 +11,7 @@ interface ProviderAvailabilityLoginEntryGuardResult {
 
 export function useProviderAvailabilityLoginEntryGuard({
   enabled = true,
-  user,
   isRestoringOAuthSession,
-  providerFamilyDomain,
   modelSelectionView,
   modelSelectionError,
   refreshProviderState,
@@ -22,9 +19,7 @@ export function useProviderAvailabilityLoginEntryGuard({
   setLoginEntryOpen,
 }: {
   enabled?: boolean;
-  user: UserInfo | null;
   isRestoringOAuthSession: boolean;
-  providerFamilyDomain: string | null | undefined;
   modelSelectionView: ModelSelectionView | null;
   modelSelectionError?: Error;
   refreshProviderState: () => Promise<void>;
@@ -54,17 +49,18 @@ export function useProviderAvailabilityLoginEntryGuard({
         : modelSelectionView;
       const availability = resolveProviderAvailabilityState({ modelSelectionView: refreshedView });
       const { hasUsableProvider, providerCount } = availability;
-      const shouldOpenLoginEntry = !providerFamilyDomain || (!user && !hasUsableProvider);
+      // FreeCodeZ fork(model-provider-intake R2/C11/C12):账号族整体移除后「已登录」概念消失，
+      // 门控唯一判据是有无可用 provider。原 `!providerFamilyDomain` 首子句在 domain 恒空后
+      // 每次冷启动都会强制弹接入界面（纯 API Key 用户亦受害），必须按 !hasUsableProvider 判定。
+      const shouldOpenLoginEntry = !hasUsableProvider;
 
-      // 未登录且没有可用模型配置时必须引导用户连接账号或填写 API Key。
+      // 没有可用模型配置时引导用户通过「添加供应商」接入 API Key / 自定义供应商。
       // 启动检查、API Key 设置回流等入口统一走这里，避免各处复制判断后语义分叉。
-      logger.info("[Root] provider 可用性登录入口守卫完成检查", {
+      logger.info("[Root] provider 可用性接入面守卫完成检查", {
         reason: options.reason,
         source: availability.source,
         providerCount,
         hasUsableProvider,
-        hasUser: Boolean(user),
-        hasProviderFamilyDomain: Boolean(providerFamilyDomain),
         shouldOpenLoginEntry,
       });
       setLoginEntryOpen(shouldOpenLoginEntry);
@@ -77,11 +73,9 @@ export function useProviderAvailabilityLoginEntryGuard({
     [
       enabled,
       modelSelectionView,
-      providerFamilyDomain,
       refreshProviderState,
       readModelSelectionView,
       setLoginEntryOpen,
-      user,
     ],
   );
 

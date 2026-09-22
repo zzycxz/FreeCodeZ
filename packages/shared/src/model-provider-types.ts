@@ -1,5 +1,7 @@
 /* eslint-disable max-lines -- 模型供应商 schema、迁移和运行时投影 helper 需要共享同一套类型边界，暂时集中在单文件避免契约分散。 */
-// FreeCodeZ fork(P2 §4.3):模板改名后同步指向(zai-api→zai-coding-plan 等)。
+// FreeCodeZ fork(model-provider-intake R1):zai/bigmodel 预设模板已随账号族下线，
+// 这两个 ID 仅作为旧数据迁移锚点保留（legacy importer / migrateLegacyModelProviderId），
+// 不再对应 zcode-builtin.json 中的任何模板条目。
 export const BUILTIN_PROVIDER_TEMPLATE_IDS = {
   zai: "zai-coding-plan",
   bigmodel: "bigmodel-coding-plan",

@@ -120,6 +120,7 @@ import { appendWorkspaceFileMentionToComposer } from "@/lib/workspaceFileCompose
 import { resolveProviderBaseURL } from "@/lib/registryProviderView.js";
 import type { ModelSelectionView } from "@zcode/services";
 import type { ModelSelectionState } from "@/hooks/useModelSelectionView.js";
+import { useReasoningEffortFix } from "@/hooks/useReasoningEffortFix.js";
 import type { ZCodeUiError } from "@/lib/zcodeUiError.js";
 import {
   resolveComposerAutoFocus,
@@ -449,7 +450,6 @@ interface ConversationComposerProps {
   onDismissError?: () => void;
   /** 无可用模型横幅的恢复动作；由 SessionPane 注入壳层导航，组件不直接操作 tab。 */
   onOpenModelSettings?: () => void;
-  onOpenModelUpgrade?: () => void;
   onOpenCodeViewer?: (source: CodeViewerSource) => void;
   /**
    * 是否监听全局「加入对话」事件（workspace file tree / 画板按钮）。
@@ -526,7 +526,6 @@ function ConversationComposerImpl({
   error,
   onDismissError,
   onOpenModelSettings,
-  onOpenModelUpgrade,
   onOpenCodeViewer,
   listenAddToChatEvents = true,
   externalTextInsertRequest = null,
@@ -2204,6 +2203,8 @@ function ConversationComposerImpl({
     ],
   );
   const isBlockedByInteraction = blockingRequestId !== null;
+  // FreeCodeZ fork(reasoning-level-presets L2):推理档位被拒时横幅一键写回安全档位。
+  const reasoningEffortFix = useReasoningEffortFix({ modelSelectionView });
 
   // v4 pendingInteractions 是 bottom dock 阻塞态；composer 必须保留挂载，
   // 只在视觉和可访问树中隐藏，避免权限/问答卡片出现时丢失草稿和编辑器内部状态。
@@ -2243,7 +2244,7 @@ function ConversationComposerImpl({
             error={visibleError}
             onDismiss={onDismissError}
             onOpenModelSettings={onOpenModelSettings}
-            onOpenUpgrade={onOpenModelUpgrade}
+            reasoningEffortFix={reasoningEffortFix}
           />
         </div>
       ) : null}

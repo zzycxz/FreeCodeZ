@@ -5,6 +5,7 @@ import {
   completeApiKeyAccessDataSchema,
   completeProviderApiDataSchema,
   completeProviderConfigDataSchema,
+  noneAccessDataSchema,
   type providerApiTypeDataSchema,
   type providerGroupDataSchema,
   type providerVisibilityDataSchema,
@@ -27,12 +28,19 @@ export type ApiKeyAccessConfigInput = Omit<ApiKeyAccessConfigObject, "type"> & {
   readonly type?: ApiKeyAccessConfigObject["type"];
 };
 
+export type NoneAccessConfigInput = Omit<NoneAccessConfigObject, "type"> & {
+  readonly type?: NoneAccessConfigObject["type"];
+};
+
+export type NoneAccessConfigObject = Readonly<z.infer<typeof noneAccessDataSchema>>;
+
 export type ApiKeyAccessConfigObject = Readonly<z.infer<typeof apiKeyAccessDataSchema>>;
 
 export class ApiKeyAccessConfig extends ConfigOverlay<ApiKeyAccessConfig> {
   readonly type: ApiKeyAccessConfigObject["type"];
   readonly apiKey?: ApiKeyAccessConfigInput["apiKey"];
   readonly apiKeyManagementUrl?: ApiKeyAccessConfigInput["apiKeyManagementUrl"];
+
 
   constructor(input: ApiKeyAccessConfigInput = {}) {
     super();
@@ -66,7 +74,36 @@ export class ApiKeyAccessConfig extends ConfigOverlay<ApiKeyAccessConfig> {
 }
 
 
-export type ProviderAccessConfig = ApiKeyAccessConfig;
+/**
+ * keyless 端点（本地 Ollama/llama.cpp/LM Studio 等）的免密访问配置（spec §P2.4，D-P2.1）。
+ * apiKey/apiKeyManagementUrl 显式为 undefined 兼容位：让联合类型上的字段访问可编译
+ * （消费方读 access.apiKey 得 undefined = 免密），schema/toJSON 不携带这两键。
+ */
+export class NoneAccessConfig extends ConfigOverlay<NoneAccessConfig> {
+  readonly type: NoneAccessConfigObject["type"];
+  readonly apiKey?: undefined;
+  readonly apiKeyManagementUrl?: undefined;
+
+  constructor(input: NoneAccessConfigInput = {}) {
+    super();
+    this.type = input.type ?? "none";
+    Object.freeze(this);
+  }
+
+  overlay(_next: NoneAccessConfig): NoneAccessConfig {
+    return new NoneAccessConfig();
+  }
+
+  validateComplete(path: readonly string[] = []): readonly ConfigValidationIssue[] {
+    return validateConfigSchema(noneAccessDataSchema, this.toJSON(), path);
+  }
+
+  toJSON(): NoneAccessConfigObject {
+    return { type: "none" };
+  }
+}
+
+export type ProviderAccessConfig = ApiKeyAccessConfig | NoneAccessConfig;
 
 export type ProviderAccessConfigObject = Readonly<z.infer<typeof providerAccessDataSchema>>;
 
@@ -87,12 +124,14 @@ export class ProviderApiConfig extends ConfigOverlay<ProviderApiConfig> {
   readonly type?: ProviderApiConfigInput["type"];
   readonly baseUrl?: ProviderApiConfigInput["baseUrl"];
   readonly headers?: ProviderApiConfigInput["headers"];
+  readonly baseUrlEditable?: ProviderApiConfigInput["baseUrlEditable"];
 
   constructor(input: ProviderApiConfigInput = {}) {
     super();
     this.type = input.type;
     this.baseUrl = input.baseUrl;
     this.headers = input.headers ? Object.freeze({ ...input.headers }) : input.headers;
+    this.baseUrlEditable = input.baseUrlEditable;
     Object.freeze(this);
   }
 
@@ -101,6 +140,7 @@ export class ProviderApiConfig extends ConfigOverlay<ProviderApiConfig> {
       type: this.overlayValue(this.type, next.type),
       baseUrl: this.overlayValue(this.baseUrl, next.baseUrl),
       headers: this.overlayValue(this.headers, next.headers),
+      baseUrlEditable: this.overlayValue(this.baseUrlEditable, next.baseUrlEditable),
     });
   }
 
@@ -114,6 +154,7 @@ export class ProviderApiConfig extends ConfigOverlay<ProviderApiConfig> {
       type: this.type,
       baseUrl: this.baseUrl,
       headers: this.headers,
+      baseUrlEditable: this.baseUrlEditable,
     });
   }
 }
@@ -134,6 +175,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
   readonly personalModelIds?: ProviderConfigObject["personalModelIds"];
   readonly modelOrder?: ProviderConfigObject["modelOrder"];
   readonly visibility?: ProviderConfigObject["visibility"];
+  readonly category?: ProviderConfigObject["category"];
 
   constructor(input: ProviderConfigInput = {}) {
     super();
@@ -145,6 +187,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
     this.personalModelIds = freezeModelIds(input.personalModelIds);
     this.modelOrder = freezeModelIds(input.modelOrder);
     this.visibility = input.visibility;
+    this.category = input.category;
     Object.freeze(this);
   }
 
@@ -158,6 +201,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
       personalModelIds: this.overlayValue(this.personalModelIds, next.personalModelIds),
       modelOrder: this.overlayValue(this.modelOrder, next.modelOrder),
       visibility: this.overlayValue(this.visibility, next.visibility),
+      category: this.overlayValue(this.category, next.category),
     });
   }
 
@@ -182,6 +226,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
       personalModelIds: this.personalModelIds,
       modelOrder: this.modelOrder,
       visibility: this.visibility,
+      category: this.category,
     });
   }
 
@@ -196,6 +241,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
       personalModelIds: source?.personalModelIds,
       modelOrder: source?.modelOrder,
       visibility: this.visibility,
+      category: this.category,
     });
   }
 
@@ -214,6 +260,7 @@ export class ProviderConfig extends ConfigOverlay<ProviderConfig> {
       personalModelIds: this.personalModelIds,
       modelOrder: this.modelOrder,
       visibility: this.visibility,
+      category: this.category,
     });
   }
 }
@@ -453,8 +500,11 @@ function overlayProviderAccess(
 ): ProviderAccessConfig | null | undefined {
   if (next === undefined) return current;
   if (next === null || current === undefined || current === null) return next;
+  // api-key 与 none 之间切换直接整体替换；同 type 才逐字段合并（D-P2.1）。
   if (current.type !== next.type) return next;
-  return current.overlay(next as ApiKeyAccessConfig);
+  if (current.type === "none" && next.type === "none") return current.overlay(next);
+  if (current.type === "api-key" && next.type === "api-key") return current.overlay(next);
+  return next;
 }
 
 function objectWithoutUndefined<T extends object>(input: T): T {

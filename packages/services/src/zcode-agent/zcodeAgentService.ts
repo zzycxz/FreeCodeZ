@@ -64,6 +64,8 @@ import {
   zcodeProviderRuntimeHeadersCancelledSchema,
   zcodeProviderRuntimeHeadersRequestParamsSchema,
   zcodeProviderTestModelConnectivityResultSchema,
+  zcodeProviderProbeAccessResultSchema,
+  zcodeProviderListRemoteModelsResultSchema,
   zcodeProtocolEmptyResultSchema,
   zcodeProtocolMethods,
   zcodeProtocolNotifications,
@@ -137,6 +139,8 @@ import type {
   ZCodeAgentInstallPluginParams,
   ZCodeAgentGenerateWorkspaceTextParams,
   ZCodeAgentTestModelConnectivityParams,
+  ZCodeAgentProbeProviderAccessParams,
+  ZCodeAgentListRemoteModelsParams,
   ZCodeAgentGoalParams,
   ZCodeAgentGrantWorkspaceHookTrustParams,
   ZCodeAgentInitializeResult,
@@ -3921,6 +3925,40 @@ export function createZCodeAgentService(
           selection: params.selection,
         },
         zcodeProviderTestModelConnectivityResultSchema,
+        { signal: params.signal },
+      );
+    },
+
+    async probeProviderAccess(params: ZCodeAgentProbeProviderAccessParams) {
+      // 落盘前探测没有 workspace 也没有可用 provider：必须走管理面 client（不依赖
+      // provider/model readiness 的控制面进程，getPluginManagementClient 先例）。
+      // 走 getClient 会在无 provider 时抛 createProviderNotReadyError，死锁首启向导。
+      const client = await getPluginManagementClient();
+      return client.request(
+        zcodeProtocolMethods.providerProbeAccess,
+        {
+          apiType: params.apiType,
+          baseUrl: params.baseUrl,
+          apiKey: params.apiKey,
+          ...(params.modelsUrl ? { modelsUrl: params.modelsUrl } : {}),
+        },
+        zcodeProviderProbeAccessResultSchema,
+        { signal: params.signal },
+      );
+    },
+
+    async listRemoteModels(params: ZCodeAgentListRemoteModelsParams) {
+      // 同 probeProviderAccess：模型目录发现发生在 provider 落盘之前，走管理面 client。
+      const client = await getPluginManagementClient();
+      return client.request(
+        zcodeProtocolMethods.providerListRemoteModels,
+        {
+          apiType: params.apiType,
+          baseUrl: params.baseUrl,
+          apiKey: params.apiKey,
+          ...(params.modelsUrl ? { modelsUrl: params.modelsUrl } : {}),
+        },
+        zcodeProviderListRemoteModelsResultSchema,
         { signal: params.signal },
       );
     },

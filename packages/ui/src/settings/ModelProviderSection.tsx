@@ -15,9 +15,7 @@ import {
   type ProviderFamilyConnectionSelectionSettings,
   type ProviderFamilyDomain,
   type OAuthProviderId,
-  resolveModelProviderFamilyIdByProviderId,
   resolveModelProviderFamilySpecByProviderId,
-  resolveProviderFamilyDomainFromOAuthProvider,
   ZAI_PROVIDER_ID,
 } from "@zcode/shared";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
@@ -30,23 +28,17 @@ import { useServices } from "@/hooks/useServices.js";
 import { useZCodeStore } from "@/store/StoreProvider.js";
 import { logger } from "@/logger.js";
 import {
-  PRESET_PROVIDER_SPECS,
   PRESET_SUBSCRIPTION_TIMEOUT_MS,
-  BIGMODEL_REGISTRATION_URL,
   type CodingPlanStatus,
   type ModelProviderNavGroup,
 } from "./model-provider-section/constants.js";
 import { ModelProviderSectionDetail } from "./model-provider-section/Detail.js";
 import { ModelProviderSectionLayout } from "./model-provider-section/SectionLayout.js";
-import { ProviderTemplatePicker } from "./model-provider-section/ProviderTemplatePicker.js";
+import { ProviderIntakeWizard } from "./model-provider-section/ProviderIntakeWizard.js";
 import type { CodingPlanLoginOptions } from "./model-provider-section/codingPlanPricingCards.js";
 import { useModelProviderNavigation } from "./model-provider-section/useModelProviderNavigation.js";
 import { reportPresetSubscriptionSuccess } from "./model-provider-section/oauthActions.js";
-import {
-  createCodingPlanProviderNodeKey,
-  createCustomProviderNodeKey,
-  createPresetProviderNodeKey,
-} from "./model-provider-section/utils.js";
+import { createCustomProviderNodeKey } from "./model-provider-section/utils.js";
 import {
   confirmAndDeleteModelProvider,
   refreshModelProviderSection,
@@ -61,7 +53,6 @@ import { useSettings } from "@/hooks/useSettingService.js";
 import { resolveLogoutProviderFamilyDomain } from "@/lib/providerFamilyDomainSettings.js";
 import {
   addPendingSettingsSectionListener,
-  consumePendingSettingsModelProviderTarget,
   type SettingsModelProviderTarget,
 } from "@/lib/settingsNavigation.js";
 import { useEnterpriseCodingPlanProducts } from "@/settings/model-provider-section/useEnterpriseCodingPlanProducts.js";
@@ -107,20 +98,11 @@ function shouldRetryUnchangedCodingPlanProviderSync({
   return modeUnchanged && selectedKeyUnchanged && attemptKey !== null && attemptStatus === "failed";
 }
 
-function resolveCodingPlanIntentProviderId(
-  target: SettingsModelProviderTarget | undefined,
-): BuiltinModelProviderId | null {
-  switch (target?.providerId) {
-    case BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan:
-    case BUILTIN_MODEL_PROVIDER_IDS.zaiTeamCodingPlan:
-    case BUILTIN_MODEL_PROVIDER_IDS.zaiStartPlan:
-    case BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan:
-    case BUILTIN_MODEL_PROVIDER_IDS.bigmodelTeamCodingPlan:
-    case BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan:
-      return target.providerId;
-    default:
-      return null;
-  }
+// FreeCodeZ fork(model-provider-intake R1):账号类预置 ID 白名单已随账号族移除，
+// 深链目标统一按自定义供应商节点解析（含 legacy 迁移落点 zai/bigmodel-coding-plan）。
+function resolveIntentProviderId(target: SettingsModelProviderTarget | undefined): string | null {
+  const providerId = target?.providerId.trim() ?? "";
+  return providerId ? providerId : null;
 }
 
 function shouldRefreshCodingPlanEntitlementsAfterSave(
@@ -146,37 +128,6 @@ function shouldRefreshCodingPlanEntitlementsAfterSave(
   );
 }
 
-function resolveBuiltinPresetOAuthProvider(
-  presetId: BuiltinModelProviderId,
-): OAuthProviderId | null {
-  if (
-    presetId === BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan ||
-    presetId === BUILTIN_MODEL_PROVIDER_IDS.zaiTeamCodingPlan ||
-    presetId === BUILTIN_MODEL_PROVIDER_IDS.zaiStartPlan
-  ) {
-    return ZAI_PROVIDER_ID;
-  }
-  if (
-    presetId === BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan ||
-    presetId === BUILTIN_MODEL_PROVIDER_IDS.bigmodelTeamCodingPlan ||
-    presetId === BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan
-  ) {
-    return BIGMODEL_PROVIDER_ID;
-  }
-  return null;
-}
-
-function shouldShowPresetProviderForActiveOAuth(
-  presetId: BuiltinModelProviderId,
-  providerFamilyDomain: ProviderFamilyDomain | null | undefined,
-): boolean {
-  const presetOAuthProvider = resolveBuiltinPresetOAuthProvider(presetId);
-  if (!providerFamilyDomain || !presetOAuthProvider) {
-    return true;
-  }
-  return resolveModelProviderFamilyIdByProviderId(presetId) === providerFamilyDomain;
-}
-
 function clearPendingProviderFamilyConnectionSelection(
   selections: ProviderFamilyConnectionSelectionSettings,
   familyId: ProviderFamilyDomain,
@@ -189,10 +140,8 @@ function clearPendingProviderFamilyConnectionSelection(
   return rest;
 }
 
-function resolveProviderFamilySideNodeKey(providerId: BuiltinModelProviderId): string | null {
-  if (isStartPlanModelProviderId(providerId)) return createCodingPlanProviderNodeKey(providerId);
-  const familySpec = resolveModelProviderFamilySpecByProviderId(providerId);
-  return familySpec ? createPresetProviderNodeKey(familySpec.startPlanProviderId) : null;
+function resolveProviderFamilySideNodeKey(providerId: string): string {
+  return createCustomProviderNodeKey(providerId);
 }
 
 function resolveConnectionSelectionForNavItem(
@@ -216,15 +165,7 @@ function resolveConnectionSelectionForNavItem(
 function resolveModelProviderSideSelectionKey(
   item: ModelProviderNavGroup["items"][number],
 ): string {
-  if (item.type !== "preset" && item.type !== "codingPlan" && item.type !== "teamPlan") {
-    return item.key;
-  }
-  if (
-    item.type === "preset" ||
-    (item.type === "codingPlan" && isStartPlanModelProviderId(item.presetId))
-  )
-    return item.key;
-  return resolveProviderFamilySideNodeKey(item.presetId) ?? item.key;
+  return item.key;
 }
 
 /**
@@ -260,7 +201,6 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
     refreshing: modelProvidersRefreshing,
     refresh,
     saveProvider,
-    createPersonalProvider,
     addPersonalModel,
     savePersonalModelDraft,
     setPersonalModelEnabled,
@@ -279,25 +219,16 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
       id: "settings.modelProvider.testModel.localWorkspaceUnavailable",
     }),
   });
-  const entitledAccountProviderIds = useMemo<ReadonlySet<string>>(() => {
-    return new Set(
-      (providerSettingsView?.providers ?? [])
-        .filter(
-          (provider) =>
-            false, // FreeCodeZ fork(P2 §4.2):账号 access 已删
-        )
-        .map((provider) => provider.providerId),
-    );
-  }, [providerSettingsView]);
   const providerConnectionRefreshSignal = providerSettingsView?.revision;
-  const [initialModelProviderTarget] = useState(() => consumePendingSettingsModelProviderTarget());
+
+  // 深链落点单点消费（P1-1）：SettingsPage 挂载时已 consume 并经 prop 传入；
+  // 本组件不得二次 consume（第二次恒得 undefined，落点时灵时不灵）。
+  const [initialModelProviderTarget] = useState(() => pendingModelProviderTarget);
   const [invalidProviderTarget, setInvalidProviderTarget] = useState(() =>
-    Boolean(
-      initialModelProviderTarget && !resolveCodingPlanIntentProviderId(initialModelProviderTarget),
-    ),
+    Boolean(initialModelProviderTarget && !resolveIntentProviderId(initialModelProviderTarget)),
   );
   const [selectedNodeKey, setSelectedNodeKey] = useState<string | null>(() => {
-    const providerId = resolveCodingPlanIntentProviderId(initialModelProviderTarget);
+    const providerId = resolveIntentProviderId(initialModelProviderTarget);
     return providerId ? resolveProviderFamilySideNodeKey(providerId) : null;
   });
   const [presetSubscriptionProviderId, setPresetSubscriptionProviderId] =
@@ -310,8 +241,9 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
   // 登录/解绑后的 refreshCodingPlanProducts 契约调用（保持共享 helper 签名不变）。
   const [, setCodingPlanProductsRefreshToken] = useState(0);
   const [pendingCreatedProviderId, setPendingCreatedProviderId] = useState<string | null>(null);
-  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
-  const [creatingProvider, setCreatingProvider] = useState(false);
+  // model-provider-intake R3：无显式目标时默认落在「添加供应商」面，
+  // 复用既有 templatePickerOpen 状态作为默认路由，不新增状态。
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(() => !initialModelProviderTarget);
 
   useEffect(() => {
     if (
@@ -330,7 +262,7 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
   const applyModelProviderTarget = useCallback(
     (target: SettingsModelProviderTarget | undefined) => {
       if (!target) return false;
-      const providerId = resolveCodingPlanIntentProviderId(target);
+      const providerId = resolveIntentProviderId(target);
       if (!providerId) {
         // 未知 ID 不能只静默忽略：pending 指令不消费的话，外部输入错误会困住导航。
         // 仅显示错误，保留当前可操作页面和持久连接，后续合法导航/手动选择可恢复。
@@ -386,11 +318,9 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
   );
   const requestLoginEntry = useZCodeStore((state) => state.requestLoginEntry);
   const setUser = useZCodeStore((state) => state.setUser);
-  const oauthError = useZCodeStore((state) => state.oauthError);
   const setOAuthError = useZCodeStore((state) => state.setOAuthError);
   const {
     settings: sharedSettings,
-    loading: sharedSettingsLoading,
     error: sharedSettingsError,
     update: updateSharedSettings,
   } = useSettings();
@@ -419,20 +349,6 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
       authenticatedZaiEnterpriseProducts.refresh(),
     ]);
   }, [authenticatedEnterpriseProducts, authenticatedZaiEnterpriseProducts]);
-  const subscribedTeamProducts = useMemo(
-    () => [
-      ...(authenticatedEnterpriseProducts.snapshot?.productList.filter(
-        (product: { subscribed?: boolean }) => product.subscribed === true,
-      ) ?? []),
-      ...(authenticatedZaiEnterpriseProducts.snapshot?.productList.filter(
-        (product: { subscribed?: boolean }) => product.subscribed === true,
-      ) ?? []),
-    ],
-    [
-      authenticatedEnterpriseProducts.snapshot?.productList,
-      authenticatedZaiEnterpriseProducts.snapshot?.productList,
-    ],
-  );
   const connectionSelections = sharedSettings?.providerFamilyConnectionSelections ?? {};
   const familyConnectionSettingsFailed = sharedSettingsError !== null && sharedSettings === null;
   const effectiveConnectionSelections = useMemo(
@@ -442,15 +358,6 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
     }),
     [connectionSelections, pendingConnectionSelections],
   );
-  // 原仅检查 bigmodel selectedKey 是否为 team plan，zai team key
-  // 永远不会触发已购团队 fallback（断裂）。改为任一 family 有持久化 team key 即显示。
-  const showPurchasedTeamPlanFallback = Boolean(
-    effectiveConnectionSelections.bigmodel?.kind === "team-coding-plan" ||
-    effectiveConnectionSelections.zai?.kind === "team-coding-plan",
-  );
-  const effectiveProviderFamilyDomain =
-    sharedSettings?.providerFamilyDomain ??
-    resolveProviderFamilyDomainFromOAuthProvider(activeOAuthProvider);
   const { entitlements: codingPlanEntitlements, refresh: refreshCodingPlanEntitlements } =
     useCodingPlanEntitlements({
       providerSettingsView,
@@ -606,17 +513,6 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
     };
   }, [providerConnectionRefreshSignal, refreshCodingPlanPurchaseTokenState]);
 
-  const presetProviders = useMemo(
-    () =>
-      PRESET_PROVIDER_SPECS.filter((preset) =>
-        shouldShowPresetProviderForActiveOAuth(preset.id, effectiveProviderFamilyDomain),
-      ).map((preset) => ({
-        ...preset,
-        provider: modelProviders.find((provider) => provider.providerId === preset.id) ?? null,
-      })),
-    [effectiveProviderFamilyDomain, modelProviders],
-  );
-
   useEffect(() => {
     if (!presetSubscriptionProviderId) {
       return;
@@ -682,18 +578,9 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
 
   const { navigationGroups, navigationItems, selectedNavItem, navigationUnavailable } =
     useModelProviderNavigation({
-      presetProviders,
       modelProviders,
-      entitledAccountProviderIds,
       modelProvidersLoading: loading,
       displayOrder,
-      codingPlanEntitlements,
-      subscribedTeamProducts,
-      providerFamilyDomain: effectiveProviderFamilyDomain,
-      connectionSelections: effectiveConnectionSelections,
-      pendingConnectionSelections,
-      showPurchasedTeamPlanFallback,
-      familyConnectionSettingsLoading: sharedSettingsLoading && sharedSettings === null,
       familyConnectionSettingsFailed,
       selectedNodeKey,
       setSelectedNodeKey,
@@ -986,24 +873,6 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
     [persistProviderFamilyModeForNavItem],
   );
 
-  const handleCreateProvider = useCallback(
-    async (input: { templateId?: string; providerName?: string }) => {
-      setCreatingProvider(true);
-      try {
-        const created = await createPersonalProvider({ ...input, locale });
-        setPendingCreatedProviderId(created.providerId);
-        setSelectedNodeKey(createCustomProviderNodeKey(created.providerId));
-        setTemplatePickerOpen(false);
-      } catch (error) {
-        setPendingCreatedProviderId(null);
-        throw error;
-      } finally {
-        setCreatingProvider(false);
-      }
-    },
-    [createPersonalProvider, locale],
-  );
-
   const handleReorderProviderIds = useCallback(
     async (orderedGroupProviderIds: string[]) => {
       const groupProviderIdSet = new Set(orderedGroupProviderIds);
@@ -1085,15 +954,14 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
         </p>
       ) : null}
       {templatePickerOpen ? (
-        <ProviderTemplatePicker
-          templates={providerTemplates}
-          creating={creatingProvider}
-          onBack={() => setTemplatePickerOpen(false)}
-          onCreateFromTemplate={(templateId) => {
-            return handleCreateProvider({ templateId });
-          }}
-          onCreateCustom={(label) => {
-            return handleCreateProvider({ providerName: label });
+        // P1.3：设置页与首页同一向导组件——创建即 key+模型+默认模型原子落盘，无空壳态。
+        <ProviderIntakeWizard
+          onCancel={() => setTemplatePickerOpen(false)}
+          onComplete={async (reason, providerId) => {
+            if (reason !== "done" || !providerId) return;
+            setPendingCreatedProviderId(providerId);
+            setSelectedNodeKey(createCustomProviderNodeKey(providerId));
+            setTemplatePickerOpen(false);
           }}
         />
       ) : (
@@ -1116,10 +984,6 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
               : (entitlement?.snapshot?.subscription?.details.length ?? 0);
           })()}
           presetLoading={presetLoading}
-          codingPlanAuthError={oauthError}
-          codingPlanPurchaseTokenAuthenticatedByProviderId={
-            codingPlanPurchaseTokenAuthenticatedByProviderId
-          }
           presetSubscriptionProviderId={presetSubscriptionProviderId}
           codingPlanStatusSyncProviderId={codingPlanStatusSyncProviderId}
           codingPlanDisconnectProviderId={codingPlanDisconnectProviderId}
@@ -1144,14 +1008,6 @@ const legacyAccountSessionStub = { logout: async () => {}, getActiveProvider: as
           onCodingPlanDisconnect={handleCodingPlanDisconnect}
           onOpenApiKeyUrl={handleOpenApiKeyUrl}
           onSelectNavItem={handleSelectNavItem}
-          onOpenBigModelRegistration={() => {
-            // 未注册提示来自一次失败的 OAuth checking 状态；跳转注册后要恢复普通状态，避免提示卡住。
-            setOAuthError(null);
-            setPresetSubscriptionProviderId((current) =>
-              current === BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan ? null : current,
-            );
-            platform.openExternal(BIGMODEL_REGISTRATION_URL);
-          }}
           onCodingPlanPurchaseComplete={async () => {
             await refreshProviderPanelAfterAuthChange({ refreshReason: "purchase" });
           }}

@@ -1,4 +1,5 @@
 import { BUILTIN_MODEL_PROVIDER_IDS } from "@zcode/shared";
+import { isReasoningEffortInvalidMessage } from "@zcode/shared/reasoning-effort-recovery";
 
 /**
  * transcript 和 custom provider 的安全 code/message 证据集中在这里判定：
@@ -270,7 +271,8 @@ export function resolveControlledUnknownMessageAttribution(
   }
   if (
     /failed to deserialize the json body.*(?:unknown variant|expected)/iu.test(message) ||
-    /field\s+reasoningeffort\s+invalid/iu.test(message) ||
+    // 推理参数非法判据抽到 shared 单一真源（spec §2.3），与 L1/L2 共用，避免 regex 漂移。
+    isReasoningEffortInvalidMessage(message) ||
     /function call is not supported for this model/iu.test(message) ||
     /model is not a vlm/iu.test(message) ||
     /engine protocol predict request returned 400:.*(?:invalid_request_error|failed to parse grammar)/iu.test(

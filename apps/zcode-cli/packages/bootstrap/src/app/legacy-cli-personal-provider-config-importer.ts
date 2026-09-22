@@ -64,27 +64,17 @@ function importLegacyCliPersonalProviderConfig(
     const providerId = rawProviderId.trim();
     if (!providerId) continue;
     // Standalone 也会读取旧 Desktop 写出的 builtin:* / source=custom。
-    // 与 Desktop 导入一致：旧内置静态配置和账号凭据不迁，按量 API 只留下 Key。
-    const templateId =
+    // FreeCodeZ：zai/bigmodel 预设与模板已随账号族整体下线（model-provider-intake R1），
+    // 旧按量 API Provider 降级为自包含个人 provider（稳定 ID 仅作旧数据锚点），
+    // 与 Desktop 导入一致保留用户 API Key 与调用配置，不关联已删除的模板。
+    const normalizedProviderId =
       providerId === "builtin:bigmodel"
         ? BUILTIN_PROVIDER_TEMPLATE_IDS.bigmodel
         : providerId === "builtin:zai"
           ? BUILTIN_PROVIDER_TEMPLATE_IDS.zai
-          : undefined;
-    if (templateId) {
-      const apiKey = provider.options?.apiKey?.trim();
-      if (apiKey)
-        providers = providers.setRule({
-          providerId: templateId,
-          templateId,
-          config: new ProviderConfig({
-            group: "standard-personal",
-            access: new ApiKeyAccessConfig({ apiKey }),
-          }),
-        });
+          : providerId;
+    if (normalizedProviderId.startsWith("builtin:") || normalizedProviderId.startsWith("account:"))
       continue;
-    }
-    if (providerId.startsWith("builtin:") || providerId.startsWith("account:")) continue;
     if (provider.source !== undefined && provider.source !== "custom") continue;
     if (requiresUnsupportedNoAuthentication(provider)) {
       throw new UnsupportedLegacyCliProviderConfigError(providerId);
@@ -93,7 +83,7 @@ function importLegacyCliPersonalProviderConfig(
     const modelIds = members.map((member) => member.modelId);
     const providerName = provider.name?.trim();
     providers = providers.setRule({
-      providerId,
+      providerId: normalizedProviderId,
       providerName: providerName && providerName !== providerId ? providerName : undefined,
       config: new ProviderConfig({
         group: "standard-personal",
@@ -111,7 +101,7 @@ function importLegacyCliPersonalProviderConfig(
     for (const member of members) {
       if (member.contextWindow === undefined) continue;
       models = models.setExact(
-        providerId,
+        normalizedProviderId,
         member.modelId,
         new ModelConfig({
           properties: new ModelPropertiesConfig({ contextWindow: member.contextWindow }),

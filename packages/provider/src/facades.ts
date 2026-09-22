@@ -1,6 +1,6 @@
 /* oxlint-disable eslint(max-lines) -- Settings/Selection Facade 共享同一套 Registry 投影与写入边界。 */
 import type { ConfigValidationIssue } from "./config-overlay.js";
-import type { ProviderModelMembership } from "./config-service.js";
+import type { ProviderModelMembership, SetupPersonalProviderInput } from "./config-service.js";
 import type {
   ModelConfig,
   ModelConfigObject,
@@ -52,6 +52,7 @@ export interface ProviderSettingsMutationTarget {
     readonly locale?: ProviderTemplateLocale;
     readonly initialConfig?: ProviderConfig;
   }): Promise<{ readonly providerId: ProviderId }>;
+  setupPersonalProvider(input: SetupPersonalProviderInput): Promise<{ readonly providerId: ProviderId }>;
   savePersonalProviderOverlay(
     providerId: ProviderId,
     config: ProviderConfig,
@@ -316,6 +317,12 @@ export class ProviderSettingsFacade {
           ? { initialConfig: parseProviderConfig(input.initialConfig) }
           : {}),
       }),
+    ).then(({ result, view }) => ({ providerId: result.providerId, view }));
+  }
+
+  setupPersonalProvider(input: SetupPersonalProviderInput): Promise<ProviderSettingsCreationResult> {
+    return this.#mutateWithResult("setup-provider", (target) =>
+      target.setupPersonalProvider(input),
     ).then(({ result, view }) => ({ providerId: result.providerId, view }));
   }
 

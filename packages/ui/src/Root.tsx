@@ -14,12 +14,10 @@ import { ServiceProvider } from "@/hooks/useServices.js";
 import { useDynamicWorkflowAvailabilityLoader } from "@/hooks/useDynamicWorkflowAvailability.js";
 import { DirectoryBrowser } from "@/DirectoryBrowser.js";
 import { useTabPersistence } from "@/hooks/useTabPersistence.js";
-import { useTokenRefresh } from "@/hooks/useTokenRefresh.js";
 import { useWorkspaceServices } from "@/hooks/useWorkspaceServices.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { SSHDialog } from "@/SSHDialog.js";
 import { SettingsPage } from "@/SettingsPage.js";
-import { CodingPlanUpgradeDialogProvider } from "@/settings/CodingPlanUpgradeDialogProvider.js";
 import { WelcomeScreen, type LoginCompleteReason } from "@/WelcomeScreen.js";
 import { setDefaultFileDisplayBasePath } from "@/lib/fileDisplay.js";
 import { readRendererLaunchTimings, shouldReportLaunchToInput } from "@/lib/launchToInputReport.js";
@@ -49,8 +47,6 @@ import { useRemoteWorkspaceTabLifecycle } from "@/root/useRemoteWorkspaceTabLife
 import { useRootProviderStateRefresh } from "@/root/useRootProviderStateRefresh.js";
 import { useModelSelectionServiceView } from "@/hooks/useModelSelectionView.js";
 import { useRootProviderSettingsSnapshot } from "@/root/useRootProviderSettingsSnapshot.js";
-import { useRootOAuthEffects } from "@/root/useRootOAuthEffects.js";
-import { consumeZcodeJwtInvalidRestartMarker } from "@/root/zcodeJwtInvalidRestartMarker.js";
 import { useDesktopNativeThemeSync } from "@/root/useDesktopNativeThemeSync.js";
 import { useRootPlatformEffects } from "@/root/useRootPlatformEffects.js";
 import { useRootWorkspaceActions } from "@/root/useRootWorkspaceActions.js";
@@ -119,16 +115,17 @@ export function Root(props: RootProps) {
           <PlatformProvider platform={props.platform}>
             <StoreProvider
               broadcastService={props.services.broadcastService}
-              initialIsRestoringOAuthSession
+              // FreeCodeZ fork 修复(P2/R2):OAuth 会话恢复链已随账号族物理删除,
+              // 解除启动门禁的 setIsRestoringOAuthSession 调用点一并移除;
+              // 这里初始 false 保证 isRestoringOAuthSession 恒 false,启动门禁可正常解除。
+              initialIsRestoringOAuthSession={false}
             >
               <TabStoreProvider>
                 <DiffsWorkerPoolProvider>
                   <AssistantCodeCommentFeatureProvider
                     enabled={props.assistantCodeCommentCardsEnabled}
                   >
-                    <CodingPlanUpgradeDialogProvider>
-                      <RootInner {...props} />
-                    </CodingPlanUpgradeDialogProvider>
+                    <RootInner {...props} />
                   </AssistantCodeCommentFeatureProvider>
                 </DiffsWorkerPoolProvider>
               </TabStoreProvider>
@@ -191,20 +188,16 @@ function RootInner({
   const user = useZCodeStore((state) => state.user);
   const isRestoringOAuthSession = useZCodeStore((state) => state.isRestoringOAuthSession);
   const setUser = useZCodeStore((state) => state.setUser);
-  const setIsRestoringOAuthSession = useZCodeStore((state) => state.setIsRestoringOAuthSession);
   const setOAuthError = useZCodeStore((state) => state.setOAuthError);
-  const oauthPollingActive = useZCodeStore((state) => state.oauthPollingActive);
-  const setOAuthPollingActive = useZCodeStore((state) => state.setOAuthPollingActive);
-  const markOAuthSuccess = useZCodeStore((state) => state.markOAuthSuccess);
   const {
     settings: appSettings,
     refresh: refreshAppSettings,
     update: updateAppSettings,
   } = useSettings();
+  // FreeCodeZ fork(model-provider-intake R2):JWT 无效重启标记已随账号族删除，
+  // 冷启动初始化恒为空；接入面仅由 provider 启动守卫与交互入口打开。
   const [welcomeScreenOpenReason, setWelcomeScreenOpenReason] =
-    useState<WelcomeScreenOpenReason | null>(() =>
-      consumeZcodeJwtInvalidRestartMarker() ? "session-expired" : null,
-    );
+    useState<WelcomeScreenOpenReason | null>(null);
   const [providerFamilyDomainMigrationComplete, setProviderFamilyDomainMigrationComplete] =
     useState(false);
   const loginEntryRequest = useZCodeStore((state) => state.loginEntryRequest);
@@ -411,12 +404,12 @@ function RootInner({
   });
   const providerAvailabilityLoginEntryGuardEnabled =
     shouldEnableProviderAvailabilityLoginEntryGuard();
-  const { startupCheckCompleted: providerAvailabilityStartupCheckCompleted } =
-    useProviderAvailabilityLoginEntryGuard({
+  const {
+    startupCheckCompleted: providerAvailabilityStartupCheckCompleted,
+    syncLoginEntryWithProviderAvailability,
+  } = useProviderAvailabilityLoginEntryGuard({
       enabled: providerAvailabilityLoginEntryGuardEnabled,
-      user,
       isRestoringOAuthSession: isResolvingStartupAuthState || providerStartupSyncPending,
-      providerFamilyDomain: appSettings?.providerFamilyDomain,
       modelSelectionView: rootModelSelectionView,
       modelSelectionError:
         rootModelSelectionRead.state.status === "error"
@@ -436,6 +429,31 @@ function RootInner({
         });
       },
     });
+  // P1.R4 可用性复检：订阅 provider 配置变更，统一覆盖向导完成、key 保存/清除、
+  // 删除供应商全部写路径（spec §P1.R4/用例 A5）。启动检查自身的首次判定由 guard 内部
+  // 的 startup effect 负责；这里只处理启动完成后的变化，避免与首检交错。
+  useEffect(() => {
+    if (!providerAvailabilityStartupCheckCompleted) {
+      return;
+    }
+    const service = services.providerSettingsService;
+    if (!service?.onDidChange) {
+      return;
+    }
+    const subscription = service.onDidChange(() => {
+      void syncLoginEntryWithProviderAvailability({
+        reason: "provider-config-changed",
+        forceRefresh: true,
+      });
+    });
+    return () => {
+      subscription.dispose();
+    };
+  }, [
+    providerAvailabilityStartupCheckCompleted,
+    services,
+    syncLoginEntryWithProviderAvailability,
+  ]);
   const isResolvingProviderStartupState = shouldResolveProviderStartupState({
     providerStartupSyncPending,
     providerAvailabilityStartupCheckCompleted,
@@ -461,9 +479,6 @@ function RootInner({
   }, []);
   const handleOpenDirectoryBrowser = useCallback(() => {
     setDirectoryBrowserOpen(true);
-  }, []);
-  const handleReauthenticationRequired = useCallback(() => {
-    setWelcomeScreenOpenReason("session-expired");
   }, []);
   const {
     setWorkspaceActionError,
@@ -582,9 +597,6 @@ function RootInner({
     );
   }, [hasCompletedFullRestore, isDesktop, windowWorkspaceTabs]);
 
-  const { tryRefresh, clearCredentials } = useTokenRefresh();
-  void tryRefresh;
-  void clearCredentials;
   // 启动阻塞是桌面窗口保护期，手机 Web 远控在进入 Root 前已有配对/加载页。
   // Web 端继续使用该 gate 会在 workspace tab 注入前渲染空 RootShell，露出浏览器白底。
   const isStartupRenderBlocked = shouldShowRootStartupLoading({
@@ -673,24 +685,6 @@ function RootInner({
     });
   }, [platform]);
 
-  useRootOAuthEffects({
-    accountIntentKey: JSON.stringify([
-      user?.id,
-      appSettings?.providerFamilyDomain,
-      appSettings?.providerFamilyConnectionSelections,
-    ]),
-    platform,
-    services,
-    refreshProviderState,
-    refreshAppSettings,
-    setUser,
-    setIsRestoringOAuthSession,
-    setOAuthError,
-    oauthPollingActive,
-    setOAuthPollingActive,
-    markOAuthSuccess,
-    onReauthenticationRequired: handleReauthenticationRequired,
-  });
 
   useEffect(
     () =>
@@ -938,9 +932,6 @@ function RootInner({
     onCreateTask: handleCreateTask,
     onOpenWorkspace: handleOpenWorkspace,
     allowOpenWorkspace,
-    onLogin: !user ? handleOpenLoginEntry : undefined,
-    onLogout: user ? handleLogout : undefined,
-    user,
   };
 
   if (isStartupRenderBlocked) {

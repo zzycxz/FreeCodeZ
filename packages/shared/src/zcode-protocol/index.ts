@@ -2139,6 +2139,76 @@ export type ZCodeProviderTestModelConnectivityResult = z.infer<
   typeof zcodeProviderTestModelConnectivityResultSchema
 >;
 
+// ── provider 接入探测/模型发现（spec: docs/spec/model-provider-intake-and-expansion.md §P1.5）──
+// 与 testModelConnectivity 不同：这两个命令发生在 provider 落盘**之前**（首启向导 Step2/3），
+// 是纯端点 HTTP 探测，不携带 workspace（向导场景 workspace 尚未创建）、不建 ZCodeApp；
+// 失败是业务结果而非协议错误，故 result 用判别联合（仿 ModelConnectivityResult）而非 throw。
+const providerAccessApiTypeSchema = z.enum([
+  "anthropic-messages",
+  "openai-chat-completions",
+  "openai-responses",
+]);
+const providerAccessErrorKindSchema = z.enum([
+  "invalid-key",
+  "rate-limited",
+  "network",
+  "endpoint-miss",
+  "unknown",
+]);
+
+export const zcodeProviderProbeAccessParamsSchema = z
+  .object({
+    apiType: providerAccessApiTypeSchema,
+    baseUrl: nonEmptyString,
+    apiKey: z.string(),
+    modelsUrl: z.string().optional(),
+  })
+  .strict();
+export const zcodeProviderProbeAccessResultSchema = z.union([
+  z
+    .object({
+      ok: z.literal(true),
+      /** 网络可达但全部候选端点不存在（404/405）：无法自动验证，温和放行（§P1.R2）。 */
+      unverified: z.boolean().optional(),
+    })
+    .strict(),
+  z
+    .object({
+      ok: z.literal(false),
+      errorKind: providerAccessErrorKindSchema,
+      message: z.string(),
+    })
+    .strict(),
+]);
+export type ZCodeProviderProbeAccessParams = z.infer<typeof zcodeProviderProbeAccessParamsSchema>;
+export type ZCodeProviderProbeAccessResult = z.infer<typeof zcodeProviderProbeAccessResultSchema>;
+export type ZCodeProviderAccessErrorKind = z.infer<typeof providerAccessErrorKindSchema>;
+
+export const zcodeProviderListRemoteModelsParamsSchema = zcodeProviderProbeAccessParamsSchema;
+export const zcodeProviderListRemoteModelsResultSchema = z.union([
+  z
+    .object({
+      ok: z.literal(true),
+      models: z.array(nonEmptyString),
+      /** 发现赢家的 base（{base}/v1 形态时供回写修正，§P2.7-5）；无需修正则等于入参 base。 */
+      resolvedBaseUrl: nonEmptyString,
+    })
+    .strict(),
+  z
+    .object({
+      ok: z.literal(false),
+      errorKind: providerAccessErrorKindSchema,
+      message: z.string(),
+    })
+    .strict(),
+]);
+export type ZCodeProviderListRemoteModelsParams = z.infer<
+  typeof zcodeProviderListRemoteModelsParamsSchema
+>;
+export type ZCodeProviderListRemoteModelsResult = z.infer<
+  typeof zcodeProviderListRemoteModelsResultSchema
+>;
+
 export const zcodeProviderUpdateAccountConfigParamsSchema = z
   .object({
     revision: nonEmptyString,
@@ -3560,6 +3630,9 @@ export const zcodeProtocolMethods = {
   workspaceGenerateText: "workspace/generateText",
   workspaceCancelGenerateText: "workspace/cancelGenerateText",
   providerTestModelConnectivity: "provider/testModelConnectivity",
+  // 接入探测/模型发现：落盘前的纯端点 HTTP，无 workspace 语义（§P1.5）。
+  providerProbeAccess: "provider/probeAccess",
+  providerListRemoteModels: "provider/listRemoteModels",
   mcpList: "mcp/list",
   pluginsList: "plugins/list",
   pluginsReferenceCatalog: "plugins/referenceCatalog",

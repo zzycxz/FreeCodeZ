@@ -405,6 +405,9 @@ export function getZCodePluginsOverview(
 export function listZCodePlugins(options: ListZCodePluginsOptions = {}): PluginLoadOutcome {
   const outcome = resolveZCodePlugins(options);
   const { pluginStorageRoot } = resolvePluginContext(options);
+  // C4（docs/spec/plugin-marketplace-parity.md §6）：CLI 与 Desktop 共用同一个种子自愈入口，
+  // listing 投影读到的也是纠正后的目录。
+  ensureDefaultPluginMarketplaces(pluginStorageRoot);
   return {
     ...outcome,
     // 用户可见名称必须从 marketplace listing 解析；这里按完整 id 传递给 CLI，

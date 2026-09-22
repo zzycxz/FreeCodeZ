@@ -1,12 +1,7 @@
 import {
-  BIGMODEL_PROVIDER_ID,
-  buildBigModelApiUrl,
-  buildBigModelCodingPlanPersonalManageUrl,
   BUILTIN_MODEL_PROVIDER_IDS,
   createUuid,
   type OAuthProviderId,
-  ZCODE_ENV,
-  ZAI_PROVIDER_ID,
   type BuiltinModelProviderId,
   type UsageQuotaLimit,
   type UsageEntitlementSubscriptionDetail,
@@ -20,33 +15,15 @@ export function generateId(): string {
 }
 
 export const PRESET_SUBSCRIPTION_TIMEOUT_MS = 2 * 60 * 1000;
-export const BIGMODEL_REGISTRATION_URL = buildBigModelApiUrl({ ZCODE_ENV }, "/login");
-const BIGMODEL_CODING_PLAN_PERSONAL_MANAGE_URL = buildBigModelCodingPlanPersonalManageUrl({
-  ZCODE_ENV,
-});
 
+// FreeCodeZ fork(model-provider-intake R1):账号类预置入口(Z.ai/BigModel Start Plan 卡片)
+// 与 Coding Plan 连接项已随 bigmodel+zai 账号族整体移除，接入面收敛为
+// 「添加供应商 / 新供应商」(ProviderTemplatePicker + 创建自定义供应商)单轨。
 export interface PresetProviderSpec {
   id: BuiltinModelProviderId;
   displayName: string;
   oauthProviderId?: OAuthProviderId;
 }
-
-export const PRESET_PROVIDER_SPECS: PresetProviderSpec[] = [
-  {
-    id: BUILTIN_MODEL_PROVIDER_IDS.zaiStartPlan,
-    displayName: "Z.ai",
-    oauthProviderId: ZAI_PROVIDER_ID,
-  },
-  {
-    id: BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan,
-    displayName: "BigModel",
-    oauthProviderId: BIGMODEL_PROVIDER_ID,
-  },
-];
-
-export const PRESET_PROVIDER_SPEC_BY_ID = new Map<BuiltinModelProviderId, PresetProviderSpec>(
-  PRESET_PROVIDER_SPECS.map((item) => [item.id, item]),
-);
 
 export type CodingPlanProviderId =
   | typeof BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan
@@ -66,45 +43,6 @@ export type CodingPlanStatus =
 
 export type TeamPlanAvailabilityReason = "not-allocated" | "expired" | "credential-unavailable";
 
-interface CodingPlanProviderSpec {
-  id: CodingPlanProviderId;
-  oauthProviderId: OAuthProviderId;
-  label: string;
-  providerName: string;
-  purchaseUrl?: string;
-}
-
-export const CODING_PLAN_PROVIDER_SPECS: CodingPlanProviderSpec[] = [
-  {
-    id: BUILTIN_MODEL_PROVIDER_IDS.zaiStartPlan,
-    oauthProviderId: ZAI_PROVIDER_ID,
-    label: "Z.ai - Coding Plan",
-    providerName: "Z.ai",
-    purchaseUrl: "https://z.ai/manage-apikey/subscription",
-  },
-  {
-    id: BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan,
-    oauthProviderId: ZAI_PROVIDER_ID,
-    label: "Z.ai - Coding Plan",
-    providerName: "Z.ai",
-    purchaseUrl: "https://z.ai/manage-apikey/subscription",
-  },
-  {
-    id: BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan,
-    oauthProviderId: BIGMODEL_PROVIDER_ID,
-    label: "BigModel - Coding Plan",
-    providerName: "BigModel",
-    purchaseUrl: BIGMODEL_CODING_PLAN_PERSONAL_MANAGE_URL,
-  },
-  {
-    id: BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan,
-    oauthProviderId: BIGMODEL_PROVIDER_ID,
-    label: "BigModel- Coding Plan",
-    providerName: "BigModel",
-    purchaseUrl: BIGMODEL_CODING_PLAN_PERSONAL_MANAGE_URL,
-  },
-];
-
 export interface CodingPlanEntitlementState {
   snapshot: UsageEntitlementSnapshot | null;
   loading: boolean;
@@ -114,21 +52,6 @@ export interface CodingPlanEntitlementState {
 export function resolveModelProviderDisplayName(
   provider: Pick<ProviderSettingsFormProvider, "providerId" | "config">,
 ): string {
-  if (
-    provider.providerId === BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan ||
-    provider.providerId === BUILTIN_MODEL_PROVIDER_IDS.zaiTeamCodingPlan
-  ) {
-    return "Z.ai - Coding Plan";
-  }
-
-  if (provider.providerId === BUILTIN_MODEL_PROVIDER_IDS.zaiStartPlan) {
-    return "Start Plan";
-  }
-
-  if (provider.providerId === BUILTIN_MODEL_PROVIDER_IDS.bigmodelStartPlan) {
-    return "Start Plan";
-  }
-
   return getProviderFormLabel(provider);
 }
 

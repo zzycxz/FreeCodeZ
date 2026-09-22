@@ -29,14 +29,29 @@ export const apiKeyAccessDataSchema = z
 export const completeApiKeyAccessDataSchema = apiKeyAccessDataSchema.extend({
   apiKey: nonBlankRequiredString,
 });
-export const providerAccessDataSchema = apiKeyAccessDataSchema;
-const completeProviderAccessDataSchema = completeApiKeyAccessDataSchema;
+// keyless 端点（本地 Ollama/llama.cpp/LM Studio 等，spec §P2.4，D-P2.1）：
+// 判别值而非 api-key 空串——「没填 key」与「免密」必须可区分（准入门据此放行）。
+export const noneAccessDataSchema = z
+  .object({
+    type: z.literal("none"),
+  })
+  .strict();
+export const providerAccessDataSchema = z.discriminatedUnion("type", [
+  apiKeyAccessDataSchema,
+  noneAccessDataSchema,
+]);
+export const completeProviderAccessDataSchema = z.discriminatedUnion("type", [
+  completeApiKeyAccessDataSchema,
+  noneAccessDataSchema,
+]);
 
 export const completeProviderApiDataSchema = z
   .object({
     type: providerApiTypeDataSchema,
     baseUrl: nonBlankRequiredString.pipe(z.string().url()),
     headers: z.record(z.string(), z.string()).readonly().nullable().optional(),
+    // 模板可编辑平台地址（MoMA 内网地址因部署而异，spec §P2.5）；纯 UI 提示位，不参与准入。
+    baseUrlEditable: z.boolean().nullable().optional(),
   })
   .strict();
 export const providerApiDataSchema = z
@@ -61,6 +76,9 @@ export const providerConfigDataSchema = z
     personalModelIds: modelIdsDataSchema,
     modelOrder: modelIdsDataSchema,
     visibility: providerVisibilityDataSchema.nullable().optional(),
+    // 模板墙三分组（direct/aggregator/local，spec §P2.1-5/D-P2.2）；
+    // 经 ProviderSettingsTemplateView.config 原样透传，UI 不维护 templateId→category 映射。
+    category: z.enum(["direct", "aggregator", "local"]).nullable().optional(),
   })
   .strict();
 export const completeProviderConfigDataSchema = providerConfigDataSchema.extend({

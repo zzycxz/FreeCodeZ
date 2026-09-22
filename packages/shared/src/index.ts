@@ -235,6 +235,7 @@ export * from "./zcode-agent-model-state.js";
 export * from "./task-realtime.js";
 export { formatTimestamp, formatLogPrefix } from "./log-format.js";
 export * from "./model-provider-types.js";
+export * from "./provider-model-discovery.js";
 export * from "./model-provider-family.js";
 export * from "./provider-family-connection-selection.js";
 export * from "./provider-provisioning.js";

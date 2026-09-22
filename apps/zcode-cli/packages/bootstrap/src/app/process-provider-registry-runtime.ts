@@ -2,10 +2,10 @@ import {
   AccountProviderService,
   MutableAccountProviderConfigSource,
   parseAccountProviderConfigMap,
+  ProviderConfigMap,
   type AccountProviderConfigSnapshot,
   type AccountProviderStates,
 } from "@zcode/provider";
-import { isBuiltinModelProviderId } from "@zcode/shared";
 import {
   NodeModelSelectionConfigRepository,
   NodeProviderRegistryRuntime,
@@ -17,10 +17,6 @@ import {
   type SharedZCodeCredentialStore,
 } from "@zcode/adapters/auth";
 import { readLegacyCliPersonalProviderConfig } from "./legacy-cli-personal-provider-config-importer.js";
-import {
-  createStandaloneProviderRuntimeHeadersPort,
-  readStandaloneAccountProviderConfigSnapshot,
-} from "./standalone-account-provider-runtime.js";
 
 export interface ProcessProviderRegistryRuntimeOptions {
   /** Standalone Prompt CLI / TUI 自己拥有旧配置的一次性导入。 */
@@ -64,14 +60,10 @@ export async function startProcessProviderRegistryRuntime(
           createAccountSource(configService) {
             standaloneAccount = new AccountProviderService({
               configSource: configService,
-              async resolve({ configRevision, configuredProviders }) {
-                // 使用本轮捕获的 Built-in，而不是异步读另一份文件后仅贴上新 revision。
-                const snapshot = await readStandaloneAccountProviderConfigSnapshot(
-                  credentialStore,
-                  env,
-                  { revision: configRevision, providers: configuredProviders },
-                );
-                return { providers: snapshot.providers, states: snapshot.states ?? {} };
+              async resolve() {
+                // FreeCodeZ fork(model-provider-intake R1):账号族(standalone account provider)
+                // 已整体移除，账号 overlay 恒为空快照，只保留自定义/personal provider 单轨。
+                return { providers: ProviderConfigMap.empty(), states: {} };
               },
             });
             standaloneAccount.onDidRefreshError(({ error }) => {
@@ -137,14 +129,6 @@ export async function startProcessProviderRegistryRuntime(
           modelSelectionConfigRepository.dispose();
           runtime.dispose();
         },
-        ...(credentialStore
-          ? {
-              providerRuntimeHeadersPort: createStandaloneProviderRuntimeHeadersPort(
-                credentialStore,
-                env,
-              ),
-            }
-          : {}),
         runtime,
         snapshot,
         modelSelectionConfigRepository,

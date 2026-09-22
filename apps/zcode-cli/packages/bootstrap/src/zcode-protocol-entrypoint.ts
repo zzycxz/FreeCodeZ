@@ -235,6 +235,13 @@ export async function runZCodeProtocolAgent(
         }),
       cwd: options.cwd,
       env: options.env,
+      // 探测/发现的代理语义与会话请求一致（D-P1.3）：同 config store 的 network 配置 + 运行时 env。
+      providerAccessNetwork: {
+        env: options.env,
+        httpProxy: configResult.config.network.httpProxy,
+        noProxy: configResult.config.network.noProxy,
+        caCertFile: configResult.config.network.caCertFile,
+      },
       loggerFactory,
       mcpPort,
       mcpTelemetry: mcpTelemetryTracker,

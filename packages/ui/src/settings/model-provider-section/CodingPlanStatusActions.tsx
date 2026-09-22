@@ -4,7 +4,3 @@ export function CodingPlanStatusActions(props: any): null {
   void props;
   return null;
 }
-export function CodingPlanUpgradeAction(props: any): null {
-  void props;
-  return null;
-}

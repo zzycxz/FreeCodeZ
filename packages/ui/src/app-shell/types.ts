@@ -83,6 +83,8 @@ export interface AppProps {
   ) => Promise<void>;
   onCancelRemoteProject: (sessionId: string) => Promise<void>;
   onReconnectRemoteWorkspace: (workspaceKey: string) => Promise<void>;
+  // onLogin/onLogout 仅剩 quickpick 登录/登出命令与账号残余链消费（P2 §4.6 账号批次），
+  // 侧栏底栏已不再使用（Provider/Key 状态指示器改造）。
   onLogout?: () => void;
   onLogin?: () => void;
   user?: UserInfo | null;

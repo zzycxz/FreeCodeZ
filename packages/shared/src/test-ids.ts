@@ -5,10 +5,6 @@
  */
 
 // Login entry
-/** 右上角登录触发按钮 */
-export const TID_LOGIN_TRIGGER = "login-trigger";
-/** 用户菜单中的登录操作 */
-export const TID_LOGIN_MENU_ITEM = "login-menu-item";
 /** 登录页切换到 API Key 登录方式按钮 */
 export const TID_LOGIN_USE_API_KEY_BUTTON = "login-use-api-key-button";
 /** API Key 登录 provider 选择触发器 */
@@ -39,8 +35,10 @@ export const TID_APP_HEADER = "app-header";
 export const TID_LOCALE_TOGGLE = "locale-toggle";
 /** 主题切换按钮 */
 export const TID_THEME_TOGGLE = "theme-toggle";
-/** 退出登录按钮 */
-export const TID_LOGOUT_BUTTON = "logout-button";
+/** 左下角 Provider/Key 状态指示器触发按钮（原登录触发位，P2 §4.6 侧栏底栏改造） */
+export const TID_PROVIDER_STATUS_TRIGGER = "provider-status-trigger";
+/** 用户菜单中的"管理 Provider"操作（原登录/登出菜单项） */
+export const TID_MANAGE_PROVIDERS_MENU_ITEM = "manage-providers-menu-item";
 /** 终端显隐切换按钮 */
 export const TID_TERMINAL_TOGGLE = "terminal-toggle";
 export const TID_SIDE_PANE_TOGGLE = "side-pane-toggle";

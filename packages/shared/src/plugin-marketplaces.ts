@@ -30,9 +30,9 @@ export const DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS: ReadonlySet<string> = new Set(
 
 export const DEFAULT_PLUGIN_MARKETPLACES: DefaultPluginMarketplace[] = [
   {
-    // FreeCodeZ fork(P4 §3.1 方案 b):官方市场目录冻结为随包内置快照
-    // (config/plugin-marketplace/official-snapshot.json),不再回连 cdn-zcode;
-    // 个人来源(git/zip/本地目录)不受影响。
+    // FreeCodeZ fork(策略见 docs/spec/marketplace-official-snapshot.md):官方市场目录
+    // 冻结为随包内置快照(config/plugin-marketplace/official-snapshot.json),目录不回连;
+    // 条目内的图标/zip 等外链为下行 fetch,按需加载。个人来源(git/zip/本地目录)不受影响。
     id: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
     source: "bundled:official-plugin-marketplace",
     name: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID,

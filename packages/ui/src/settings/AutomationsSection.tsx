@@ -30,10 +30,6 @@ import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
 import { useSettings } from "@/hooks/useSettingService.js";
 import { logger } from "@/logger.js";
 import {
-  createIdleTimeCodingPlanFunnelContext,
-  resolveCodingPlanEntryPlanStateFromProviderSettings,
-} from "@/lib/codingPlanFunnelTelemetry.js";
-import {
   useAutomationManagementStore,
   type AutomationRunNowResult,
 } from "@/store/automationManagementStore.js";
@@ -107,7 +103,6 @@ import { AutomationTemplateSkeletonGrid } from "@/settings/AutomationTemplateSke
 
 import {
   AUTOMATION_CREATE_LIMIT,
-  BUILTIN_MODEL_PROVIDER_IDS,
   TID_AUTOMATION_ACTION_DELETE,
   TID_AUTOMATION_ACTION_TOGGLE,
   TID_AUTOMATION_CARD,
@@ -178,12 +173,6 @@ function freezeOffPeakCreateTelemetrySnapshot(..._a: unknown[]): null {
   return null;
 }
 function reportOffPeakCreateResult(..._a: unknown[]): void {}
-function useCodingPlanUpgradeDialog(): { openCodingPlanUpgrade: (_options?: unknown) => void } {
-  return { openCodingPlanUpgrade: () => {} };
-}
-function useCodingPlanEntryGate(): { status: "hidden" | "loading" | "error"; label: string | null; retry: () => void } {
-  return { status: "hidden", label: null, retry: () => {} };
-}
 /* eslint-disable @typescript-eslint/no-unused-vars -- 惯性桩组件 */
 function OffPeakEditView(props: {
   editing: ZCodeOffPeakTask | null;
@@ -598,11 +587,9 @@ export function AutomationsSection({
   // FreeCodeZ fork:offPeakTaskService 已从 accessor 删除;惯性桩持有 undefined 引用即可(所有调用落空快照)。
   const offPeakTaskService = undefined as never;
   const confirmDialog = useConfirmDialog();
-  const { openCodingPlanUpgrade } = useCodingPlanUpgradeDialog();
   const providerSettingsRead = useProviderSettingsView();
   const providerSettingsView =
     providerSettingsRead.state.status === "ready" ? providerSettingsRead.state.view : null;
-  const { status: entryStatus, label: entryLabel, retry: retryEntry } = useCodingPlanEntryGate();
   const { settings: sharedSettings, update: updateSharedSettings } = useSettings();
   useOffPeakEligibility(sharedSettings, providerSettingsView?.revision);
 
@@ -912,44 +899,15 @@ export function AutomationsSection({
     );
   }, [currentWorkspaceIsRemote]);
 
-  const handleOpenCodingPlanUpgrade = useCallback(() => {
-    const providerId =
-      sharedSettings?.providerFamilyDomain === "bigmodel"
-        ? BUILTIN_MODEL_PROVIDER_IDS.bigmodelIndividualCodingPlan
-        : BUILTIN_MODEL_PROVIDER_IDS.zaiIndividualCodingPlan;
-    const eventText = intl.formatMessage({
-      id: "settings.modelProvider.codingPlan.upgrade",
-    });
-    // 埋点缺失原因：Automations 的闲时入口此前绕过了购买漏斗 context，只打开弹窗。
-    // 这里在用户点击时冻结入口套餐状态，后续 OAuth 只刷新鉴权，不重建 funnel。
-    openCodingPlanUpgrade({
-      providerId,
-      initialAudience: "personal",
-      funnelContext: createIdleTimeCodingPlanFunnelContext({
-        providerId,
-        eventText,
-        entryPlanState: resolveCodingPlanEntryPlanStateFromProviderSettings(providerSettingsView),
-      }),
-    });
-  }, [intl, openCodingPlanUpgrade, providerSettingsView, sharedSettings?.providerFamilyDomain]);
-
   const showCodingPlanRequiredToast = useCallback(() => {
-    toast(entryLabel ?? intl.formatMessage({ id: "offPeak.create.codingPlanToast" }), {
+    toast(intl.formatMessage({ id: "offPeak.create.codingPlanToast" }), {
       durationMs: 8000,
       position: "top-center",
       variant: "info",
-      actionLabel:
-        entryStatus === "loading"
-          ? undefined
-          : (entryLabel ??
-            intl.formatMessage({
-              id: "settings.modelProvider.codingPlan.upgrade",
-            })),
-      onAction: entryStatus === "error" ? retryEntry : handleOpenCodingPlanUpgrade,
       dismissible: true,
       dismissLabel: intl.formatMessage({ id: "common.close" }),
     });
-  }, [handleOpenCodingPlanUpgrade, intl, entryStatus, entryLabel, retryEntry]);
+  }, [intl]);
 
   const showAutomationCreateLimitToast = useCallback(() => {
     toast(

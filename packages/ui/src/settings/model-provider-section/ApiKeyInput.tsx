@@ -35,7 +35,7 @@ export function ApiKeyInput({
         type={visible && !readOnly ? "text" : "password"}
         size="lg"
         data-testid={TID_MODEL_PROVIDER_API_KEY_INPUT}
-        className="pr-10 h-9"
+        className="pr-10 h-9 text-mobile-input-safe md:text-ui-base"
         placeholder={intl.formatMessage({
           id: "settings.modelProvider.apiKeyPlaceholder",
         })}

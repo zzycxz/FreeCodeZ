@@ -15,9 +15,16 @@ import {
   type ProviderSettingsView,
   type ResolveModelConfigInput,
   type SavePersonalModelDraftInput,
+  type SetupPersonalProviderInput,
 } from "@zcode/provider";
 import { createServiceDescriptor } from "../descriptors.js";
-import type { ModelConnectivityResult } from "@zcode/shared";
+import type {
+  ModelConnectivityResult,
+  ZCodeProviderProbeAccessParams,
+  ZCodeProviderProbeAccessResult,
+  ZCodeProviderListRemoteModelsParams,
+  ZCodeProviderListRemoteModelsResult,
+} from "@zcode/shared";
 import { createServiceLogger } from "../logger/serviceLogger.js";
 
 export type {
@@ -68,6 +75,16 @@ export interface IProviderSettingsService {
   testModelConnectivity(
     input: ProviderSettingsConnectivityRequest,
   ): Promise<ModelConnectivityResult>;
+  /** 接入探测（spec §P1.R2）：落盘前只读验证 key，不发生成请求。 */
+  probeProviderAccess(
+    input: ZCodeProviderProbeAccessParams,
+  ): Promise<ZCodeProviderProbeAccessResult>;
+  /** 模型目录发现（spec §P2.7）：落盘前只读拉取，探测与发现共用候选语义。 */
+  listRemoteModels(
+    input: ZCodeProviderListRemoteModelsParams,
+  ): Promise<ZCodeProviderListRemoteModelsResult>;
+  /** 三步向导原子提交（spec §P1.R3）：创建 + key + 模型 + 默认模型单次落盘。 */
+  setupPersonalProvider(input: SetupPersonalProviderInput): Promise<ProviderSettingsCreationResult>;
 }
 
 export const IProviderSettingsService = createServiceDescriptor<IProviderSettingsService>(
@@ -92,6 +109,16 @@ export type ProviderSettingsConnectivityTester = (
   input: ProviderSettingsConnectivityTestInput,
 ) => Promise<ModelConnectivityResult>;
 
+/** 接入探测/模型发现的执行侧注入（D-P1.3：CLI agent 管理面 client）。 */
+export interface ProviderSettingsAccessProber {
+  probeProviderAccess(
+    input: ZCodeProviderProbeAccessParams,
+  ): Promise<ZCodeProviderProbeAccessResult>;
+  listRemoteModels(
+    input: ZCodeProviderListRemoteModelsParams,
+  ): Promise<ZCodeProviderListRemoteModelsResult>;
+}
+
 export interface IModelSelectionService {
   readonly onDidChange: Event<ModelSelectionView>;
   getView(input?: ModelSelectionViewInput): Promise<ModelSelectionView>;
@@ -110,6 +137,7 @@ export function createProviderSettingsService(
   facade: ProviderSettingsFacade,
   ensureReady: () => Promise<void> = async () => {},
   testConnectivity?: ProviderSettingsConnectivityTester,
+  accessProber?: ProviderSettingsAccessProber,
 ): IProviderSettingsService {
   return {
     onDidChange: toEvent((listener) => facade.onDidChange(listener)),
@@ -124,6 +152,19 @@ export function createProviderSettingsService(
     createPersonalProvider: async (input) => {
       await ensureReady();
       return facade.createPersonalProvider(input);
+    },
+    setupPersonalProvider: async (input) => {
+      await ensureReady();
+      return facade.setupPersonalProvider(input);
+    },
+    probeProviderAccess: async (input) => {
+      // 只读探测不需要 Registry ready：向导发生在 provider 落盘之前。
+      if (!accessProber) throw new Error("Provider Access Prober 尚未装配");
+      return accessProber.probeProviderAccess(input);
+    },
+    listRemoteModels: async (input) => {
+      if (!accessProber) throw new Error("Provider Access Prober 尚未装配");
+      return accessProber.listRemoteModels(input);
     },
     resolveModelConfig: async (input) => {
       await ensureReady();

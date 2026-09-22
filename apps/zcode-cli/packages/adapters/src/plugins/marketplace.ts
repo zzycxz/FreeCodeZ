@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { isDeepStrictEqual, promisify } from "node:util";
 import type { PluginDiagnostic, PluginManifest, PluginStoreListing } from "@zcode/contracts";
 import { isOfficialMarketplaceId, ZCODE_OFFICIAL_PLUGIN_MARKETPLACE } from "@zcode/contracts";
 import {
@@ -24,7 +24,7 @@ import {
 import { enumeratePluginComponents, type PluginComponentGroup } from "./plugin-components.js";
 import { applyNetworkEgressEnv } from "../network/subprocess-env.js";
 import { createNodeWebFetchHttpClientAdapter } from "../http/index.js";
-import { writeCdnOfficialMarketplacePartitionSync } from "./official-marketplace.js";
+import { ensureOfficialCatalogPartitionSync } from "./official-marketplace.js";
 import {
   isZipPluginUrlSource,
   readZipPluginSourceSha256,
@@ -297,10 +297,42 @@ export function ensureDefaultPluginMarketplaces(storageRoot: string): KnownMarke
       pluginCount: marketplace.pluginCount,
     }),
   );
-  if (missing.length === 0) return known;
+  if (missing.length === 0) return normalizeDefaultMarketplaceSourcesSync(known, storageRoot);
   const next = [...known, ...missing];
   writeKnownMarketplacesSync(storageRoot, next);
-  return next;
+  return normalizeDefaultMarketplaceSourcesSync(next, storageRoot, true);
+}
+
+/** C4（docs/spec/plugin-marketplace-parity.md §6）：默认市场的规范 source——known 记录只认这个形态。 */
+function resolveDefaultMarketplaceSource(id: string): MarketplaceSource | undefined {
+  const marketplace = DEFAULT_PLUGIN_MARKETPLACES.find((item) => item.id === id);
+  return marketplace ? defaultMarketplaceSourceFromString(marketplace.source) : undefined;
+}
+
+/**
+ * C4 启动自愈（docs/spec/plugin-marketplace-parity.md §6）：官方市场的 known source 与 CDN
+ * 分片都是随包冻结快照的派生状态。P4~P7 旧代产物（占位 source、只剩 name 的空壳分片）会让
+ * 三条历史读取路径全部短路（spec §3 R3），因此在种子入口幂等纠正，升级用户无需手工清缓存。
+ * `skipPersist` 供刚落盘过的调用方复用，避免同一次 ensure 内重复写盘。
+ */
+function normalizeDefaultMarketplaceSourcesSync(
+  records: KnownMarketplaceRecord[],
+  storageRoot: string,
+  skipPersist = false,
+): KnownMarketplaceRecord[] {
+  let changed = false;
+  for (const record of records) {
+    const source = resolveDefaultMarketplaceSource(record.id);
+    if (source && !isDeepStrictEqual(record.source, source)) {
+      record.source = source;
+      changed = true;
+    }
+    if (isOfficialMarketplaceId(record.id)) {
+      ensureOfficialCatalogPartitionSync(storageRoot);
+    }
+  }
+  if (changed && !skipPersist) writeKnownMarketplacesSync(storageRoot, records);
+  return records;
 }
 
 export async function ensureMarketplaceManifestAvailable(input: {
@@ -375,14 +407,11 @@ export async function addMarketplace(input: {
         `Official marketplace source must provide ${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE}, received ${loaded.manifest.name}`,
       );
     }
+    // C4 单一写入路径：官方目录内容固定取随包冻结快照（P5 冻结策略），调用方 source 不能
+    // 注入条目；旧代/漂移由同一入口整体重播纠正（spec §6 C4/C5）。
     const persistedManifest =
       loaded.manifest.name === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE
-        ? parseRequiredMarketplaceManifest(
-            writeCdnOfficialMarketplacePartitionSync({
-              manifest: loaded.manifest.raw,
-              storageRoot: input.storageRoot,
-            }),
-          )
+        ? parseRequiredMarketplaceManifest(ensureOfficialCatalogPartitionSync(input.storageRoot))
         : loaded.manifest;
     // 旧流程先删 marketplace target 再复制 source，刷新失败会丢失最后成功快照。
     // source tree 与规范 manifest 在同一 staging 目录准备完毕后一次 rename 激活。
@@ -406,7 +435,8 @@ export async function addMarketplace(input: {
     const now = new Date().toISOString();
     const record: KnownMarketplaceRecord = {
       id: loaded.manifest.name,
-      source: input.source,
+      // C4：官方记录的 source 以内嵌快照为规范形态（spec A2），不持久化调用方 source。
+      source: resolveDefaultMarketplaceSource(loaded.manifest.name) ?? input.source,
       name: loaded.manifest.name,
       ...(loaded.manifest.description ? { description: loaded.manifest.description } : {}),
       addedAt: now,
@@ -1897,7 +1927,8 @@ function writeKnownMarketplacesSync(
 
 function defaultMarketplaceSourceFromString(source: string): MarketplaceSource {
   const trimmed = source.trim();
-  // FreeCodeZ fork(P4 §3.1):官方市场随包内置快照(shared 内嵌 manifest),零 CDN 外联。
+  // FreeCodeZ fork:官方市场随包内置快照(shared 内嵌 manifest),目录不回连;
+  // 条目内 icon/zip 外链属下行 fetch,允许按需加载(docs/spec/marketplace-official-snapshot.md)。
   if (trimmed === "bundled:official-plugin-marketplace") {
     return {
       source: "settings",

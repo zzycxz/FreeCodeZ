@@ -4,6 +4,7 @@ import {
   ZCODE_HTTP_PROXY_ENV_KEY,
   ZCODE_NO_PROXY_ENV_KEY,
   ZCODE_TOOL_ENV_PASSTHROUGH_ENV_KEY,
+  isLoopbackHost,
   readZCodeToolEnvPassthroughEnv,
 } from "@zcode/shared";
 
@@ -62,6 +63,14 @@ function resolveProxyForRequestInternal(
   const url = typeof requestUrl === "string" ? safeUrl(requestUrl) : requestUrl;
   if (!url || (url.protocol !== "http:" && url.protocol !== "https:")) {
     return { noProxyMatched: false };
+  }
+
+  // loopback 目标永远直连（spec model-provider-intake-and-expansion §P2.4-3，验收 B6）：
+  // 代理服务器无法访问用户本机回环地址，本地模型服务（Ollama/LM Studio/llama.cpp）的
+  // 请求经代理转发只会打到远端代理失败。该规则无条件生效，不依赖用户显式配置 noProxy；
+  // loopback 判定单源于 @zcode/shared 的 isLoopbackHost（与候选 URL 链同一实现）。
+  if (isLoopbackHost(url)) {
+    return { noProxyMatched: true };
   }
 
   if (shouldBypassProxy(url, readExplicitNoProxyValue(options))) {

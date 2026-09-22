@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@zcode/spreadsheets-plugin",
+  "version": "0.1.7",
+  "private": true,
+  "license": "SEE LICENSE IN skills/xlsx/LICENSE.txt",
+  "description": "XLSX spreadsheet production skills, published as an official ZCode plugin."
+}

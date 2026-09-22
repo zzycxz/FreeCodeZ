@@ -6,12 +6,13 @@ import { atomicWritePrivateTextFile, backupCorruptFile, withFileLock } from "@zc
 import { createZCodeCredentialCipher, type ZCodeCredentialCipher } from "./credential-cipher.js";
 
 const ZCODE_DATA_BASE_DIR_ENV_KEY = "ZCODE_DATA_BASE_DIR";
-const ZAI_PROVIDER_ID = "zai";
 const credentialChangeListeners = new Map<
   string,
   Set<() => void | Promise<void>>
 >();
 
+// FreeCodeZ fork(model-provider-intake R1):zai/bigmodel OAuth 键位已废弃，不再读写；
+// 条目仅作历史键位锚点保留，供登出/清理路径扫掉旧凭据残留。
 export const SHARED_ZCODE_CREDENTIAL_KEYS = {
   activeProvider: "oauth:active_provider",
   bigmodelAccessToken: "oauth:bigmodel:access_token",
@@ -30,22 +31,8 @@ export interface SharedZCodeCredentialStoreOptions {
   filePath?: string;
 }
 
-export interface ZaiLoginCredentialUser {
-  avatar?: string;
-  email?: string;
-  name?: string;
-  user_id: string;
-}
-
-export interface ZaiLoginCredentialPayload {
-  accessToken: string;
-  jwtToken: string;
-  user: ZaiLoginCredentialUser;
-}
-
 export interface SharedZCodeCredentialStore {
   readonly filePath: string;
-  clearZaiLoginCredentials(): Promise<void>;
   delete(key: string): Promise<void>;
   deleteIfValue(key: string, expectedValue: string): Promise<boolean>;
   deleteIfValues(
@@ -62,7 +49,6 @@ export interface SharedZCodeCredentialStore {
   save(key: string, value: string): Promise<void>;
   saveMany(entries: Readonly<Record<string, string>>): Promise<void>;
   saveReplacing(key: string, value: string, replacedKeys: readonly string[]): Promise<void>;
-  saveZaiLoginCredentials(payload: ZaiLoginCredentialPayload): Promise<void>;
 }
 
 export function createSharedZCodeCredentialStore(
@@ -74,20 +60,6 @@ export function createSharedZCodeCredentialStore(
 
   return {
     filePath,
-
-    async clearZaiLoginCredentials(): Promise<void> {
-      await mutateRawCredentialRecord(filePath, async (rawCredentials) => {
-        const activeProviderRaw = rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.activeProvider];
-        const activeProvider = activeProviderRaw ? cipher.decrypt(activeProviderRaw) : null;
-        delete rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.zaiAccessToken];
-        delete rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.zaiRefreshToken];
-        delete rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.zaiUserInfo];
-        delete rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.zcodeJwtToken];
-        if (activeProvider === ZAI_PROVIDER_ID) {
-          delete rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.activeProvider];
-        }
-      });
-    },
 
     async delete(key: string): Promise<void> {
       const validatedKey = validateCredentialKey(key);
@@ -230,23 +202,6 @@ export function createSharedZCodeCredentialStore(
         for (const replacedKey of validatedReplacedKeys) {
           if (replacedKey !== validatedKey) delete rawCredentials[replacedKey];
         }
-      });
-    },
-
-    async saveZaiLoginCredentials(payload: ZaiLoginCredentialPayload): Promise<void> {
-      const encryptedCredentials = {
-        activeProvider: cipher.encrypt(ZAI_PROVIDER_ID),
-        accessToken: cipher.encrypt(validateCredentialValue(payload.accessToken)),
-        jwtToken: cipher.encrypt(validateCredentialValue(payload.jwtToken)),
-        userInfo: cipher.encrypt(JSON.stringify(payload.user)),
-      };
-      await mutateRawCredentialRecord(filePath, (rawCredentials) => {
-        rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.activeProvider] =
-          encryptedCredentials.activeProvider;
-        rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.zaiAccessToken] =
-          encryptedCredentials.accessToken;
-        rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.zcodeJwtToken] = encryptedCredentials.jwtToken;
-        rawCredentials[SHARED_ZCODE_CREDENTIAL_KEYS.zaiUserInfo] = encryptedCredentials.userInfo;
       });
     },
   };

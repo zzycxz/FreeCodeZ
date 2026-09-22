@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { ZCODE_OFFICIAL_PLUGIN_MARKETPLACE } from "@zcode/contracts";
+import { BUNDLED_OFFICIAL_PLUGIN_MARKETPLACE_MANIFEST } from "@zcode/shared";
 
 const BUNDLED_PARTITION_FILE = "bundled-marketplace.json";
 const CDN_PARTITION_FILE = "cdn-marketplace.json";
@@ -30,6 +31,24 @@ export function writeCdnOfficialMarketplacePartitionSync(input: {
   assertOfficialManifest(input.manifest);
   writeJsonFileSync(partitionPath(input.storageRoot, CDN_PARTITION_FILE), input.manifest);
   return rebuildOfficialMarketplaceSync(input.storageRoot);
+}
+
+/**
+ * C4 启动自愈（docs/spec/plugin-marketplace-parity.md §6）：官方市场目录的唯一事实源是
+ * 随包冻结快照，cdn 分片与合并清单都是它的派生状态。P4~P7 旧代产物（条目只剩 name、缺
+ * source/icon 的空壳分片）与「快照随版本变更」的漂移统一在写入侧整体重播纠正——不做逐字段
+ * 补丁（C5 语义），避免半修状态成为第二份事实。writeJsonFileSync 对字节相同内容跳写，
+ * 健康态零写盘；返回合并后的 canonical manifest。
+ * 唯一写入路径：启动种子（ensureDefaultPluginMarketplaces）与 addMarketplace 官方分支都走这里，
+ * 内容固定取内嵌快照、调用方不可注入。
+ */
+export function ensureOfficialCatalogPartitionSync(
+  storageRoot: string,
+): Record<string, unknown> {
+  return writeCdnOfficialMarketplacePartitionSync({
+    manifest: BUNDLED_OFFICIAL_PLUGIN_MARKETPLACE_MANIFEST as unknown as Record<string, unknown>,
+    storageRoot,
+  });
 }
 
 export function loadBundledOfficialPluginRootsSync(

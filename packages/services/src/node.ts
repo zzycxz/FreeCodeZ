@@ -1362,7 +1362,7 @@ export function createLocalServices(options: {
     }),
   ];
   let providerConnectivityAgentService:
-    | Pick<IZCodeAgentService, "testModelConnectivity">
+    | Pick<IZCodeAgentService, "testModelConnectivity" | "probeProviderAccess" | "listRemoteModels">
     | undefined;
   const providerRuntime = createProviderRuntimeFromConfigRuntime({
     configRuntime: providerConfigRuntime,
@@ -1377,6 +1377,21 @@ export function createLocalServices(options: {
         return providerConnectivityAgentService.testModelConnectivity(input);
       },
     }),
+    // 接入探测/模型发现（D-P1.3）：走 agent 管理面 client，与会话请求共用代理语义。
+    accessProber: {
+      probeProviderAccess: async (input) => {
+        if (!providerConnectivityAgentService) {
+          throw new Error("Agent Service 尚未完成接入探测装配");
+        }
+        return providerConnectivityAgentService.probeProviderAccess(input);
+      },
+      listRemoteModels: async (input) => {
+        if (!providerConnectivityAgentService) {
+          throw new Error("Agent Service 尚未完成模型发现装配");
+        }
+        return providerConnectivityAgentService.listRemoteModels(input);
+      },
+    },
   });
   // mcpSync/hooks 里引用 zcodeAgentService 的闭包是惰性调用，声明顺序不影响初始化。
   const skillsService = createSkillsService({ isDesktopRuntime: true });

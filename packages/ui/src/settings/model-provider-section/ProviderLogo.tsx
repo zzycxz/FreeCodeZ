@@ -56,6 +56,11 @@ function resolveBuiltinProviderLogoAsset(
   return asset ? (theme === "dark" ? (asset.dark ?? asset.light) : asset.light) : null;
 }
 
+/** 素材是否已打包命中；未命中时调用方给字母 monogram 兜底（无素材孤儿，B7）。 */
+export function hasBuiltinProviderLogo(key: string | null | undefined): boolean {
+  return Boolean(key && BUILTIN_PROVIDER_LOGO_ASSETS[key]);
+}
+
 export function ProviderLogo({
   logo,
   className,

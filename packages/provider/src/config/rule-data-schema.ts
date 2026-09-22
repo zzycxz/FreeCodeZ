@@ -4,6 +4,7 @@ import { manualModelConfigSchema } from "./manual-model-config.js";
 export { manualModelConfigSchema, type ManualModelConfig } from "./manual-model-config.js";
 import {
   apiKeyAccessDataSchema,
+  noneAccessDataSchema,
   personalProviderApiDataSchema,
   providerConfigDataSchema,
   providerGroupDataSchema,
@@ -95,9 +96,13 @@ export const providerConfigRuleSchema = z
   .strict();
 export const providerTemplateConfigRuleSchema = providerTemplateDataSchema.extend({
   config: providerConfigDataSchema
-    .pick({ logo: true, access: true, api: true, builtinModelIds: true })
+    .pick({ logo: true, access: true, api: true, builtinModelIds: true, category: true })
     .extend({
-      access: apiKeyAccessDataSchema.omit({ apiKey: true }).nullable().optional(),
+      // 模板传输面不携带 key；keyless 模板（none）原样通过（spec §P2.4，D-P2.1）。
+      access: z
+        .union([apiKeyAccessDataSchema.omit({ apiKey: true }), noneAccessDataSchema])
+        .nullable()
+        .optional(),
     }),
 });
 export const builtinProviderConfigRuleSchema = providerConfigRuleSchema.extend({

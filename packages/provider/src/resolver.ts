@@ -3,6 +3,7 @@ import type { z } from "zod";
 import type { completeModelConfigDataSchema } from "@zcode/shared/model-config";
 import type {
   completeApiKeyAccessDataSchema,
+  completeProviderAccessDataSchema,
   completeProviderConfigDataSchema,
 } from "./config/provider-data-schema.js";
 import type { ConfigValidationIssue } from "./config-overlay.js";
@@ -11,6 +12,7 @@ import {
   ModelConfig,
   ModelConfigRules,
   type ModelId,
+  type NoneAccessConfig,
   type ProviderConfig,
   type ProviderConfigRule,
   ProviderConfigMap,
@@ -23,6 +25,7 @@ import type { AccountProviderStates } from "./account-provider-state.js";
 
 export type RegistryProviderAccessConfig =
   | (ApiKeyAccessConfig & z.infer<typeof completeApiKeyAccessDataSchema>)
+  | NoneAccessConfig
 ;
 
 export type RegistryProviderConfig = ProviderConfig &
@@ -30,7 +33,9 @@ export type RegistryProviderConfig = ProviderConfig &
     readonly access?: RegistryProviderAccessConfig;
   };
 
-export type RegistryProviderConfigObject = Omit<z.infer<typeof completeProviderConfigDataSchema>, "access"> & { access?: z.infer<typeof completeApiKeyAccessDataSchema> };
+export type RegistryProviderConfigObject = Omit<z.infer<typeof completeProviderConfigDataSchema>, "access"> & {
+  access?: z.infer<typeof completeProviderAccessDataSchema>;
+};
 
 export function serializeRegistryProviderConfig(
   config: RegistryProviderConfig,
@@ -41,22 +46,28 @@ export function serializeRegistryProviderConfig(
     access:
       config.access == null
         ? undefined
-        : {
-            type: config.access.type,
-            apiKey: config.access.apiKey,
-            ...(config.access.apiKeyManagementUrl === undefined
-              ? {}
-              : { apiKeyManagementUrl: config.access.apiKeyManagementUrl }),
-          },
+        : config.access.type === "none"
+          ? { type: "none" }
+          : {
+              type: config.access.type,
+              apiKey: config.access.apiKey,
+              ...(config.access.apiKeyManagementUrl === undefined
+                ? {}
+                : { apiKeyManagementUrl: config.access.apiKeyManagementUrl }),
+            },
     api: {
       type: config.api.type,
       baseUrl: config.api.baseUrl,
       ...(config.api.headers == null ? {} : { headers: config.api.headers }),
+      ...(config.api.baseUrlEditable === undefined
+        ? {}
+        : { baseUrlEditable: config.api.baseUrlEditable }),
     },
     ...(config.builtinModelIds == null ? {} : { builtinModelIds: [...config.builtinModelIds] }),
     ...(config.personalModelIds == null ? {} : { personalModelIds: [...config.personalModelIds] }),
     ...(config.modelOrder == null ? {} : { modelOrder: [...config.modelOrder] }),
     ...(config.visibility === undefined ? {} : { visibility: config.visibility }),
+    ...(config.category === undefined ? {} : { category: config.category }),
   };
 }
 

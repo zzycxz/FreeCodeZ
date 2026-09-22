@@ -143,7 +143,6 @@ const enUS: Record<string, string> = {
   "chat.selections.file": "{name} · Selection",
   "chat.selections.mixedCount": "{count} selections",
   "chat.previewCards.openExternalFailed": "Could not open this file in the browser",
-  "settings.modelProvider.connectionMode.switchToStartPlan": "Switch to Start Plan",
   "chat.composer.contextSearchHint": "Type to search plugins, files, and chats",
   "chat.composer.contextShortcut": "Add context",
   "chat.composer.capabilityShortcut": "Choose capabilities",
@@ -553,40 +552,10 @@ const enUS: Record<string, string> = {
   "welcome.login": "Login",
   "welcome.loggingIn": "Logging in...",
   "welcome.loginFailed": "Login failed",
-  "login.title": "Welcome to FreeCodeZ",
-  "login.description": "Connect your account to start using FreeCodeZ",
-  "login.oauth.activeProviderHint":
-    "Current active provider: {provider}. Signing in again replaces the current identity.",
-  "login.oauth.loadingProviders": "Loading account providers...",
-  "login.oauth.noProviders":
-    "No account providers are available right now. Please try again later.",
-  "login.oauth.button": "Continue with {provider}",
-  "login.oauth.button.zai": "Connect to Z.ai",
-  "login.oauth.button.bigmodel": "Connect to BigModel",
-  "login.oauth.regionTag.zai": "Global",
-  "login.oauth.regionTag.bigmodel": "CN",
-  "login.oauth.waiting": "Waiting for {provider} authentication...",
-  "login.oauth.loginFailure": "Login failed, please try again",
-  "login.oauth.cancel": "Cancel",
-  "login.oauth.retry": "Retry login",
   "login.expired.title": "Your session has expired",
   "login.expired.description": "To keep your account secure, please sign in again.",
   "login.expired.action": "Sign in again",
   "login.expired.restart": "Confirm and restart",
-  "login.useApiKey": "Use API key",
-  "login.apiKey.title": "API Key",
-  "login.apiKey.placeholder": "Enter API key",
-  "login.apiKey.providerLabel": "API key provider",
-  "login.apiKey.provider.zai": "Z.ai",
-  "login.apiKey.provider.bigmodel": "BigModel",
-  "login.apiKey.getApiKey": "Get API Key",
-  "login.apiKey.cancel": "Cancel",
-  "login.apiKey.continue": "Continue",
-  "login.apiKey.emptyError": "Enter an API key.",
-  "login.apiKey.providerMissingError":
-    "Built-in provider configuration for {provider} was not found. Please try again later.",
-  "login.apiKey.saveError": "Failed to save API key: {error}",
-  "login.apiKey.skipError": "Failed to skip API key setup: {error}",
   "login.skip": "Skip for now",
   "settings.onboarding": "Onboard",
   "settings.onboardingDescription":
@@ -595,8 +564,6 @@ const enUS: Record<string, string> = {
 
   // App header
   "app.currentTheme": "Current: {theme}",
-  "app.login": "Connect",
-  "app.logout": "Disconnect",
   "logout.confirm.title": "Disconnect and restart FreeCodeZ?",
   "logout.confirm.descriptionWithRunningSessions":
     "{count} session(s) are currently running. Disconnecting will interrupt them and restart the app.",
@@ -605,6 +572,11 @@ const enUS: Record<string, string> = {
   "logout.confirm.ok": "Disconnect and restart",
   "logout.confirm.cancel": "Cancel",
   "sidebar.profile.notLoggedIn": "Connect",
+  // Sidebar footer provider/key status indicator (P2 §4.6)
+  "sidebar.providerStatus.notConfigured": "No API key configured",
+  "sidebar.providerStatus.ready": "API key ready",
+  "sidebar.providerStatus.invalid": "API key invalid or misconfigured",
+  "sidebar.providerStatus.manage": "Manage providers",
   "app.selectFile": "Select a file to get started",
   "app.workspace": "Workspace",
   "browser.title": "Browser",
@@ -2424,8 +2396,6 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.catalogProviderEmpty": "No providers found",
   "settings.modelProvider.addProviderAction": "Add provider",
   "settings.modelProvider.templatePickerTitle": "Add provider",
-  "settings.modelProvider.templateGroup.zhipu": "Zhipu",
-  "settings.modelProvider.templateGroup.other": "Other",
   "settings.modelProvider.templatePickerBack": "Back to provider details",
   "settings.modelProvider.addProviderModelReminder":
     "Add at least one model before adding the provider.",
@@ -2455,8 +2425,6 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.connectionMode.oauth": "OAuth",
   "settings.modelProvider.connectionMode.codingPlan": "Individual Plan",
   "settings.modelProvider.connectionMode.startPlan": "Start Plan",
-  "settings.modelProvider.connectionMode.startPlanCount": "Start Plan × {count}",
-  "settings.modelProvider.connectionMode.switchToStartPlanPrefix": "Switch to",
   "settings.modelProvider.connectionMode.teamPlan": "Team Plan",
   "settings.modelProvider.connectionMode.apiKeyBadge": "API",
   "settings.modelProvider.connectionMode.usageBasedApi": "Usage-based API",
@@ -2467,42 +2435,9 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.connectionMode.noAvailablePlan": "No available plan",
   "settings.modelProvider.accountProviderConfigMissing":
     "The account provider configuration is unavailable. Refresh and try again.",
-  "settings.modelProvider.startPlan.login": "Log in",
-  "settings.modelProvider.startPlan.status.loginRequired": "Log in to view and use your Start Plan",
   "settings.modelProvider.startPlan.status.expired": "Start Plan expired",
-  "settings.modelProvider.startPlan.status.noPlan": "No available Start Plan",
-  "settings.modelProvider.startPlan.status.loginExpired":
-    "Your login has expired. Please log in again.",
-  "settings.modelProvider.startPlan.title": "{provider} - Coding Plan",
-  "settings.modelProvider.startPlan.meta.today": "Today",
-  "settings.modelProvider.startPlan.meta.tomorrow": "Tomorrow",
-  "settings.modelProvider.startPlan.quotaSectionTitle": "Trial plan",
-  "settings.modelProvider.startPlan.eligibleNewUser": "New User",
-  "settings.modelProvider.startPlan.preview.unit.tokens": "tokens",
-  "settings.modelProvider.startPlan.preview.period.daily": "{unit} per day",
-  "settings.modelProvider.startPlan.preview.entitlementSummary.daily": "Daily quota · {details}",
-  "settings.modelProvider.startPlan.preview.entitlementSummary.generic": "Quota · {details}",
-  "settings.modelProvider.startPlan.preview.entitlementGroup.single": "{model} {quota}",
-  "settings.modelProvider.startPlan.preview.entitlementGroup.each": "{models} {quota} each",
   "settings.modelProvider.startPlan.balance.title": "Today's balance",
-  "settings.modelProvider.startPlan.balance.remaining": "{value} tokens remaining",
-  "settings.modelProvider.startPlan.balance.used": "{value} used",
-  "settings.modelProvider.startPlan.highlight.trial.label": "Trial period",
-  "settings.modelProvider.startPlan.highlight.trial.value": "5 calendar days",
-  "settings.modelProvider.startPlan.highlight.trial.description":
-    "Timing starts after signing in to FreeCodeZ 3.x.",
-  "settings.modelProvider.startPlan.highlight.quota.label": "Daily quota",
-  "settings.modelProvider.startPlan.highlight.quota.value": "3M tokens daily",
-  "settings.modelProvider.startPlan.highlight.quota.description":
-    "Platform GLM flagship models share a 3M token daily trial quota.",
-  "settings.modelProvider.startPlan.highlight.metering.label": "Metering",
-  "settings.modelProvider.startPlan.highlight.metering.value": "After platform model use",
-  "settings.modelProvider.startPlan.highlight.metering.description":
-    "Metered only after using platform GLM flagship models.",
-  "settings.modelProvider.startPlan.compatibility":
-    "Supports BYOK and BYOA. Base URL, API format, and API Key are maintained by FreeCodeZ automatically.",
   "settings.modelProvider.codingPlan.title": "{provider} - Coding Plan",
-  "settings.modelProvider.codingPlan.webview.title": "Upgrade Plan",
   "settings.modelProvider.codingPlan.webview.authInjectFailed":
     "Couldn't sign you into the plan page. Please retry.",
   "settings.modelProvider.codingPlan.webview.retry": "Retry",
@@ -2520,9 +2455,6 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.codingPlan.status.teamUnavailable":
     "Team plan not assigned. Contact your team admin.",
   "settings.modelProvider.codingPlan.status.unsupported": "Not supported yet",
-  "settings.modelProvider.codingPlan.bigmodel.unregisteredHint":
-    "This BigModel account is not registered yet. Register first.",
-  "settings.modelProvider.codingPlan.bigmodel.registerAction": "Register",
   "settings.modelProvider.codingPlan.description.disconnected":
     "Connect to view Coding Plan entitlements.",
   "settings.modelProvider.codingPlan.description.checking":
@@ -2542,15 +2474,9 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.codingPlan.purchaseLoginRequiredShort": "Sign in to purchase",
   "settings.modelProvider.codingPlan.purchaseConnectRequiredShort": "Connect to purchase",
   "settings.modelProvider.codingPlan.disconnect": "Unlink",
-  "settings.modelProvider.codingPlan.subscribe": "Subscribe",
-  "settings.modelProvider.codingPlan.upgrade": "Upgrade",
-  "settings.modelProvider.codingPlan.renew": "Renew",
   "settings.modelProvider.codingPlan.currentPlan": "Current",
   "settings.modelProvider.codingPlan.purchased": "Purchased",
-  "settings.modelProvider.codingPlan.startPlan.expiredBadge": "Expired",
-  "settings.modelProvider.codingPlan.startPlan.expiredAction": "Ended",
   "settings.modelProvider.codingPlan.cancelUpgrade": "Back",
-  "settings.modelProvider.codingPlan.purchase.title": "Upgrade Coding Plan",
   "settings.modelProvider.codingPlan.purchase.pricingTitle": "Pricing",
   "settings.modelProvider.codingPlan.purchase.pricingDescription":
     "Find the perfect plan for you and kick-start your AI coding journey.",
@@ -2562,20 +2488,6 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.codingPlan.purchase.team": "Teams",
   "settings.modelProvider.codingPlan.purchase.individualsSectionTitle": "For Individuals",
   "settings.modelProvider.codingPlan.purchase.teamsSectionTitle": "For Teams",
-  "settings.modelProvider.codingPlan.purchaseBanner.startPlanTitle": "Start Plan",
-  "settings.modelProvider.codingPlan.purchaseBanner.startPlanDescription":
-    "Try platform GLM flagship model quota for free.",
-  "settings.modelProvider.codingPlan.purchaseBanner.personalTitle": "For Individuals",
-  "settings.modelProvider.codingPlan.purchaseBanner.personalDescription":
-    "For individual developers with dedicated Coding Plan quota.",
-  "settings.modelProvider.codingPlan.purchaseBanner.temporarilySoldOut": "Temporarily sold out",
-  "settings.modelProvider.codingPlan.purchaseBanner.teamTitle": "For Teams",
-  "settings.modelProvider.codingPlan.purchaseBanner.teamDescription":
-    "For team collaboration with seats and centralized billing.",
-  "settings.modelProvider.codingPlan.purchaseBanner.teamStandardDescription":
-    "For small teams that need shared quota and seat management.",
-  "settings.modelProvider.codingPlan.purchaseBanner.teamAdvancedDescription":
-    "For high-throughput engineering teams that need more quota and flexible seats.",
   "settings.modelProvider.codingPlan.purchase.choosePlan": "Choose a plan",
   "settings.modelProvider.codingPlan.purchase.choosePlanDescription":
     "Compare plan capacity first. Billing cycle and final payment are confirmed next.",
@@ -2641,7 +2553,6 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.codingPlan.purchase.manageTeamPlan": "Manage team plan",
   "settings.modelProvider.codingPlan.manage": "Manage",
   "settings.modelProvider.planCard.codingPlan": "Coding Plan",
-  "settings.modelProvider.planCard.startPlan": "Start Plan",
   "settings.modelProvider.planCard.usage.fiveHour": "5h usage",
   "settings.modelProvider.planCard.usage.week": "1w usage",
   "settings.modelProvider.planCard.usage.totalTokens": "Total tokens",
@@ -2652,9 +2563,6 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.codingPlan.nextResetAt": "Quota resets {date}",
   "settings.modelProvider.codingPlan.renewsAt": "Renews {date}",
   "settings.modelProvider.codingPlan.expiresAt": "Expires {date}",
-  "settings.modelProvider.startPlan.pendingUntil": "Pending {date}",
-  "settings.modelProvider.startPlan.refreshEntitlement": "Refresh access",
-  "settings.modelProvider.startPlan.expiresAt": "Expires {date}",
   "settings.modelProvider.codingPlan.openApiKeyProvider": "Open BigModel - API key",
   "settings.modelProvider.codingPlan.plansTitle": "Coding Plan",
   "settings.modelProvider.codingPlan.audience.personal": "Individuals",
@@ -2962,34 +2870,6 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.codingPlan.zai.plan.max.name": "Max",
   "settings.modelProvider.codingPlan.zai.plan.max.summary":
     "Everything in Pro, plus 20x Lite usage",
-  "settings.modelProvider.codingPlan.bigmodel.plan.lite.name": "Lite",
-  "settings.modelProvider.codingPlan.bigmodel.plan.lite.summary": "3x Claude Pro usage quota",
-  "settings.modelProvider.codingPlan.bigmodel.plan.pro.name": "Pro",
-  "settings.modelProvider.codingPlan.bigmodel.plan.pro.summary":
-    "5x Lite usage quota + all Lite benefits",
-  "settings.modelProvider.codingPlan.bigmodel.plan.max.name": "Max",
-  "settings.modelProvider.codingPlan.bigmodel.plan.max.summary":
-    "20x Lite usage quota + all Pro benefits",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.lite.detail0": "Base usage allowance",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.lite.detail1":
-    "Light iteration for small repos",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.lite.detail2":
-    "Latest models rolled out over time",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.lite.detail3": "20+ coding tools",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.pro.detail0": "5x Lite usage allowance",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.pro.detail1":
-    "Daily development for mid-sized repos",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.pro.detail2":
-    "Priority access to latest models",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.pro.detail3": "Curated MCP tools",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.max.detail0":
-    "20x Lite usage allowance",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.max.detail1":
-    "Deep work on mid-to-large repos",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.max.detail2":
-    "First access to latest models",
-  "settings.modelProvider.codingPlan.bigmodel.purchase.plan.max.detail3":
-    "Peak-time resource priority",
   "settings.modelProvider.codingPlan.zai.purchase.plan.lite.detail0": "Base usage included",
   "settings.modelProvider.codingPlan.zai.purchase.plan.lite.detail1": "Small repo iteration",
   "settings.modelProvider.codingPlan.zai.purchase.plan.lite.detail2": "Latest models over time",
@@ -3059,6 +2939,20 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.reasoningLevelAdd": "Add reasoning level",
   "settings.modelProvider.reasoningLevelMapping": "Reasoning parameter mapping",
   "settings.modelProvider.reasoningLevelDelete": "Delete reasoning level",
+  "settings.modelProvider.reasoningPreset": "Reasoning preset",
+  "settings.modelProvider.reasoningPreset.off-on": "On / Off only",
+  "settings.modelProvider.reasoningPreset.low-medium-high": "Low / Medium / High",
+  "settings.modelProvider.reasoningPreset.low-high-max": "Low / High / Max",
+  "settings.modelProvider.reasoningPreset.full-ladder": "Low / Medium / High / X-High / Max",
+  "settings.modelProvider.reasoningPreset.no-reasoning": "No reasoning levels",
+  "settings.modelProvider.reasoningPresetHint.off-on":
+    "Toggle-style thinking models (most GLM-5.x, qwen-plus, etc.)",
+  "settings.modelProvider.reasoningPresetHint.low-medium-high":
+    "Common effort models, widest coverage",
+  "settings.modelProvider.reasoningPresetHint.low-high-max": "GLM-5.3 / Kimi K3 style",
+  "settings.modelProvider.reasoningPresetHint.full-ladder": "Claude 5 / GPT 5 series style",
+  "settings.modelProvider.reasoningPresetHint.no-reasoning":
+    "Sends no reasoning parameters; safe for any model",
   "settings.modelProvider.modelMetadata.invalid.reasoningLevelValues":
     "Reasoning levels cannot be empty or duplicated",
   "settings.modelProvider.modelMetadata.invalid.reasoningLevelMap":
@@ -3186,8 +3080,6 @@ const enUS: Record<string, string> = {
   "settings.usage.entitlementStatusNotConfigured": "Not configured",
   "sidebar.usage.summaryTitle": "Last 30 days",
   "sidebar.usage.plan.title": "Usage remaining",
-  "sidebar.usage.plan.upgrade": "Upgrade",
-  "sidebar.usage.plan.renew": "Renew",
   "sidebar.usage.plan.codingPlanTitle": "Coding Plan",
   "sidebar.usage.plan.audienceIndividual": "Individual",
   "sidebar.usage.plan.audienceTeam": "Team",
@@ -5401,6 +5293,13 @@ const enUS: Record<string, string> = {
   "chat.error.action.refreshQuota": "Refresh quota",
   "chat.error.action.switchModel": "Switch model",
   "chat.error.imageUnsupported": "The current model does not support image input. Switch to a vision model or use an image analysis tool.",
+  "chat.error.reasoningEffortInvalid":
+    "The current model rejected the selected reasoning effort. Lower the level or switch to on/off only.",
+  "chat.error.action.reasoningToToggle": "Switch to on/off only",
+  "chat.error.action.reasoningOff": "Disable reasoning levels",
+  "chat.error.reasoningEffortFixed": "Reasoning levels updated. Please resend.",
+  "chat.error.reasoningEffortFixFailed":
+    "Automatic fix failed. Adjust reasoning levels in model settings.",
   "chat.composer.imageReferenceHint": "The current model cannot read images directly; after sending, they will be handled as references plus a vision tool.",
   "chat.error.action.retryLater": "Try again later",
   "chat.error.copyTraceId": "Copy TraceID",
@@ -5431,10 +5330,6 @@ const enUS: Record<string, string> = {
     "The system is busy. Please switch models, upgrade your account, or try again later.",
   "chat.quota.startPlan.concurrentLimit.retryExhausted":
     "The system is busy, and automatic retries have reached the maximum count. Please try again later or upgrade your account.",
-  "chat.quota.startPlan.concurrentLimit.switchModel":
-    "The current model request concurrency limit has been reached. Switch models to continue your current task.",
-  "chat.quota.action.upgrade": "Upgrade",
-  "chat.quota.action.renew": "Renew",
   "chat.quota.action.switchModel": "Switch model",
   "chat.quota.action.switchProvider": "Switch provider",
   "chat.quota.action.refresh": "Refresh quota",
@@ -5588,8 +5483,6 @@ const enUS: Record<string, string> = {
     "Current video attachments are too large. Remove or compress videos and try again.",
   "zcode.error.ZCODE_RUNTIME_MODEL_UNAVAILABLE":
     "The current model is no longer available. Select an available model from the current model list to continue.",
-  "zcode.error.ZCODE_BIGMODEL_TEAM_PLAN_MEMBER_REQUIRED":
-    "The current model is unavailable. Check whether the current account has been added to the project member list.",
   "zcode.error.providerBusiness.1006": "Your login session has expired. Please sign in again.",
   "zcode.error.providerBusiness.1005":
     "Today's free plan quota has been used up. Upgrade to continue now, or wait for the quota to reset.",
@@ -6468,6 +6361,33 @@ const enUS: Record<string, string> = {
   "scheduledPreview.toast.running": "Running “{title}”…",
   "scheduledPreview.toast.view": "View",
   "scheduledPreview.addSchedule": "Add schedule",
+  "providerIntake.stepKey": "Enter your API key and verify the connection",
+  "providerIntake.stepModel": "Choose the models to enable",
+  "providerIntake.customNameLabel": "Provider name",
+  "providerIntake.baseUrlLabel": "API base URL",
+  "providerIntake.baseUrlPlaceholder": "https://api.example.com/v1",
+  "providerIntake.apiTypeLabel": "API format",
+  "providerIntake.connect": "Connect",
+  "providerIntake.unverified": "Couldn't verify the key automatically (no model list endpoint); you can continue.",
+  "providerIntake.modelsFetching": "Loading model list…",
+  "providerIntake.modelsFallback": "Couldn't fetch the model list; showing preset models — you can add more manually.",
+  "providerIntake.modelsTitle": "Enabled models",
+  "providerIntake.defaultModelLabel": "Default model",
+  "providerIntake.manualModelPlaceholder": "Enter a model ID",
+  "providerIntake.manualModelAdd": "Add",
+  "providerIntake.finish": "Finish",
+  "providerIntake.finishError": "Save failed, please try again.",
+  "providerIntake.errInvalidKey": "That key didn't work — check that it's activated and has API access.",
+  "providerIntake.errRateLimited": "Too many requests, please try again later.",
+  "providerIntake.errNetwork": "Couldn't reach the provider — check your network and retry.",
+  "providerIntake.errEndpointMiss": "This endpoint has no model list API; you can add models manually.",
+  "providerIntake.errUnknown": "Something went wrong, please try again.",
+  "providerIntake.templatesError": "Failed to load provider templates, please retry.",
+  "providerIntake.groupDirect": "Direct providers",
+  "providerIntake.groupAggregator": "Aggregators",
+  "providerIntake.groupLocal": "Local & intranet",
+  "providerIntake.groupOther": "Other",
+  "providerIntake.localHint": "Local services must be running with models loaded; llama.cpp tool calls require --jinja (enabled by default in current builds).",
 };
 
 export default enUS;

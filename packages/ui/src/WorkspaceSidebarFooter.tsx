@@ -1,15 +1,14 @@
-/* oxlint-disable eslint(max-lines) -- footer 聚合账户、主题、模式和快捷键菜单。 */
-import type { Locale, UserInfo } from "@zcode/shared";
+/* oxlint-disable eslint(max-lines) -- footer 聚合 Provider 状态条与平台能力共享菜单，
+   SettingsPage 复用同一骨架，拆文件会打断菜单分组顺序与复用约束。 */
+import type { Locale } from "@zcode/shared";
 import { memo, useCallback, useEffect, useState } from "react";
 import {
   DesktopCommandIds,
-  TID_LOGIN_MENU_ITEM,
-  TID_LOGIN_TRIGGER,
-  TID_LOGOUT_BUTTON,
+  TID_MANAGE_PROVIDERS_MENU_ITEM,
+  TID_PROVIDER_STATUS_TRIGGER,
   TID_TASK_SETTINGS_BUTTON,
 } from "@zcode/shared";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
 import {
@@ -26,62 +25,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.js";
 import {
-  PencilRuler,
+  CircleIcon,
   Globe,
-  Loader2,
-  LogInIcon,
-  LogOut,
+  KeyRound,
   Maximize,
   Palette,
+  PencilRuler,
   Settings,
-  User,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+import { useModelSelectionView } from "@/hooks/useModelSelectionView.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
+import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
-import { useShortcutCommandLabel } from "@/shortcuts/useShortcutBindings.js";
-import { useZCodeStore } from "@/store/StoreProvider.js";
+import { parseCustomProviderIdFromSupplierKey } from "@/lib/modelConfigSync.js";
 import { normalizeInterfaceMode } from "@/lib/interfaceMode.js";
-import type { Theme } from "@/useTheme.js";
 import {
-  WorkspaceSidebarFooterPlanBadge,
-  WorkspaceSidebarFooterUsageSummaryContent,
-  useWorkspaceSidebarFooterUsageSummaryState,
-} from "@/WorkspaceSidebarFooterUsageSummary.js";
+  resolveSidebarProviderKeyHealth,
+  type SidebarProviderKeyHealth,
+} from "@/lib/sidebarProviderStatus.js";
+import { setPendingSettingsSectionIntent } from "@/lib/settingsNavigation.js";
+import { ProviderLogo } from "@/settings/model-provider-section/ProviderLogo.js";
+import { useShortcutCommandLabel } from "@/shortcuts/useShortcutBindings.js";
+import { selectWorkspaceZCodeState, useZCodeSessionStore } from "@/store/zcodeSessionStore.js";
+import { useZCodeStore } from "@/store/StoreProvider.js";
+import type { Theme } from "@/useTheme.js";
+import { WorkspaceSidebarFooterUsageSummaryContent } from "@/WorkspaceSidebarFooterUsageSummary.js";
 
 const DESKTOP_ZOOM_MIN_LEVEL = -3;
 const DESKTOP_ZOOM_MAX_LEVEL = 5;
 
-function getSidebarProfileName(user?: UserInfo | null): string {
-  const displayName = user?.displayName?.trim();
-  if (displayName) {
-    return displayName;
-  }
-
-  const username = user?.username?.trim();
-  if (username) {
-    return username;
-  }
-
-  return "ZCode";
-}
-
-function getSidebarProfileBadge(
-  user: UserInfo | null | undefined,
-  formatMessage: ReturnType<typeof useZCodeIntl>["intl"]["formatMessage"],
-): string {
-  if (user) {
-    return getSidebarProfileName(user);
-  }
-
-  return formatMessage({ id: "sidebar.profile.notLoggedIn" });
-}
-
-function getAvatarFallbackText(user: UserInfo | null | undefined): string {
-  const source = user?.displayName?.trim() || user?.username?.trim() || "Z";
-  return source[0]?.toUpperCase() ?? "Z";
-}
+// 三态展示映射（docs/spec/sidebar-provider-key-status.md）：语义色 + 可读文案，不以颜色单独表意。
+const PROVIDER_KEY_HEALTH_PRESENTATION: Record<
+  SidebarProviderKeyHealth,
+  { labelId: string; color: string }
+> = {
+  "not-configured": { labelId: "sidebar.providerStatus.notConfigured", color: "text-warning" },
+  ready: { labelId: "sidebar.providerStatus.ready", color: "text-success" },
+  invalid: { labelId: "sidebar.providerStatus.invalid", color: "text-destructive" },
+};
 
 export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterComponent({
   theme,
@@ -90,15 +73,10 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   onThemeChange,
   onSettingsButtonClick,
   onUsageClick,
-  onUpgradeClick,
-  onLogin,
-  onLogout,
   settingsButtonMode = "settings",
-  user,
   workspacePath,
   workspaceIdentity,
   workspaceRemoteSessionId,
-  activeTaskId,
   isDesktop = false,
   className,
 }: {
@@ -108,17 +86,10 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   onThemeChange: (value: string) => void;
   onSettingsButtonClick?: () => void;
   onUsageClick?: () => void;
-  onUpgradeClick?: Parameters<
-    typeof WorkspaceSidebarFooterUsageSummaryContent
-  >[0]["onUpgradeClick"];
-  onLogin?: () => void;
-  onLogout?: () => void;
   settingsButtonMode?: "settings" | "back";
-  user?: UserInfo | null;
   workspacePath?: string;
   workspaceIdentity?: string;
   workspaceRemoteSessionId?: string;
-  activeTaskId?: string | null;
   isDesktop?: boolean;
   className?: string;
 }) {
@@ -129,42 +100,82 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   const zoomInShortcutLabel = useShortcutCommandLabel("zoomIn");
   const zoomOutShortcutLabel = useShortcutCommandLabel("zoomOut");
   const resetZoomShortcutLabel = useShortcutCommandLabel("resetZoom");
-  const isRestoringOAuthSession = useZCodeStore((state) => state.isRestoringOAuthSession);
-  const profileBadge = getSidebarProfileBadge(user, intl.formatMessage);
-  const avatarFallbackText = getAvatarFallbackText(user);
-  const avatarKey = user?.avatarUrl ?? user?.id ?? "guest";
-  const showAuthRestoreLoading = !user && isRestoringOAuthSession;
-  const usageSummaryState = useWorkspaceSidebarFooterUsageSummaryState({
-    enabled: true,
-    workspaceIdentity,
+  // Provider 事实来自 registry 快照；当前生效选择与模型选择器同源。
+  // 只做展示映射：不读取/校验 key 字符串，不在 UI 二次请求猜状态。
+  const providerSettingsRead = useProviderSettingsView();
+  const providerSettingsView =
+    providerSettingsRead.state.status === "ready" ? providerSettingsRead.state.view : null;
+  const modelSelectionRead = useModelSelectionView(
     workspacePath,
+    workspaceRemoteSessionId,
+    workspaceIdentity,
+  );
+  // 契约允许"页面展示不完整选择，执行入口才要求 effectiveSelection"（EffectiveModelSelectionResult 注释）。
+  // 底栏是展示位：解析失败（selectionIssue）时必须回退 preferredSelection（已持久化的用户选择意图），
+  // 否则模板供应商（原生 supplier key）+ 暂时解析失败时会误显示"连接使用"，掩盖真实接入状态。
+  const resolvedSelectionView =
+    modelSelectionRead.state.status === "ready" ? modelSelectionRead.state.view : null;
+  const effectiveSelection =
+    resolvedSelectionView?.effectiveSelection ??
+    resolvedSelectionView?.preferredSelection ??
+    null;
+  const selectedSupplierKey = useZCodeSessionStore((state) =>
+    workspacePath
+      ? selectWorkspaceZCodeState(state, workspacePath, workspaceIdentity).selectedSupplierKey
+      : "",
+  );
+  // 选择失效（selectionIssue/remote-waiting）时用 supplier key 兜底定位 provider，
+  // 健康点仍按 registry 事实显示，模型文案降级为 provider 名。
+  const currentProviderId =
+    effectiveSelection?.providerId ?? parseCustomProviderIdFromSupplierKey(selectedSupplierKey);
+  const provider =
+    providerSettingsView?.providers.find(
+      (candidate) => candidate.providerId === currentProviderId,
+    ) ?? null;
+  const keyHealth = resolveSidebarProviderKeyHealth(
+    provider
+      ? {
+          enabled: provider.enabled,
+          executable: provider.executable,
+          hasPersonalConfig: Boolean(provider.personalConfig),
+        }
+      : null,
+  );
+  const modelIdLabel = effectiveSelection?.modelId ?? null;
+  const providerNameLabel = provider?.providerName?.trim() || null;
+  const statusBadge =
+    modelIdLabel ?? providerNameLabel ?? intl.formatMessage({ id: "sidebar.profile.notLoggedIn" });
+  const healthLabel = intl.formatMessage({
+    id: PROVIDER_KEY_HEALTH_PRESENTATION[keyHealth].labelId,
   });
+  const triggerTitle =
+    providerNameLabel && modelIdLabel
+      ? `${providerNameLabel} · ${modelIdLabel} · ${healthLabel}`
+      : providerNameLabel
+        ? `${providerNameLabel} · ${healthLabel}`
+        : healthLabel;
   const profileContent = (
     <>
-      <Avatar key={avatarKey} size="default">
-        {user?.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={profileBadge} /> : null}
-        <AvatarFallback className="bg-background text-foreground">
-          {user ? (
-            avatarFallbackText
-          ) : showAuthRestoreLoading ? (
-            <>
-              {/* OAuth 启动恢复未落定前，footer 之前会直接显示未登录头像，
-                  用户很容易把“还在校验”误判成“已经退出”。
-                  这里用 loading 图标明确表达“状态确认中”，等恢复成功或失败后再展示最终状态。 */}
-              <Loader2 className="size-4 animate-spin" />
-              <span className="sr-only">{intl.formatMessage({ id: "common.loading" })}</span>
-            </>
-          ) : (
-            <User className="size-4" />
-          )}
-        </AvatarFallback>
-      </Avatar>
+      <ProviderLogo logo={provider?.effectiveConfig.logo} className="size-5" />
       <div className="min-w-0 flex-1 overflow-hidden text-left">
         <div className="flex min-w-0 items-center gap-1.5">
-          <span className="min-w-0 truncate text-ui-base font-semibold text-foreground">
-            {profileBadge}
+          {/* model ID 用等宽（DESIGN.md：技术标识走 font-mono），provider 名回落常规字重。 */}
+          <span
+            className={cn(
+              "min-w-0 truncate text-ui-base font-semibold text-foreground",
+              modelIdLabel ? "font-mono" : null,
+            )}
+          >
+            {statusBadge}
           </span>
-          {user ? <WorkspaceSidebarFooterPlanBadge state={usageSummaryState} /> : null}
+          <CircleIcon
+            data-provider-key-health={keyHealth}
+            aria-label={healthLabel}
+            className={cn(
+              "size-2 shrink-0 fill-current",
+              PROVIDER_KEY_HEALTH_PRESENTATION[keyHealth].color,
+            )}
+          />
         </div>
       </div>
     </>
@@ -174,6 +185,17 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
       ? intl.formatMessage({ id: "workspace.backToWorkspace" })
       : intl.formatMessage({ id: "settings.title" });
   const usageButtonClick = onUsageClick ?? onSettingsButtonClick;
+  const handleManageProviders = useCallback(() => {
+    setPendingSettingsSectionIntent(
+      "modelProvider",
+      currentProviderId ? { modelProviderId: currentProviderId } : {},
+    );
+    // 设置页场景（settingsButtonMode="back"）经 section intent 就地切换分区，
+    // 不能触发 onSettingsButtonClick（那是"返回工作区"）。
+    if (settingsButtonMode !== "back") {
+      onSettingsButtonClick?.();
+    }
+  }, [currentProviderId, onSettingsButtonClick, settingsButtonMode]);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [desktopZoomLevel, setDesktopZoomLevel] = useState(0);
   const runDesktopZoomCommand = useCallback(
@@ -218,22 +240,23 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
       <div className="flex min-w-0 gap-2">
         <DropdownMenu open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
           <DropdownMenuTrigger asChild>
-            {/* 头像和 Login 之前直接绑定到登录动作，导致用户无法从这里打开偏好设置。
-              现在把这一块改成统一的设置菜单入口，登录/退出留在菜单项里，交互职责更清晰。 */}
+            {/* 主体行是 Provider/Key 状态指示器（P2 §4.6），点击展开共享菜单；
+              账号身份/登录按钮已删，"管理 Provider"承接原账号组的管理职能。 */}
             <Button
               type="button"
               variant="ghost"
               size={"lg"}
               className="min-w-0 flex-1 justify-start gap-2 overflow-hidden rounded-tl-2xl rounded-bl-2xl border-0 pl-0"
-              data-testid={TID_LOGIN_TRIGGER}
-              aria-label={profileBadge}
+              data-testid={TID_PROVIDER_STATUS_TRIGGER}
+              aria-label={triggerTitle}
+              title={triggerTitle}
             >
-              {/* Button 默认 shrink-0 且带 whitespace-nowrap，超长用户名会把 footer 撑出 sidebar。
-                这里让触发按钮和文本列都允许收缩，并只在用户名自身做单行截断。 */}
+              {/* Button 默认 shrink-0 且带 whitespace-nowrap，超长模型名会把 footer 撑出 sidebar。
+                这里让触发按钮和文本列都允许收缩，并只在模型/名称自身做单行截断。 */}
               {profileContent}
             </Button>
           </DropdownMenuTrigger>
-          {/* 菜单内容保持挂载，避免每次点击头像菜单都重建 footer 内部状态。*/}
+          {/* 菜单内容保持挂载，避免每次点击都重建 footer 内部状态。*/}
           <DropdownMenuContent align="start" className="w-max min-w-50" forceMount>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
@@ -306,7 +329,7 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
             </DropdownMenuSub>
             {/* 快捷键设置：缩放子菜单 label 读生效表，设置页改绑后即时跟随 */}
             {/* 收口重复缩放子菜单时误留了语言之后的那份，导致菜单顺序变成
-                语言→缩放→主题；账户菜单分组顺序固定为 语言→主题→界面模式→缩放→用量→登录/登出，
+                语言→缩放→主题；账户菜单分组顺序固定为 语言→主题→界面模式→缩放→用量→管理 Provider，
                 这里把唯一一份（读生效表）挪回用量摘要之前，不要再补第二份缩放子菜单。 */}
             {isDesktop ? (
               <DropdownMenuSub>
@@ -342,30 +365,16 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             ) : null}
-            {/* 升级入口状态不再以菜单开关为生命周期边界。*/}
-            <WorkspaceSidebarFooterUsageSummaryContent
-              state={usageSummaryState}
-              onUsageClick={usageButtonClick}
-              onUpgradeClick={onUpgradeClick}
-            />
-            {onLogin && !user ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={onLogin} data-testid={TID_LOGIN_MENU_ITEM}>
-                  <LogInIcon className="size-4" />
-                  {intl.formatMessage({ id: "app.login" })}
-                </DropdownMenuItem>
-              </>
-            ) : null}
-            {onLogout ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={onLogout} data-testid={TID_LOGOUT_BUTTON}>
-                  <LogOut className="size-4" />
-                  {intl.formatMessage({ id: "app.logout" })}
-                </DropdownMenuItem>
-              </>
-            ) : null}
+            {/* 用量入口（使用统计）保留；套餐徽标/升级入口已删。 */}
+            <WorkspaceSidebarFooterUsageSummaryContent onUsageClick={usageButtonClick} />
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              data-testid={TID_MANAGE_PROVIDERS_MENU_ITEM}
+              onSelect={handleManageProviders}
+            >
+              <KeyRound className="size-4" />
+              {intl.formatMessage({ id: "sidebar.providerStatus.manage" })}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="flex shrink-0 items-center gap-1.5">

@@ -42,6 +42,10 @@ import {
   type ResolvedAiSdkModel,
 } from "./runner-runtime.js";
 import { createModel, type ModelExecutionRequest } from "./model.js";
+import {
+  runGenerateWithReasoningDegrade,
+  runStreamWithReasoningDegrade,
+} from "./reasoning-degrade-retry.js";
 
 export type { AiSdkModelRetryOptions } from "./retry-policy.js";
 export type {
@@ -232,22 +236,36 @@ export class AiSdkModelAdapter {
       },
       options: options.options,
       executor: {
-        generateText: (request) => {
-          const legacyRequest = toLegacyRequest(request);
-          return this.generateTextWithResolved(
-            legacyRequest,
-            resolved,
-            resolveForRequest(legacyRequest, request.options),
-          );
-        },
-        streamText: (request) => {
-          const legacyRequest = toLegacyRequest(request);
-          return this.streamTextWithResolved(
-            legacyRequest,
-            resolved,
-            resolveForRequest(legacyRequest, request.options),
-          );
-        },
+        // L1 当次自动降级重试（spec §2.3）：接口拒绝推理参数时以安全档重试一次，
+        // 只作用本次请求，不改用户已保存的档位配置。
+        generateText: (request) =>
+          runGenerateWithReasoningDegrade(
+            request,
+            (attemptRequest) => {
+              const legacyRequest = toLegacyRequest(attemptRequest);
+              return this.generateTextWithResolved(
+                legacyRequest,
+                resolved,
+                resolveForRequest(legacyRequest, attemptRequest.options),
+              );
+            },
+            optionSpecs.reasoningLevel.values,
+            this.logger,
+          ),
+        streamText: (request) =>
+          runStreamWithReasoningDegrade(
+            request,
+            (attemptRequest) => {
+              const legacyRequest = toLegacyRequest(attemptRequest);
+              return this.streamTextWithResolved(
+                legacyRequest,
+                resolved,
+                resolveForRequest(legacyRequest, attemptRequest.options),
+              );
+            },
+            optionSpecs.reasoningLevel.values,
+            this.logger,
+          ),
       },
     });
   }
