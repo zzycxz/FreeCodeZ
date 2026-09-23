@@ -43,14 +43,34 @@ export class ApiProviderModelRuntime {
   readonly modelFactory: RuntimeModelFactory = (target): Model => {
     if (!this.#started) throw new Error("ApiProviderModelRuntime 必须先 start() 再创建 Model");
     const validation = this.#registry.validateSelection(target.selection);
-    if (!validation.ok) throw createRegistrySelectionProtocolError(validation);
+    // 修复(2026-09-23):reasoning-level-missing 不再直接拒绝。该形态来自内部辅助绑定——
+    // 视觉模型 visionUnderstandModel 存裸 picker 串("providerId/modelId"),core runtime
+    // 拿不到 provider registry 无法自行补全档位。此处按辅助模型语义补模型声明的首个
+    // 可用档(与 auxiliaryModelOptions 同款 values[0]);模型无任何可用档位、档位不支持、
+    // 供应商/模型不存在仍严格抛错。会话主选择路径的 selection 在执行入口已按
+    // model-selection-config 规则补全,不经过此分支。
+    if (!validation.ok && validation.code !== "reasoning-level-missing") {
+      throw createRegistrySelectionProtocolError(validation);
+    }
     const providerId = target.selection.providerId;
     const modelId = target.selection.modelId;
     const provider = this.#registry.getProvider(providerId);
     if (!provider) throw new Error("Registry Selection 校验与 Provider 索引结果不一致");
     const registryModel = this.#registry.getModel(providerId, modelId);
     if (!registryModel) throw new Error("Registry Selection 校验与 Model 索引结果不一致");
-    return this.#createRegistryModel(provider, registryModel, target);
+    const fallbackReasoningLevel = validation.ok
+      ? undefined
+      : registryModel.config.optionSpecs.reasoningLevel.values[0];
+    if (!validation.ok && !fallbackReasoningLevel) {
+      throw createRegistrySelectionProtocolError(validation);
+    }
+    const resolvedTarget = fallbackReasoningLevel
+      ? {
+          ...target,
+          selection: { ...target.selection, options: { reasoningLevel: fallbackReasoningLevel } },
+        }
+      : target;
+    return this.#createRegistryModel(provider, registryModel, resolvedTarget);
   };
 
   start(): void {

@@ -54,10 +54,23 @@ test("search sqlite cache put/get/expiry with temp dir", async () => {
 
 test("key resolution prefers credentials over env", async () => {
   const { resolveSearchProviderKeys } = await import(coreHandlers.href);
-  // 独立环境下 credential store 可用(读 ~/.freecodez);此处仅验证 env 兜底与形状。
-  const keys = await resolveSearchProviderKeys({ SERPAPI_API_KEY: "  env-key  " });
-  assert.equal(keys.serpapi, "env-key");
-  assert.equal(keys.brave, undefined);
+  // 隔离凭据库(2026-09-23 修正):默认读 ~/.freecodez 真实 credentials.json,本机存过
+  // search:serpapi 后凭据优先级会压过 env 使断言失败且把真实 key 打进失败信息。
+  // 指向临时目录的空库,只验证 env 兜底与形状。
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = mkdtempSync(join(tmpdir(), "fcz-cred-isolated-"));
+  try {
+    const keys = await resolveSearchProviderKeys({
+      ZCODE_DATA_BASE_DIR: dir,
+      SERPAPI_API_KEY: "  env-key  ",
+    });
+    assert.equal(keys.serpapi, "env-key");
+    assert.equal(keys.brave, undefined);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("extractHtmlMainContent prefers article/main over body boilerplate", async () => {

@@ -38,6 +38,16 @@ export function resolveInitialModelSelection(input: {
         selection: freezeSelection(input.configuredDefault),
       };
     }
+    // 修复(2026-09-23,spec search-vision-settings.md §4.3g):接入向导落盘的默认选择是
+    // 裸 {providerId,modelId}(无档位),isSelectable 会按 reasoning-level-missing 整体拒绝并
+    // 静默退回 Registry 顺序第一个模型,用户配置的默认模型从未生效。按「用户主动选模型」
+    // 同一补档规则补声明最高档后继续作为默认推荐;供应商/模型不存在、hidden、无任何可用
+    // 档位仍走原兜底。reasoning-level-not-supported(存了过期档位)不补——那是要用户可见
+    // 修复的配置错误,不静默改写。
+    const completed = completeBareConfiguredDefault(input.registry, input.configuredDefault);
+    if (completed) {
+      return { source: "configured-default", selection: freezeSelection(completed) };
+    }
   }
 
   // 仅用于全新草稿的 Host 初始推荐；历史未绑定状态不能进入这个初始化分支。
@@ -52,6 +62,24 @@ export function resolveInitialModelSelection(input: {
     }
   }
   return { source: "none" };
+}
+
+/** 裸默认选择补档：只补缺档位(reasoning-level-missing)这一种形态，其余失效仍交回兜底。 */
+function completeBareConfiguredDefault(
+  registry: ProviderRegistryView,
+  selection: ModelSelection,
+): ModelSelection | undefined {
+  // 存了档位但不被支持是用户可见的配置错误，静默换成别的档会掩盖问题；只有完全
+  // 没存档位（向导落盘形态）才按主动选模型规则补最高档。
+  if (selection.options?.reasoningLevel !== undefined) return undefined;
+  const provider = registry.providers.find(
+    (candidate) => candidate.providerId === selection.providerId,
+  );
+  if (!provider || provider.config.visibility === "hidden") return undefined;
+  if (!provider.models.some((candidate) => candidate.modelId === selection.modelId)) {
+    return undefined;
+  }
+  return completeNewModelSelection(registry, selection);
 }
 
 /** 仅在用户主动选模型或全新初始化时构造最高档；不能用于恢复/重解析已有选择。 */

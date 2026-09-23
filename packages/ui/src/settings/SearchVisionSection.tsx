@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select.js";
 import { SettingsBadge, SettingsGroupCard, SettingsRow } from "@/settings/SettingsPageParts.js";
+import { resolveNativeSearchStatus } from "@/lib/searchVisionStatus.js";
 
 type SearchKeyProvider = "serpapi" | "brave" | "exa" | "linkup" | "anysearch";
 type SummaryMode = "on" | "off" | "vlm";
@@ -58,6 +59,8 @@ export function SearchVisionSection({
   const format = (id: string) => intl.formatMessage({ id });
   const modelRead = useModelSelectionView(activeWorkspacePath);
   const view = modelRead.state.status === "ready" ? modelRead.state.view : null;
+  // §4.3f-1:当前端点原生搜索三态,与视觉模型下拉共用同一 view 数据源。
+  const nativeSearchStatus = useMemo(() => resolveNativeSearchStatus(view), [view]);
 
   // 只列 supportsImage 的模型;值为 providerId/modelId picker 格式,与 agent 侧
   // parseModelPickerValue 对齐。
@@ -83,6 +86,15 @@ export function SearchVisionSection({
           label={format("settings.searchVision.webSearch.title")}
           description={format("settings.searchVision.webSearch.description")}
           control={<span />}
+        />
+        <SettingsRow
+          label={format("settings.searchVision.nativeSearch.label")}
+          description={format(`settings.searchVision.nativeSearch.${nativeSearchStatus}`)}
+          control={
+            <SettingsBadge>
+              {format(`settings.searchVision.nativeSearch.badge.${nativeSearchStatus}`)}
+            </SettingsBadge>
+          }
         />
         <SettingsRow
           label={format("settings.searchVision.summaryMode")}
@@ -132,6 +144,7 @@ export function SearchVisionSection({
           label={format("settings.searchVision.key.anysearch")}
           envVar="ANYSEARCH_API_KEY"
           provider="anysearch"
+          placeholderUnsetId="settings.searchVision.key.anysearchPlaceholder"
           onSave={onSearchProviderKeySave}
           onDelete={onSearchProviderKeyDelete}
           onStatus={onSearchProviderKeyStatus}
@@ -229,6 +242,9 @@ function CountryRow({
   const [draft, setDraft] = useState(value);
   const trimmed = draft.trim();
   const dirty = trimmed !== value.trim();
+  // §4.3f-4:仅接受空值或两位 ISO-3166 国家码(保存时小写归一);Brave/SerpAPI 都按
+  // 两字母码消费,自由文本会被 API 拒。
+  const valid = trimmed.length === 0 || /^[a-z]{2}$/i.test(trimmed);
   return (
     <SingleLineRow
       label={intl.formatMessage({ id: "settings.searchVision.country" })}
@@ -236,9 +252,9 @@ function CountryRow({
         <Button
           type="button"
           size="lg"
-          disabled={!dirty || trimmed.length > 8}
+          disabled={!dirty || !valid}
           onClick={() => {
-            void onSave(trimmed);
+            void onSave(trimmed.toLowerCase());
           }}
         >
           {intl.formatMessage({ id: "settings.searchVision.countrySave" })}
@@ -251,8 +267,8 @@ function CountryRow({
         placeholder={intl.formatMessage({ id: "settings.searchVision.countryPlaceholder" })}
         onChange={(event) => setDraft(event.currentTarget.value)}
         onKeyDown={(event) => {
-          if (event.key === "Enter" && dirty && trimmed.length <= 8) {
-            void onSave(trimmed);
+          if (event.key === "Enter" && dirty && valid) {
+            void onSave(trimmed.toLowerCase());
           }
         }}
         className="w-full min-w-0 font-mono"
@@ -305,6 +321,7 @@ function SearchKeyRow({
   label,
   envVar,
   provider,
+  placeholderUnsetId,
   onSave,
   onDelete,
   onStatus,
@@ -312,6 +329,8 @@ function SearchKeyRow({
   label: string;
   envVar: string;
   provider: SearchKeyProvider;
+  /** 未设置态的占位文案 id;AnySearch 等可选源用它区分"留空也能用"(§4.3f-2)。 */
+  placeholderUnsetId?: string;
   onSave: (provider: SearchKeyProvider, key: string) => Promise<void>;
   onDelete: (provider: SearchKeyProvider) => Promise<void>;
   onStatus: (provider: SearchKeyProvider) => Promise<string | null>;
@@ -388,7 +407,9 @@ function SearchKeyRow({
         placeholder={
           isSet
             ? intl.formatMessage({ id: "settings.searchVision.key.placeholderSet" })
-            : intl.formatMessage({ id: "settings.searchVision.key.placeholder" })
+            : intl.formatMessage({
+                id: placeholderUnsetId ?? "settings.searchVision.key.placeholder",
+              })
         }
         onChange={(event) => setValue(event.currentTarget.value)}
         onKeyDown={(event) => {

@@ -173,7 +173,15 @@ function createRuntimeToolExecutor(
               const selection = parseModelPickerValue(visionModelSelection);
               const base = createRuntimeModel(runtime, { selection });
               return base.bind(auxiliaryModelOptions(base));
-            } catch {
+            } catch (error) {
+              // 绑定解析失败(ref 失效/provider 已删/构造异常)降级到当前会话模型,但必须
+              // 留痕——2026-09-23 曾因 selection 缺推理档位在此被静默吞掉,伪装成"未配置"。
+              runtime.logger?.warn("vision model binding failed to resolve; falling back", {
+                event: "runtime.search_vision_binding_resolve_failed",
+                module: "core.runtime-tools",
+                visionUnderstandModel: visionModelSelection,
+                error: error instanceof Error ? error.message : String(error),
+              });
               return undefined;
             }
           },
