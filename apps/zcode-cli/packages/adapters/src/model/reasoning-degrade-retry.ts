@@ -1,6 +1,7 @@
 import type { Logger } from "@zcode/contracts";
 import {
   isReasoningEffortInvalidMessage,
+  parseSupportedReasoningEfforts,
   pickDegradedReasoningLevel,
 } from "@zcode/shared/reasoning-effort-recovery";
 import type { ModelExecutionRequest } from "./model.js";
@@ -18,9 +19,13 @@ function buildDegradedRequest(
 ): ModelExecutionRequest | undefined {
   const message = error instanceof Error ? error.message : String(error);
   if (!isReasoningEffortInvalidMessage(message)) return undefined;
+  // 2026-09-23 修订：MoMA 类报错自带支持词表（"Supported types are xhigh (default), medium, and low."），
+  // 解析后约束降级目标 ∈ 档位表 ∩ 词表；交集为空则不重试（任何目标都注定再 400）。
+  const supported = parseSupportedReasoningEfforts(message);
   const degradedLevel = pickDegradedReasoningLevel(
     reasoningValues,
     request.options.reasoningLevel,
+    supported,
   );
   if (!degradedLevel) return undefined;
   // 可恢复异常（spec §日志）：warn 一次，记录原档位与降级档位，不含用户数据与凭据。

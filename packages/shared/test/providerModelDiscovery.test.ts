@@ -105,6 +105,18 @@ test("filterChatModelIds: 非 chat 黑名单命中项剔除且去重保序", () 
     ]),
     ["gpt-4o", "qwen-max"],
   );
+  // 2026-09-23：MoMA /v3/models 实测返回 qwen/qwen3-asr，词表补 asr 前会漏判混入。
+  assert.deepEqual(filterChatModelIds(["qwen/qwen3-asr", "qwen/qwen3.8-27b"]), [
+    "qwen/qwen3.8-27b",
+  ]);
+});
+
+test("decodeModelList: MoMA /v3/models 信封与 OpenAI data[].id 形态兼容", () => {
+  // 2026-09-23 内网实测形态：{code,message,data:[{id,…}]}，走 OpenAI 解码分支。
+  assert.deepEqual(
+    decodeModelList({ code: 200, message: "成功", data: [{ id: "qwen/qwen3.8-27b" }] }),
+    ["qwen/qwen3.8-27b"],
+  );
 });
 
 test("resolveWinnerBaseUrl: anthropic-messages 不回写（防 /v1/v1 风险位）", () => {

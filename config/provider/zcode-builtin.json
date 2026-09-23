@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 36,
+  "revision": 37,
   "config": {
     "providerConfigRules": {
       "templateRules": [
@@ -811,7 +811,7 @@
             },
             "api": {
               "type": "openai-chat-completions",
-              "baseUrl": "http://moma.hq.cmcc",
+              "baseUrl": "http://moma.hq.cmcc/largemodel/moma/api/v3",
               "baseUrlEditable": true
             },
             "builtinModelIds": [],
@@ -4711,6 +4711,28 @@
           "config": {
             "properties": {
               "supportsJsonSchemaOutput": true
+            }
+          }
+        },
+        {
+          "modelMatch": ".*qwen3\\.8-27b(?:[.\\-:/\\[].*)?",
+          "apiTypeMatch": "openai-chat-completions",
+          "baseUrlMatch": "http://moma\\.hq\\.cmcc/largemodel/moma/api/v3/?",
+          "config": {
+            "properties": {
+              "inputFormat": {
+                "supportsImage": true,
+                "supportsVideo": true
+              }
+            },
+            "optionSpecs": {
+              "reasoningLevel": {
+                "values": [
+                  "low",
+                  "medium",
+                  "xhigh"
+                ]
+              }
             }
           }
         }

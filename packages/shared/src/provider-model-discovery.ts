@@ -129,8 +129,9 @@ export function decodeModelList(payload: unknown): string[] | null {
 }
 
 // 非 chat 模型黑名单启发式（§P2.7，对标 IsLikelyChatModel 语义）。
+// 2026-09-23 补 asr：MoMA /v3/models 实测返回 qwen/qwen3-asr，漏判会混进 chat 档位选择。
 const NON_CHAT_MODEL_PATTERN =
-  /(?:embed|rerank|tts|stt|whisper|dall|imagine|video|moderation|classifier|guard|playground)/iu;
+  /(?:embed|rerank|tts|asr|stt|whisper|dall|imagine|video|moderation|classifier|guard|playground)/iu;
 
 export function isLikelyChatModelId(modelId: string): boolean {
   return !NON_CHAT_MODEL_PATTERN.test(modelId);

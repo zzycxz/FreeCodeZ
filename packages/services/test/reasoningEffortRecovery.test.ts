@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   isReasoningEffortInvalidMessage,
+  parseSupportedReasoningEfforts,
   pickDegradedReasoningLevel,
   matchReasoningLevelPreset,
   getReasoningLevelPreset,
@@ -19,6 +20,8 @@ test("归因判据命中推理参数非法样本", () => {
     "reasoning_effort: Input should be 'low', 'medium' or 'high'",
     "This model does not support reasoning_effort",
     "field reasoning_effort not permitted",
+    // 2026-09-23 MoMA 实证：拒绝词 unexpected 在参数名之前（空格形态），v1 三判据全部漏判。
+    "Error code: 400 - {'error': {'message': 'Unexpected reasoning effort high. Supported types are xhigh (default), medium, and low.', 'type': 'BadRequestError', 'param': None, 'code': 400}}",
   ];
   for (const message of hits) {
     assert.equal(isReasoningEffortInvalidMessage(message), true, `应命中: ${message}`);
@@ -39,7 +42,54 @@ test("归因判据不命中鉴权/限流/网络与其它字段错误", () => {
   }
 });
 
-test("降级目标优先 enabled，其次 disabled，再退最低档", () => {
+test("支持词表解析：Supported types are / one of 两种锚点", () => {
+  // MoMA 实证文案："(default)" 注解与 and/or 连接词剔除。
+  assert.deepEqual(
+    parseSupportedReasoningEfforts(
+      "Unexpected reasoning effort high. Supported types are xhigh (default), medium, and low.",
+    ),
+    ["xhigh", "medium", "low"],
+  );
+  // OpenAI/OpenRouter 引号列表形态。
+  assert.deepEqual(
+    parseSupportedReasoningEfforts(
+      "Invalid 'reasoning_effort': 'xhigh' is not one of 'low','medium','high'",
+    ),
+    ["low", "medium", "high"],
+  );
+  assert.deepEqual(
+    parseSupportedReasoningEfforts("reasoning_effort must be one of: low"),
+    ["low"],
+  );
+  // 无锚点或解析不出有效值 → undefined（维持无词表的 v1 降级链）。
+  assert.equal(parseSupportedReasoningEfforts("401 Unauthorized: invalid api key"), undefined);
+  assert.equal(
+    parseSupportedReasoningEfforts("Unknown parameter: 'reasoning_effort'"),
+    undefined,
+  );
+});
+
+test("降级目标：报错带词表时取交集最强档，交集为空不重试", () => {
+  // 档位 [low,medium,high] 发 high 被拒，词表 {xhigh,medium,low} → 交集里最强且 ≠ 当前 → medium。
+  assert.equal(
+    pickDegradedReasoningLevel(["low", "medium", "high"], "high", ["xhigh", "medium", "low"]),
+    "medium",
+  );
+  // MoMA 致命题：off-on 档位 ∩ {xhigh,medium,low} = ∅ → 不重试（enabled→high/disabled→none 双双非法）。
+  assert.equal(
+    pickDegradedReasoningLevel(["disabled", "enabled"], "enabled", ["xhigh", "medium", "low"]),
+    undefined,
+  );
+  // 当前档不在词表、交集有多档时取声明序（强度升序）最强者。
+  assert.equal(
+    pickDegradedReasoningLevel(["low", "medium", "high", "xhigh"], "xhigh", ["low", "medium", "high"]),
+    "high",
+  );
+  // 词表命中当前档之外无他档 → 不重试。
+  assert.equal(pickDegradedReasoningLevel(["low"], "low", ["low", "medium"]), undefined);
+});
+
+test("降级目标无词表时维持 v1 链：优先 enabled，其次 disabled，再退最低档", () => {
   assert.equal(
     pickDegradedReasoningLevel(["disabled", "enabled"], "disabled"),
     "enabled",

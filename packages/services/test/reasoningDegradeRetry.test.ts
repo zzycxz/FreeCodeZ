@@ -29,6 +29,47 @@ test("整段生成：推理参数被拒时以安全档重试一次（自定义�
   assert.deepEqual(seen, ["xhigh", "low"]);
 });
 
+test("整段生成：MoMA 词表报错降交集最强档（high 被拒 → medium）", async () => {
+  // 2026-09-23 MoMA 实证：qwen3.8-27b 仅认 {xhigh,medium,low}，报错自带词表；
+  // L1 解析词表后取档位表 ∩ 词表的最强可用档，而不是 v1 链的最低档。
+  const seen: string[] = [];
+  const run = async (request: DegradedRequest) => {
+    seen.push(request.options.reasoningLevel);
+    if (seen.length === 1)
+      throw new Error(
+        "Error code: 400 - {'error': {'message': 'Unexpected reasoning effort high. Supported types are xhigh (default), medium, and low.', 'type': 'BadRequestError', 'param': None, 'code': 400}}",
+      );
+    return "ok";
+  };
+  const result = await runGenerateWithReasoningDegrade(
+    makeRequest("high"),
+    run,
+    ["low", "medium", "high"],
+  );
+  assert.equal(result, "ok");
+  assert.deepEqual(seen, ["high", "medium"]);
+});
+
+test("整段生成：MoMA 词表与档位表交集为空不重试（off-on 双非法）", async () => {
+  // off-on 档位（enabled→high / disabled→none）对 {xhigh,medium,low} 双双非法，
+  // 任何降级目标都注定再 400——直接上抛交 L2，不白烧请求。
+  let calls = 0;
+  await assert.rejects(
+    runGenerateWithReasoningDegrade(
+      makeRequest("enabled"),
+      async () => {
+        calls += 1;
+        throw new Error(
+          "Unexpected reasoning effort high. Supported types are xhigh (default), medium, and low.",
+        );
+      },
+      ["disabled", "enabled"],
+    ),
+    /Unexpected reasoning effort/,
+  );
+  assert.equal(calls, 1);
+});
+
 test("整段生成：非推理参数错误（鉴权）不重试", async () => {
   let calls = 0;
   await assert.rejects(
