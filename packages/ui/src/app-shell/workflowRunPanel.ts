@@ -197,6 +197,22 @@ export function workflowRunEventLines(
         // caps 不进这一行：并发度不是可操作信息。
         return { ...base, label: formatMessage(key("runStarted")), tone: "default" };
 
+      case "run-caps-changed": {
+        // 批次 2-1（原地 retune）：只改并发上限、runId 不变。载荷 { runId, caps, previous }。
+        const previous = typeof payload.previous === "number" ? String(payload.previous) : "?";
+        const next =
+          typeof payload.caps === "object" &&
+          payload.caps !== null &&
+          typeof (payload.caps as { maxConcurrency?: unknown }).maxConcurrency === "number"
+            ? String((payload.caps as { maxConcurrency: number }).maxConcurrency)
+            : "?";
+        return {
+          ...base,
+          label: formatMessage(key("runCapsChanged"), { previous, next }),
+          tone: "default",
+        };
+      }
+
       case "actor-created": {
         const name = typeof payload.name === "string" ? payload.name : undefined;
         return {

@@ -75,11 +75,15 @@ export async function resolveAmendWorkflowInput(
       max_concurrency: requested,
       subagent_model: _model,
       script_line_offset: _offset,
+      max_concurrency_requested: _forgedRequested,
+      retune_eligible: _forgedRetune,
       ...rest
     } = parsed.data;
     void _forged;
     void _model;
     void _offset;
+    void _forgedRequested;
+    void _forgedRetune;
     // 没有端口就既没有前驱也没有天花板：`null`（解除）与「沿用」都塌成缺席，数原样过。
     // 归一化后的入参此后永远只有「一个数或没有」这一种形状。
     const subagentModel = resolveAmendSubagentModel(
@@ -132,12 +136,17 @@ export async function resolveAmendWorkflowInput(
     max_concurrency: _tristate,
     subagent_model: _model,
     // 行偏移与 `predecessor` 同一姿态：解析结果，模型给的一律作废（下面按文件重算）。
+    // retune 两键同理（解析结果，模型伪造无效——下面按原始三态重算）。
     script_line_offset: _offset,
+    max_concurrency_requested: _forgedRequested,
+    retune_eligible: _forgedRetune,
     ...rest
   } = parsed.data;
   void _forged;
   void _model;
   void _offset;
+  void _forgedRequested;
+  void _forgedRetune;
   const resolved: AmendWorkflowInput = {
     ...rest,
     ...script.fields,
@@ -151,6 +160,17 @@ export async function resolveAmendWorkflowInput(
       ...describePredecessor(snapshot, context.sessionId),
       ...(script.inherited ? { script_inherited: true as const } : {}),
     },
+    // 批次 2-1（retune 路由）：三态的原始值与「只改了界」的判定只在这里算得出来——
+    // 归一化会把「省略」回填成前驱的界、把省略的模型回填成规范形，handler 侧无从区分。
+    ...(parsed.data.max_concurrency === undefined
+      ? {}
+      : { max_concurrency_requested: parsed.data.max_concurrency }),
+    ...(parsed.data.script !== undefined ||
+    parsed.data.path !== undefined ||
+    parsed.data.subagent_model !== undefined ||
+    parsed.data.name !== undefined
+      ? {}
+      : { retune_eligible: true as const }),
   };
   return { result: true, input: resolved };
 }

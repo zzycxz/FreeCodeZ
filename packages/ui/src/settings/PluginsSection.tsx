@@ -96,6 +96,7 @@ import {
   shouldShowRemoteSyncActions,
   useRemoteSyncDialogIntent,
 } from "@/settings/RemoteSyncActions.js";
+import { currentClientLinkIdentity } from "@/lib/clientLinkIdentity.js";
 
 type PluginTabTarget = "plugins" | "mcps" | "skills" | "commands";
 type PluginTab = Exclude<PluginTabTarget, "commands">;
@@ -201,7 +202,8 @@ function PluginList({
     shouldShowRemoteSyncActions({
       remoteSessionId: target?.remoteSessionId,
       remoteTarget: target?.remoteTarget,
-      clientMode: "desktop-continuous" as const,
+      // 链路身份随真实链路推导（R6），不再写死 desktop-continuous。
+      clientMode: currentClientLinkIdentity().clientMode,
       hasLocalSourceService: Boolean(baseServices.pluginSyncService),
     }) &&
     target?.workspacePath

@@ -603,6 +603,12 @@ export type RunStopReason = "user" | "model" | "provider" | "interrupted" | "sup
 export type RunEvent =
   | { type: "run-started"; runId: string; caps: Caps }
   /**
+   * 原地 retune（上游 3.14.3 R3 / 批次 2-1）：仅改并发上限的修订不起后继，runId 不变。
+   * `caps` 是生效后的整份新 caps，`previous` 是改动前的 maxConcurrency。在飞 ask 一律不动；
+   * 升档由引擎自行 pump 排队 ask，降档只影响后续派发。投影侧据此更新 `concurrency.limit`。
+   */
+  | { type: "run-caps-changed"; runId: string; caps: Caps; previous: number }
+  /**
    * 发起 run 的那一轮：`inputId` 是父会话里发起这次
    * run 的 turn 的 inputId（中枢直接启动为铸出的 UUID v7）。**只在建 run 那一世记一次**，紧跟第一条
    * `run-started`；resume 再发 `run-started` 时不再发它——同 run 的子代理 step 因此永远挂在同一个
@@ -976,6 +982,11 @@ export interface JournalStorePort {
    * 绝不触碰 status / failure——用量更新与 run 结算是两条独立的写入路径。
    */
   updateRunUsage(runId: string, spentTokens: number): void;
+  /**
+   * 原地 retune 的 caps 落库（批次 2-1）：只改 `caps_max_concurrency` 与 time_updated，
+   * 绝不触碰 status / failure / result。未知 runId 必须抛错（与 updateRunUsage 同一条纪律）。
+   */
+  updateRunCaps(runId: string, caps: Caps): void;
 
   putActor(record: ActorRecord): void;
   getActor(runId: string, siteId: string, ordinal: number): ActorRecord | undefined;

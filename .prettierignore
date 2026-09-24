@@ -7,3 +7,7 @@ apps/zcode-cli/
 # oxfmt 解析会报错；只排除这两个文件，其余 graphs fixture 仍参与格式检查。
 apps/zcode-cli/packages/dynamic-workflow/tests/graphs/control-flow-for-await.ts
 apps/zcode-cli/packages/dynamic-workflow/tests/graphs/async-promise-for-await-of.ts
+
+# 上游拆包取证资产（反编译重建的伪 TS，含 `...failRun(...)...` 省略号语法），
+# 是对照阅读件而非源码，不参与格式化与格式检查。
+upstream-assets-3.14.3/

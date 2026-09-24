@@ -99,6 +99,11 @@ export interface ToolExecutorOptions {
   embeddedSearchBackend?: EmbeddedSearchBackend;
   nativeSearchEnhancementsEnabled?: boolean;
   skillPort?: SkillPort;
+  /**
+   * 会话已加载技能集合（skill 门控 R1 的唯一事实源）。executor 实例 = 会话生命周期，
+   * 会话结束随 executor 销毁；Skill 工具执行成功即写入。
+   */
+  loadedSkillIds?: Set<string>;
   subagentPort?: SubagentPort;
   coordinatorResponsePort?: CoordinatorResponsePort;
   workflowSubmitPort?: WorkflowSubmitPort;
@@ -206,6 +211,11 @@ export interface ToolExecutorDeps {
   embeddedSearchBackend?: EmbeddedSearchBackend;
   nativeSearchEnhancementsEnabled?: boolean;
   skillPort?: SkillPort;
+  /**
+   * 会话已加载技能集合（skill 门控 R1 的唯一事实源）。executor 实例 = 会话生命周期，
+   * 会话结束随 executor 销毁；Skill 工具执行成功即写入。
+   */
+  loadedSkillIds?: Set<string>;
   subagentPort?: SubagentPort;
   coordinatorResponsePort?: CoordinatorResponsePort;
   workflowSubmitPort?: WorkflowSubmitPort;

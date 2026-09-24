@@ -92,6 +92,40 @@ export function reduceRunStartedConcurrency(
 }
 
 /**
+ * `run-caps-changed` → `run.concurrency.limit`（批次 2-1 原地 retune）：runId 不变的并发
+ * 上限修订，载荷带生效后的 `caps.maxConcurrency`。与 `run-started` 同一条「等于天花板 =
+ * 没有自己的界」判据：升回天花板的 retune 摘掉 limit 键（幂等）；降档写新 limit。共享桶的
+ * cap / ceiling 原样保留——retune 改的是 run 自己的界，与限流治理无关。
+ */
+export function reduceRunCapsChanged(
+  run: WorkflowRunState,
+  payload: Record<string, unknown>,
+): WorkflowRunState {
+  const limit = positiveInteger(plainRecord(payload.caps)?.maxConcurrency);
+  if (limit === undefined) return run;
+  const ceiling = run.concurrencyCeiling;
+  const existing = run.concurrency;
+  if (ceiling !== undefined && limit >= ceiling) {
+    if (existing?.limit === undefined) return run;
+    const { limit: _lifted, ...rest } = existing;
+    return { ...run, concurrency: rest };
+  }
+  if (existing?.limit === limit) return run;
+  if (existing === undefined) {
+    // 没有共享桶读数时只能从天花板起构（与 reduceRunStartedConcurrency 同一条依据）；
+    // 天花板也读不出就不改——丢的是展示位，不是事实。
+    if (ceiling === undefined) return run;
+    return { ...run, concurrency: { cap: ceiling, ceiling, limit } };
+  }
+  const concurrency: WorkflowRunConcurrency = {
+    ...existing,
+    ceiling: Math.max(existing.ceiling, ceiling ?? 0),
+    limit,
+  };
+  return { ...run, concurrency };
+}
+
+/**
  * 摘掉 `concurrency.cooldownMs`（run 终态：不再派发任何东西，冷却没有对象）。没有可摘的就
  * 原样返回——幂等重放的支点，与主归约的 withoutPendingQuestions 同理。cap / ceiling 照留：
  * 它们是这次 run 跑在什么并发下的历史事实。

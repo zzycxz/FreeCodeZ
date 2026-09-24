@@ -178,6 +178,9 @@ function WorkflowRunSettingsForm({
   const [rejection, setRejection] = useState<WorkflowRunSettingsRejection | undefined>(undefined);
   const ceiling = workflowRunSettingsCeiling(run);
   const change = workflowRunSettingsChange(initial, draft, ceiling);
+  // 批次 2-1：只改并发上限的 running run 走原地 retune（后果句换文案）。
+  const concurrencyOnlyChange =
+    change !== undefined && change.subagentModel === undefined && change.maxConcurrency !== undefined;
   const updateDraft = (next: WorkflowRunSettingsDraft) => {
     setDraft(next);
     setRejection(undefined);
@@ -329,7 +332,7 @@ function WorkflowRunSettingsForm({
         className="text-ui-sm text-foreground-subtle"
         data-testid="workflow-run-settings-consequence"
       >
-        {format(workflowRunSettingsConsequenceId(run.status))}
+        {format(workflowRunSettingsConsequenceId(run.status, concurrencyOnlyChange))}
       </p>
       {rejection === undefined ? null : (
         <div

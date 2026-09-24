@@ -7,6 +7,7 @@ import {
   type HelloMessage,
 } from "@zcode/shared/zcode-protocol-v4";
 import { getV4ClientId } from "@/v4/commandFactory.js";
+import { adoptClientLinkMode } from "@/lib/clientLinkIdentity.js";
 
 type AgentV4HandshakeService = Pick<
   IZCodeAgentService,
@@ -23,6 +24,8 @@ export function ensureAgentV4ConnectionHandshake(
 
   const handshake = (async () => {
     const hello = helloMessageSchema.parse(await service.helloConversationV4());
+    // hello 的 clientMode 是 host 按 attachment 下发的真实链路身份，采纳为壳级事实源。
+    adoptClientLinkMode(hello.clientMode);
     await service.initializeConversationV4({
       kind: "clientHello",
       protocolVersion: V4_WIRE_PROTOCOL_VERSION,

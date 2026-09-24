@@ -41,6 +41,7 @@ import type {
   ToolInputValidationResult,
 } from "../types.js";
 import { SAVE_WORKFLOW_TOOL_DESCRIPTION } from "./save-workflow-description.js";
+import { requireDynamicWorkflowSkill } from "./dynamic-workflow-skill-gate.js";
 import {
   SAVED_WORKFLOW_SENTINEL,
   findSavedWorkflowShadowing,
@@ -263,7 +264,9 @@ export const saveWorkflowToolEntry: ToolEntry = {
   handler: saveWorkflowHandler,
   validateInput: (input) => validateSaveWorkflowInput(input),
   // 把落点与覆盖判定算进入参：确认窗与 hook 读的是同一份事实，且对所有客户端版本可见。
+  // skill 门控（R1）在归一化之前：保存必然提交脚本，无豁免。
   resolveInput: (input, context) =>
+    requireDynamicWorkflowSkill(SAVE_WORKFLOW_TOOL_NAME, context) ??
     resolveSaveWorkflowInput(input, context.workingDirectory ?? "."),
   prepareApproval: prepareSaveWorkflowApproval,
   inputSchema: SaveWorkflowInputJsonSchema,

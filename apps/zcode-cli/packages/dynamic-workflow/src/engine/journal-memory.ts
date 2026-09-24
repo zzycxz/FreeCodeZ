@@ -7,6 +7,7 @@
 
 import type {
   ActorRecord,
+  Caps,
   JournalStorePort,
   ListEventsOptions,
   NodeRecord,
@@ -82,6 +83,12 @@ export class InMemoryJournalStore implements JournalStorePort {
     const r = this.runs.get(runId);
     if (r === undefined) throw new Error(`journal: unknown run ${runId}`);
     r.spentTokens = spentTokens;
+  }
+
+  updateRunCaps(runId: string, caps: Caps): void {
+    const r = this.runs.get(runId);
+    if (r === undefined) throw new Error(`journal: unknown run ${runId}`);
+    r.caps = { ...caps };
   }
 
   putActor(record: ActorRecord): void {

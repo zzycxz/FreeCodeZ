@@ -39,7 +39,7 @@ import {
   upsertBoundedByArtifactId,
   workflowArtifactSummary,
 } from "./workflow-runs-artifacts.js";
-import { reduceConcurrencyChanged, withoutCooldown } from "./workflow-runs-concurrency.js";
+import { reduceConcurrencyChanged, reduceRunCapsChanged, withoutCooldown } from "./workflow-runs-concurrency.js";
 import { readRunIdField, readWorkflowRunStopReason } from "./workflow-runs-lineage.js";
 import { carryNodeProgress, reduceNodeProgress } from "./workflow-runs-node-progress.js";
 import { reducePhaseEntered, reduceRunLaunched } from "./workflow-runs-phases.js";
@@ -404,6 +404,13 @@ function applyWorkflowRunEvent(
      */
     case "concurrency-changed":
       return reduceConcurrencyChanged(run, payload);
+
+    /**
+     * run-caps-changed（批次 2-1 原地 retune）：runId 不变的并发上限修订。只改
+     * `concurrency.limit` 这一个读数位——在飞 ask 与节点状态一概不动。规则同文件。
+     */
+    case "run-caps-changed":
+      return reduceRunCapsChanged(run, payload);
 
     /** phase-entered / run-launched：阶段归约在同族的 workflow-runs-phases.ts（后者只搬运声明阶段表）。 */
     case "phase-entered":

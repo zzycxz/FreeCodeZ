@@ -14,6 +14,7 @@
 import type { ImportedWorldQueue } from "./imported-cache.js";
 import type { ArtifactOp } from "../facade/registry.js";
 import type {
+  Caps,
   ImportedRunCache,
   JournalStorePort,
   RunEvent,
@@ -89,4 +90,9 @@ export interface EngineState {
   abortInFlight(error: WorkflowError, emitCancelled: boolean): void;
   /** 兑现 `engine.settled`。 */
   resolveSettled(settlement: RunSettlement): void;
+
+  /** 引擎 caps（与 scheduler host 共享的同一对象；原地 retune 改它，见 engine-retune.ts）。 */
+  readonly caps: Caps;
+  /** 泵全部 actor 的排队 ask（升档 retune 后放行）。 */
+  pumpAll(): void;
 }

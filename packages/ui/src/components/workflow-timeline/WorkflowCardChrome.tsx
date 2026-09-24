@@ -190,12 +190,13 @@ export function WorkflowCardHeader({
       >
         {name}
       </span>
-      <span className="flex shrink-0 items-center gap-2">
+      {/* 按钮簇不许被挤出：min-w-0 让簇参与收缩，配合 detail 截断保证按钮始终完整可见（上游 3.14.3 修复）。 */}
+      <span className="flex min-w-0 items-center gap-2">
         {leading}
         {status}
         {detail === undefined || detail.length === 0 ? null : (
           <span
-            className="text-ui-base tabular-nums text-foreground-subtlest"
+            className="min-w-0 truncate text-ui-base tabular-nums text-foreground-subtlest"
             data-testid="workflow-card-detail"
             {...(detailTitle === undefined ? {} : { title: detailTitle })}
           >

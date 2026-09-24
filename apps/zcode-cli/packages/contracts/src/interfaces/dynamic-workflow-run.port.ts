@@ -182,6 +182,25 @@ export type DynamicWorkflowRunAmendResult =
   | { ok: false; reason: DynamicWorkflowRunAmendRefusalReason };
 
 /**
+ * 原地 retune（批次 2-1 / 上游 3.14.3 R3）的拒绝词：
+ * `workflow_retune_unchanged` / `workflow_run_not_retunable` / `workflow_run_settled`
+ * 三个协议错误码分别对应 `unchanged` / `not_retunable` / `settled`。
+ */
+export type DynamicWorkflowRunRetuneRefusalReason = "run_not_found" | "not_retunable" | "settled" | "unchanged";
+
+export type DynamicWorkflowRunRetuneResult =
+  | {
+      ok: true;
+      /** 与请求同一个 runId——retune 不起后继（这是它与 amend 的全部区别）。 */
+      runId: string;
+      maxConcurrency: number;
+      previous: number;
+      /** 本进程并发天花板；缺席即宿主未提供（调用方展示降级）。 */
+      ceiling?: number;
+    }
+  | { ok: false; reason: DynamicWorkflowRunRetuneRefusalReason };
+
+/**
  * 取消的发起方。`user` / `model` 是两条停止入口的 initiator；`{ superseded }` 是 amend 路径
  * 停下在飞前驱时传的：新 run 的 id 随原因一起落进前驱的结算袋（`supersededBy`）。
  */
@@ -613,6 +632,20 @@ export interface DynamicWorkflowRunPort {
     request: DynamicWorkflowRunAmendRequest,
     options?: DynamicWorkflowRunSubmitOptions,
   ): Promise<DynamicWorkflowRunAmendResult>;
+  /**
+   * 原地 retune 并发上限（批次 2-1 / 上游 3.14.3 R3）：仅改并发上限的修订**不起后继**——
+   * runId 不变、在飞 ask 不动、升档只放行排队 ask、降档只影响后续派发。journal 的
+   * caps 列与 `run-caps-changed` 事件是事实源。
+   *
+   * 拒绝词见 {@link DynamicWorkflowRunRetuneRefusalReason}：终态 run 报 `settled`、
+   * 引擎不在（构造间隙 / 已被清理）报 `not_retunable`、同值报 `unchanged`（调用方也可
+   * 自行前置比较——两条路等价，服务侧兜底防 TOCTOU）。**可选成员**（消费方 `typeof`
+   * 探测）：老宿主缺席时，仅改并发的修订回落到 supersede 语义。
+   */
+  retune?(request: {
+    runId: string;
+    maxConcurrency: number;
+  }): Promise<DynamicWorkflowRunRetuneResult>;
   /**
    * run 自己并发上界的天花板（`max(1, min(16, availableParallelism() − 2))`，每进程一个值）。同步、无副作用。
    *

@@ -77,6 +77,7 @@ import {
   RemoteSyncMenuItems,
   shouldShowRemoteSyncActions,
 } from "@/settings/RemoteSyncActions.js";
+import { currentClientLinkIdentity } from "@/lib/clientLinkIdentity.js";
 import { invalidateDeferredDraftSessionForSkillChange } from "@/lib/zcodeDraftSkillInvalidation.js";
 import { refreshSharedSkillStoreForWorkspace } from "@/lib/skillStoreRefresh.js";
 import { refreshWorkspacePluginCapabilitiesAfterRemoteSync } from "@/lib/remotePluginSyncRefresh.js";
@@ -247,7 +248,8 @@ export const WorkspaceSidebarItem = memo(function WorkspaceSidebarItem({
   const showRemoteSkillSyncAction = shouldShowRemoteSyncActions({
     remoteSessionId: tab.remoteSessionId,
     remoteTarget: tab.remoteTarget,
-    clientMode: "desktop-continuous" as const,
+    // 链路身份随真实链路推导（R6），不再写死 desktop-continuous。
+    clientMode: currentClientLinkIdentity().clientMode,
     hasLocalSourceService: Boolean(baseServices.skillSyncService),
   });
   // 远端工作区在“重连中”时，之前只有轻微背景呼吸效果，

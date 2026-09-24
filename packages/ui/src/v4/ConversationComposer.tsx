@@ -128,6 +128,7 @@ import {
   type ComposerAutoFocusOptions,
 } from "@/v4/composer/composerAutoFocus.js";
 import { V4_DRAFT_SCOPE_ROOT, type V4ComposerDraft } from "@/v4/composer/composerDraftStore.js";
+import { buildComposerPersistSnapshot } from "@/v4/composer/composerDraftPersist.js";
 import {
   resolveOppositeFollowupDelivery,
   resolveFollowupModifierTooltip,
@@ -774,9 +775,9 @@ function ConversationComposerImpl({
     } catch (error) {
       logger.warn(`[v4-composer] 草稿 editorState 序列化失败: ${String(error)}`);
     }
-    return currentText.trim()
-      ? { text: currentText, ...(editorStateJson ? { editorStateJson } : {}) }
-      : { text: "" };
+    // 空文本快照也保留 editorStateJson 结构：折叠/压缩等不碰编辑器的时机触发的空快照，
+    // 若丢掉结构，重挂载恢复只能退化为 setText(纯文本)，mention pill 引用随之丢失。
+    return buildComposerPersistSnapshot(currentText, editorStateJson);
   }, []);
 
   const persistDraftNow = useCallback(

@@ -323,7 +323,12 @@ export class AskScheduler {
     }
   }
 
-  private pumpAll(): void {
+  /**
+   * 泵全部 actor 的排队 ask。公开给引擎的升档 retune（原地调大 caps 后放行排队）与
+   * 既有的内部时机共用；pumpActor 内部仍按 caps.maxConcurrency 门禁——降档后的在飞
+   * 不回收，只挡后续派发。
+   */
+  pumpAll(): void {
     for (const actor of this.actorOrder) this.pumpActor(actor);
   }
 

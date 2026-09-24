@@ -200,6 +200,10 @@ export interface ToolExecutionContext {
   recordReadFileStateMetadata?: (metadata: PersistedReadFileStateMetadata) => void;
   /** 记录 Skill resolved metadata；仅用于 telemetry，不改变模型可见结果。 */
   recordSkillTelemetryMetadata?: (metadata: SkillTelemetryMetadata) => void;
+  /** Skill 加载成功即记入会话已加载技能集合（skill 门控 R1 的写口，唯一写入者是 Skill 工具）。 */
+  recordLoadedSkill?: (skillId: string) => void;
+  /** 同 ToolInputResolutionContext.hasLoadedSkill；给 handler 侧的读口。 */
+  hasLoadedSkill?: (skillId: string) => boolean;
   bashShellSelection?: ExecutionShellSelection;
   embeddedSearch?: ToolEmbeddedSearchContext;
   setWorkingDirectory?: (cwd: string) => Promise<void> | void;
@@ -275,6 +279,11 @@ export interface ToolInputResolutionContext {
    */
   modelCatalogPort?: ModelCatalogPort;
   sessionId?: string;
+  /**
+   * 本会话是否已加载某 skill（skill 门控 R1 的读口）。缺席的宿主按已加载处理（向后兼容）；
+   * 事实源是 executor 持有的会话已加载技能集合，Skill 工具执行成功即记入。
+   */
+  hasLoadedSkill?: (skillId: string) => boolean;
 }
 
 export type ToolInputResolutionResult = { result: true; input: unknown } | ToolHandlerFailure;

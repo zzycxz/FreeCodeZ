@@ -58,6 +58,7 @@ import type {
   DynamicWorkflowRunSnapshot,
   DynamicWorkflowRunAmendRequest,
   DynamicWorkflowRunAmendResult,
+  DynamicWorkflowRunRetuneResult,
   DynamicWorkflowRunCancelInitiator,
   DynamicWorkflowRunSubmitRequest,
   DynamicWorkflowRunSubmitResult,
@@ -385,6 +386,43 @@ export function createDynamicWorkflowRunService(
     async amend(request: DynamicWorkflowRunAmendRequest): Promise<DynamicWorkflowRunAmendResult> {
       assertOpen();
       return amendDynamicWorkflowRun(entryContext, request);
+    },
+
+    /**
+     * 原地 retune（批次 2-1）：只改并发上限，不起后继。读序刻意「journal 先、引擎后」——
+     * 引擎结算与 retune 的竞态里，journal 的终态行是事实源；引擎不在条目上说 not_retunable
+     * 而不是 settled，调用方（设置弹层/工具层）据此决定要不要提示重试。
+     */
+    async retune(request: {
+      runId: string;
+      maxConcurrency: number;
+    }): Promise<DynamicWorkflowRunRetuneResult> {
+      assertOpen();
+      const record = deps.journal.getRun(request.runId);
+      if (record === undefined) return { ok: false, reason: "run_not_found" };
+      if (record.status !== "pending" && record.status !== "running") {
+        return { ok: false, reason: "settled" };
+      }
+      const entry = runs.get(request.runId);
+      const setMaxConcurrency = entry?.controls?.setMaxConcurrency;
+      if (setMaxConcurrency === undefined) return { ok: false, reason: "not_retunable" };
+      const previous = record.caps.maxConcurrency;
+      // 值的钳制（[1, ceiling]）在调用方完成；这里只兜底归一（引擎同样只认有限正整数）。
+      const next = Math.max(1, Math.floor(request.maxConcurrency));
+      if (next === previous) return { ok: false, reason: "unchanged" };
+      if (!setMaxConcurrency(next)) {
+        // 引擎拒绝只有一种剩余成因：调用链上 run 恰在刚才结算（终态行可能尚未落）。
+        return { ok: false, reason: "settled" };
+      }
+      // 条目上的间隙副本同步：枚举面在读到 journal 行之前也该看到新界。
+      if (entry !== undefined) entry.maxConcurrency = next;
+      return {
+        ok: true,
+        runId: request.runId,
+        maxConcurrency: next,
+        previous,
+        ceiling: concurrencyCeiling(),
+      };
     },
 
     /**

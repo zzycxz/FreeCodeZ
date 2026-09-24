@@ -26,6 +26,7 @@ import {
   rememberArtifactRow,
 } from "./engine-artifacts.js";
 import { publishReport } from "./engine-report.js";
+import { retuneEngineCaps } from "./engine-retune.js";
 import { closeImportCache, readWorld, recoverImportClosure } from "./engine-world.js";
 import { settleCompleted, settleFailed, settleStopped } from "./engine-settlement.js";
 import type {
@@ -226,6 +227,8 @@ export class WorkflowEngine implements WorkflowHostApi, WorkflowReportSink {
       runId: this.runId,
       driver: this.driver,
       journal: this.journal,
+      caps: this.caps,
+      pumpAll: () => this.scheduler.pumpAll(),
       artifacts: this.artifacts,
       importedCache: this.importedCache,
       importedWorld: this.importedWorld,
@@ -352,6 +355,11 @@ export class WorkflowEngine implements WorkflowHostApi, WorkflowReportSink {
   /** 当前 run 状态。 */
   status(): RunStatus {
     return this.journal.getRun(this.runId)?.status ?? "running";
+  }
+
+  /** 原地 retune 并发上限（批次 2-1；语义见 engine-retune.ts：runId 不变、在飞不动、同值幂等）。 */
+  setMaxConcurrency(maxConcurrency: number): boolean {
+    return retuneEngineCaps(this.state, maxConcurrency);
   }
 
   // ——————————————————————————————— Boundary A ———————————————————————————————

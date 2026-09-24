@@ -29,6 +29,10 @@ import {
 import type { ToolApprovalGate, ToolEntry, ToolExecutionContext, ToolHandler } from "../types.js";
 import { CREATE_WORKFLOW_TOOL_DESCRIPTION } from "./create-workflow-description.js";
 import {
+  createWorkflowNeedsSkill,
+  requireDynamicWorkflowSkill,
+} from "./dynamic-workflow-skill-gate.js";
+import {
   resolveCreateWorkflowInput,
   validateCreateWorkflowSource,
 } from "./create-workflow-source.js";
@@ -325,13 +329,19 @@ export const createWorkflowToolEntry: ToolEntry = {
   // 天花板同在这里读：钳制必须发生在确认窗之前，否则用户批准的是一个不会生效的数。
   // 模型目录同在这里读：`subagent_model` 必须在确认窗之前解析成规范形，否则用户批准的是一个
   // 还没被认出来的名字，而解不出来的调用会在批准之后才失败。
-  resolveInput: (input, context) =>
-    resolveCreateWorkflowInput(
+  resolveInput: (input, context) => {
+    // skill 门控（R1）：仅 `saved`-only 豁免；归一化之前拒收脚本（Nothing was started）。
+    if (createWorkflowNeedsSkill(input)) {
+      const refusal = requireDynamicWorkflowSkill(CREATE_WORKFLOW_TOOL_NAME, context);
+      if (refusal) return refusal;
+    }
+    return resolveCreateWorkflowInput(
       input,
       context.workingDirectory ?? ".",
       context.dynamicWorkflowRunPort?.concurrencyCeiling?.(),
       context.modelCatalogPort,
-    ),
+    );
+  },
   prepareApproval: prepareCreateWorkflowApproval,
   inputSchema: CreateWorkflowInputJsonSchema,
   outputSchema: CreateWorkflowOutputJsonSchema,

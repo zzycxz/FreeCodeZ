@@ -36,7 +36,7 @@ import {
   type RunSettlement,
   type ValidateFn,
 } from "@zcode/dynamic-workflow";
-import { runWorkflowScript } from "@zcode/dynamic-workflow-runtime";
+import { runWorkflowScript, type RunControls } from "@zcode/dynamic-workflow-runtime";
 import { createJournalSequenceCapture } from "./dynamic-workflow-run-sequence-capture.js";
 import { isResumableSettlement } from "./dynamic-workflow-run-observation.js";
 import {
@@ -113,6 +113,11 @@ interface LaunchDynamicWorkflowRunInput {
    * 索引，两条入口各持一张会让 resume 之后的 run 作答不到自己刚提的问题。
    */
   escalationRegistry: WorkflowEscalationRegistry;
+  /**
+   * 运行期控制柄（批次 2-1 retune）：调用方创建空对象传入，harness 构造引擎后回填。
+   * launch 只透传，不加工——与 `signal` 同一条「宿主控制面」的路。
+   */
+  controls?: RunControls;
 }
 
 /**
@@ -138,6 +143,8 @@ export function launchDynamicWorkflowRun(
     signal,
     toolCallId,
   } = input;
+  // retune 控制柄：随 run 下传，harness 回填（见 LaunchDynamicWorkflowRunInput.controls）。
+  const controls = input.controls;
   const childSpawn = dynamicWorkflowChildSpawn();
   // 锚点：submit 给的（本次建 run）或 journal 里的（resume）。升级前的 run 两边都没有 → 缺席，
   // 进度事件不带 launchInputId，子代理不上报。
@@ -330,6 +337,7 @@ export function launchDynamicWorkflowRun(
     ...(input.inheritedTokens === undefined ? {} : { inheritedTokens: input.inheritedTokens }),
     // 锚点只在建 run 那一世落 journal（引擎侧的门），resume 时传它无害。
     ...(launch === undefined ? {} : { launch }),
+    ...(controls === undefined ? {} : { controls }),
     signal,
     validate: validateFn,
   });

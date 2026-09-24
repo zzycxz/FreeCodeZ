@@ -12,6 +12,7 @@ import {
   WORKFLOW_RUN_LIFECYCLE_STATUSES,
   WORKFLOW_RUN_STOP_REASONS,
 } from "./list-workflow-runs.js";
+import { CreateWorkflowOutputSchema } from "./create-workflow.js";
 
 export const AMEND_WORKFLOW_TOOL_NAME = "AmendWorkflow";
 
@@ -129,6 +130,18 @@ export const AmendWorkflowInputSchema = AmendWorkflowModelInputSchema.extend({
    * 同一个姿态：解析结果，不是可填的参数，模型的 JSON schema 不列它。
    */
   script_line_offset: z.number().int().nonnegative().optional(),
+  /**
+   * 解析结果（批次 2-1，不是可填的参数）：模型本次对 `max_concurrency` 的**原始三态值**。
+   * 在场 = 显式给了值（number 或 null）；缺席 = 省略。归一化后的 `max_concurrency` 会把
+   * 「省略」回填成前驱的界，两者在那里不可分——retune 路由只认显式改界。
+   */
+  max_concurrency_requested: z.number().int().positive().nullable().optional(),
+  /**
+   * 解析结果（批次 2-1，不是可填的参数）：本次调用**只显式改了并发上限**（`script` 与
+   * `path` 均省略、`subagent_model` 与 `name` 也省略）。配合前驱仍在跑与端口带 retune，
+   * handler 走原地 retune，不起后继。
+   */
+  retune_eligible: z.literal(true).optional(),
 }).strict();
 
 export type AmendWorkflowInput = z.infer<typeof AmendWorkflowInputSchema>;
@@ -137,3 +150,25 @@ export type AmendWorkflowInput = z.infer<typeof AmendWorkflowInputSchema>;
 export const AmendWorkflowInputJsonSchema = toToolJsonSchema(
   AmendWorkflowModelInputSchema.strict(),
 );
+
+/**
+ * 批次 2-1（原地 retune）：仅改 `max_concurrency` 且 run 仍在跑时，修订不起后继——
+ * runId 不变、在飞 ask 不动、升档放行排队、降档只影响后续派发。`previous` 是改动前的
+ * maxConcurrency，`ceiling` 是本机天花板（缺席即宿主未提供）。
+ */
+export const AmendWorkflowRetunedSchema = z
+  .object({
+    runId: z.string().min(1),
+    maxConcurrency: z.number().int().min(1),
+    previous: z.number().int().min(1),
+    ceiling: z.number().int().min(1).optional(),
+  })
+  .strict();
+export type AmendWorkflowRetuned = z.infer<typeof AmendWorkflowRetunedSchema>;
+
+/** AmendWorkflow 的输出：CreateWorkflow 的形状 + retune 的结构化块（可选）。 */
+export const AmendWorkflowOutputSchema = CreateWorkflowOutputSchema.extend({
+  retuned: AmendWorkflowRetunedSchema.optional(),
+}).strict();
+export type AmendWorkflowOutput = z.infer<typeof AmendWorkflowOutputSchema>;
+export const AmendWorkflowOutputJsonSchema = toToolJsonSchema(AmendWorkflowOutputSchema);

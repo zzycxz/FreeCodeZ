@@ -148,8 +148,14 @@ export function clampWorkflowRunSettingsBound(value: number, ceiling: number | u
   return ceiling === undefined ? floor : Math.min(floor, ceiling);
 }
 
-/** 后果句的文案 key：随 run 状态换最后一句（completed 不会走到这里）。 */
-export function workflowRunSettingsConsequenceId(status: WorkflowRunState["status"]): string {
+/**
+ * 后果句的文案 key：随 run 状态换最后一句（completed 不会走到这里）。
+ * 批次 2-1：running 且本次只改并发上限时换 retune 句——不起后继、在飞不动。
+ */
+export function workflowRunSettingsConsequenceId(
+  status: WorkflowRunState["status"],
+  concurrencyOnlyChange?: boolean,
+): string {
   switch (status) {
     case "pending":
       return "chat.toolCall.workflow.run.settings.consequence.pending";
@@ -158,7 +164,9 @@ export function workflowRunSettingsConsequenceId(status: WorkflowRunState["statu
     case "errored":
       return "chat.toolCall.workflow.run.settings.consequence.errored";
     default:
-      return "chat.toolCall.workflow.run.settings.consequence.running";
+      return concurrencyOnlyChange === true
+        ? "chat.toolCall.workflow.run.settings.consequence.concurrencyLive"
+        : "chat.toolCall.workflow.run.settings.consequence.running";
   }
 }
 

@@ -1,4 +1,5 @@
 import { applyComposerPermissionGrant } from "@/v4/composer/composerPermissionGrant.js";
+import { mergeComposerPersistedContent } from "@/v4/composer/composerDraftPersist.js";
 /* eslint-disable max-lines -- Composer 草稿 owner 同时收口选择、正文与提交生命周期，保持单一状态边界。 */
 // Composer 的模式/模型选择与正文使用同一 scope 草稿；Session 只提供一次初始化种子。
 // 菜单点击立即保存 Renderer 意图，Prewarm 与 Submission 只消费它，不反向覆盖。
@@ -280,12 +281,7 @@ export function useDraftConfigControl(params: {
 
   const updateComposerContent = useCallback(
     (content: Pick<V4ComposerDraft, "text" | "editorStateJson" | "mention">) => {
-      updateComposerDraft((current) => ({
-        ...current,
-        editorStateJson: undefined,
-        mention: undefined,
-        ...content,
-      }));
+      updateComposerDraft((current) => mergeComposerPersistedContent(current, content));
     },
     [updateComposerDraft],
   );

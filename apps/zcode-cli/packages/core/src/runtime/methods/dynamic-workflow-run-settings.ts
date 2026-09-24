@@ -53,7 +53,14 @@ export type AmendWorkflowRunSettingsRejection =
   | "start_failed";
 
 export type AmendWorkflowRunSettingsResult =
-  | { ok: true; runId: string; toolCallId: string; supersededRunId?: string }
+  | {
+      ok: true;
+      runId: string;
+      toolCallId: string;
+      supersededRunId?: string;
+      /** 批次 2-1：只改并发上限且 run 在跑时走原地 retune——runId 不变、无 superseded。 */
+      retuned?: { maxConcurrency: number; previous: number; ceiling?: number };
+    }
   | { ok: false; reason: AmendWorkflowRunSettingsRejection; message?: string };
 
 /** 本 run 的两项设置的归一形：缺席即默认（会话模型 / 本机上限）。 */
@@ -132,6 +139,73 @@ export async function amendWorkflowRunSettings(
   const modelChanged = next.subagentModel !== current.subagentModel;
   const boundChanged = next.maxConcurrency !== current.maxConcurrency;
   if (!modelChanged && !boundChanged) return { ok: false, reason: "unchanged" };
+
+  // (6.5) 批次 2-1（原地 retune）：只改并发上限、run 仍在跑 → 不起后继——runId 不变、
+  // 在飞 ask 不动、升档只放行排队、降档只影响后续派发；弹层「应用」即同意，且改的只是
+  // 数值闸门，无需再确认。端口无 retune（老宿主）或引擎恰好不在（构造间隙/刚结算被拒）时
+  // 回落到下方 supersede 流程——语义降级，不失败。
+  if (
+    !modelChanged &&
+    boundChanged &&
+    snapshot.status === "running" &&
+    typeof port.retune === "function"
+  ) {
+    const ceilingOfRun = port.concurrencyCeiling?.();
+    // `null`（解除本 run 的界）= 调到天花板；天花板也读不出时无从落值，走 supersede。
+    const retuneTarget = next.maxConcurrency ?? ceilingOfRun;
+    if (retuneTarget !== undefined) {
+      const retuned = await port.retune({
+        runId: input.runId,
+        maxConcurrency: retuneTarget,
+      });
+      if (retuned.ok) {
+        const retunedBlock = {
+          maxConcurrency: retuned.maxConcurrency,
+          previous: retuned.previous,
+          ...(retuned.ceiling === undefined ? {} : { ceiling: retuned.ceiling }),
+        };
+        const trimmedName = snapshot.name?.trim();
+        const name = trimmedName === undefined || trimmedName.length === 0 ? undefined : trimmedName;
+        const toolCallId = `settings-${randomUUID()}`;
+        // run 没换：后台追踪免登记（原 toolCallId 继续有效），只排一条设置轮把界的变化
+        // 记进 transcript；之后的失败也只记日志（retune 已生效，无可回滚）。
+        try {
+          enqueueSettingsTurn.call(this, {
+            text: buildSettingsMessageText({
+              ...(name === undefined ? {} : { name }),
+              previous: input.runId,
+              runId: input.runId,
+              superseded: false,
+              amend: {
+                predecessorRunId: input.runId,
+                maxConcurrency: fromTo(retuned.previous, retuned.maxConcurrency),
+              },
+              retuned: true,
+            }),
+            meta: boundWorkflowLaunchMeta({
+              runId: input.runId,
+              toolCallId,
+              ...(name === undefined ? {} : { name }),
+            }),
+            titleInput: name ?? input.runId,
+            traceContext,
+          });
+        } catch (error) {
+          this.logger?.warn?.("Workflow run retuned but settings turn enqueue failed", {
+            ...traceContextToLogContext(traceContext),
+            event: "dynamic_workflow.settings.retune_turn_failed",
+            module: "core.runtime",
+            runId: input.runId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+        return { ok: true, runId: input.runId, toolCallId, retuned: retunedBlock };
+      }
+      if (retuned.reason === "unchanged") return { ok: false, reason: "unchanged" };
+      // settled / not_retunable / run_not_found：落到 supersede 流程继续（下方的检查会再拦
+      // 该拦的；引擎竞态里刚结算的 run 走修订是既有语义）。
+    }
+  }
 
   // (7) 编译。存下的脚本可能是在更早的 facade 上写的；编不过就停在这里，旧 run 不动。
   const analysis = analyzeScript(script);
@@ -318,6 +392,8 @@ function buildSettingsMessageText(input: {
   runId: string;
   superseded: boolean;
   amend: WorkflowSettingsAmendMeta;
+  /** 批次 2-1：原地 retune 的措辞（同一条 run，不提缓存导入与替代）。 */
+  retuned?: boolean;
 }): string {
   const changes: string[] = [];
   const model = input.amend.subagentModel;
@@ -335,6 +411,13 @@ function buildSettingsMessageText(input: {
         ? "the limit on subagents at once is removed"
         : `at most ${bound.to} of them run at once`,
     );
+  }
+  if (input.retuned) {
+    return [
+      `Changed the settings of workflow run ${input.previous}${input.name === undefined ? "" : ` ("${input.name}")`} from the GUI: ${changes.join("; ")}.`,
+      `The run keeps running in place under run id ${input.runId} — nothing was restarted or superseded, and in-flight subagents were not interrupted; queued subagents follow the new limit.`,
+      "Progress and results arrive as background notifications; do not amend, resume or restart it.",
+    ].join(" ");
   }
   const relation = input.superseded ? "supersedes" : "takes over from";
   return [

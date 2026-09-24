@@ -84,6 +84,8 @@ const OFFICIAL_CUA_REQUIRED_SEED_PATHS = [
 // 没有 /workflow 命令的插件——症状是命令不存在，没有任何诊断。commands/ 与技能正文都钉住。
 const OFFICIAL_ZCODE_GUIDE_REQUIRED_SEED_PATHS = [
   "commands/workflow.md",
+  // 3.14.3 起 dynamic-workflows 的作者规则/facade 内联进 SKILL.md（§16）；
+  // examples.md / patterns.md 是官方 bundled-skills 同步带的伴生深读件（SKILL §15 引用），一并钉住。
   "skills/dynamic-workflows/SKILL.md",
   "skills/dynamic-workflows/examples.md",
   "skills/dynamic-workflows/patterns.md",
@@ -304,7 +306,9 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
       "../../zcode-guide-plugin",
       "../../../zcode-guide-plugin",
     ],
-    version: "0.2.0",
+    // 内容对齐上游 0.3.0 语义（单文件 dynamic-workflows SKILL），版本沿 fork 自有
+    // 序列继续演进；技能按小方案留在 zcode-guide，不建 bundled-skills 出包链。
+    version: "0.3.0",
   },
   {
     // 产品决策：电脑控制回退为默认关闭，需用户在设置页显式开启。
@@ -336,10 +340,15 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
       "../zcode-cua-plugin",
       "../../zcode-cua-plugin",
       "../../../zcode-cua-plugin",
+      // vendored 位置(B1-1 native-search 先例):repo 内运行打包产物时 agent 入口落在
+      // apps/zcode-cli/packages/cli/dist(dev 邻接解析),上面四条全部扑空导致静默跳过
+      // (2026-09-24 打包实测:内置 12 缺电脑控制行)。此候选同时覆盖 dev 树邻接布局。
+      "../../../dependencies/zcode-cua/plugin",
     ],
     requiredSeedPaths: OFFICIAL_CUA_REQUIRED_SEED_PATHS,
-    // 当前 CUA 为不可用占位包，无需复制 native runtime；避免把本地旧依赖继续带入缓存。
-    runtimeTopLevelPaths: [],
+    // 电脑控制能力补位（B1-2）：node_modules 随 seed 携带，否则装上的插件缺 koffi/sharp，
+    // 启用即断。这是 bundled-plugins.ts filesystem seed 的复制开关，勿再置空。
+    runtimeTopLevelPaths: ["node_modules"],
     // 这里的 version 追踪上游 zcode-cua runtime 版本，使插件 UI 展示、缓存路径、
     // marketplace 条目都对齐；具体版本由原子 producer bump 工作流维护。
     version: "0.6.3",

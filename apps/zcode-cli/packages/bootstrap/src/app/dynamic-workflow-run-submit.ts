@@ -32,6 +32,7 @@ import {
   type WorkflowProgram,
 } from "@zcode/dynamic-workflow";
 import { formatModelPickerValue } from "@zcode/shared/model-selection";
+import type { RunControls } from "@zcode/dynamic-workflow-runtime";
 import type { ModelSelection } from "@zcode/shared/model-selection";
 import {
   buildImportedCache,
@@ -286,9 +287,12 @@ function startNewRun(ctx: DynamicWorkflowRunEntryContext, input: StartNewRunInpu
   // 立刻开始轮询快照——注册表是「run 已存在」的唯一同步事实（journal 的 dwf_run 行
   // 要等引擎构造，晚若干个微任务）。
   const controller = new AbortController();
+  // retune 控制柄：空对象随 launch 下传、harness 回填；条目持同一引用（批次 2-1）。
+  const controls: RunControls = {};
   const entry: RunRegistryEntry = {
     controller,
     startedAt: new Date(),
+    controls,
     ...(input.toolCallId === undefined ? {} : { toolCallId: input.toolCallId }),
     ...(input.parentSessionId === undefined ? {} : { parentSessionId: input.parentSessionId }),
     // 枚举面在 journal 行出现之前唯一能读到的项目键与标签来源（见 RunRegistryEntry）。
@@ -320,6 +324,7 @@ function startNewRun(ctx: DynamicWorkflowRunEntryContext, input: StartNewRunInpu
     launchDynamicWorkflowRun({
       caps,
       compiled,
+      controls,
       cwd: input.cwd,
       deps,
       // name 与 scriptText / cwd 同一条元数据路：launch → harness 原样转交 EngineConfig，
@@ -429,9 +434,12 @@ export async function resumeDynamicWorkflowRun(
   const resumedSubagentModel = readRunSubagentModel(deps.journal, runId);
   const resumedScriptPath = readRunScriptPath(deps.journal, runId);
   const controller = new AbortController();
+  // resume 同样持有 retune 控制柄（批次 2-1）：恢复后的 run 照旧可原地调并发。
+  const controls: RunControls = {};
   const entry: RunRegistryEntry = {
     controller,
     startedAt: new Date(),
+    controls,
     ...(record.toolCallId === undefined ? {} : { toolCallId: record.toolCallId }),
     ...(record.parentSessionId === undefined ? {} : { parentSessionId: record.parentSessionId }),
     // 枚举面的间隙元数据（见 RunRegistryEntry）：resume 的权威在 journal 记录里，
@@ -458,6 +466,7 @@ export async function resumeDynamicWorkflowRun(
       // 重算等于悄悄挪门柱。
       caps: record.caps,
       compiled,
+      controls,
       cwd: record.cwd ?? process.cwd(),
       deps,
       ...(record.name === undefined ? {} : { name: record.name }),

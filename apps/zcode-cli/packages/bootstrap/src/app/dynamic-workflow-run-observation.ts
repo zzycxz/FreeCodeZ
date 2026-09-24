@@ -30,6 +30,7 @@ import { artifactsOf } from "./dynamic-workflow-run-artifact-projection.js";
 import { readRunScriptPath, readRunSubagentModel } from "./dynamic-workflow-run-launch-anchor.js";
 import { resolveDynamicWorkflowRunLabel } from "./dynamic-workflow-run-label.js";
 import { lineageFields, supersededByOf } from "./dynamic-workflow-run-lineage.js";
+import type { RunControls } from "@zcode/dynamic-workflow-runtime";
 
 /**
  * 产物归并住在 dynamic-workflow-run-artifact-projection.ts（本文件顶到 oxlint 的 400 行上限）。
@@ -44,6 +45,12 @@ export interface RunRegistryEntry {
   startedAt: Date;
   toolCallId?: string;
   parentSessionId?: string;
+  /**
+   * 运行期控制柄（批次 2-1 retune）：submit/amend 建条目时创建空对象随 launch 下传，
+   * harness 构造引擎后回填 `setMaxConcurrency`。引擎不在（构造间隙 / 已结算被清理）时
+   * 成员缺席，retune 归一成 `workflow_run_not_retunable`。三条建条目的路同建。
+   */
+  controls?: RunControls;
   /**
    * 三个 submit 时元数据的内存副本，只服务于 **submit → createRun 的微任务间隙**：那一刻
    * journal 里还没有行，而枚举面必须能把这个 run 按项目过滤（cwd）并给出标签（name /

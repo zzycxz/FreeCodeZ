@@ -1,5 +1,12 @@
 # 内部调研与 spec 文档：本地维护，不随仓库发布。
 /docs/
+# 上游修复移植执行包（规格/手册/审计清单，单源在 ZCode 树）与拆包取证资产
+# （官方 3.14.3 SKILL/反编译重建件，Z.ai 分发物不入公开仓库）。
+/规格书-FreeCodeZ-*.md
+/作业手册-FreeCodeZ-*.md
+/调研报告-*.md
+/问题清单-FreeCodeZ-*.md
+/upstream-assets-3.14.3/
 node_modules/
 dist/
 # 打包产物 staging（桌面端 ZCODE_DESKTOP_DIST_DIR=dist-release 与 zcode-server-cli 发行包）。

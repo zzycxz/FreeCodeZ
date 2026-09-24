@@ -213,6 +213,8 @@ async function executeToolCallImpl(
         ? {}
         : { dynamicWorkflowRunPort: deps.dynamicWorkflowRunPort }),
       ...(deps.modelCatalogPort === undefined ? {} : { modelCatalogPort: deps.modelCatalogPort }),
+      // skill 门控 R1 的读口：会话已加载技能集合缺席时按已加载放行（向后兼容）。
+      hasLoadedSkill: (skillId: string) => deps.loadedSkillIds?.has(skillId) ?? true,
       sessionId: deps.sessionId,
     });
     if (isToolHandlerFailure(resolution)) {
@@ -426,6 +428,10 @@ async function executeToolCallImpl(
       recordSkillTelemetryMetadata: (metadata) => {
         skillTelemetryMetadata = metadata;
       },
+      recordLoadedSkill: (skillId: string) => {
+        deps.loadedSkillIds?.add(skillId);
+      },
+      hasLoadedSkill: (skillId: string) => deps.loadedSkillIds?.has(skillId) ?? true,
       bashShellSelection,
       setWorkingDirectory: deps.setWorkingDirectory,
       workingDirectory: deps.getWorkingDirectory(),

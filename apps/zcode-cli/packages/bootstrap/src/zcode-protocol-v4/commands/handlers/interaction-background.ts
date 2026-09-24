@@ -304,6 +304,16 @@ async function amendWorkflowRunSettings(
     runId: result.runId,
     toolCallId: result.toolCallId,
     ...(result.supersededRunId === undefined ? {} : { supersededRunId: result.supersededRunId }),
+    // 批次 2-1：原地 retune 时 runId 是同一个 run、无 supersededRunId，retuned 块在场。
+    ...(result.retuned === undefined
+      ? {}
+      : {
+          retuned: {
+            maxConcurrency: result.retuned.maxConcurrency,
+            previous: result.retuned.previous,
+            ...(result.retuned.ceiling === undefined ? {} : { ceiling: result.retuned.ceiling }),
+          },
+        }),
   };
 }
 

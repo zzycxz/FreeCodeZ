@@ -54,6 +54,11 @@ const skillHandler: ToolHandler = async (input, context) => {
     ...(loaded.metadata.pluginId ? { pluginId: loaded.metadata.pluginId } : {}),
     source: loaded.metadata.source,
   });
+  // skill 门控（R1）的写口：加载成功即记入会话已加载技能集合。
+  // 名字、限定名与调用原文都记——门控按裸 id 判定，两种调用拼法都必须算已加载。
+  for (const id of [loaded.metadata.name, loaded.metadata.qualifiedName, skill]) {
+    if (id) context.recordLoadedSkill?.(id);
+  }
 
   return [
     `<skill_content name="${loaded.metadata.name}">`,

@@ -13,9 +13,10 @@ import {
   AMEND_WORKFLOW_TOOL_NAME,
   AmendWorkflowInputJsonSchema,
   AmendWorkflowInputSchema,
-  CreateWorkflowOutputJsonSchema,
+  AmendWorkflowOutputJsonSchema,
   CreateWorkflowOutputSchema,
   type AmendWorkflowInput,
+  type AmendWorkflowOutput,
   type CreateWorkflowOutput,
   type ModelMessageContent,
   createWorkflowPhaseAlongside,
@@ -23,6 +24,10 @@ import {
 } from "@zcode/contracts";
 import type { ToolApprovalGate, ToolEntry, ToolHandler, ToolHandlerFailure } from "../types.js";
 import { AMEND_WORKFLOW_TOOL_DESCRIPTION } from "./amend-workflow-description.js";
+import {
+  amendWorkflowNeedsSkill,
+  requireDynamicWorkflowSkill,
+} from "./dynamic-workflow-skill-gate.js";
 import {
   AMEND_WORKFLOW_ERROR_CODE,
   predecessorNotFoundFailure,
@@ -111,6 +116,58 @@ function compileFailureResponse(
 
 const amendWorkflowHandler: ToolHandler = async (input, context) => {
   const parsed = AmendWorkflowInputSchema.parse(input) as AmendWorkflowInput;
+  // 批次 2-1（原地 retune）：模型只显式改了并发上限、前驱仍在跑、端口带 retune → 不起后继。
+  // runId 不变、在飞 ask 不动；同值报 workflow_retune_unchanged（I2）。终态/引擎竞态被服务拒
+  // 时回落到下方 supersede 流程——amend-any-run 的既有语义不回归。
+  const retunePort = context.dynamicWorkflowRunPort;
+  if (
+    parsed.retune_eligible === true &&
+    parsed.max_concurrency_requested !== undefined &&
+    parsed.predecessor?.status === "running" &&
+    retunePort?.retune !== undefined
+  ) {
+    // `null`（解除本 run 的界）= 调到天花板；天花板也读不出时无从落值，走 supersede。
+    const ceiling = retunePort.concurrencyCeiling?.();
+    const target =
+      typeof parsed.max_concurrency_requested === "number"
+        ? parsed.max_concurrency_requested
+        : ceiling;
+    if (target !== undefined) {
+      const retuned = await retunePort.retune({
+        runId: parsed.run_id,
+        maxConcurrency: target,
+      });
+      if (retuned.ok) {
+        return {
+          diagnostics: [],
+          ok: true,
+          response: [
+            `Run ${parsed.run_id} is still running; its concurrency limit was retuned in place from ${retuned.previous} to ${retuned.maxConcurrency}.`,
+            "The run keeps the same id and everything in flight keeps running; queued subagents follow the new limit. You will be notified with the final output when it completes. Do not wait for it or poll it with TaskOutput.",
+            ...(retuned.ceiling === undefined
+              ? []
+              : [`This machine's concurrency ceiling is ${retuned.ceiling}.`]),
+          ].join(" "),
+          status: "backgrounded",
+          backgroundTaskId: parsed.run_id,
+          retuned: {
+            runId: parsed.run_id,
+            maxConcurrency: retuned.maxConcurrency,
+            previous: retuned.previous,
+            ...(retuned.ceiling === undefined ? {} : { ceiling: retuned.ceiling }),
+          },
+        } satisfies AmendWorkflowOutput;
+      }
+      if (retuned.reason === "unchanged") {
+        return {
+          result: false,
+          errorCode: 400,
+          message: `workflow_retune_unchanged: run ${parsed.run_id} already runs with max_concurrency ${target}; nothing was changed and nothing was started. To change the script or another setting, pass that too in one call (that path supersedes the run as usual).`,
+        } satisfies ToolHandlerFailure;
+      }
+      // settled / not_retunable / run_not_found：落回 supersede 流程（下方）。
+    }
+  }
   // resolveInput 恒把脚本落定进来（`path` 读成 `script`、省略的从前驱回填，或当场失败）；到这里还
   // 缺脚本，只可能是绕过归一化的调用方——同样回结构化失败，而不是把 undefined 交给编译器。
   const script = parsed.script;
@@ -258,10 +315,17 @@ export const amendWorkflowToolEntry: ToolEntry = {
   handler: amendWorkflowHandler,
   // 修订脚本至多给一个，只对模型入参成立（归一化后 `script` 与 `path` 同时在场是合法执行态）。
   validateInput: (input) => validateAmendWorkflowSource(input),
-  resolveInput: resolveAmendWorkflowInput,
+  resolveInput: (input, context) => {
+    // skill 门控（R1）：带 script/path 才需要技能；纯设置修订（只改并发/模型）豁免。
+    if (amendWorkflowNeedsSkill(input)) {
+      const refusal = requireDynamicWorkflowSkill(AMEND_WORKFLOW_TOOL_NAME, context);
+      if (refusal) return refusal;
+    }
+    return resolveAmendWorkflowInput(input, context);
+  },
   prepareApproval: prepareAmendWorkflowApproval,
   inputSchema: AmendWorkflowInputJsonSchema,
-  outputSchema: CreateWorkflowOutputJsonSchema,
+  outputSchema: AmendWorkflowOutputJsonSchema,
   runtimeInputSchema: AmendWorkflowInputSchema,
   runtimeOutputSchema: CreateWorkflowOutputSchema,
   formatModelContent: formatAmendWorkflowModelContent,

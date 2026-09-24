@@ -13,6 +13,7 @@
 import type { DatabaseSync } from "node:sqlite";
 import type {
   ActorRecord,
+  Caps,
   JournalStorePort,
   ListEventsOptions,
   NodeRecord,
@@ -179,6 +180,13 @@ class SqliteDwfJournalStore implements JournalStorePort, DwfRunIntrospectionQuer
     const { changes } = this.db
       .prepare("update dwf_run set spent_tokens = ?, time_updated = ? where id = ?")
       .run(spentTokens, Date.now(), runId);
+    this.assertRunTouched(changes, runId);
+  }
+
+  updateRunCaps(runId: string, caps: Caps): void {
+    const { changes } = this.db
+      .prepare("update dwf_run set caps_max_concurrency = ?, time_updated = ? where id = ?")
+      .run(caps.maxConcurrency, Date.now(), runId);
     this.assertRunTouched(changes, runId);
   }
 

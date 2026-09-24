@@ -30,12 +30,23 @@ export type AmendWorkflowRunSettingsPayload = z.infer<typeof amendWorkflowRunSet
 /**
  * accepted ACK 的结果。`runId` / `toolCallId` 指**新** run（toolCallId = `settings-<uuid>`，
  * 联接设置轮的 run 卡与详情页）；`supersededRunId` 只在旧 run 仍在飞、被这次调整停下时在场。
+ *
+ * 批次 2-1（原地 retune）：只改并发上限且 run 仍在跑时，runId 是**同一个** run（不换卡、
+ * 不跟随、无 supersededRunId），`retuned` 块在场并携带生效值/前值/天花板；0-1 的 runId
+ * 守卫正靠「同 runId 不 follow」防住自跟随环。
  */
 export const amendWorkflowRunSettingsResultSchema = z.object({
   type: z.literal("amendWorkflowRunSettings"),
   runId: z.string().min(1),
   toolCallId: z.string().min(1),
   supersededRunId: z.string().min(1).optional(),
+  retuned: z
+    .object({
+      maxConcurrency: z.number().int().min(1),
+      previous: z.number().int().min(1),
+      ceiling: z.number().int().min(1).optional(),
+    })
+    .optional(),
 });
 
 /**

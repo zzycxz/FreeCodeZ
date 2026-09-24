@@ -4786,6 +4786,8 @@ const zhCN: Record<string, string> = {
   "chat.toolCall.workflow.run.settings.limit.increase": "增加同时运行数",
   "chat.toolCall.workflow.run.settings.consequence.running":
     "将停止当前运行，以新设置另起一次运行，已完成的步骤会保留。",
+  "chat.toolCall.workflow.run.settings.consequence.concurrencyLive":
+    "原地作用于当前运行——同一条运行，不重启，进行中的子代理不受打扰。",
   "chat.toolCall.workflow.run.settings.consequence.pending":
     "将以新设置另起一次运行，当前运行尚未开始任何步骤。",
   "chat.toolCall.workflow.run.settings.consequence.stopped":
@@ -4923,6 +4925,7 @@ const zhCN: Record<string, string> = {
   // 分区自己的表头与空/错文案随之删除；这一族**保留**——它是
   // journal 事件的展示规则，回放导出桶（replay.ts）仍在静态数据上用它。
   "chat.toolCall.workflow.run.event.runStarted": "实例启动",
+  "chat.toolCall.workflow.run.event.runCapsChanged": "并发上限 {previous} → {next}（原地生效）",
   "chat.toolCall.workflow.run.event.actorCreated": "创建子代理",
   "chat.toolCall.workflow.run.event.nodeQueued": "入队",
   "chat.toolCall.workflow.run.event.nodeDispatched": "已派发",

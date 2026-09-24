@@ -24,6 +24,7 @@ import type {
   RemoteTarget,
 } from "@zcode/shared";
 import { ZCODE_AGENT_PROVIDER } from "@zcode/shared";
+import { currentClientLinkIdentity } from "@/lib/clientLinkIdentity.js";
 import type { CreateTaskRequest } from "@/app-shell/types.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { toast } from "@/components/ui/toast.js";
@@ -247,7 +248,8 @@ export function SkillsSection({
     shouldShowRemoteSyncActions({
       remoteSessionId,
       remoteTarget,
-      clientMode: "desktop-continuous" as const,
+      // 链路身份随真实链路推导（R6），不再写死 desktop-continuous。
+      clientMode: currentClientLinkIdentity().clientMode,
       hasLocalSourceService: Boolean(baseServices.skillSyncService),
     }) &&
     activeWorkspacePath

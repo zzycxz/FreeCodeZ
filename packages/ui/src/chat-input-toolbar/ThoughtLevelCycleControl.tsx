@@ -24,6 +24,19 @@ import { RollingToolbarLabel } from "@/chat-input-toolbar/RollingToolbarLabel.js
 
 type ThoughtLevelInteractionMode = "select" | "cycle";
 
+/**
+ * 思考控件的收纳身份（上游 3.14.1 图标态修复）：进入 composer 工具条收纳体系（优先级 3），
+ * 收纳时先收文字，极限宽度下走图标态（data-composer-compact="icon"）只留图标+进度，
+ * 不再整个消失。属性挂在触发器根节点（= group/thought 所在元素），供
+ * useComposerToolbarFit 按 [data-composer-thought-control] 寻址写 data-composer-compact。
+ */
+const THOUGHT_CONTROL_ATTRS = {
+  "data-composer-thought-control": "true",
+  "data-composer-collapse-priority": "3",
+} as const;
+const THOUGHT_CONTROL_TRIGGER_CLASSNAME =
+  "group/thought data-[composer-compact=true]:w-7 data-[composer-compact=true]:px-0 data-[composer-compact=icon]:size-7 data-[composer-compact=icon]:justify-center data-[composer-compact=icon]:gap-0 data-[composer-compact=icon]:p-0";
+
 export function ThoughtLevelCycleControl({
   disabled,
   disabledReason,
@@ -198,7 +211,8 @@ export function ThoughtLevelCycleControl({
       <span
         className={cn(
           "relative w-1 self-stretch overflow-hidden rounded-full bg-current/10",
-          "hidden @sm/composer:inline-flex @xl/composer:hidden",
+          // 收纳态下文字已隐藏，进度条顶上（图标态留图标+进度）。
+          "hidden @sm/composer:inline-flex @xl/composer:hidden group-data-[composer-compact]/thought:inline-flex",
         )}
         aria-hidden="true"
       >
@@ -210,7 +224,14 @@ export function ThoughtLevelCycleControl({
           style={{ height: `${progressPercent}%` }}
         />
       </span>
-      <span ref={labelRef} className={cn("min-w-0 whitespace-nowrap", labelVisibilityClassName)}>
+      <span
+        ref={labelRef}
+        className={cn(
+          "min-w-0 whitespace-nowrap",
+          labelVisibilityClassName,
+          "group-data-[composer-compact]/thought:hidden",
+        )}
+      >
         <RollingToolbarLabel label={currentLabel} />
       </span>
     </>
@@ -222,11 +243,13 @@ export function ThoughtLevelCycleControl({
         <span
           className={cn(
             "inline-flex h-7 items-center gap-1 rounded-lg px-1.5 py-1.5 text-ui-base text-foreground",
+            THOUGHT_CONTROL_TRIGGER_CLASSNAME,
             triggerClassName,
           )}
           aria-label={currentLabel}
           data-thought-level-fixed="true"
           data-testid={TID_CHAT_THOUGHT_LEVEL_SELECT_TRIGGER}
+          {...THOUGHT_CONTROL_ATTRS}
         >
           {/* 单档模型（如 Kimi K3）没有可切换状态，不能继续渲染带箭头的 Select。*/}
           {triggerContent}
@@ -267,10 +290,15 @@ export function ThoughtLevelCycleControl({
                 )}
               />
             }
-            className={cn("gap-1 rounded-lg px-1.5 py-1.5 text-ui-base", triggerClassName)}
+            className={cn(
+              "gap-1 rounded-lg px-1.5 py-1.5 text-ui-base",
+              THOUGHT_CONTROL_TRIGGER_CLASSNAME,
+              triggerClassName,
+            )}
             aria-label={currentLabel}
             data-chat-toolbar-popover-trigger="true"
             data-testid={TID_CHAT_THOUGHT_LEVEL_SELECT_TRIGGER}
+            {...THOUGHT_CONTROL_ATTRS}
           >
             {triggerContent}
           </SelectTrigger>
@@ -347,9 +375,14 @@ export function ThoughtLevelCycleControl({
         disabled={disabled}
         data-chat-toolbar-popover-trigger="true"
         data-testid={TID_CHAT_THOUGHT_LEVEL_SELECT_TRIGGER}
-        className={cn("gap-1 rounded-lg px-1.5 py-1.5 text-ui-base", triggerClassName)}
+        className={cn(
+          "gap-1 rounded-lg px-1.5 py-1.5 text-ui-base",
+          THOUGHT_CONTROL_TRIGGER_CLASSNAME,
+          triggerClassName,
+        )}
         aria-label={currentLabel}
         onClick={handleClick}
+        {...THOUGHT_CONTROL_ATTRS}
       >
         {triggerContent}
       </Button>

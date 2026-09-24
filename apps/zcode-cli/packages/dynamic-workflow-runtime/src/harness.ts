@@ -84,6 +84,13 @@ export interface RunWorkflowOptions {
   validate: ValidateFn;
   /** 外部取消信号：中止在飞 ask 并 kill 子进程，run 结算 cancelled。 */
   signal?: AbortSignal;
+  /**
+   * 运行期控制柄（批次 2-1 retune）：harness 构造引擎后回填，调用方可跨 await 边界对
+   * **本 run 的活引擎**做原地并发调整。引擎缺席（run 已结算 / 尚未构造）时保持初始
+   * undefined——调用方按 `workflow_run_not_retunable` 归一。惰性回填而不是返回值：
+   * runWorkflowScript 是一次性 Promise，控制柄要在构造时刻就交给注册方。
+   */
+  controls?: RunControls;
   /** 墙钟超时（ms）：到点 kill 子进程，run 结算 failed。缺省不限。 */
   timeoutMs?: number;
   /** 子进程堆上限（MB），映射为 `--max-old-space-size`。缺省 256。 */
@@ -163,6 +170,15 @@ const DEFAULT_MAX_OLD_SPACE_MB = 256;
 const STDERR_LIMIT = 64 * 1024;
 
 /**
+ * 运行期控制面（批次 2-1）：宿主侧对活引擎的原地操作。现在只有 retune 一项；
+ * 返回语义与 {@link WorkflowEngine.setMaxConcurrency} 逐字相同。可选成员：harness 在引擎
+ * 构造完成后回填，构造间隙与结算后的调用方按缺席归一（`workflow_run_not_retunable`）。
+ */
+export interface RunControls {
+  setMaxConcurrency?(maxConcurrency: number): boolean;
+}
+
+/**
  * 跑一份 workflow 脚本至结算。返回引擎的 {@link RunSettlement}。
  * 失败一等公民，但分两类：脚本抛错是脚本之错，
  * 归一成 `{status:"errored", error}`；子进程无法启动 / 崩溃 / 墙钟超时 / 协议损坏是宿主侧故障，
@@ -212,6 +228,14 @@ export async function runWorkflowScript(options: RunWorkflowOptions): Promise<Ru
     ...(options.inheritedTokens === undefined ? {} : { inheritedTokens: options.inheritedTokens }),
     cwd: options.cwd ?? process.cwd(),
   });
+
+  // 控制柄回填（retune）：引擎构造完成即可用；run 结算后引擎自己拒绝（返回 false），
+  // 注册方据此区分「活但不可调」与「已不在」。
+  if (options.controls !== undefined) {
+    options.controls.setMaxConcurrency = (maxConcurrency: number) =>
+      engine.setMaxConcurrency(maxConcurrency);
+  }
+
 
   const maxOldSpaceSizeMb = options.maxOldSpaceSizeMb ?? DEFAULT_MAX_OLD_SPACE_MB;
   const cwd = options.cwd ?? process.cwd();

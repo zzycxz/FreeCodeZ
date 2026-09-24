@@ -5014,6 +5014,8 @@ const enUS: Record<string, string> = {
   "chat.toolCall.workflow.run.settings.limit.increase": "More at once",
   "chat.toolCall.workflow.run.settings.consequence.running":
     "Stops this run and starts a new one with these settings; finished steps are kept.",
+  "chat.toolCall.workflow.run.settings.consequence.concurrencyLive":
+    "Applies to this run in place — same run, nothing restarts, in-flight subagents are not interrupted.",
   "chat.toolCall.workflow.run.settings.consequence.pending":
     "Starts a new run with these settings; this one has not begun any step yet.",
   "chat.toolCall.workflow.run.settings.consequence.stopped":
@@ -5134,6 +5136,7 @@ const enUS: Record<string, string> = {
   "chat.toolCall.workflow.run.actor.notStarted.body":
     "This subagent has not been asked anything yet. The transcript appears here as soon as its first step is dispatched.",
   "chat.toolCall.workflow.run.event.runStarted": "Run started",
+  "chat.toolCall.workflow.run.event.runCapsChanged": "Concurrency limit {previous} → {next} (applied in place)",
   "chat.toolCall.workflow.run.event.actorCreated": "Subagent created",
   "chat.toolCall.workflow.run.event.nodeQueued": "Queued",
   "chat.toolCall.workflow.run.event.nodeDispatched": "Dispatched",

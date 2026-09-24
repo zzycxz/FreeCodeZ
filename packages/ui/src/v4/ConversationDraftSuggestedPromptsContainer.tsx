@@ -26,6 +26,7 @@ import { usePlatform } from "@/hooks/usePlatform.js";
 import { useWorkspaceServicesResolution } from "@/hooks/useWorkspaceServices.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
+import { currentClientLinkIdentity } from "@/lib/clientLinkIdentity.js";
 import type { AutomationsNavigationTab } from "@/lib/taskNavigationHistory.js";
 import { reportPromptTemplateClick } from "@/lib/promptTemplateTelemetry.js";
 import { invalidateDeferredDraftSessionForSkillChange } from "@/lib/zcodeDraftSkillInvalidation.js";
@@ -297,8 +298,9 @@ export function ConversationDraftSuggestedPromptsContainer({
       const resolved =
         await resolution.services.pluginManagementService.resolveSuggestedPluginReference({
           ...targetParams(),
-          clientMode: "desktop-continuous" as const,
-          deliveryKind: "desktop-continuous" as const,
+          // 链路身份随真实链路推导（修复①）：写死 desktop-continuous 在手机远控链路
+          // 上与真实链路不符，解析不回 ready，requestComposerTextInsert 不会发出。
+          ...currentClientLinkIdentity(),
           stableId: current.plugin.stableId,
           operationId: current.operationId,
         });
@@ -616,8 +618,9 @@ export function ConversationDraftSuggestedPromptsContainer({
           operation,
           resolution.services.pluginManagementService.resolveSuggestedPluginReference({
             ...targetParams(),
-            clientMode: "desktop-continuous" as const,
-            deliveryKind: "desktop-continuous" as const,
+            // 链路身份随真实链路推导（修复①）：写死 desktop-continuous 在手机远控链路
+            // 上与真实链路不符，解析不回 ready，requestComposerTextInsert 不会发出。
+            ...currentClientLinkIdentity(),
             stableId: plugin.stableId,
             operationId: operation.operationId,
           }),

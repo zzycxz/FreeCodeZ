@@ -35,6 +35,7 @@ import {
   RemoteSyncDropdownButton,
   shouldShowRemoteSyncActions,
 } from "@/settings/RemoteSyncActions.js";
+import { currentClientLinkIdentity } from "@/lib/clientLinkIdentity.js";
 export { RemoteConnectionConnectingStep } from "@/remote-connection/RemoteConnectionConnectingStep.js";
 
 function getKindIcon(kind: RemoteTarget["kind"]) {
@@ -365,7 +366,8 @@ export function RemoteConnectionDirectoryStep({
   const canShowRemoteSyncActions = shouldShowRemoteSyncActions({
     remoteSessionId: remoteTarget ? "directory-step" : null,
     remoteTarget,
-    clientMode: "desktop-continuous",
+    // 链路身份随真实链路推导（R6），不再写死 desktop-continuous。
+    clientMode: currentClientLinkIdentity().clientMode,
     hasLocalSourceService: Boolean(
       localSkillSyncService || localMcpSyncService || localPluginSyncService,
     ),
