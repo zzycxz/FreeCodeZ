@@ -95,6 +95,24 @@ export function WorkflowMoreRow({
         )}
       >
         {label}
+        {/* 批次 2-3（A9）：展示界截掉的节点——不是「还有」的一部分，是连脸都没有的部分。 */}
+        {more.unlisted === undefined ? null : (
+          <span
+            className="text-foreground-subtlest"
+            data-testid="workflow-roster-unlisted"
+            title={format({ id: "chat.toolCall.workflow.run.truncated" })}
+          >
+            {format(
+              {
+                id:
+                  more.unlisted === 1
+                    ? "chat.toolCall.workflow.timeline.roster.unlisted.one"
+                    : "chat.toolCall.workflow.timeline.roster.unlisted.many",
+              },
+              { count: more.unlisted },
+            )}
+          </span>
+        )}
       </span>
       {door === undefined ? null : door.open ? null : (
         <RosterTally className="mr-0.5 shrink-0" counts={door.tally} />

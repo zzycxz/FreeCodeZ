@@ -147,6 +147,11 @@ export interface WorkflowTimelineModel {
   runningIndex: number | undefined;
   /** 是否有 run 投影参与（决定灯 / 墨迹是否有话说）。 */
   live: boolean;
+  /**
+   * 被展示界（maxNodes）截掉的节点数（批次 2-3 / A9）：名册「还有 n 个」行追加
+   * 「N unlisted」。缺席即老形态。
+   */
+  unlistedNodes?: number;
   /** 流式草稿：站由笔逐字写出，子代理只计数不画（`draft-scan.ts`）。分析器的模型没有它。 */
   draft?: { agents: number };
 }
@@ -479,31 +484,14 @@ export function buildWorkflowTimeline(
     }),
   }));
 
-  return { arcs, bands, live: run !== undefined, rails, runningIndex, stations };
-}
-
-/** 一枚药丸「正在做什么」：优先正在跑的 step 的 label，其次最后一个已结算的，再次第一个。 */
-export function pillActivity(
-  graph: WorkflowCausalityGraphData,
-  run: WorkflowRunState | undefined,
-  pill: TimelinePill,
-): { label: string; asks: number; reads: number } {
-  const stepsById = new Map(graph.steps.map((step) => [step.id, step]));
-  const statuses = run === undefined ? {} : workflowRunOverlay(run, graph).statuses;
-  let asks = 0;
-  let reads = 0;
-  let running: string | undefined;
-  let done: string | undefined;
-  let first: string | undefined;
-  for (const id of pill.stepIds) {
-    const step = stepsById.get(id);
-    if (step === undefined) continue;
-    if (step.kind === "world-read") reads += 1;
-    else asks += 1;
-    first ??= step.label;
-    const status = statuses[id];
-    if (status === "running") running ??= step.label;
-    else if (status === "done" || status === "failed") done = step.label;
-  }
-  return { asks, label: running ?? done ?? first ?? "", reads };
+  const unlistedNodes = run?.usage.nodesUnlisted;
+  return {
+    arcs,
+    bands,
+    live: run !== undefined,
+    rails,
+    runningIndex,
+    stations,
+    ...(unlistedNodes !== undefined && unlistedNodes > 0 ? { unlistedNodes } : {}),
+  };
 }

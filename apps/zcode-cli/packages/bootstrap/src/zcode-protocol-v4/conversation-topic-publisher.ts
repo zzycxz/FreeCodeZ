@@ -636,6 +636,9 @@ export class ConversationTopicPublisher {
         const wireDeltas = deltas.filter((delta) => {
           if (delta.op === "state.updated" || delta.op === "row.appended") return true;
           if (delta.op === "row.removed") return false;
+          // per-run 增量（批次 2-3）按「必发」处理：它不挂行、不占尾窗预算，体积已由
+          // wire bounds（maxActors/maxNodes 每条）与全量回退护栏约束。
+          if (delta.op === "workflowRun.updated" || delta.op === "workflowRun.removed") return true;
           wireRowIds ??= new Set(
             snapshot.rows.window
               .slice(-PROTOCOL_V4_LIMITS.snapshotTailWindowRows)

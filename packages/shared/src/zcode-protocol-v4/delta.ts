@@ -23,6 +23,10 @@ import {
   workspaceHookAdmissionStateSchema,
 } from "./snapshot.js";
 import { workflowRunsStateSchema } from "./workflow-runs.js";
+import {
+  workflowRunRemovedDeltaSchema,
+  workflowRunUpdateDeltaSchema,
+} from "./workflow-runs-delta.js";
 
 // StatePatch：键级整体替换（Object.assign），键集合封闭。键内绝不深合并。
 export const statePatchSchema = z.object({
@@ -65,5 +69,9 @@ export const conversationDeltaSchema = z.discriminatedUnion("op", [
     append: z.string(),
   }),
   z.object({ op: z.literal("state.updated"), patch: statePatchSchema }),
+  // per-run 增量（批次 2-3 / 上游 3.14.3）：workflowRuns 状态键的 op-log 形态。旧端不认识
+  // 这两个 op——服务端对旧 profile 用 encodeConversationDeltasForLegacy 收敛回全量。
+  workflowRunUpdateDeltaSchema,
+  workflowRunRemovedDeltaSchema,
 ]);
 export type ConversationDelta = z.infer<typeof conversationDeltaSchema>;

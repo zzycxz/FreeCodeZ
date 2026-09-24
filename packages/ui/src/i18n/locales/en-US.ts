@@ -4968,6 +4968,11 @@ const enUS: Record<string, string> = {
   "chat.toolCall.workflow.run.usage.label": "Usage",
   "chat.toolCall.workflow.run.usage.tokens": "{tokens} tokens",
   "chat.toolCall.workflow.run.usage.value": "{tokens} tokens · {steps} steps",
+  "chat.toolCall.workflow.run.usage.unlistedSuffix": " / {count}",
+  "chat.toolCall.workflow.run.truncated":
+    "Some steps are hidden from the card to keep it readable; the totals above include them.",
+  "chat.toolCall.workflow.timeline.roster.unlisted.one": " · {count} unlisted",
+  "chat.toolCall.workflow.timeline.roster.unlisted.many": " · {count} unlisted",
   "chat.toolCall.workflow.run.cancel": "Stop run",
   "chat.toolCall.workflow.run.cancelling": "Stopping…",
   "chat.toolCall.workflow.run.cancelDisabled": "Only a running workflow can be stopped.",

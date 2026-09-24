@@ -6,10 +6,10 @@ import { laneDisplayName } from "@/components/workflow-graph/lane-name.js";
 import { phaseDisplayName } from "@/components/workflow-graph/phase-name.js";
 import type { WorkflowCausalityGraphData } from "@/components/workflow-graph/types.js";
 import {
-  pillActivity,
   type TimelinePill,
   type WorkflowTimelineModel,
 } from "@/components/workflow-timeline/timeline-model.js";
+import { pillActivity } from "@/components/workflow-timeline/pill-activity.js";
 import {
   ROSTER_PINS_PANE,
   ROSTER_THRESHOLD,
@@ -18,6 +18,7 @@ import {
   rosterMore,
   rosterRoll,
   stationRoster,
+  ROSTER_DECK,
 } from "@/components/workflow-timeline/roster-model.js";
 import {
   WorkflowAgentPill,
@@ -396,7 +397,7 @@ export const WorkflowRunPhaseList = memo(function WorkflowRunPhaseList({
                         open: listed.has(station.id),
                         tally: rosterCounts(roster.rest),
                       }}
-                      more={rosterMore(roster)}
+                      more={rosterMore(roster, ROSTER_DECK, model.unlistedNodes)}
                       onOpen={() => toggleListed(station.id)}
                     />
                     {listed.has(station.id) ? (

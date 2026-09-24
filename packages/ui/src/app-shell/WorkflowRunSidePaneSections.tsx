@@ -342,6 +342,18 @@ export const WorkflowRunStatusHeader = memo(function WorkflowRunStatusHeader({
               { id: "chat.toolCall.workflow.run.usage.value" },
               { tokens: formatCount(usage.spentTokens), steps: usage.nodesUsed },
             )}
+            {/* 批次 2-3（A9）：被展示界截掉的节点算回总数——进度不再静默失真。 */}
+            {(usage.nodesUnlisted ?? 0) > 0 ? (
+              <span
+                className="text-foreground-subtle"
+                title={intl.formatMessage({ id: "chat.toolCall.workflow.run.truncated" })}
+              >
+                {intl.formatMessage(
+                  { id: "chat.toolCall.workflow.run.usage.unlistedSuffix" },
+                  { count: usage.nodesUsed + (usage.nodesUnlisted ?? 0) },
+                )}
+              </span>
+            ) : null}
           </span>
         </div>
       ) : null}

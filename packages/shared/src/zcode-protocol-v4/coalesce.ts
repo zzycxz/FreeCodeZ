@@ -7,11 +7,45 @@
 //   2. 相邻 state.updated → patch 键浅合并（键内整体替换，安全）；
 //   3. row.delta 后随同 rowId 的 row.upserted → 前者丢弃（整行替换蕴含所有追加）；
 //   4. row.removed 是屏障，任何规则不得跨越；
-//   5. 帧超限切分不在本函数（属通道层打帧）。
+//   5. workflowRun.removed 是同 run 增量的屏障，且吞并其前同 run 的 workflowRun.updated；
+//      相邻同 run 的 workflowRun.updated 在 wire 界内合并（批次 2-3，上游 3.14.3 同规则）；
+//   6. 帧超限切分不在本函数（属通道层打帧）。
 import type { ConversationDelta } from "./delta.js";
+import {
+  isWorkflowRunDelta,
+  mergeWorkflowRunUpdates,
+  workflowRunUpdateWithinWireBounds,
+  type WorkflowRunUpdateDelta,
+} from "./workflow-runs-delta.js";
 
 function isBarrier(delta: ConversationDelta): boolean {
   return delta.op === "row.removed";
+}
+
+/** 同 run 增量的屏障：workflowRun.removed（同 run）或整键全量（patch 带 workflowRuns）。 */
+function isWorkflowRunBarrier(delta: ConversationDelta, runId: string): boolean {
+  return (
+    (delta.op === "state.updated" && delta.patch.workflowRuns !== undefined) ||
+    (delta.op === "workflowRun.removed" && delta.runId === runId)
+  );
+}
+
+/** 与已积累的同 run 增量就地合并（规则 5 后半）；界外不合并、独立成条。 */
+function tryMergeWorkflowRunUpdate(result: ConversationDelta[], delta: WorkflowRunUpdateDelta): boolean {
+  let target = -1;
+  for (let i = result.length - 1; i >= 0; i--) {
+    const prev = result[i];
+    if (prev === undefined || isWorkflowRunBarrier(prev, delta.runId)) break;
+    if (prev.op === "workflowRun.updated" && prev.runId === delta.runId) {
+      target = i;
+      break;
+    }
+  }
+  if (target < 0) return false;
+  const merged = mergeWorkflowRunUpdates(result[target] as WorkflowRunUpdateDelta, delta);
+  if (!workflowRunUpdateWithinWireBounds(merged)) return false;
+  result[target] = merged;
+  return true;
 }
 
 /**
@@ -43,6 +77,20 @@ export function coalesceConversationDeltas(
         }
       }
     }
+
+    // 规则 5 前半：workflowRun.removed 吞并其前同 run 的 workflowRun.updated（回溯到屏障）。
+    if (delta.op === "workflowRun.removed") {
+      for (let i = result.length - 1; i >= 0; i--) {
+        const prev = result[i];
+        if (prev === undefined || isWorkflowRunBarrier(prev, delta.runId)) break;
+        if (prev.op === "workflowRun.updated" && prev.runId === delta.runId) {
+          result.splice(i, 1);
+        }
+      }
+    }
+
+    // 规则 5 后半：同 run 增量就地合并（界内）。
+    if (delta.op === "workflowRun.updated" && tryMergeWorkflowRunUpdate(result, delta)) continue;
 
     const last = result[result.length - 1];
 

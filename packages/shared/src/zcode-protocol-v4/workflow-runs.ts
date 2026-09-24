@@ -108,8 +108,30 @@ export type WorkflowRunPhase = z.infer<typeof workflowRunPhaseSchema>;
 export const workflowRunUsageSchema = z.object({
   spentTokens: z.number().int().nonnegative(),
   nodesUsed: z.number().int().nonnegative(),
+  /**
+   * 被展示界（maxNodes）拒之门外、但确实存在的节点数（批次 2-3 / 上游 3.14.3）：节点
+   * 出生事件（node-queued / cached node-settled）触界被拒时 +1。状态行据此把「显示 X」
+   * 校正为「共 Y = X + unlisted」。为 0 时缺席（老形态逐字节不变）。
+   */
+  nodesUnlisted: z.number().int().nonnegative().optional(),
+  /** unlisted 节点中已结算的数量（node-settled 触界被拒时 +1，与上一键同生）。 */
+  nodesUnlistedSettled: z.number().int().nonnegative().optional(),
 });
 export type WorkflowRunUsage = z.infer<typeof workflowRunUsageSchema>;
+
+/**
+ * unlisted 节点的按阶段桶（批次 2-3 / 上游 3.14.3 unlistedByPhase）：被拒节点结算时把
+ * settled+1 记入其阶段桶；其 actor 再无任何在列节点时，actors/actorsSettled 记入 actor
+ * 的阶段桶并从 `actors[]` 除籍（展示位让给还活着的）。与 `phases` 同界。
+ */
+export const workflowRunUnlistedPhaseSchema = z.object({
+  phaseName: z.string().min(1).max(WORKFLOW_RUNS_LIMITS.maxPhaseNameLength).optional(),
+  actors: z.number().int().nonnegative(),
+  actorsSettled: z.number().int().nonnegative().optional(),
+  actorsFailed: z.number().int().nonnegative().optional(),
+  settled: z.number().int().nonnegative(),
+});
+export type WorkflowRunUnlistedPhase = z.infer<typeof workflowRunUnlistedPhaseSchema>;
 
 /**
  * 一个 actor 实例。`status` 是**派生**的三态：
@@ -433,6 +455,11 @@ export const workflowRunSchema = z.object({
    * 原始事实仍在 journal。
    */
   truncated: z.boolean().optional(),
+  /** unlisted 节点的按阶段桶（批次 2-3；见 workflowRunUnlistedPhaseSchema）。 */
+  unlistedByPhase: z
+    .array(workflowRunUnlistedPhaseSchema)
+    .max(WORKFLOW_RUNS_LIMITS.maxPhases + 1)
+    .optional(),
   /** 最后一条已归约事件的 journal sequence；抬升即事件日志重取的触发条件。 */
   lastEventSequence: z.number().int().nonnegative(),
 });

@@ -6,6 +6,25 @@ import type { ConversationDelta } from "./delta.js";
 import type { ConversationSnapshot } from "./snapshot.js";
 import type { ConversationRow } from "./rows.js";
 import type { StreamablePath } from "./core.js";
+import {
+  applyWorkflowRunRemoved,
+  applyWorkflowRunUpdated,
+  type WorkflowRunRemovedDelta,
+  type WorkflowRunUpdateDelta,
+} from "./workflow-runs-delta.js";
+
+function applyWorkflowRunDelta(
+  snapshot: ConversationSnapshot,
+  delta: WorkflowRunUpdateDelta | WorkflowRunRemovedDelta,
+): ConversationSnapshot {
+  const workflowRuns =
+    delta.op === "workflowRun.updated"
+      ? applyWorkflowRunUpdated(snapshot.workflowRuns, delta)
+      : applyWorkflowRunRemoved(snapshot.workflowRuns, delta);
+  // 与 state.updated 同一条键级整体替换纪律：容器变化为 no-op 时保持引用，调用方的
+  // 逐字节比对据此判「无变化」。
+  return workflowRuns === snapshot.workflowRuns ? snapshot : { ...snapshot, workflowRuns };
+}
 
 /**
  * 仅供服务端在未发布的候选快照内批量归约使用。
@@ -118,6 +137,12 @@ export function applyConversationDelta(
     case "state.updated":
       // 键级整体替换：patch 中在场的键覆盖，绝不深合并。
       return { ...snapshot, ...delta.patch };
+    case "workflowRun.updated":
+    case "workflowRun.removed":
+      // workflowRuns 的 per-run 增量（批次 2-3）：键内仍是「整体替换」，只是替换物由
+      // 应用端逐条拼出——与 state.updated 的纪律不冲突：拼装是协议语义（本文件），不是
+      // 消费端的自由发挥。
+      return applyWorkflowRunDelta(snapshot, delta);
   }
 }
 
@@ -185,6 +210,17 @@ export function applyConversationDeltaMutable(
     case "state.updated":
       // 与不可变实现相同：patch 在场键整体替换，不能深合并。
       Object.assign(snapshot, delta.patch);
+      return;
+    case "workflowRun.updated":
+    case "workflowRun.removed": {
+      const applied = applyWorkflowRunDelta(
+        { ...snapshot, rows: { ...snapshot.rows, window: [] } } as ConversationSnapshot,
+        delta,
+      );
+      // 逐字段回写（rows 占位不落地）：候选快照的 workflowRuns 引用按需替换。
+      if (applied.workflowRuns !== snapshot.workflowRuns) snapshot.workflowRuns = applied.workflowRuns;
+      return;
+    }
   }
 }
 

@@ -4742,6 +4742,11 @@ const zhCN: Record<string, string> = {
   "chat.toolCall.workflow.run.usage.label": "用量",
   "chat.toolCall.workflow.run.usage.tokens": "{tokens} tokens",
   "chat.toolCall.workflow.run.usage.value": "{tokens} tokens · {steps} 步",
+  "chat.toolCall.workflow.run.usage.unlistedSuffix": " / {count}",
+  "chat.toolCall.workflow.run.truncated":
+    "为保持卡片可读，部分步骤未在卡上列出；上方总数已把它们计入。",
+  "chat.toolCall.workflow.timeline.roster.unlisted.one": " · {count} 个未列出",
+  "chat.toolCall.workflow.timeline.roster.unlisted.many": " · {count} 个未列出",
   "chat.toolCall.workflow.run.cancel": "停止运行",
   "chat.toolCall.workflow.run.cancelling": "正在停止…",
   "chat.toolCall.workflow.run.cancelDisabled": "只有正在运行的工作流可以停止。",

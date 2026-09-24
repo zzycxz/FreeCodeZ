@@ -211,5 +211,10 @@ export function deltaBumpsRevision(delta: ConversationDelta): boolean {
       return false;
     case "state.updated":
       return REVISION_BEARING_PATCH_KEYS.some((key) => delta.patch[key] !== undefined);
+    // workflowRuns 的 per-run 增量（批次 2-3）与整键同一条豁免：高频派生数据、自带单调
+    // revision、无 baseRevision CAS 读它——不抖动 conversation revision。
+    case "workflowRun.updated":
+    case "workflowRun.removed":
+      return false;
   }
 }

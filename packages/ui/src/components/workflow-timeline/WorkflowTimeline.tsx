@@ -13,7 +13,7 @@ import { laneDisplayName } from "@/components/workflow-graph/lane-name.js";
 import { phaseDisplayName } from "@/components/workflow-graph/phase-name.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import type { TimelinePill, TimelineStation, WorkflowTimelineModel } from "./timeline-model.js";
-import { ROSTER_PINS_CARD, rosterMore, stationRoster } from "./roster-model.js";
+import { ROSTER_DECK, ROSTER_PINS_CARD, rosterMore, stationRoster } from "./roster-model.js";
 import { useTypewriter } from "./use-typewriter.js";
 import { WorkflowAgentPill } from "./WorkflowAgentPill.js";
 import { WorkflowMoreRow } from "./WorkflowMoreRow.js";
@@ -383,7 +383,7 @@ export const WorkflowTimeline = memo(function WorkflowTimeline({
                       {roster.pinned.map(renderPill)}
                       <WorkflowMoreRow
                         enterDelayMs={nextDelay()}
-                        more={rosterMore(roster)}
+                        more={rosterMore(roster, ROSTER_DECK, model.unlistedNodes)}
                         {...(onOpenMore === undefined ? {} : { onOpen: () => onOpenMore(station) })}
                       />
                     </>

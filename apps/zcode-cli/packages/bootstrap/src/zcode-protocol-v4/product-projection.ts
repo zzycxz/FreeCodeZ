@@ -115,7 +115,9 @@ import {
   applyConversationDeltas,
   applyConversationDeltasMutable,
   createMutableConversationSnapshotAccumulator,
+  diffWorkflowRunsState,
   reduceWorkflowRunsState,
+  workflowRunDeltaGrowthUpperBound,
   workspaceHookReviewRequestPayloadSchema,
 } from "@zcode/shared/zcode-protocol-v4";
 import {
@@ -3862,6 +3864,10 @@ export class ProductProjection {
             return true;
           }
           break;
+        // per-run 增量（批次 2-3）不触发 subagent 投影物化：它不碰 rows/pending/backgroundWorks。
+        case "workflowRun.updated":
+        case "workflowRun.removed":
+          break;
         default: {
           const exhaustiveDelta: never = delta;
           return exhaustiveDelta;
@@ -4023,6 +4029,10 @@ export class ProductProjection {
           break;
         case "row.removed":
           if (prospective.rowId >= delta.fromRowId) prospective = null;
+          break;
+        // per-run 增量（批次 2-3）不碰 subagent 行。
+        case "workflowRun.updated":
+        case "workflowRun.removed":
           break;
         default: {
           const exhaustiveDelta: never = delta;
@@ -4303,21 +4313,30 @@ export class ProductProjection {
   }
 
   // ── dwf 实时运行态：DynamicWorkflowRunProgress → workflowRuns 状态键 ──
-  // 一条引擎 RunEvent 一条会话事件，归约成键级整体替换的权威态。走 reducer 而不是侧通道，
-  // 所以持久、可回放、冷恢复免费（先例：subagents 键）。
+  // 一条引擎 RunEvent 一条会话事件，归约成权威态。走 reducer 而不是侧通道，所以持久、
+  // 可回放、冷恢复免费（先例：subagents 键）。
   //
   // 归约本体在 @zcode/shared 的 workflow-runs-reducer（与状态 schema 同居）：TUI 镜像要用
   // 同一份归约，两处各写一份就是两个时钟。
-  // 留在这里的只有投影的非纯部分——从事件信封取载荷、把新状态发成 state.updated。
+  // 留在这里的只有投影的非纯部分——从事件信封取载荷、把新状态发上线。批次 2-3（上游
+  // 3.14.3）：优先发 per-run 增量（workflowRun.updated/removed），只发变化；diff 失败或
+  // 增量链体积超预算时回全量 state.updated——大工作流不再每条事件整键重发（O(N²)→O(N)）。
   private onDynamicWorkflowRunProgress(event: SessionEvent): ConversationDelta[] {
     // 先转 contracts 的有界 payload、再赋给 shared 的结构化入参：这行赋值就是"两边形状不漂移"
     // 的编译期闸（shared 不得反向依赖 contracts，所以入参类型只能结构化定义）。
     const envelope: WorkflowRunProgressEnvelope =
       event.payload as DynamicWorkflowRunProgressPayload;
-    const workflowRuns = reduceWorkflowRunsState(this.snapshot.workflowRuns, envelope);
+    const previous = this.snapshot.workflowRuns;
+    const workflowRuns = reduceWorkflowRunsState(previous, envelope);
     // null = 语义无变化（无效事件或同一条事件重放）：不产 delta，revision 不抬。
     if (workflowRuns === null) return [];
-    return [{ op: "state.updated", patch: { workflowRuns } }];
+    const deltas = diffWorkflowRunsState(previous, workflowRuns);
+    // 体积护栏：全量帧本身有界（maxRuns×maxNodes），增量链理论上无界（revise 循环每条都带
+    // removed+changed）——超预算就发全量，帧大小回到常数。
+    if (workflowRunDeltaGrowthUpperBound(deltas) > PROTOCOL_V4_LIMITS.maxFrameBytes) {
+      return [{ op: "state.updated", patch: { workflowRuns } }];
+    }
+    return deltas as ConversationDelta[];
   }
 
   private removeQueueItems(ids: readonly string[]): ConversationDelta[] {

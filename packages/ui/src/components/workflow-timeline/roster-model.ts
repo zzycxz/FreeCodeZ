@@ -99,14 +99,24 @@ export interface RosterMore {
   deck: TimelinePill[];
   /** 藏在这一行后面的 failed 数（钉住的不算）——卡上这一行唯一会说的状态。 */
   failed: number;
+  /**
+   * 被展示界（maxNodes）截掉、连药丸都不存在的节点数（批次 2-3 / A9）。在场即这一行
+   * 追加「N unlisted」；缺席即老形态一个键不多。
+   */
+  unlisted?: number;
 }
 
-export function rosterMore(roster: StationRoster, deck: number = ROSTER_DECK): RosterMore {
+export function rosterMore(
+  roster: StationRoster,
+  deck: number = ROSTER_DECK,
+  unlisted?: number,
+): RosterMore {
   const pinnedFailed = roster.pinned.filter((pill) => pillStatusOf(pill) === "failed").length;
   return {
     count: roster.rest.length,
     deck: byAttention(roster.rest).slice(0, deck),
     failed: roster.counts.failed - pinnedFailed,
+    ...(unlisted !== undefined && unlisted > 0 ? { unlisted } : {}),
   };
 }
 

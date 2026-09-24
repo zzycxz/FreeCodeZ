@@ -30,6 +30,7 @@ import {
   type WorkflowRunPendingQuestion,
   type WorkflowRunReport,
   type WorkflowRunState,
+  type WorkflowRunUnlistedPhase,
   type WorkflowRunsState,
 } from "./workflow-runs.js";
 
@@ -42,6 +43,8 @@ import {
 import { reduceConcurrencyChanged, reduceRunCapsChanged, withoutCooldown } from "./workflow-runs-concurrency.js";
 import { readRunIdField, readWorkflowRunStopReason } from "./workflow-runs-lineage.js";
 import { carryNodeProgress, reduceNodeProgress } from "./workflow-runs-node-progress.js";
+import { countUnlistedUsage, rollupUnlistedSettle } from "./workflow-runs-unlisted.js";
+import { upsertBoundedByInstance, upsertBoundedByQid } from "./workflow-runs-bounded.js";
 import { reducePhaseEntered, reduceRunLaunched } from "./workflow-runs-phases.js";
 import { reduceRunStarted } from "./workflow-runs-started.js";
 
@@ -112,6 +115,9 @@ export function reduceWorkflowRunsState(
     ...(envelope.toolCallId === undefined ? {} : { toolCallId: envelope.toolCallId }),
     // 单调：迟到/重放的事件不会把水位拉回去。
     sequence: Math.max(base.lastEventSequence, sequence),
+    // 水位准入门（批次 2-3）：对既有 run，只有真正推进水位的事件才可新建条目/计数；
+    // 新生 run 的第一条事件本身就是出生（base 尚不存在，谈不上重放）。
+    advancesWaterMark: existing === undefined || sequence > existing.lastEventSequence,
   });
 
   // 幂等：语义无变化不产 delta（同一条事件重放不抬 revision）。
@@ -136,6 +142,8 @@ function applyWorkflowRunEvent(
     actorSessionId?: string;
     toolCallId?: string;
     sequence: number;
+    /** 批次 2-3：事件是否推进水位（重放/迟到为 false）——新条目准入与 unlisted 计数的幂等锚。 */
+    advancesWaterMark?: boolean;
   },
 ): WorkflowRunState {
   const run: WorkflowRunState = {
@@ -143,6 +151,8 @@ function applyWorkflowRunEvent(
     ...(derived.toolCallId && !base.toolCallId ? { toolCallId: derived.toolCallId } : {}),
     lastEventSequence: derived.sequence,
   };
+  // 缺省按推进处理（既有调用点的向后兼容；生产路径恒显式传入）。
+  const advancesWaterMark = derived.advancesWaterMark ?? true;
 
   switch (eventType) {
     /**
@@ -167,7 +177,9 @@ function applyWorkflowRunEvent(
         // 占位值：紧接着的 withDerivedWorkflowActorStatuses 会按节点与 run 终态重算。
         status: "waiting",
       };
-      const upserted = upsertBoundedByInstance(run.actors, actor, WORKFLOW_RUNS_LIMITS.maxActors);
+      const upserted = upsertBoundedByInstance(run.actors, actor, WORKFLOW_RUNS_LIMITS.maxActors, {
+        admitNew: advancesWaterMark,
+      });
       return withDerivedWorkflowActorStatuses({
         ...run,
         actors: upserted.list,
@@ -216,16 +228,37 @@ function applyWorkflowRunEvent(
         // 规则在同族的 workflow-runs-node-progress.ts（那里也讲了为什么必须显式携带）。
         ...carryNodeProgress(eventType, payload, previousNode),
       };
-      const upsertedNodes = upsertBoundedByInstance(run.nodes, node, WORKFLOW_RUNS_LIMITS.maxNodes);
+      const upsertedNodes = upsertBoundedByInstance(run.nodes, node, WORKFLOW_RUNS_LIMITS.maxNodes, {
+        admitNew: advancesWaterMark,
+      });
       // 步数：一个实例**首次**派发计一步。重放同一条 node-dispatched 时 previousNode 已在
       // dispatched 之后的相位，不再计数——归约必须幂等（顶层靠逐字节比对判「无变化」）。
       // 触界被拒的实例查不到 previousNode，会照常计数：步数是 run 级事实，不受展示界约束。
       const firstDispatch =
         eventType === "node-dispatched" &&
+        advancesWaterMark &&
         (previousNode === undefined || previousNode.phase === "queued");
+      // 批次 2-3（A9）：出生/结算事件触界被拒 → unlisted 计数 + 按阶段桶（同族
+      // workflow-runs-unlisted.ts；水位门在那里，重放不重计）。
+      const usage = countUnlistedUsage(
+        firstDispatch ? { ...run.usage, nodesUsed: run.usage.nodesUsed + 1 } : run.usage,
+        {
+          rejected: upsertedNodes.truncated,
+          advancesWaterMark,
+          eventType,
+          cached: payload.cached === true,
+        },
+      );
+      const withUnlistedRollup =
+        upsertedNodes.truncated && advancesWaterMark && eventType === "node-settled"
+          ? rollupUnlistedSettle(
+              { ...run, usage },
+              node,
+              actorRef ?? undefined,
+            )
+          : { ...run, usage };
       return withDerivedWorkflowActorStatuses({
-        ...run,
-        ...(firstDispatch ? { usage: { ...run.usage, nodesUsed: run.usage.nodesUsed + 1 } } : {}),
+        ...withUnlistedRollup,
         nodes: upsertedNodes.list,
         ...(upsertedNodes.truncated || run.truncated ? { truncated: true } : {}),
       });
@@ -472,51 +505,6 @@ function workflowInstanceRef(value: unknown): { siteId: string; ordinal: number 
   const ordinal = value.ordinal;
   if (siteId === undefined || typeof ordinal !== "number") return null;
   return { siteId, ordinal };
-}
-
-/**
- * 按 (siteId, ordinal) upsert 进有界列表。
- *
- * 触界时的语义是**拒绝新条目、仍接受已有条目的更新**：把一个正在跑的实例的相位冻结在
- * "queued" 上，比少列一个实例更容易误导读者（图上那一格会永远显示没开始）。
- */
-function upsertBoundedByInstance<T extends { siteId: string; ordinal: number }>(
-  list: readonly T[],
-  entry: T,
-  limit: number,
-): { list: T[]; truncated: boolean } {
-  const index = list.findIndex(
-    (item) => item.siteId === entry.siteId && item.ordinal === entry.ordinal,
-  );
-  if (index >= 0) {
-    const next = [...list];
-    next[index] = entry;
-    return { list: next, truncated: false };
-  }
-  if (list.length >= limit) return { list: [...list], truncated: true };
-  return { list: [...list, entry], truncated: false };
-}
-
-/**
- * 按 `qid` upsert 进有界的停驻问题表。
- *
- * 与 `upsertBoundedByInstance` 是同一条触界语义（拒新、仍更新已有），只是键不同：升级没有
- * 站点实例身份，qid 才是它的键。没有把两者合并成一个泛型函数，是因为键的**取法**正是这里
- * 唯一要说的事——合并之后调用点要传一个取键函数，读者反而看不出"这张表按什么去重"。
- */
-function upsertBoundedByQid(
-  list: readonly WorkflowRunPendingQuestion[],
-  entry: WorkflowRunPendingQuestion,
-  limit: number,
-): { list: WorkflowRunPendingQuestion[]; truncated: boolean } {
-  const index = list.findIndex((item) => item.qid === entry.qid);
-  if (index >= 0) {
-    const next = [...list];
-    next[index] = entry;
-    return { list: next, truncated: false };
-  }
-  if (list.length >= limit) return { list: [...list], truncated: true };
-  return { list: [...list, entry], truncated: false };
 }
 
 /**
