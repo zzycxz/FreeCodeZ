@@ -110,8 +110,9 @@ function completedAsksHaveBoundaries(nodes: readonly NodeRecord[]): boolean {
 interface AmendImportDeps {
   journal: ImportedCacheJournalReader;
   /**
-   * 会话转录读面。在场时多做一道**源诚实性检查**（见 {@link honorsBoundary}）；缺席时
-   * 候选照收——driver 侧的种子兑现仍会大声失败，那是 corruption 级的兜底。
+   * 会话转录读面。在场时做**源诚实性检查**（计数 ≥ 完结前缀边界）并为携带判定提供全量
+   * 消息数（批次 2-2）；缺席时候选照收——driver 侧的种子兑现仍会大声失败，那是 corruption
+   * 级的兜底。
    */
   actorTranscriptStore?: ActorTranscriptStore;
   logger?: Logger;
@@ -135,6 +136,7 @@ interface AmendImportDeps {
 export async function buildImportedCache(
   deps: AmendImportDeps,
   predecessorRunId: string,
+  options?: { quietSessions?: ReadonlySet<string> },
 ): Promise<BuildImportedCacheResult> {
   const { actorTranscriptStore: transcripts, journal, logger } = deps;
 
@@ -158,6 +160,7 @@ export async function buildImportedCache(
       nodes,
       predecessorRunId,
       ...(transcripts === undefined ? {} : { transcripts }),
+      ...(options?.quietSessions === undefined ? {} : { quietSessions: options.quietSessions }),
     });
     if (candidate !== undefined) actors.set(name, candidate);
   }
@@ -216,16 +219,19 @@ async function buildActorCandidate(input: {
   nodes: NodeRecord[];
   predecessorRunId: string;
   transcripts?: ActorTranscriptStore;
+  /** 批次 2-2：前驱结算后有界等到的「已静默」会话集合；缺席即无探测（不触发 Q3 门）。 */
+  quietSessions?: ReadonlySet<string>;
 }): Promise<ImportedActorCandidate | undefined> {
-  const { actor, journal, logger, nodes, predecessorRunId, transcripts } = input;
+  const { actor, journal, logger, nodes, predecessorRunId, transcripts, quietSessions } = input;
   const name = actor.name!;
 
   // persona 是引擎在 createActor 时同步落的冻结身份，所以正常必在场；缺席只可能是被外力
   // 改写过的行。运行期比对没有比对物就无从谈起 persona 一致性——弃候选而不是拿 `{}` 顶。
   if (actor.persona === undefined) return undefined;
 
-  const entries = completedAskPrefix(nodes, actor);
-  if (entries.length === 0) return undefined;
+  const { entries, next } = completedAskPrefix(nodes, actor);
+  // 空前缀 + 无在飞候选 = 无可导入（旧判）；空前缀 + 有 running 行仍可作**携带**候选（批次 2-2）。
+  if (entries.length === 0 && next?.status !== "running") return undefined;
 
   const source = resolveTranscriptSource({
     actorName: name,
@@ -244,11 +250,14 @@ async function buildActorCandidate(input: {
     return undefined;
   }
 
-  const boundary = entries[entries.length - 1]!.messageBoundary;
-  if (
-    transcripts !== undefined &&
-    !(await honorsBoundary(transcripts, source.sessionId, boundary))
-  ) {
+  const boundary = entries.length === 0 ? 0 : entries[entries.length - 1]!.messageBoundary;
+  // 计数代替旧布尔：携带判定要的就是全量数（Q2/Q3/Q4 三道门都吃它），完结前缀的诚实性检查
+  // （数 ≥ 边界）顺路完成——读不到源的计数按「兑现不了」处理，与旧 honorsBoundary 同语义。
+  const messageCount =
+    transcripts === undefined
+      ? undefined
+      : await countSource(transcripts, source.sessionId as SessionId);
+  if (transcripts !== undefined && (messageCount === undefined || messageCount < boundary)) {
     logger?.warn?.(
       "Dynamic workflow amend: transcript source shorter than boundary, import dropped",
       {
@@ -262,12 +271,83 @@ async function buildActorCandidate(input: {
     return undefined;
   }
 
+  const inFlight = resolveInFlightAsk({
+    actor,
+    boundary,
+    ...(logger === undefined ? {} : { logger }),
+    ...(messageCount === undefined ? {} : { messageCount }),
+    ...(next === undefined ? {} : { next }),
+    predecessorRunId,
+    ...(quietSessions === undefined ? {} : { quietSessions }),
+    sourceSessionId: source.sessionId,
+  });
+  if (entries.length === 0 && inFlight === undefined) return undefined;
+
   return {
     persona: actor.persona,
     entries,
+    ...(inFlight === undefined ? {} : { inFlight }),
     transcriptSourceSessionId: source.sessionId,
     ...(source.resolvedModel === undefined ? {} : { resolvedModel: source.resolvedModel }),
   };
+}
+
+/**
+ * 前驱被替代时仍在飞的那次 ask 是否可**携带**（批次 2-2 / 上游 3.14.3 resolveInFlightAsk）。
+ * 四道门全过才收：只收 running 行；转录源必须是本代会话（不是链上祖先的）；有探测时源会话
+ * 必须已静默（计数是稳定值）；转录必须真的延伸到完结前缀之外（被放弃的尝试留下了消息）。
+ * 收下的边界 = 静默那刻的**全量**消息数——携带执行因此带着完整前代上下文重生成（R4）。
+ */
+function resolveInFlightAsk(input: {
+  actor: ActorRecord;
+  boundary: number;
+  logger?: Logger;
+  messageCount?: number;
+  next?: NodeRecord;
+  predecessorRunId: string;
+  quietSessions?: ReadonlySet<string>;
+  sourceSessionId: string;
+}): { inputHash: string; messageBoundary: number } | undefined {
+  const { actor, boundary, logger, messageCount, next, predecessorRunId, quietSessions, sourceSessionId } =
+    input;
+  // Q1：只有 running 行是「被放弃的尝试」；failed 行对修订无约束力，空洞同理。
+  if (next === undefined || next.status !== "running") return undefined;
+  const drop = (reason: string): undefined => {
+    logger?.info?.("Dynamic workflow amend: in-flight ask not carried", {
+      actorName: actor.name,
+      event: "dynamic_workflow.amend.in_flight_dropped",
+      module: "bootstrap.app",
+      reason,
+      runId: predecessorRunId,
+      sessionId: sourceSessionId,
+    });
+    return undefined;
+  };
+  // Q2：源必须是本代会话——祖先代的转录边界对这个 run 的在飞尝试没有意义。
+  if (actor.sessionId === undefined || actor.sessionId !== sourceSessionId) {
+    return drop("transcript_source_is_ancestor");
+  }
+  if (messageCount === undefined) return drop("no_transcript_count");
+  // Q3：探测在场时，源会话必须已静默——计数在增长的流上取出来是移动靶。
+  if (quietSessions !== undefined && !quietSessions.has(sourceSessionId)) {
+    return drop("session_not_quiescent");
+  }
+  // Q4：转录必须延伸到完结前缀之外（尝试至少留下了它的 prompt）。
+  if (messageCount <= boundary) return drop("no_transcript_beyond_prefix");
+  return { inputHash: next.inputHash, messageBoundary: messageCount };
+}
+
+/** 源会话的已落库消息数；读失败返回 undefined（按「兑现不了」处理）。 */
+async function countSource(
+  transcripts: ActorTranscriptStore,
+  sessionId: SessionId,
+): Promise<number | undefined> {
+  try {
+    const messages = await transcripts.messages({ sessionID: sessionId });
+    return messages.length;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -278,7 +358,10 @@ async function buildActorCandidate(input: {
  * 不导入；但跳过它去导入其后的条目会走私上下文——被跳过那一轮的问答仍在源会话转录里，
  * 而缓存却声称它没发生过。停在第一个非 completed 处是唯一自洽的读法。
  */
-function completedAskPrefix(nodes: NodeRecord[], actor: ActorRecord): ImportedAskEntry[] {
+function completedAskPrefix(
+  nodes: NodeRecord[],
+  actor: ActorRecord,
+): { entries: ImportedAskEntry[]; next?: NodeRecord } {
   const bySeq = new Map<number, NodeRecord>();
   for (const node of nodes) {
     if (node.kind !== "ask") continue;
@@ -290,7 +373,9 @@ function completedAskPrefix(nodes: NodeRecord[], actor: ActorRecord): ImportedAs
   const entries: ImportedAskEntry[] = [];
   for (let seq = 0; ; seq++) {
     const node = bySeq.get(seq);
-    if (node === undefined || node.status !== "completed") break;
+    // 第一个非 completed 行一并交回（批次 2-2）：running 的是携带候选，failed/空洞只是前缀终点。
+    if (node === undefined) return { entries };
+    if (node.status !== "completed") return { entries, next: node };
     // 边界必在场：门 3 已对整个前驱把关，所以这里不是乐观读而是不变式的兑现。
     const entry: ImportedAskEntry = {
       inputHash: node.inputHash,
@@ -300,7 +385,6 @@ function completedAskPrefix(nodes: NodeRecord[], actor: ActorRecord): ImportedAs
     if (node.stats !== undefined) entry.stats = node.stats;
     entries.push(entry);
   }
-  return entries;
 }
 
 /**
@@ -341,29 +425,6 @@ function resolveTranscriptSource(input: {
     runId = journal.getRun(runId)?.resumedFrom;
   }
   return undefined;
-}
-
-/**
- * 源会话是否真兑现得了边界（消息数 ≥ 边界）。
- *
- * 这道检查把 driver 的**大声失败**语义与构建期的**降级**语义接在一起：driver 的
- * `seedActorTranscript` 对短会话抛 `DriverError`（corruption 级，见那边的性质 3）；构建期缺少转录时则降级为全新重跑。两者都对，但作用域不同——**可预见的**缺料（会话被清理 / 被截断）
- * 应当在构建期就把候选弃掉，driver 那一侧的失败因此退化成真正不该发生时的兜底。
- *
- * 读失败（会话不存在等）同样按「兑现不了」处理：构建器不为会话存储的错误分类负责，而任何
- * 读不到的源都不是可用的源。
- */
-async function honorsBoundary(
-  transcripts: ActorTranscriptStore,
-  sessionId: string,
-  boundary: number,
-): Promise<boolean> {
-  try {
-    const messages = await transcripts.messages({ sessionID: sessionId as SessionId });
-    return messages.length >= boundary;
-  } catch {
-    return false;
-  }
 }
 
 /**

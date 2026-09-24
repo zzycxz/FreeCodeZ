@@ -30,6 +30,7 @@ import type {
   SessionRef,
 } from "@zcode/dynamic-workflow";
 import type { ActorTranscriptStore } from "./workflow-actor-transcript.js";
+import type { ActorSessionQuiescence } from "./dynamic-workflow-quiescence.js";
 import type { WorkflowConcurrencyPort } from "./workflow-concurrency-governor.js";
 import type { ActorModelActivity, WorkflowClock } from "./workflow-driver-concurrency.js";
 import type { WorkflowEscalationRegistry } from "./workflow-escalation-registry.js";
@@ -163,6 +164,12 @@ export interface AgentRuntimeWorkflowDriverDeps {
    * 引擎已经据导入事实认定要接转录，此时没有存取面就是接线错误。
    */
   actorTranscriptStore?: ActorTranscriptStore;
+  /**
+   * 会话静默探测（批次 2-2 carry）：run 结算释放会话时逐会话登记在飞 turn，修订方在
+   * 前驱结算后有界等待——携带判定据此只对已静默的源会话取全量消息数。与
+   * actorTranscriptStore 同款可选论证：无转录面的装配没有可等的流。
+   */
+  quiescence?: ActorSessionQuiescence;
   logger?: Logger;
   /**
    * 本 run 的 id。actor 会话 id 以它为作用域——不含 runId 的方案会让并发两个 run 的同

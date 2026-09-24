@@ -191,13 +191,18 @@ export function closeImportCache(
 export function recoverImportClosure(
   journal: JournalStorePort,
   runId: string,
-): { live: ReadonlySet<string>; closed: boolean } {
+): { live: ReadonlySet<string>; queuedBeforeClose: ReadonlySet<string>; closed: boolean } {
   const live = new Set<string>();
+  // 批次 2-2：关门**之前**已准入的 ask 集合——崩溃恢复的携带判定（reconcileRecorded 第 4 参）
+  // 只对这批行成立；关门后的 live 行依附的世界已被改写，永不携带。
+  const queuedBeforeClose = new Set<string>();
   let closed = false;
   for (const { event } of journal.listEvents(runId)) {
     if (event.type === "import-cache-closed") closed = true;
     if (event.type !== "node-queued" || event.kind !== "ask") continue;
-    live.add(refToString(event.instance));
+    const key = refToString(event.instance);
+    live.add(key);
+    if (!closed) queuedBeforeClose.add(key);
   }
-  return { live, closed };
+  return { live, queuedBeforeClose, closed };
 }

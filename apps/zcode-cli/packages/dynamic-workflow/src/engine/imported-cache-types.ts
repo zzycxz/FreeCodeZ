@@ -32,6 +32,12 @@ export interface ImportedActorCandidate {
   /** 最长全 completed ask 前缀，按 actorSeq 0..n-1 索引。 */
   entries: ImportedAskEntry[];
   /**
+   * 前驱被替代时**仍在飞**的那次 ask（批次 2-2 carry）：它不在 `entries` 里（未完结不可导入
+   * 为命中），但若新脚本在同 seq 上给出同一哈希的指令，就作为「带前代转写前缀的全新执行」
+   * 携带（seed 到 quiescence 时的全量消息数），而不是从零重问。缺席即前驱无在飞 ask。
+   */
+  inFlight?: ImportedInFlightAsk;
+  /**
    * 经 `resumed_from` 链解析出的转录源会话 id。service 保证在场——链上没有任何祖先
    * 持有该 actor 会话的候选在 service 侧就已弃置（降级为全新 actor），所以这里不是可选。
    */
@@ -41,6 +47,16 @@ export interface ImportedActorCandidate {
    * actor 走全新解析、不带 pin（见 scheduler 的 ensureSession）。
    */
   resolvedModel?: string;
+}
+
+/**
+ * 前驱的在飞 ask（批次 2-2 carry）：`inputHash` 与新脚本在此 seq 的指令比对；
+ * `messageBoundary` = 前驱静默（quiescence）那一刻源会话的**全量**消息数——含被放弃尝试
+ * 已持久化的部分轮。它是「携带执行」的种子边界，不是完结边界。
+ */
+export interface ImportedInFlightAsk {
+  inputHash: string;
+  messageBoundary: number;
 }
 
 /** 一条可导入的世界节点（world-read / world-run），按内容 + 出现序匹配。 */

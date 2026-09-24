@@ -33,6 +33,7 @@ import {
 } from "@zcode/dynamic-workflow";
 import { formatModelPickerValue } from "@zcode/shared/model-selection";
 import type { RunControls } from "@zcode/dynamic-workflow-runtime";
+import { createActorSessionQuiescence } from "./dynamic-workflow-quiescence.js";
 import type { ModelSelection } from "@zcode/shared/model-selection";
 import {
   buildImportedCache,
@@ -151,7 +152,17 @@ export async function amendDynamicWorkflowRun(
     });
   }
 
-  const built = await buildImportedCache(deps, request.predecessorRunId);
+  // 携带判定（批次 2-2）：前驱结算后、建缓存前，有界等它的 actor 会话静默——在飞尝试的
+  // 部分输出落地，全量消息数才是稳定值。无转录面 / 无在飞前驱时探测缺席（携带门 Q3 不触发）。
+  const quietSessions =
+    deps.actorTranscriptStore === undefined
+      ? undefined
+      : await live?.quiescence?.quietSessions();
+  const built = await buildImportedCache(
+    deps,
+    request.predecessorRunId,
+    quietSessions === undefined ? undefined : { quietSessions },
+  );
   if (!built.ok) {
     // 预检刚通过：run 存在、边界齐全；到这里还被拒只剩「前驱非终态」——注册表说它不在飞而
     // journal 说它还在跑（别的进程持有）。这不是模型能改的输入，按接线故障上抛。
@@ -289,10 +300,14 @@ function startNewRun(ctx: DynamicWorkflowRunEntryContext, input: StartNewRunInpu
   const controller = new AbortController();
   // retune 控制柄：空对象随 launch 下传、harness 回填；条目持同一引用（批次 2-1）。
   const controls: RunControls = {};
+  // 静默探测（批次 2-2）：与转录面同生同灭——无转录面的装配没有可等的流。
+  const quiescence =
+    deps.actorTranscriptStore === undefined ? undefined : createActorSessionQuiescence();
   const entry: RunRegistryEntry = {
     controller,
     startedAt: new Date(),
     controls,
+    ...(quiescence === undefined ? {} : { quiescence }),
     ...(input.toolCallId === undefined ? {} : { toolCallId: input.toolCallId }),
     ...(input.parentSessionId === undefined ? {} : { parentSessionId: input.parentSessionId }),
     // 枚举面在 journal 行出现之前唯一能读到的项目键与标签来源（见 RunRegistryEntry）。
@@ -325,6 +340,7 @@ function startNewRun(ctx: DynamicWorkflowRunEntryContext, input: StartNewRunInpu
       caps,
       compiled,
       controls,
+      ...(quiescence === undefined ? {} : { quiescence }),
       cwd: input.cwd,
       deps,
       // name 与 scriptText / cwd 同一条元数据路：launch → harness 原样转交 EngineConfig，
@@ -436,10 +452,14 @@ export async function resumeDynamicWorkflowRun(
   const controller = new AbortController();
   // resume 同样持有 retune 控制柄（批次 2-1）：恢复后的 run 照旧可原地调并发。
   const controls: RunControls = {};
+  // 静默探测（批次 2-2）：与转录面同生同灭，resume 后的 run 同样可被修订携带。
+  const quiescence =
+    deps.actorTranscriptStore === undefined ? undefined : createActorSessionQuiescence();
   const entry: RunRegistryEntry = {
     controller,
     startedAt: new Date(),
     controls,
+    ...(quiescence === undefined ? {} : { quiescence }),
     ...(record.toolCallId === undefined ? {} : { toolCallId: record.toolCallId }),
     ...(record.parentSessionId === undefined ? {} : { parentSessionId: record.parentSessionId }),
     // 枚举面的间隙元数据（见 RunRegistryEntry）：resume 的权威在 journal 记录里，
@@ -467,6 +487,7 @@ export async function resumeDynamicWorkflowRun(
       caps: record.caps,
       compiled,
       controls,
+      ...(quiescence === undefined ? {} : { quiescence }),
       cwd: record.cwd ?? process.cwd(),
       deps,
       ...(record.name === undefined ? {} : { name: record.name }),

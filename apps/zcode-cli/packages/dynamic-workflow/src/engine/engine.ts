@@ -227,8 +227,6 @@ export class WorkflowEngine implements WorkflowHostApi, WorkflowReportSink {
       runId: this.runId,
       driver: this.driver,
       journal: this.journal,
-      caps: this.caps,
-      pumpAll: () => this.scheduler.pumpAll(),
       artifacts: this.artifacts,
       importedCache: this.importedCache,
       importedWorld: this.importedWorld,
@@ -248,6 +246,7 @@ export class WorkflowEngine implements WorkflowHostApi, WorkflowReportSink {
       markSettled: (failure) => {
         this.runSettled = true;
         if (failure !== undefined) this.runFailure = failure;
+        this.scheduler.openReplayOrder();
       },
       abortInFlight: (error, emitCancelled) => this.scheduler.abortInFlight(error, emitCancelled),
       resolveSettled: (settlement) => this.settledDeferred.resolve(settlement),
@@ -329,6 +328,7 @@ export class WorkflowEngine implements WorkflowHostApi, WorkflowReportSink {
       if (this.importedCache !== undefined) {
         const recovered = recoverImportClosure(this.journal, this.runId);
         this.liveAskInstances = recovered.live;
+        this.scheduler.recoverReplayState(recovered.queuedBeforeClose, this.journal);
         this.importClosed = recovered.closed;
       }
       this.journal.updateRunStatus(this.runId, "running");
@@ -359,7 +359,7 @@ export class WorkflowEngine implements WorkflowHostApi, WorkflowReportSink {
 
   /** 原地 retune 并发上限（批次 2-1；语义见 engine-retune.ts：runId 不变、在飞不动、同值幂等）。 */
   setMaxConcurrency(maxConcurrency: number): boolean {
-    return retuneEngineCaps(this.state, maxConcurrency);
+    return retuneEngineCaps({ ...this.state, caps: this.caps, pumpAll: () => this.scheduler.pumpAll() }, maxConcurrency);
   }
 
   // ——————————————————————————————— Boundary A ———————————————————————————————

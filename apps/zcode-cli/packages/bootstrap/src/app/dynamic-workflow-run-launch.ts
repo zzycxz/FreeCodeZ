@@ -37,6 +37,7 @@ import {
   type ValidateFn,
 } from "@zcode/dynamic-workflow";
 import { runWorkflowScript, type RunControls } from "@zcode/dynamic-workflow-runtime";
+import type { ActorSessionQuiescence } from "./dynamic-workflow-quiescence.js";
 import { createJournalSequenceCapture } from "./dynamic-workflow-run-sequence-capture.js";
 import { isResumableSettlement } from "./dynamic-workflow-run-observation.js";
 import {
@@ -118,6 +119,11 @@ interface LaunchDynamicWorkflowRunInput {
    * launch 只透传，不加工——与 `signal` 同一条「宿主控制面」的路。
    */
   controls?: RunControls;
+  /**
+   * 会话静默探测（批次 2-2 carry）：随 driver deps 下传（结算释放会话时登记在飞 turn）；
+   * 注册条目持同一引用供修订方等待。与 controls 同一条「调用方创建、launch 透传」的路。
+   */
+  quiescence?: ActorSessionQuiescence;
 }
 
 /**
@@ -225,6 +231,8 @@ export function launchDynamicWorkflowRun(
     ...(deps.actorTranscriptStore === undefined
       ? {}
       : { actorTranscriptStore: deps.actorTranscriptStore }),
+    // 批次 2-2：静默探测与转录面同进 driver deps（无转录面的装配没有可等的流）。
+    ...(input.quiescence === undefined ? {} : { quiescence: input.quiescence }),
     ...(deps.logger === undefined ? {} : { logger: deps.logger }),
     // 进程级并发治理器的窄端口：在场时 driver 给每个
     // actor runtime 一个请求级准入端口（下面 runtimeFactory 原样下传）；缺席即 actor 不受闸门约束。

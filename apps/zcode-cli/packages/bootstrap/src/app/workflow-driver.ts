@@ -380,6 +380,8 @@ class AgentRuntimeWorkflowDriver implements WorkflowDriver {
     this.disposed = true;
     this.stallClock.dispose();
     for (const state of this.sessions.values()) {
+      // 批次 2-2：先登记静默探测再走关闭链——修订方等的就是这些 turn promise 的落地。
+      this.deps.quiescence?.noteDisposed(state.sessionId, state.turn);
       state.modelActivity.unsubscribe();
       state.cancelRedrive?.();
       state.cancelRedrive = undefined;

@@ -11,6 +11,7 @@
 
 import { inputHash } from "./hash.js";
 import { importedAskRecord, type ImportedActorState } from "./imported-cache.js";
+import { ReplaySettleOrder, recoverReplaySettleOrder } from "./scheduler-replay.js";
 import { defer, type Actor, type AskNode, type Deferred, type SchedulerHost } from "./scheduler-types.js";
 import { handleSubmitAttempted, handleTurnEnded, type SubmitSeam } from "./scheduler-submit.js";
 import type {
@@ -40,6 +41,16 @@ export class AskScheduler {
   private readonly actorOrder: Actor[] = [];
   private readonly liveNodes = new Map<string, AskNode>();
   private activeAsks = 0;
+  /**
+   * 转录来自前代的 ask 实例（批次 2-2 carry：携带位命中、或崩溃恢复重放的 running 行）。
+   * 它们的 stats 落 journal 时剥掉 `worldToolCalls`——缺键让**更后续**修订的 takeIfPure 把
+   * 它按「碰过世界」处理，携带结果因此绝不进导入缓存（R4：不得免费复用）。
+   */
+  private readonly priorTranscriptAsks = new Set<string>();
+  /** replay 缓存结算的放行序表（批次 2-2）；非 resume 恒空表（全部立即结算）。 */
+  private replay = ReplaySettleOrder.empty();
+  /** 关门之前已准入的 ask 集合（批次 2-2 携带判定的崩溃恢复输入）。 */
+  private queuedBeforeImportClose: ReadonlySet<string> = new Set();
 
   /** scheduler-submit.ts 的自由函数经它查 live 节点、按结果结算（见 {@link SubmitSeam}）。 */
   private readonly submitSeam: SubmitSeam;
@@ -118,14 +129,27 @@ export class AskScheduler {
       const seq = recorded.actorSeq ?? 0;
       if (recorded.status === "running") {
         // 崩溃于执行中：按记录的 actorSeq 位置重新 live 派发（hold 规则保证其准入次序）。
+        // priorTranscript=true：重放的 running 行在原次执行里已带着前代转录（携带 ask 的崩溃
+        // 恢复形态），重派发必须保持这个身份，否则 stats 剥离的纯度约定在恢复后失守。
         actor.pendingRecorded.set(seq, () => {
-          actor.imported?.reconcileRecorded(seq, recorded.inputHash, this.host.wasLiveBeforeResume(instance));
-          this.admitLive(instance, actor, seq, instructions, hash, spec, deferred);
+          actor.imported?.reconcileRecorded(
+            seq,
+            recorded.inputHash,
+            this.host.wasLiveBeforeResume(instance),
+            this.queuedBeforeImportClose.has(refToString(instance)),
+          );
+          this.admitLive(instance, actor, seq, instructions, hash, spec, deferred, true);
         });
       } else {
-        // completed / failed：短路结算，无 driver 调用。
+        // completed / failed：短路结算，无 driver 调用；结算经 ReplaySettleOrder 按崩溃前
+        // 落地序放行（批次 2-2），跨 ask 的观察序在恢复里因此保持确定。
         actor.pendingRecorded.set(seq, () => {
-          actor.imported?.reconcileRecorded(seq, recorded.inputHash, this.host.wasLiveBeforeResume(instance));
+          actor.imported?.reconcileRecorded(
+            seq,
+            recorded.inputHash,
+            this.host.wasLiveBeforeResume(instance),
+            this.queuedBeforeImportClose.has(refToString(instance)),
+          );
           this.releaseCachedAsk(instance, recorded, deferred);
         });
       }
@@ -134,11 +158,13 @@ export class AskScheduler {
     }
 
     // 未命中（fresh）：注册到 pendingLive，按到达顺序在记录节点排空后准入并分配新的 actorSeq。
-    // 分配到 seq 之后先问导入缓存（amend-resume）：命中即 cached settle，不 live。
+    // 分配到 seq 之后先问导入缓存（amend-resume）：命中即 cached settle，不 live。不命中且
+    // 分歧恰好落在前代在飞 ask 上（carriedAt）时，该 ask 带着 priorTranscript 身份转 live。
     actor.pendingLive.push(() => {
       const seq = actor.nextAdmitSeq++;
       if (this.tryImportedSettle(instance, actor, seq, hash, deferred)) return;
-      this.admitLive(instance, actor, seq, instructions, hash, spec, deferred);
+      const carried = actor.imported?.carriedAt(seq) === true;
+      this.admitLive(instance, actor, seq, instructions, hash, spec, deferred, carried);
     });
     this.drainAdmission(actor);
     this.pumpAll();
@@ -154,7 +180,9 @@ export class AskScheduler {
     hash: string,
     spec: AskSpec,
     deferred: Deferred<unknown>,
+    priorTranscript = false,
   ): void {
+    if (priorTranscript) this.priorTranscriptAsks.add(refToString(instance));
     const node: AskNode = {
       instance,
       actor,
@@ -313,14 +341,18 @@ export class AskScheduler {
   }
 
   private releaseCachedAsk(instance: InstanceRef, recorded: NodeRecord, deferred: Deferred<unknown>): void {
-    if (recorded.status === "completed") {
-      this.host.record({ type: "node-settled", instance, outcome: "ok", cached: true });
-      deferred.resolve(recorded.result);
-    } else {
-      // 已记录的失败也要短路复现：脚本可能已 try/catch 过它并据此分支，replay 必须重放同一 rejection。
-      this.host.record({ type: "node-settled", instance, outcome: "failed", cached: true, error: recorded.error });
-      deferred.reject(WorkflowError.fromJSON(recorded.error!));
-    }
+    // ReplaySettleOrder（批次 2-2）：缓存行的 replay 结算按崩溃前的落地序放行——同 run 多个
+    // 已完结行在恢复中并发短路时，事件序与原次执行一致，读面（投影/通知）不闪变。
+    this.replay.hold(refToString(instance), () => {
+      if (recorded.status === "completed") {
+        this.host.record({ type: "node-settled", instance, outcome: "ok", cached: true });
+        deferred.resolve(recorded.result);
+      } else {
+        // 已记录的失败也要短路复现：脚本可能已 try/catch 过它并据此分支，replay 必须重放同一 rejection。
+        this.host.record({ type: "node-settled", instance, outcome: "failed", cached: true, error: recorded.error });
+        deferred.reject(WorkflowError.fromJSON(recorded.error!));
+      }
+    });
   }
 
   /**
@@ -330,6 +362,20 @@ export class AskScheduler {
    */
   pumpAll(): void {
     for (const actor of this.actorOrder) this.pumpActor(actor);
+  }
+
+  /**
+   * resume 恢复（批次 2-2）：重建 replay 放行序表，并收下「关门之前已准入」集合（引擎在
+   * resume 分支做一次 recoverImportClosure，把两样东西一并递进来，不二次扫描事件）。
+   */
+  recoverReplayState(queuedBeforeClose: ReadonlySet<string>, journal: JournalStorePort): void {
+    this.queuedBeforeImportClose = queuedBeforeClose;
+    this.replay = recoverReplaySettleOrder(journal, this.host.runId);
+  }
+
+  /** run 结算：放行全部停驻的 replay 结算（ReplaySettleOrder 的 open 语义）。 */
+  openReplayOrder(): void {
+    this.replay.open();
   }
 
   private pumpActor(actor: Actor): void {
@@ -455,8 +501,20 @@ export class AskScheduler {
     };
     if (outcome.status === "completed") record.result = outcome.result;
     else record.error = outcome.error;
-    if (node.lastStats !== undefined) record.stats = node.lastStats;
+    if (node.lastStats !== undefined) record.stats = this.journaledStats(node);
     return record;
+  }
+
+  /**
+   * 携带 ask 的 stats 剥掉 `worldToolCalls`（批次 2-2）：缺键 ⇒ 更后续修订的 takeIfPure 按
+   * 「碰过世界」拒收（保守），携带结果因此永远不会被免费导入——它的上下文属于被放弃的
+   * 尝试，哈希链看不见那段历史。
+   */
+  private journaledStats(node: AskNode): AskStats {
+    if (!this.priorTranscriptAsks.has(refToString(node.instance))) return node.lastStats!;
+    const { worldToolCalls: _dropped, ...rest } = node.lastStats!;
+    void _dropped;
+    return rest as AskStats;
   }
 }
 

@@ -8,9 +8,16 @@
 // concurrency.limit）；同值幂等（true 且不落库不发声，扛恢复重放期的重复调用）。
 
 import type { EngineState } from "./engine-state.js";
+import type { Caps } from "./types.js";
+
+/** retune 的接缝：state 的既有读面 + caps/pump（引擎在委托点就地补上）。 */
+export interface EngineRetuneState extends EngineState {
+  caps: Caps;
+  pumpAll(): void;
+}
 
 /** retune 走引擎的 state 接缝（兄弟模块自由函数读写私有状态的既有先例），纯逻辑可单测。 */
-export function retuneEngineCaps(state: EngineState, requested: number): boolean {
+export function retuneEngineCaps(state: EngineRetuneState, requested: number): boolean {
   if (state.isRunSettled() || !Number.isFinite(requested)) return false;
   const next = Math.max(1, Math.floor(requested));
   const previous = state.caps.maxConcurrency;
