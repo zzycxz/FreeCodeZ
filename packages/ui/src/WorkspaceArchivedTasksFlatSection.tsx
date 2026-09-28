@@ -20,6 +20,7 @@ import { TaskListRemoteSyncHint } from "@/TaskListRemoteSyncHint.js";
 import { TaskListLoadingHint } from "@/TaskListLoadingHint.js";
 import { buildWorkspaceServiceLookup } from "@/lib/workspaceServiceResolver.js";
 import { DeleteAllArchivedTasksButton } from "@/DeleteAllArchivedTasksButton.js";
+import { useMobileActiveTaskKey } from "@/web-remote-control/useWebRemoteControlStatus.js";
 
 export function WorkspaceArchivedTasksFlatSection({
   workspaceTabs,
@@ -43,6 +44,8 @@ export function WorkspaceArchivedTasksFlatSection({
   ) => void;
 }) {
   const { intl } = useZCodeIntl();
+  // 手机 viewState 命中 key（spec §1.9）。
+  const mobileActiveTaskKey = useMobileActiveTaskKey();
   const confirmDialog = useConfirmDialog();
   const baseServices = useBaseWorkspaceServices();
   const sessionsById = useRemoteWorkspaceSessionStore((state) => state.sessionsById);
@@ -141,8 +144,9 @@ export function WorkspaceArchivedTasksFlatSection({
           const deleteLabel = intl.formatMessage({ id: "taskList.delete" });
           // archived 平铺列表同样是跨 workspace 视图，选中态要按 workspaceKey 隔离。
           const isActive = workspaceKey === activeWorkspaceKey && task.taskId === activeTaskId;
-          const isMobileActive = false;
           const taskKey = `${workspaceKey}:${task.taskId}`;
+          // 手机 viewState 命中绿标（spec §1.9）：归档视图同样保留同一标记，避免列表间状态不一致。
+          const isMobileActive = mobileActiveTaskKey === taskKey;
           const isDeleting = deletingTaskKeys.has(taskKey);
 
           return (

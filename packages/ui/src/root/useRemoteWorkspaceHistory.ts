@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type {
   AppSettings,
+  BotRemoteWorkspaceReconnectedEvent,
   IPlatformService,
   RemoteSessionClosedEvent,
   RemoteWorkspaceSessionEntry,
@@ -36,6 +37,7 @@ import {
   restorePersistedRemoteWorkspaceSessions,
 } from "@/root/remoteWorkspaceSessionPersistence.js";
 import { useReconnectingRemoteWorkspaceLogs } from "@/root/useReconnectingRemoteWorkspaceLogs.js";
+import { getWebRemoteControlBridge } from "@/web-remote-control/useWebRemoteControlStatus.js";
 import {
   reconnectRemoteWorkspaceHistoryEntry,
   type BindRemoteWorkspaceSessionContextFn,
@@ -927,6 +929,68 @@ export function useRemoteWorkspaceHistory({
     const preserveRemoteStartupReconnectEffectSlot = true;
     void preserveRemoteStartupReconnectEffectSlot;
   }, []);
+
+  useEffect(() => {
+    // 手机端 workspace-reconnect-request 经 main 委托 renderer 执行重连（spec
+    // web-remote-control.md §4，120s 应答超时在 main 侧）。手机发起不抢占桌面焦点。
+    const bridge = getWebRemoteControlBridge();
+    const dispose = bridge?.onWebRemoteControlReconnectWorkspace(async ({ workspaceKey }) => {
+      const entry = remoteWorkspaceSessionsRef.current.find(
+        (candidate) => buildWorkspaceSessionKey(candidate) === workspaceKey,
+      );
+      if (!entry) {
+        return { success: false, error: `Unknown workspace: ${workspaceKey}` };
+      }
+      try {
+        const ok = await runReconnectRemoteWorkspaceEntry(entry, {
+          activateWorkspaceAfterReconnect: false,
+          showErrorToast: true,
+          throwOnFailure: true,
+        });
+        return ok
+          ? { success: true }
+          : { success: false, error: "reconnect already in flight or workspace not eligible" };
+      } catch (error) {
+        return { success: false, error: getErrorMessage(error) };
+      }
+    });
+    return () => dispose?.();
+  }, [runReconnectRemoteWorkspaceEntry]);
+
+  useEffect(() => {
+    // bot /reconnect 成功广播（附录D §3.2-1：main→全部 renderer，Root 刷状态，官方同款）。
+    // 重连本体已由委托链里的 runReconnectRemoteWorkspaceEntry 提交 tab/session 状态，
+    // 这里只把事件转发到既有投影刷新函数，保持 pinned/timeline 任务列表与连接态一致。
+    const bridge = getWebRemoteControlBridge() as
+      | (NonNullable<ReturnType<typeof getWebRemoteControlBridge>> & {
+          onBotRemoteWorkspaceReconnected?: (
+            callback: (event: BotRemoteWorkspaceReconnectedEvent) => void,
+          ) => () => void;
+        })
+      | null;
+    const dispose = bridge?.onBotRemoteWorkspaceReconnected?.((event) => {
+      const workspaceKey = event.workspaceIdentity?.trim() || event.workspacePath;
+      const tab = tabStoreApi.getState().tabs.find(
+        (candidate): candidate is import("@/store/tabStore.js").WorkspaceTabState =>
+          isWorkspaceTab(candidate) && buildWorkspaceSessionKey(candidate) === workspaceKey,
+      );
+      if (!tab?.remoteSessionId) {
+        return;
+      }
+      const refreshParams = {
+        sessionId: tab.remoteSessionId,
+        workspacePath: event.workspacePath,
+        ...(event.workspaceIdentity ? { workspaceIdentity: event.workspaceIdentity } : {}),
+      };
+      void Promise.all([
+        refreshRemotePinnedTasksForSession(refreshParams),
+        refreshRemoteTimelineTasksForSession(refreshParams),
+      ]).catch((error: unknown) => {
+        logger.warn("[Root] bot 重连成功后的状态投影刷新失败", { workspaceKey, error });
+      });
+    });
+    return () => dispose?.();
+  }, [tabStoreApi]);
 
   const restorePersistedSession = useCallback(
     async (settings: AppSettings) => {

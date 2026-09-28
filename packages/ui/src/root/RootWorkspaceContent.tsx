@@ -4,6 +4,8 @@ import { ScopedErrorBoundary } from "@/ErrorBoundary.js";
 import { ServiceProvider } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";
 import { WorkspaceSettingsLayer } from "@/root/WorkspaceSettingsLayer.js";
+import { useWebRemoteControlStatus } from "@/web-remote-control/useWebRemoteControlStatus.js";
+import { WebRemoteControlSnapshotSync } from "@/web-remote-control/WebRemoteControlTrigger.js";
 import type { AppProps } from "@/app-shell/types.js";
 import type { RootProps } from "@/root/types.js";
 import type { IFeedbackService, IServiceAccessor } from "@zcode/services";
@@ -87,6 +89,7 @@ export function RootWorkspaceContent({
   windowsWindowControlsRightPaddingPx,
 }: RootWorkspaceContentProps) {
   const workspaceKey = workspaceIdentity?.trim() || workspaceShellPath;
+  const webRemoteControlStatus = useWebRemoteControlStatus();
 
   useEffect(() => {
     logger.info("[RootWorkspaceContent] settings layer visibility changed", {
@@ -98,6 +101,11 @@ export function RootWorkspaceContent({
 
   return (
     <>
+      {/* 窗口 workspace/任务快照常驻同步（spec web-remote-control.md §4）：
+          挂 root 而非触发按钮，保证触发入口缺席时手机 bootstrap 仍拿到完整窗口集合。 */}
+      <WebRemoteControlSnapshotSync
+        enabled={isDesktop === true && webRemoteControlStatus.status !== "idle"}
+      />
       <div
         className={isSettingsTabActive ? "h-full opacity-0 pointer-events-none" : "h-full"}
         aria-hidden={isSettingsTabActive}

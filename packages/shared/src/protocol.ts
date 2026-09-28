@@ -371,4 +371,18 @@ export interface AppSettings {
   settingsSyncFirstRunPromptHandled?: boolean;
   /** 设置页里的临时 endpoint override；正式/测试默认 base url 由 ZCODE_BASE_URL env 管理。 */
   zcodeEndpointOrigin?: string;
+  /** 移动端远控的外部 relay 设备身份；deviceSid 由 relay 注册分配，刷新配对（rotate）时清空换新。 */
+  webRemoteControlExternalRelayDevice?: { deviceSid: string };
+  /** 上次开启移动端远控的窗口上下文；桌面重启后由首个匹配窗口独占恢复（全局一次性，恢复后保留记录）。 */
+  webRemoteControlLastEnabledContext?: {
+    workspacePath: string;
+    workspaceIdentity?: string;
+    initialTaskId?: string;
+  };
+  /** 配对网卡钉选（spec web-remote-control §5）：空/缺省=自动（默认路由出口）；值为本机私网 IPv4。 */
+  webRemoteControlPairAddress?: string;
+  /** 局域网常驻可达（spec §1.10）：缺省=true；停止按钮显式置 false，重启不再自启。 */
+  webRemoteControlAutoEnabled?: boolean;
+  /** 远程访问开放能力（spec §1.11）：自建中继 origin（https://host[:port]）；空=内嵌局域网模式。 */
+  webRemoteControlExternalRelayUrl?: string;
 }

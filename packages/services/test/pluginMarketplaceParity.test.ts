@@ -26,9 +26,10 @@ const marketplaceUrl = new URL(
 const bundledManifestUrl = new URL("packages/shared/src/bundled-plugin-marketplace.ts", repoRoot);
 const snapshotUrl = new URL("config/plugin-marketplace/official-snapshot.json", repoRoot);
 
-// spec §10 决策:computer-use(zcode-cua-plugin)runtime 依赖 koffi/sharp 原生包,
-// node_modules 不进 stage 白名单,暂不 vendor;就绪后从本名单移除即恢复 C3 全量对照。
-const DEFERRED_DEFINITIONS = new Set(["computer-use"]);
+// 电脑控制能力补位(2026-09-23):computer-use(zcode-cua-plugin)已随
+// docs/spec/computer-control-capability.md B1 vendor 进 apps/zcode-cli/dependencies/zcode-cua/plugin,
+// koffi/sharp 原生运行时走 staging 白名单携带——DEFERRED 名单清空,C3 恢复全量对照。
+const DEFERRED_DEFINITIONS = new Set<string>();
 
 const OFFICIAL_MARKETPLACE = "zcode-plugins-official";
 

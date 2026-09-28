@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "inputHashEncoding": "UTF-8 with CRLF normalized to LF; notice and source snapshot hashes remain byte-exact",
   "scope": "Production dependency union across current workspace projects, copied source/assets and native tools; not a per-installer SBOM or a certification of all licensing obligations.",
-  "noticesSha256": "35b7da1799ec1ae564fb6b6c73e13435f7d2139189b664bbd8943e43538f1d1e",
+  "noticesSha256": "9393f35d677d95d273dd7496fcd61045a9692722d3b660c233bd1f03c00d604d",
   "inputs": {
     ".agents/skills/agent-browser/references/authentication.md": "e2c3b0f4a1dc1368dee821f03c000d818a48421d09f3872525dddffe73f2112b",
     ".agents/skills/agent-browser/references/commands.md": "17522fc56d742663f47231ff06c4811abc87e12c7f78e11f94d253ddd540a909",
@@ -224,28 +224,81 @@
     ".agents/skills/react-best-practices/rules/server-parallel-nested-fetching.md": "4d9c44e579e1286013acf5cb5f65b04297d2b68909f44f8163804656514a78ff",
     ".agents/skills/react-best-practices/rules/server-serialization.md": "4d025c42043c56e6355196a2e885d168cdb15248d0797146c9db838a57b34946",
     ".agents/skills/react-best-practices/SKILL.md": "b7d246acb440bee224ab33614979a5b8debe5fdb13d0304967aa19358eb69d9f",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/libvips-42.dll": "9645c466adf9cb0a4f0f65439af0826bdff1a96988c35b16d7f94de9d7aa4d86",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/libvips-cpp-8.17.3.dll": "1c40d30678918255443fc9765d699b9330ad99924f6d58074ccfa080e3c3e85e",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/sharp-win32-x64.node": "872dfade8ec6f3247576fca443ee36968c7b72a89c4ac8e925f08fdd62323a34",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/LICENSE": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/package.json": "f94caf1239a3fa72c5da4a3a81f4410d517550159da15ad8eca1543324a0c3da",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/versions.json": "e823074bfa33ed7b1861b797dd3c60d7ef8c34cd2faa9a7d22ec32dd6d6ad8ad",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/detect-libc.js": "5de6a1c1abec8bba5ea1261cf819d83a73c92ebe72b879ae48c59ca12320a462",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/elf.js": "0e8820f00ee11d179d94894d4f97a6e87c34ab59e5dd4d3a571dfabcecf043af",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/filesystem.js": "5c98fb66b559d0b4fa82c7a3e39d9ab6840f022c4c73e6b1a73ac6d16ec13fd7",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/process.js": "f37dd0ead9f70b50c6f5529c600e1cdf076e3c3bc8e6b4a0a9820a8d65244628",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/LICENSE": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/package.json": "ee88e5b954fdf3a8480b1d01ef767d68d8ca2c6da269f58c5cf1c5550e9aa2a7",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/install/build.js": "37f7c9591d75dbc5fe734c5a196a46c355b3d7de5134260ba011efed8433a718",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/install/check.js": "31fd360ede9ff3e80d643faff6c4570d0b2b5c621dc421b6c4086dfe86ce981f",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/channel.js": "4a699621c111427f9f6b3b767764a292f6a358616de2866e0078475830420f42",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/colour.js": "024d2e9c04d50b492e91ae781da539c837fcaf40a585508c043356fdd9e69297",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/composite.js": "73f04ab765a11bfc72771dbd0a6324e8e34ea354d16108cc1277bba4e80dd523",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/constructor.js": "b38f3e7ceecc305a8f81f278bf9219cba966993b8c2d7cebafdb8e8d5005760c",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/index.js": "5e30578a16290fa0855c32fe3d544ce4f26c147de6bad69cffaf7bc416a2919a",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/input.js": "d88bdf5d807ef57ce8aa5d9be29bc7b9199974eac385bf559f19d5fc06bd632a",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/is.js": "7ecb71679b5b58e7ddf7e14fa697ff6a31bbe9ef107745170095031519e93463",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/libvips.js": "ae8cbc8008bf88f5100ca56729ed43d45cd88316e030dc2eed62e142f657cd79",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/operation.js": "01019d62cfb83c5f6192a65a4a97635214e5dc61da07c51be59b8216ba907a7a",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/output.js": "71cec9ac95f3db764ee4d2e26eec1deb16da63c47fdd352f6a41af4dbb0f1831",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/resize.js": "d85081a35bb1195ff6f057d2db4343adfe3241abccc7e277d13673a116fea1ad",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/sharp.js": "59e9436f1c62a58b8781acb3803e55114bada9984cc7c39b9291769155811cd3",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/utility.js": "ada1854f397f54ee09286094a4f4cd9a4d4af9f4ddbaae3b4f477edbd8c1fd14",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/LICENSE": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/package.json": "e6be69319929151be3aa240bf1485f25a3477cb6d2286f92510b9fceb3cbef26",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/binding.gyp": "dc753e7ef9a8b393e14ed6a6fa17baae89e6edb4f39740b1cc1e9d06cbd20478",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/common.cc": "9102e55ed0c5d3027fad3df16e751b5424265d32201568395958862ab3a3f6e1",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/common.h": "44940aefc7ec601e316dad5c3882041c56d6070f84cc2b2871f6236b75df5cb4",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/metadata.cc": "04366c98d90cf3415a50cb5f47a07c3a7f25ace2a67d603e72035807f99af33f",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/metadata.h": "bd50ae9c3e55d9ed5f8b3c4e09d9a79f496ef665b6c993ff1b2c7edecc32d03a",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/operations.cc": "db97d0ca7ec042279cf5b4331fdc19466c20318ca4bc52fda4e3fdc13781a8c2",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/operations.h": "80a4f350793f657c10769e2b4e82d3b103f5d4984dc27d10e592e14b8cc1b34b",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/pipeline.cc": "8fa9d1f70f46ea0f27f30203dfa1ebe8df8a5679b9d93a8f8dadf72dd1fa6e59",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/pipeline.h": "89f81e2d0308ed696a0f39099d42b7867b8ffb5fcd4969c7dbfb3e6778c0de23",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/sharp.cc": "9f407b50bb2d02e5eb711b769f05d3e6659028430e055c4271e5ab1593f5a257",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/stats.cc": "084df95f2cc863e522c35e5da31976e1dc4d370d40ab6d2a0b398763208af4ea",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/stats.h": "db854f0c3c4a0db1751021ed676413c6d5ca00becc08bdc13258b29047450b8c",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/utilities.cc": "7141d5bb1e7b1bca0fdd7d14c30b27b2a4b3f177441b04106e460e013cd061ed",
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/utilities.h": "0b126ab63cf1aedf8e71e6cb8179899d3ef02c46419100e847b2ca4284b8901b",
     "apps/zcode-cli/package.json": "6c48017b05d8a7215c5bf7dea12f50edd1487bf5b8b22e11c21703d32e8f7742",
     "apps/zcode-cli/packages/adapters/package.json": "da99aebdd4d463b7705a2a0febc12adb9ad7e792f74f4ba7c4e258b8bb6a13dc",
+    "apps/zcode-cli/packages/android-emulator-plugin/package.json": "ff715b80126b5d372cc6fdeeec42e2ba160493d4b05ef1c403d0e60fccbb9ebb",
     "apps/zcode-cli/packages/bootstrap/package.json": "0e175ac8b64cd5b478c15e6bf71fb3940c17ddb7f95fb7cbcdd426bb61ce5bef",
     "apps/zcode-cli/packages/browser-use-plugin/package.json": "b7ecf0a222844419da9a27c66f6bcc0e17bdbb2db187183133c4fb0932b3d59a",
     "apps/zcode-cli/packages/cli/package.json": "81a0c3dbdff4fb6598ac5b7336578de102c54eef914e06f0f3a65bc1b6e734b9",
     "apps/zcode-cli/packages/contracts/package.json": "7443f402f58df867ad5f776b2e94823d2b3bb235b16d0155f7a939ba181aa3ac",
-    "apps/zcode-cli/packages/core/package.json": "abf5a6c8715fe87ea4b5ef3a48b225f94980dc386fe2ccfe98844347aa16bcd8",
+    "apps/zcode-cli/packages/core/package.json": "b3b3134d5ca6e12c9f9786850d7d0816636c40480faf60dfb1e44731cc6552e1",
     "apps/zcode-cli/packages/core/src/tool/handlers/generated/bash-command-registry.ts": "60fa5acd9f5c357f4e51b1d1e944ee39da92680e4bc5e98dd708f1457fcf612b",
     "apps/zcode-cli/packages/debug/package.json": "16e6a402d995d3a56ed6e97665cd81f0dd22f03280350d5e0a70c14a2cc4b2ca",
+    "apps/zcode-cli/packages/documents-plugin/package.json": "49d8a05b60c38c054a5050d7bb48b2d9c051139412c7feba5074a869a0e9a8b2",
     "apps/zcode-cli/packages/dynamic-workflow-runtime/package.json": "f8dab813c3b9f236b593d4d04f1b78e511e15d586cb7dcdd74147e7d1c22ec5c",
     "apps/zcode-cli/packages/dynamic-workflow/package.json": "aac5891463ddeb419ff6f73fc95b7c407964b06f8aeff66b6a9ba4d999164f99",
     "apps/zcode-cli/packages/i18n/package.json": "025e4620d80f39cac3df06249866fcaed531615b6b8a4c4a727c4557066f7b1b",
+    "apps/zcode-cli/packages/ios-simulator-plugin/package.json": "982a07175299246714da534a321a9e4ebde62c4561a2bd8def7a84395b987146",
     "apps/zcode-cli/packages/node-repl-host/package.json": "1f593b58799ead7927275a71bcda496ad4861c491ae639b721830594171fa96b",
+    "apps/zcode-cli/packages/pdf-plugin/package.json": "e24650553f14634109fd5ed849901ae199623c95368daaf40f301eb0851be84c",
+    "apps/zcode-cli/packages/plugin-creator-plugin/package.json": "f1e80cecd4989b4a1f01f600f108a1b2701d1503e299fab1ccaaf7dac74e1f98",
+    "apps/zcode-cli/packages/presentations-plugin/package.json": "c278f98233a8c3ffa36fe8ffbdd5e25c031b2a476ace08853575c211f6936c99",
+    "apps/zcode-cli/packages/restore-legacy-sessions-plugin/package.json": "ee180a70bc31e945dfa798fd2592a3150cd2e55d546d44be361a90a24cb33fd3",
     "apps/zcode-cli/packages/shared-types/package.json": "6616fb50cf5b4b854273d09411f38857c17df5d4b4abebdfe5d9601e7341e451",
+    "apps/zcode-cli/packages/skill-creator-plugin/package.json": "9477f2dbaf0de233856a8d71f8aa1e4fac95e189358887df5c3b7c13672727a6",
+    "apps/zcode-cli/packages/spreadsheets-plugin/package.json": "c8558ec3376938ef70d4e8bf9a25c0382aec9ca0a9e29b38da99bd31c9637db2",
     "apps/zcode-cli/packages/superpowers-plugin/LICENSE": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
     "apps/zcode-cli/packages/swift-bridge/package.json": "958674fcd44c789564ee672b0e6c687f1f900f4286174280700ddfb442d23906",
     "apps/zcode-cli/packages/tui/package.json": "097d5896b0b37a455eafaf015f21113dfbea7b05bb3f92666f423f7753720eb1",
+    "apps/zcode-cli/packages/zcode-guide-plugin/package.json": "b6b6c4a0097496f5bf8848ad4fecea1c2e9f8a94d4a3b962217a74a6253deacf",
     "apps/zcode-cli/tools/prompt-trajectory/package.json": "7f161fc87f36691f01eb8c2034bd89cf28107da36db02bc20e76f059edd36af6",
     "apps/zcode-cli/tools/typescript/package.json": "23d7e50d2089d205ce3022c5bafbb6b3e31d000e41ac678a5934e0b72627cf3a",
     "package.json": "2d9d6daaacb28f970fb661176c4df22d0f86b47f4b7a1ba31e91ce978d58ea4f",
     "packages/client/package.json": "e76f441549130dc3e5e68072a36b6cb9044e19a6625f1e813f19a4def2b1b689",
-    "packages/desktop/package.json": "b4036048e26b43e413e71b89f1dacdb9a8869db87e5df0e338b93df4fbc4a65b",
+    "packages/desktop/package.json": "65efdf416f0219a06b3ccf297299736cf70ca9c6149188e59d685241a05d59f8",
     "packages/desktop/src/renderer/public/material-icons/3d.svg": "9527b849f0fba57ca7640e2717b3a19cb5f5e046712cbbd8b75d73af338c68fb",
     "packages/desktop/src/renderer/public/material-icons/abap.svg": "1335bd7eb9a0ed49deb622330d680c2e97731726a7a5eee8e4f46dc1e5db4de4",
     "packages/desktop/src/renderer/public/material-icons/abc.svg": "d1a68020e8f020ef29dca5f94dc8613b7ae8fb5b212d8b1cc23b0f975ac7acda",
@@ -1418,8 +1471,8 @@
     "packages/rpc/src/remote.ts": "a11e072d5df7e1c1ce64814a68f72afc081246b364f0da409b5c9d22bc815957",
     "packages/rpc/src/serialization.ts": "e949418e1cd17cc863c147fc8d1ff15237e1b5f0cb8e3344fd2a9ccfae9d54e7",
     "packages/server/package.json": "0a6119239c88af79bc766e3c023eb4437105a0d35b03ecca1137d1e688e60a90",
-    "packages/services/package.json": "8d7757a8d8328ef827925cb730c28ce21fed20e27ddd83f2aae7b447229bd17a",
-    "packages/shared/package.json": "6394da63b39d6bf4cabadf803a4f26cf9758de944ac6e0cc5c4f0dc303f66b77",
+    "packages/services/package.json": "a2acc114239fd4d716b07ebe2a0f709ba13985000b1969e6b3275adc3e8263c8",
+    "packages/shared/package.json": "ae3e80d0b906d3f73b4b66559fb441c282c03149899d6ca02307ddcebe4c3e81",
     "packages/shared/src/zcode-protocol-v4/wire-codec.ts": "ac2494a3acc795c809c94ee9393f50271a9c2a0fd33813459e5ab93842ceef75",
     "packages/ui/package.json": "220e916077604008bb6ffea19d6bdf7148c4b09472bea251248a230ba3c69bf5",
     "packages/ui/src/components/ai-elements/agent.tsx": "830e7ea9e927de1524851337f1d35bda0e5690e3e4fa307fff854b60006b16c7",
@@ -2666,12 +2719,12 @@
     "packages/zcode-server-cli/package.json": "6e294c4409cb90863d85b2e3d60f92766b156ccee577ebfeaffcb85e94194004",
     "patches/@ai-sdk__anthropic@3.0.81.patch": "d3a7c381eba7f5157f765a0528003af17cf84544911dfb7412c7800168e01c18",
     "patches/@ai-sdk__openai-compatible@2.0.60.patch": "9632fe9d821b3dc20939ae509cc35b968d90d018bbd1d812390718898182a38b",
-    "pnpm-lock.yaml": "d3d6a67b9a7b254939c36e7a7accffb3285f2f46d89fd2143cf71312f71f918a",
+    "pnpm-lock.yaml": "c640f3758f398eb3a5cc4d0786318e6529617b9d09009fcf6d5e1156defe3aa8",
     "pnpm-workspace.yaml": "f18a18233e82cda1dc40be61bf2ad1bc99de25de63ad0be64bc652761a638372",
     "scripts/license-texts/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
     "scripts/native-search-tools-config.mjs": "281d368464f61363fa2d8ab74f416962fe730dd0a0572db5564475f876bb65aa",
     "scripts/remote-native-search-tools-config.mjs": "472322a66f84c7452f96aa9e16e9c4e0600f7c2588a03dc6bc869229161b1cb2",
-    "third-party/copied-components.json": "a411ef6ee22a25e910d2ccfb5dde572a116174645abbda9e99f86946deeb2072",
+    "third-party/copied-components.json": "42f5bb2fae700001d76f44f3983d8c0005ad296684922862804e5059acbef45a",
     "third-party/embedded-components.json": "9586ccca15897f56d4ca1d703dffe9e02880fedd766c1dff93f7ac1f52ea891a",
     "third-party/native-search/licenses/00373c9bf56a894b2ed67586596bc1e8b0630cabbaf1ab46c75fc754b6bcd1ce.txt": "00373c9bf56a894b2ed67586596bc1e8b0630cabbaf1ab46c75fc754b6bcd1ce",
     "third-party/native-search/licenses/01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f.txt": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
@@ -2828,6 +2881,7 @@
     "third-party/upstream/5f787c1dee3c56547f09ccc2906ab5f5293c4d8dd6c8654e573216c38e908dbd.txt": "5f787c1dee3c56547f09ccc2906ab5f5293c4d8dd6c8654e573216c38e908dbd",
     "third-party/upstream/66aa9feab8bb39aceebd69f2a357015d57ceab486d3c7a19ff8d3d4110a6d101.txt": "66aa9feab8bb39aceebd69f2a357015d57ceab486d3c7a19ff8d3d4110a6d101",
     "third-party/upstream/6ae13df543a24b3fb18c25182cf4f084132f799ea9225410f7037888401b7469.txt": "6ae13df543a24b3fb18c25182cf4f084132f799ea9225410f7037888401b7469",
+    "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
     "third-party/upstream/75815e3bf6484201a3c3d17a1bbf10f2e8e3237f84df10a2357ea896db2a81d6.txt": "75815e3bf6484201a3c3d17a1bbf10f2e8e3237f84df10a2357ea896db2a81d6",
     "third-party/upstream/8405932022a556380c2d8c272eff154a923feb197233f348ce5f7334fb0a5ede.txt": "8405932022a556380c2d8c272eff154a923feb197233f348ce5f7334fb0a5ede",
     "third-party/upstream/8802fecf9da4367bc23bcf20b21cc143785fc6c92b152f3fa7fbe6ce08d344d6.txt": "8802fecf9da4367bc23bcf20b21cc143785fc6c92b152f3fa7fbe6ce08d344d6",
@@ -2844,6 +2898,7 @@
     "third-party/upstream/a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2.txt": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
     "third-party/upstream/af0d7d2cef91fc243cf4ad98570b03d1f26f5e0227cad0f5f4a7376e2feb3160.txt": "af0d7d2cef91fc243cf4ad98570b03d1f26f5e0227cad0f5f4a7376e2feb3160",
     "third-party/upstream/b1688598c3e32605b3973902a546225e0159349c05a0f74db67f76e08e116e65.txt": "b1688598c3e32605b3973902a546225e0159349c05a0f74db67f76e08e116e65",
+    "third-party/upstream/b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1.txt": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
     "third-party/upstream/b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529.txt": "b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529",
     "third-party/upstream/ba8f810f2455c2f08e2d56bb49b72f37fcf68f1f4fade38977cfd7372050ad64.txt": "ba8f810f2455c2f08e2d56bb49b72f37fcf68f1f4fade38977cfd7372050ad64",
     "third-party/upstream/bdb0a645ea18c60507d0368379b1ac5474b92255fcc2d115e07486a7672ba526.txt": "bdb0a645ea18c60507d0368379b1ac5474b92255fcc2d115e07486a7672ba526",
@@ -17918,187 +17973,187 @@
       "files": [
         {
           "file": "packages/ui/src/components/ui/GlmMonochromeIcon.tsx",
-          "sha256": "f1691224d23be4359e1a79bcd81b9dd5ee19c0177b3a4bf750332c620b98ae5c"
+          "sha256": "42a8fbf15562fa4ac935a920cd9a9bb31c984d23e08331ba19c6d8174cc5a223"
         },
         {
           "file": "packages/ui/src/components/ui/README.md",
-          "sha256": "75b3a7d95cb683c0e97d4212af3a984359031f9b1f0c5d373b2c9ed38e4bda40"
+          "sha256": "05610a7a90f17c5548af8d6be4341f32a1f983288418ea2a10470e4031f57174"
         },
         {
           "file": "packages/ui/src/components/ui/ZCodeAboutLogo.tsx",
-          "sha256": "1e5b7c2e8a9dc98a3c597cbe34122521319eaeb89825e4c41641e77715d1407a"
+          "sha256": "80c0fbcdf136e3535f0b5b1c747efcecc299c45bfa3531710755df86126756cd"
         },
         {
           "file": "packages/ui/src/components/ui/accordion.tsx",
-          "sha256": "4a72f846da91bdeac1dbba849572132b98c8b96f0b03e611f46d0f3e41791947"
+          "sha256": "7491484a7866cebb34653bfe579029a66372ad865eb4663416d55a36139110e2"
         },
         {
           "file": "packages/ui/src/components/ui/alert-dialog.tsx",
-          "sha256": "3dd074ddbfcefdad6a6c231b6cf055bbcd5fce40bf8feecc6950b60d9ab53b81"
+          "sha256": "bbb24197b2b9e1a6dd4f5f600ef416d9127a66ca0cc7078ddd8ab6ced3a8eab8"
         },
         {
           "file": "packages/ui/src/components/ui/alert.tsx",
-          "sha256": "5f29338fc9b767994b39849edeac71ee91dc1fd4a875252b40c5cf9001b1c0a7"
+          "sha256": "f433e7fda39549423b5b6646b746b37f04211116bf67c36031b6040c51f083fc"
         },
         {
           "file": "packages/ui/src/components/ui/avatar.tsx",
-          "sha256": "5d87a3860936de1795099bc995ca64b2d5a9179caa74385b4e5de5fd3ee59725"
+          "sha256": "741c0002a5a159376233d6f3c6520fad04e784693264545fc979526ed47b816c"
         },
         {
           "file": "packages/ui/src/components/ui/badge.tsx",
-          "sha256": "d4966b2604bc7acf38bd3aecc899b08a6aec8b62552f680d4e1fd4616d2198b9"
+          "sha256": "4a039398c99e7b9f81ddd869580a866ca62843cbe57524596e93fe7de29e39b9"
         },
         {
           "file": "packages/ui/src/components/ui/button-group.tsx",
-          "sha256": "3c455ad047c87097070c4e107bc0e58dd087531e85b1c60f28f1f526dd9a0061"
+          "sha256": "36df8620250ab5a00139871a834afb4891dd855514c1d543648a19675bb6d51e"
         },
         {
           "file": "packages/ui/src/components/ui/button.tsx",
-          "sha256": "3bf0b1573c940999f875a1dd5e67a32e7d9bcb3e320774fa8277f5c00748b32b"
+          "sha256": "30c0e05a69d862e13becddfb14b3a4e74720abf1bccd95a99d5316a73cdeb069"
         },
         {
           "file": "packages/ui/src/components/ui/card.tsx",
-          "sha256": "cdfb5121c2647a4b496a377609acb05d14513f7975858482b911a3873c3695b3"
+          "sha256": "e9582b38d29b84066fda885564c1e024813fd4a3aafe171f77a911480e651f43"
         },
         {
           "file": "packages/ui/src/components/ui/chart.tsx",
-          "sha256": "272efec5aa60d34665104b45341d9f2b8cad4480070bca91e9d5409713b6fecd"
+          "sha256": "53ba9d45e0b7469032edb6ec4e9501a71eb3325412da3c39f936f9121b67e2fd"
         },
         {
           "file": "packages/ui/src/components/ui/checkbox.tsx",
-          "sha256": "5b3cb5612ed7654218e1cdd86fc41c7b490475721948d50a603996133245bace"
+          "sha256": "e6f5f4020fdbada56f05bff3b0ff5fa60255b61627c21d82485380c25f82fb67"
         },
         {
           "file": "packages/ui/src/components/ui/code-viewer.tsx",
-          "sha256": "dfccd2feaccc62af84f3e92dc5b8e25e7025b6c64cbd16f177586b1dc763affe"
+          "sha256": "23d35cd9af0fd0d85de22898cb3a38c6138ee54f876b30828dd9b7c4e44b6503"
         },
         {
           "file": "packages/ui/src/components/ui/collapsible.tsx",
-          "sha256": "e00f7ad26cc4c168f8c6b20e6078512807ddca05e375e47b6c9dbbd50fcbef52"
+          "sha256": "aacb5c57be0eb5b35c34268b61d48f36e1c6721d53f62ff4164795fa8ed84db1"
         },
         {
           "file": "packages/ui/src/components/ui/command.tsx",
-          "sha256": "7c754bc80704163ce505d08d961a5a4b3e57107e7d53ea319483a896d448cbdb"
+          "sha256": "03e61cca2e7880aa4dae9da0c7b1587f2f11820c68554c1578d14abfbbc15083"
         },
         {
           "file": "packages/ui/src/components/ui/context-menu.tsx",
-          "sha256": "3820461fd68ca7a345fc919ab356bdefbbead23abb3ac0f4e8d46898f7522a6f"
+          "sha256": "c1b0a3a641ad5f2d96cae997c7374dae9e8c50a3b00d3a26af47e9790361fcb4"
         },
         {
           "file": "packages/ui/src/components/ui/dialog.tsx",
-          "sha256": "53dc10761bd894a5e86278d9354aac47920c81b4aab8b414b840af095f7c0b31"
+          "sha256": "606b7a42e5af3e0fa0f82b7a3382fa59c0a68afa2ec47d5a19ddc71d10020312"
         },
         {
           "file": "packages/ui/src/components/ui/diff-viewer.tsx",
-          "sha256": "f02208b316e6dc4043ed1794455422bc74cdd521285fcac5a2c0d589c2eb9af2"
+          "sha256": "f7c6e3c34a115a9be92fdcc8ebf04cf4ff1eacfeef224533aaff64358ed6d460"
         },
         {
           "file": "packages/ui/src/components/ui/dropdown-menu.tsx",
-          "sha256": "34c5b79489756aa3467ec26d2b44587f3d47eafcb2cb16402686aac15e4debdb"
+          "sha256": "95d17ee733b4cc0ebfdd6f8302034d5407c683b6f94dc5aca55a80cdd40e99a9"
         },
         {
           "file": "packages/ui/src/components/ui/flip-metric-value.tsx",
-          "sha256": "ce2d6cf063003e1023191b0fa4e3eb9b365e04a14eb0d498b897326600bf4071"
+          "sha256": "90f67a751588cc1e3cf14acf5cf555018d35e627cda33cfd6cca26e0eca0f57f"
         },
         {
           "file": "packages/ui/src/components/ui/highlighted-lightweight-diff-preview.tsx",
-          "sha256": "c04bb6009683ab74cb72ff8f1e1157ffbdd06be4a46dc3c725c63e0bc43fea72"
+          "sha256": "ffdc29d908e6b645d26aa27eb87fb53ae4a5a61613a9c8e4ceb007c63647fe74"
         },
         {
           "file": "packages/ui/src/components/ui/hover-card.tsx",
-          "sha256": "28e49fb55a3fd4f5bfc5d61f336854304bc92c5a7098305b208274913b226f3d"
+          "sha256": "5bc09e9b38ce0855e926888bd8fb36abf4cbc1a480ec59bb350c9d7b3832a0e4"
         },
         {
           "file": "packages/ui/src/components/ui/input-group.tsx",
-          "sha256": "72e8c0775e55525efe49dfa42ecba7b9244836a78c31be0dd576d52640d4c3c9"
+          "sha256": "afc80df0ae6242443781736a6b8c451bd0a08aa4a6711be2785fabb35ff5abb4"
         },
         {
           "file": "packages/ui/src/components/ui/input.tsx",
-          "sha256": "946d37bdf07c81e70ad13242b904c27618d5d09f7c17a74f6b6c8cb613fa93dc"
+          "sha256": "088bd900a05018ed60bf1d2f1c6b1a4aa08a9cc06ddc53fc148b3dc4695509fc"
         },
         {
           "file": "packages/ui/src/components/ui/kbd.tsx",
-          "sha256": "a7fabb33892c759337ae5c936d3b62f27fb2356a5a6340dbff8bfbac6f0a359f"
+          "sha256": "44b8770e737229021413944b37698f2a6eed7bd4a2ff25baf82febf2b8cfb593"
         },
         {
           "file": "packages/ui/src/components/ui/label.tsx",
-          "sha256": "717bd1167a7c8c136abfe0b3e23e8cfcb38abbe51b04c74d6d01ba1ea0b53fa5"
+          "sha256": "4f30a6da764bf4e71db7062bebc25c0d138f924ba48f3269ada43838afe5ef48"
         },
         {
           "file": "packages/ui/src/components/ui/lightweight-diff-preview.tsx",
-          "sha256": "7d1ff2a02815d988f5ffd2d6549848920c98488a4dba43f67ba9d81a3da49d01"
+          "sha256": "53d7872783b515d3644e143ce1d42e58bd4f9e2998eb85eef74fe68271c6fea0"
         },
         {
           "file": "packages/ui/src/components/ui/pdf-viewer.tsx",
-          "sha256": "19ba82ab97a84599bb99178de85a4d5c6a89da6924ba55a0dc14f33286187fdc"
+          "sha256": "bb49c1ea2b64ec99ad5d0518befb200559e7dd0e7d73d389bbb4cdd78037fd42"
         },
         {
           "file": "packages/ui/src/components/ui/popover.tsx",
-          "sha256": "e23c9238865ba7e85965ebed89e7328cfbdbbdcc2264156c775d51e9e264b484"
+          "sha256": "e7fe4b8c459d34f96f58a67e3922b8247b60e6025569437469294c989387d060"
         },
         {
           "file": "packages/ui/src/components/ui/pptx-preview-viewer.tsx",
-          "sha256": "64d7ed9e83cad0e98ba56ff2c49be2db335aedca4230b207cba5a383a15cb93d"
+          "sha256": "423e61926c66f213ddb66414bb75b84ede45ae6065889f922b8089701f83af9a"
         },
         {
           "file": "packages/ui/src/components/ui/pptx-selection-action-bar.tsx",
-          "sha256": "6e7187b7f527e4a97df117cc0df85d2dd8f4408d7415aec2e4907db39a331efd"
+          "sha256": "0ad91e8aa09bbe2eea47f8838bc42d35bb563a6552accab80332da46d3c49706"
         },
         {
           "file": "packages/ui/src/components/ui/progress.tsx",
-          "sha256": "ba88ffa75ad78eaa23519c7af84e11679ca2b8e4508c57759d769462811c0ec5"
+          "sha256": "84994760fbdcaa037f6874e0601adaeab4f0431e6aab40024171577547116df3"
         },
         {
           "file": "packages/ui/src/components/ui/resizable.tsx",
-          "sha256": "83425c34fb76c35276e6dbf8d7ad0ee860b4536ba9d4cfd8e8a60aec3b7cabc4"
+          "sha256": "2b02e04e6a948968c2f64a893a0e48ce4113449f9239eb142b282555c1d66fc7"
         },
         {
           "file": "packages/ui/src/components/ui/scroll-area.tsx",
-          "sha256": "83999d597a4a417aea402e833884826539b9aa1bd1ec966aa2f6dab9a97afb3c"
+          "sha256": "bbe8696bc5082edcab84b6f7c4b863bf5f4aed953e5bea02d3097fb8bb32e7a2"
         },
         {
           "file": "packages/ui/src/components/ui/scroll-fade-viewport.tsx",
-          "sha256": "50e5984232b6a7d59e872aab4ebb36ae837e2865e3a770adbc234b61c2531da1"
+          "sha256": "ca96b3553a73ecc9f8030a97523f55e7a891dca634b04e7eccec73945c4ce296"
         },
         {
           "file": "packages/ui/src/components/ui/select.tsx",
-          "sha256": "e6d73ae0bf6916256fd86005d8a94e3dfb004c8107f51882cfd2d52e7751ca09"
+          "sha256": "cd317ce93deeacafc4c612d175c21c89f6dfaad016f722e6dcc1495d5289a802"
         },
         {
           "file": "packages/ui/src/components/ui/separator.tsx",
-          "sha256": "31ade0b9a0eca6689226c94d479352416ef076859980a976422a8af17879dee2"
+          "sha256": "a7963e6d753f24c414db374afc56f790f261c3c65b454cfc63f2e9ff6ac09891"
         },
         {
           "file": "packages/ui/src/components/ui/spinner.tsx",
-          "sha256": "96bef1c5ef7e582de503aac8402b55f3539cea37bd2c186a12a4f2cb7605468e"
+          "sha256": "3e18b1e73e3fedcb1f800949edf9b3759dee22951731758ef70d3609b7fe7502"
         },
         {
           "file": "packages/ui/src/components/ui/switch.tsx",
-          "sha256": "1a6490eb3c47b3a86b76c8469e5702608ea57da7853df5de00fffa9a4a472adf"
+          "sha256": "022d9b43e006f53b77425d81a8b10c23fcf124401ec27709a81240756db9db00"
         },
         {
           "file": "packages/ui/src/components/ui/tabs.tsx",
-          "sha256": "adc59a0469c80118e9d60c08bf0222d55664ef95e6c522496b5c201011b347f0"
+          "sha256": "6328477de966a5ddea5b1864d61bfd7eba749484ef019eccf55f40886c3efa35"
         },
         {
           "file": "packages/ui/src/components/ui/textarea.tsx",
-          "sha256": "a839574ce1301fbaa9ba917fdb980900eb9118bffa7c6c4e469f3293b122ed30"
+          "sha256": "d5a72e3e2ac2725d469bcce5f996b018ee8d5ae263cc82e8a482b3b2d16573ff"
         },
         {
           "file": "packages/ui/src/components/ui/toast.tsx",
-          "sha256": "0f8894c6fc30e4cec44caa4cffe70e111f9c41ff9bf3699ec8e91696ea631671"
+          "sha256": "40d726d6499a8d1176d02771932f66188bc69b73ee4f0dfc6cd67b6c5ddfc990"
         },
         {
           "file": "packages/ui/src/components/ui/tooltip.tsx",
-          "sha256": "301dbf3a6f8b1bc496f9bdc6fbc5fe6202ed373182897f39cd1ecd19b00fdfbe"
+          "sha256": "d568fef992eeabdd8263a3dcb890edad9fffead2fae694eb2a40bedafec53e6c"
         },
         {
           "file": "packages/ui/src/components/ui/usePdfZoomOverlay.ts",
-          "sha256": "c8c91b003ce2fded32c7a2369dc6eac43aa4b9dc9c830a0f5ceccb21d366b610"
+          "sha256": "464150506ec89809411a0e9166220c7260ecf8dd1501e9b63dd401c4fe6482d4"
         },
         {
           "file": "packages/ui/src/styles.css",
-          "sha256": "22d5b58e44cdebdbe7154c418ee05fef6dde689e384f0dd590d4057739487be7"
+          "sha256": "2d6ce62c279a76f4860aa5c14eb0f6a61bd830c4f7cc4117551767fa1a38c3e8"
         }
       ]
     },
@@ -18260,187 +18315,187 @@
       "files": [
         {
           "file": "packages/ui/src/components/ai-elements/agent.tsx",
-          "sha256": "830e7ea9e927de1524851337f1d35bda0e5690e3e4fa307fff854b60006b16c7"
+          "sha256": "f3e9cb77966a98bbb0891e26ef785e5686cb7208396f4489066029ccfc807bcb"
         },
         {
           "file": "packages/ui/src/components/ai-elements/artifact.tsx",
-          "sha256": "7d73f08864d6280ac86c77d32e56d0e702f8aa6208e5910820139d0fb08ce64c"
+          "sha256": "40a4cf560b0e917863c3a6bb79cce35bbbf62f261085935e0333b75023026e0b"
         },
         {
           "file": "packages/ui/src/components/ai-elements/attachments.tsx",
-          "sha256": "7a847ce6c8ac9dc630481a82dd20a5e9e00949bf710a41fea1d32a18123011d8"
+          "sha256": "6b4e643f384f6125b73ca86d6c253fc7835ffcc439fc7ace18e273e3dc4ae0b6"
         },
         {
           "file": "packages/ui/src/components/ai-elements/canvas.tsx",
-          "sha256": "7bc92905e97c182c9a2f52b421a4d70414c8700a66039af9a4466587f74d2687"
+          "sha256": "e35fecd6d2724dfeae183edfeba7141e1d1a1ff91eda9e226d402d68e8248f77"
         },
         {
           "file": "packages/ui/src/components/ai-elements/chat-loading.tsx",
-          "sha256": "b75d4398d778179f78209debde63547410d76e01cdaf3887f60b13ef9a35331f"
+          "sha256": "82a86742375dd6e1a33aaf0681358e750b26eaf893e3ce61e2fde66505dd3bb3"
         },
         {
           "file": "packages/ui/src/components/ai-elements/checkpoint.tsx",
-          "sha256": "72459f6fb8668e9245ec32542f92c7de809cc9b5a366bb44ab08f91ea4e1255b"
+          "sha256": "64e18bdf7c37419116771395b7518b0c53a18c3a55f072cfc38021f57eb392aa"
         },
         {
           "file": "packages/ui/src/components/ai-elements/code-block.tsx",
-          "sha256": "ae4f975537ebb9c8ef905b7b9de39bc37180f81511bffc027dc4da1929037f18"
+          "sha256": "b7600334dcb648daf2dd99748ea6a24e5a3a86c4a056d6bc659571ba892f8dfb"
         },
         {
           "file": "packages/ui/src/components/ai-elements/commit.tsx",
-          "sha256": "e9f5dcffac4ec7702b6d77b41cfc28fab54f0595375dd2c992dc972c0a9e74d2"
+          "sha256": "d5da05d31b158085886cf2617c0a8d12f940f7851907ee97881e385add8f39de"
         },
         {
           "file": "packages/ui/src/components/ai-elements/confirmation.tsx",
-          "sha256": "bb39ae89d5550f4ffcbb36e73dc8b75d1c9930f0fdba28cc8ff135d753b65a9b"
+          "sha256": "8defdc12b6551cc5eb3f9aa0314ba9956aed5bf9c6fe862d7bb6052d7f2adbe2"
         },
         {
           "file": "packages/ui/src/components/ai-elements/connection.tsx",
-          "sha256": "6e6cf65efcef612a3d14f5fda69e27009bc06046d1f7aa842a1a93b9142a7f81"
+          "sha256": "5fcf40d92499ad2c371dfcec7d20438d98eaf5bfc301c0d78065c36b1f0dfce2"
         },
         {
           "file": "packages/ui/src/components/ai-elements/context.tsx",
-          "sha256": "9f9a766dcab0010b1483b5276f9d5f4b4c3b31bd85434731fc7ce4d8bf9913f7"
+          "sha256": "ef9985f965bc8cc18e7f96a84aca6190a582cd06c5437843eb0b523d46650a6d"
         },
         {
           "file": "packages/ui/src/components/ai-elements/controls.tsx",
-          "sha256": "3123e9cb668171780944fb91632c68977617ae4ef46312540c1f7ddecc3fc568"
+          "sha256": "977a5e6671c8b8764df0be1f97a9ddeef63f39233b721e40006c731696d5fda5"
         },
         {
           "file": "packages/ui/src/components/ai-elements/conversation.tsx",
-          "sha256": "1fda6a3c198ae104e8736b70992e9ce8549f667a942246d9a9762be8f4431e3a"
+          "sha256": "6e6b7df4d9311b5a1a4e1afc252e33de7525ca9897ee650b81a99809f7e0185c"
         },
         {
           "file": "packages/ui/src/components/ai-elements/diagram-preview-dialog.tsx",
-          "sha256": "cc142f8808370897dfc40cd7aea3f1aa42fd07ce471a7fbb284d9ae728b1299a"
+          "sha256": "213a90088c8cc32402efb2b3775217b5f4bfdca5ee0aa27a3170a8064131e275"
         },
         {
           "file": "packages/ui/src/components/ai-elements/edge.tsx",
-          "sha256": "661a25632f0879b8363f22e6b99198a6d37ad622781c798c090fcad9b591b181"
+          "sha256": "f8367b3783935fc94e75a438372df5b3f9e798299877810d5c71c8ae9fbad327"
         },
         {
           "file": "packages/ui/src/components/ai-elements/image-preview-dialog.tsx",
-          "sha256": "47d4ecdefc84d39f2deda93119ce400b36224276bb6c7dab6a914868914ac8de"
+          "sha256": "68774872d6dee86f48801458bbf68c1e000fd35b32f07a14171cd6c7d83afa4c"
         },
         {
           "file": "packages/ui/src/components/ai-elements/image-thumbnail-gallery.tsx",
-          "sha256": "185766c039c6c4852ae12360360f7cf29e844a1463358b8cc2c6de972dcdaf43"
+          "sha256": "bd9f667da73244643c514ee7eeb7e07c8dfac6706d90c25cb59e3ff35088530f"
         },
         {
           "file": "packages/ui/src/components/ai-elements/image.tsx",
-          "sha256": "1c6f9595ef814c4ef9648607562fa77a3007f7d857571f8e107a24022fe83e24"
+          "sha256": "b19fc107d04e3ecc944e81cc45660810b00f1587cc4283f350acf8f2f979f48e"
         },
         {
           "file": "packages/ui/src/components/ai-elements/markdown-blockquote.tsx",
-          "sha256": "0c76599780a464136703d40d07172dcc62730dee1ce01a155100cf4712440a7f"
+          "sha256": "e67d08208487b3b476d972b14bc743a883110f0f3b8f0c3aecb44eb81de54656"
         },
         {
           "file": "packages/ui/src/components/ai-elements/markdown-image.tsx",
-          "sha256": "aedf797b19d4f5d37fc7e8833b2824a9d1a1a4fca440b69519b43a43eb122e90"
+          "sha256": "ac582c5757253ca207d71c0fbd1083b674a5e0bceb9704a8535ec4ca303211e7"
         },
         {
           "file": "packages/ui/src/components/ai-elements/markdown-list.tsx",
-          "sha256": "ecf50ad4f48cd460ddcf90db7b463671f915d8c22c7cb8e7760ff3b02282c7f1"
+          "sha256": "db6c610ce4fc1dd1b02086807b0c56fad873d8df5328659e06ea73cc47f50c42"
         },
         {
           "file": "packages/ui/src/components/ai-elements/markdown-table.tsx",
-          "sha256": "612d78092eaeb950931070fff2a194a244e84c5c2d63c6df645e6b91391953da"
+          "sha256": "9b536a8e4458d6c7a71e7178972adb664554361465f77f7c982ea5506342d653"
         },
         {
           "file": "packages/ui/src/components/ai-elements/mermaid-block.tsx",
-          "sha256": "4cc6783097a6ecbb1896ee1f3dd1d89115ca81f3efb15d9fbabcf448063818ae"
+          "sha256": "4962bf69546159f459b9a4a4ffd6fb55a40769ee1fdf35a2215deaad353eba16"
         },
         {
           "file": "packages/ui/src/components/ai-elements/message.tsx",
-          "sha256": "6c35829ed11321e850cd59e20c1c88fdd452e8e2d9b5da45f808371021aabf99"
+          "sha256": "ecd43975863befd4ccf12bdd0760d552f208861a40abe8ca8b7317a935550f2d"
         },
         {
           "file": "packages/ui/src/components/ai-elements/node.tsx",
-          "sha256": "d7b68c41717a509bd9063f0a9fc0c4525ceb2b23bae4028bcd49ec949fc6268f"
+          "sha256": "32654316e9b4d1ccdc8d09df244ace7a0f170a7a29309b7957f3a40fcce0179d"
         },
         {
           "file": "packages/ui/src/components/ai-elements/panel.tsx",
-          "sha256": "9c345ecb217fbb6a3a2b49b93ca81b746f249d18b9223470fbf511c0a9a37bb7"
+          "sha256": "f5c82af472b437abbd2a41bfa94594497062c940bc9411ac9881189172ef5fc6"
         },
         {
           "file": "packages/ui/src/components/ai-elements/persona.tsx",
-          "sha256": "cb5b71ae937a559d8151bf6ccfb765ad0780f23333d7dbc1adbbf10cdc0ab1af"
+          "sha256": "62783b7d4ce7a3da4d6718dea1e21ca9004d917257bdfa3dc03a910349077fba"
         },
         {
           "file": "packages/ui/src/components/ai-elements/plan.tsx",
-          "sha256": "576b2ee1a9546f9e30f2512bb2e097babca71ca35a2820c0be4c93caef600622"
+          "sha256": "25a8bc6496d4b0b79d86fe3fc830dcc2539accfc46ee555c45701991933e78cf"
         },
         {
           "file": "packages/ui/src/components/ai-elements/prompt-input-actions.tsx",
-          "sha256": "198df66e5883016d542b4dfbfb12d050992febf53ccdcd712a289fbdd7a48a56"
+          "sha256": "89cb84286e9f7c7bc849dbf532ca41a8ffa72d1ce5728c2535e6d291e014c8c5"
         },
         {
           "file": "packages/ui/src/components/ai-elements/prompt-input-buttons.tsx",
-          "sha256": "b1c2a6ded9a2866946d08691072a4dacb59ecdce761baba7ee06f02e1e117185"
+          "sha256": "539c37a9fb88faf219f03dd265651b5f72e01fb3be7a103dcf5be66cfa0ae139"
         },
         {
           "file": "packages/ui/src/components/ai-elements/prompt-input-primitives.tsx",
-          "sha256": "2412c8a868445a649264724ef8c6b75a97eb87aa3f790ca012c8e6a8b460a632"
+          "sha256": "210cea05548a4e8c105964bcab752d002c0415340ac3f67acf7d7d3566df32cf"
         },
         {
           "file": "packages/ui/src/components/ai-elements/prompt-input-textarea.tsx",
-          "sha256": "4798574a8f2fc8584a1c5585d9dd878dd19d76bd05603e77948ec12180649def"
+          "sha256": "6cfedf54567ab6b0aa00fc6fabe841da3bf2d2a05d383b503ac9d0eb52f9aa20"
         },
         {
           "file": "packages/ui/src/components/ai-elements/prompt-input.tsx",
-          "sha256": "68a92e07c27774e9c1d63bccd12ec3ff38b4f89dd245b20bfffbbd052e6101c4"
+          "sha256": "52cb90635eb4029b38dbb95194940f0b4c7a7c5c6bec5e98743607de260fafa9"
         },
         {
           "file": "packages/ui/src/components/ai-elements/queue.tsx",
-          "sha256": "9d84f6e15708519ec65e258d9843dc5f4d76f106fc85155f7dcf51f89474b695"
+          "sha256": "9451f053ad4d3f7d52d3df30df952d71412b99207e72208a9438d8ce8341c0b1"
         },
         {
           "file": "packages/ui/src/components/ai-elements/reasoning.tsx",
-          "sha256": "a10a38c7b3ca633e9b5480ad94f9c7a1fdd52bc5526ae0801e3e6ed141f2b604"
+          "sha256": "7ad6dea5cce454246b47c644277b5a530bcf789fa2a4903fb0325851b0f099f9"
         },
         {
           "file": "packages/ui/src/components/ai-elements/sandbox.tsx",
-          "sha256": "f521400dbaebe4c2a2fbcdcb8c18f98980c566169233beb137b22a093b44bbf0"
+          "sha256": "46e652b77dc55859bcabca5d9b9534e4d77edff07513ce3a89725fbeac5e1d7f"
         },
         {
           "file": "packages/ui/src/components/ai-elements/shimmer.tsx",
-          "sha256": "5d06ffdff80a13453a0b61b67f588c48d838a20d9be2cd319ca2a97d441b3127"
+          "sha256": "a0b54ec3469f84fc5c930e693c5cc0d4557aff51afc4755f0f1636aa7b51e2fd"
         },
         {
           "file": "packages/ui/src/components/ai-elements/snippet.tsx",
-          "sha256": "6f369f0bb3308166ccd55f39dd542f7315873c5bd6de2491ffccc26b0700edfe"
+          "sha256": "5156f62309c1a9e1481895f74c8dd079b18b495127df49f08ef366f4e82eb0de"
         },
         {
           "file": "packages/ui/src/components/ai-elements/sources.tsx",
-          "sha256": "cd5a9a20dc50b66f9d114b9a0ced1dd2eb8815040cccd4c577b386ef18bed435"
+          "sha256": "a81b6a01b794f374bd64162b5c90464666d50cf6f1c033f24e15760f78898668"
         },
         {
           "file": "packages/ui/src/components/ai-elements/streamdown-controls.ts",
-          "sha256": "13dc740d133c75a9d6eec6e23e673b29d0361a87ba4ee0e7d44a4b7ad047984a"
+          "sha256": "e2dcff69513cf334d82ba700613fe35ae94971cedd73cb0b7116b217a63ef2cc"
         },
         {
           "file": "packages/ui/src/components/ai-elements/suggestion.tsx",
-          "sha256": "e92b5cdbf1a7868a42f4cb00d172cd8558543dbeb59ebdd192598c6333ea635f"
+          "sha256": "48a0d88ddc5bb4089cd1bb16a1235362476971e2842e09ea8f1a27d3a14e4c15"
         },
         {
           "file": "packages/ui/src/components/ai-elements/task.tsx",
-          "sha256": "89f8110b326bd86afd71d17db79c36d86ada09d9f58401cc01aa47e16667926d"
+          "sha256": "0919139033fc223a719da8b5c273955510ceed719d977ec5568200f86db677a1"
         },
         {
           "file": "packages/ui/src/components/ai-elements/terminal.tsx",
-          "sha256": "da19fdbdeaaf682b50db23ccd8ba2a5fc6fa43dc2337bd1a3a0c4b8f52677f44"
+          "sha256": "b1aab2bcd7996b8c488cc8165c54fa5bec93984de9b35953305f623f6f4754f8"
         },
         {
           "file": "packages/ui/src/components/ai-elements/test-results.tsx",
-          "sha256": "8e12e551516048a877ca94c92c4979ecd6e4f2eb0042e465a3a23fc805ae7449"
+          "sha256": "6fd6ddf3b8c658d87409f5cdb23d30ce9c97f966a75dcdb5c29ffec55125801d"
         },
         {
           "file": "packages/ui/src/components/ai-elements/tool.tsx",
-          "sha256": "c4ca6fee5ecb3cfa597e8e99a2786c1bca28a6af36c4e8d05626b979e0f5963c"
+          "sha256": "5a19939b5d11c9c7c8b376d8e8a7b91065a4ef76c3c367b62a725d3a2e16bb31"
         },
         {
           "file": "packages/ui/src/components/ai-elements/toolbar.tsx",
-          "sha256": "4bf1d6677248001166eb640a264ea7dc8750d609a01119e6aaf161ef74c0a245"
+          "sha256": "62106c95be606cfff15896a466070911d35a2eac1b18b1ea2ed00e4f9e5188a0"
         },
         {
           "file": ".agents/skills/ai-elements/SKILL.md",
@@ -28268,67 +28323,67 @@
       "files": [
         {
           "file": "packages/rpc/src/buffer.ts",
-          "sha256": "6bc6a44e6abd088f72d57616d9556d78ce078b6f3813bf75402dde386781492c"
+          "sha256": "04d7ef7a007a7873b004198b2e12f7ffbb2fb859d041bbdd8cae093886c34c42"
         },
         {
           "file": "packages/rpc/src/channelClient.ts",
-          "sha256": "d2504929253ebb18f020e6f35e51a3741190558875d18a47192f9af78ca3f8ac"
+          "sha256": "e315c0bcc600d3ec7acd205393c37262ae67198e0f7672475c38c690969f6646"
         },
         {
           "file": "packages/rpc/src/channelServer.ts",
-          "sha256": "b9c61bd3881fff11b38a93853c60fa5c2bc871bcbea5dad0e9be0a4674f6c9da"
+          "sha256": "3573c9e2c0abe6dd8187931b359ef702d0e5041ff62b9845f50369df7a9df496"
         },
         {
           "file": "packages/rpc/src/channels.shared.ts",
-          "sha256": "e2d3ce17dfb23d53ea8fef6cd4dc87bef4558ff6e72b458e50fd456b0b2a6ae2"
+          "sha256": "7ea3786df50e2e1ce4576c8ab37d7894b63aaa19f48f0fb51ae2607e121106ac"
         },
         {
           "file": "packages/rpc/src/channels.ts",
-          "sha256": "afaba1724055a3d2e6b8b379553569489b71ac6eb252f636ab91649657485209"
+          "sha256": "0822131ba84bc942f755039f96610dc9fb031c39af275043fec183c5f7e3fa76"
         },
         {
           "file": "packages/rpc/src/delayedChannel.ts",
-          "sha256": "e7607b7fe9f35c742db206df90852e2ccafb75abc088606cf1ddbae801574ecf"
+          "sha256": "d85c756e488654faa5be0c8c65ec8597b2426e4240f9d25ce59f46ac2a2203f3"
         },
         {
           "file": "packages/rpc/src/foundation.ts",
-          "sha256": "b4874401965e7bad7e84245a2fc5960657a349b146f355ac7343562fa724da9f"
+          "sha256": "b63aa5390e66526a76df7e6a9eb06c200749f3d244f3bbbc48779cef71cf2d18"
         },
         {
           "file": "packages/rpc/src/index.ts",
-          "sha256": "6a5adcfb0e6c7a7d385e10fede09c3e9c808e3555c27b938091868cdf0c3fbef"
+          "sha256": "b83110b902ccf9577b9a676ebe449054c98c39a1915d2c5de0417142a3ea62e7"
         },
         {
           "file": "packages/rpc/src/ipc.ts",
-          "sha256": "2ec3dfe0654a68300dbed7afd5ac436b563abf983d6e0f59a2b028469fdf71ef"
+          "sha256": "c83702318a1295d43d84b270e7807e3666941855162bd92a893213f38b1d0d17"
         },
         {
           "file": "packages/rpc/src/logging-middleware.ts",
-          "sha256": "20edfd8e5d054097186f2498ec4e9c08c61740ed003fc69eecea8176a15fe025"
+          "sha256": "cda4a5c802d0029233f8a92c16adf63f9a6995bb4c0888f91577a32fef49e093"
         },
         {
           "file": "packages/rpc/src/network-telemetry-middleware.ts",
-          "sha256": "18a7cde46e6c65e0138af0623d07bf883ce278acf44654bc5144ecaadd36a536"
+          "sha256": "dae17569f1f73b77a345381c6865de4d9a9850af5d703c390a8832dd7f466938"
         },
         {
           "file": "packages/rpc/src/persistent-protocol.ts",
-          "sha256": "80609595b89188272d743e557502c6cad3858f828acae31c2ef64206bb3c8978"
+          "sha256": "69c8dfadd769f6c9ded294741b08fc746db15568da07d2c1ee8638675195578a"
         },
         {
           "file": "packages/rpc/src/protocol.ts",
-          "sha256": "aafc0c098c75fcba4519fad2ecbee7e025d5d8a27c15c87e5ccb4ca6ce554670"
+          "sha256": "e6556cfe0eb32bcb4add1023951179eb2d52bf992d7716ffff36588daaed83b0"
         },
         {
           "file": "packages/rpc/src/proxy-channel.ts",
-          "sha256": "ec5b43e6a3a622a88a8aaa6af9cb37dbfe517932ee7f4a337019ec138bb2d513"
+          "sha256": "482c4f3795f76b4b0400fccf078511eec2acf1f469c2abe12a6709b34261a284"
         },
         {
           "file": "packages/rpc/src/remote.ts",
-          "sha256": "a11e072d5df7e1c1ce64814a68f72afc081246b364f0da409b5c9d22bc815957"
+          "sha256": "4640eb07f0f36aba2cf1d0260be5bb12fcf8780e03e88405a52c033d1a4ba50f"
         },
         {
           "file": "packages/rpc/src/serialization.ts",
-          "sha256": "e949418e1cd17cc863c147fc8d1ff15237e1b5f0cb8e3344fd2a9ccfae9d54e7"
+          "sha256": "1d2d3173ae78b8bea066c05b655fbf2bd6545c77453e849a9c63a856a45f6df5"
         },
         {
           "file": "packages/rpc/examples/01-basic-ipc.ts",
@@ -28348,7 +28403,7 @@
         },
         {
           "file": "packages/shared/src/zcode-protocol-v4/wire-codec.ts",
-          "sha256": "ac2494a3acc795c809c94ee9393f50271a9c2a0fd33813459e5ab93842ceef75"
+          "sha256": "3c089371d1447c2637009221d1270fff74486385488cfafb85693109ad72c314"
         }
       ]
     },
@@ -28369,7 +28424,7 @@
       "files": [
         {
           "file": "packages/ui/src/lib/builtinSkillI18n.ts",
-          "sha256": "9640e8db6813244029e85b7569845cf2c098bd9b92dcb1d98befb3211280f7e4"
+          "sha256": "ff16d6be2ba50f6740a2dbc292874afa046c57e5a43eff7f2cebc82179b53ccf"
         },
         {
           "file": "apps/zcode-cli/packages/superpowers-plugin/LICENSE",
@@ -28692,6 +28747,226 @@
         {
           "file": ".agents/skills/react-best-practices/rules/server-serialization.md",
           "sha256": "4d025c42043c56e6355196a2e885d168cdb15248d0797146c9db838a57b34946"
+        }
+      ]
+    },
+    {
+      "id": "sharp",
+      "referenceRevision": "0.34.5",
+      "source": "https://www.npmjs.com/package/sharp/v/0.34.5",
+      "file": "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt",
+      "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
+      "importRevision": null,
+      "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
+      "roots": [
+        "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp"
+      ],
+      "scope": "Image metadata/resize runtime for Computer Use screenshot handling, carried in the computer-use plugin node_modules (koffi/sharp chain).",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/LICENSE",
+          "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/install/build.js",
+          "sha256": "37f7c9591d75dbc5fe734c5a196a46c355b3d7de5134260ba011efed8433a718"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/install/check.js",
+          "sha256": "31fd360ede9ff3e80d643faff6c4570d0b2b5c621dc421b6c4086dfe86ce981f"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/channel.js",
+          "sha256": "4a699621c111427f9f6b3b767764a292f6a358616de2866e0078475830420f42"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/colour.js",
+          "sha256": "024d2e9c04d50b492e91ae781da539c837fcaf40a585508c043356fdd9e69297"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/composite.js",
+          "sha256": "73f04ab765a11bfc72771dbd0a6324e8e34ea354d16108cc1277bba4e80dd523"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/constructor.js",
+          "sha256": "b38f3e7ceecc305a8f81f278bf9219cba966993b8c2d7cebafdb8e8d5005760c"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/index.js",
+          "sha256": "5e30578a16290fa0855c32fe3d544ce4f26c147de6bad69cffaf7bc416a2919a"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/input.js",
+          "sha256": "d88bdf5d807ef57ce8aa5d9be29bc7b9199974eac385bf559f19d5fc06bd632a"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/is.js",
+          "sha256": "7ecb71679b5b58e7ddf7e14fa697ff6a31bbe9ef107745170095031519e93463"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/libvips.js",
+          "sha256": "ae8cbc8008bf88f5100ca56729ed43d45cd88316e030dc2eed62e142f657cd79"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/operation.js",
+          "sha256": "01019d62cfb83c5f6192a65a4a97635214e5dc61da07c51be59b8216ba907a7a"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/output.js",
+          "sha256": "71cec9ac95f3db764ee4d2e26eec1deb16da63c47fdd352f6a41af4dbb0f1831"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/resize.js",
+          "sha256": "d85081a35bb1195ff6f057d2db4343adfe3241abccc7e277d13673a116fea1ad"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/sharp.js",
+          "sha256": "59e9436f1c62a58b8781acb3803e55114bada9984cc7c39b9291769155811cd3"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/utility.js",
+          "sha256": "ada1854f397f54ee09286094a4f4cd9a4d4af9f4ddbaae3b4f477edbd8c1fd14"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/package.json",
+          "sha256": "e6be69319929151be3aa240bf1485f25a3477cb6d2286f92510b9fceb3cbef26"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/binding.gyp",
+          "sha256": "dc753e7ef9a8b393e14ed6a6fa17baae89e6edb4f39740b1cc1e9d06cbd20478"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/common.cc",
+          "sha256": "9102e55ed0c5d3027fad3df16e751b5424265d32201568395958862ab3a3f6e1"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/common.h",
+          "sha256": "44940aefc7ec601e316dad5c3882041c56d6070f84cc2b2871f6236b75df5cb4"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/metadata.cc",
+          "sha256": "04366c98d90cf3415a50cb5f47a07c3a7f25ace2a67d603e72035807f99af33f"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/metadata.h",
+          "sha256": "bd50ae9c3e55d9ed5f8b3c4e09d9a79f496ef665b6c993ff1b2c7edecc32d03a"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/operations.cc",
+          "sha256": "db97d0ca7ec042279cf5b4331fdc19466c20318ca4bc52fda4e3fdc13781a8c2"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/operations.h",
+          "sha256": "80a4f350793f657c10769e2b4e82d3b103f5d4984dc27d10e592e14b8cc1b34b"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/pipeline.cc",
+          "sha256": "8fa9d1f70f46ea0f27f30203dfa1ebe8df8a5679b9d93a8f8dadf72dd1fa6e59"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/pipeline.h",
+          "sha256": "89f81e2d0308ed696a0f39099d42b7867b8ffb5fcd4969c7dbfb3e6778c0de23"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/sharp.cc",
+          "sha256": "9f407b50bb2d02e5eb711b769f05d3e6659028430e055c4271e5ab1593f5a257"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/stats.cc",
+          "sha256": "084df95f2cc863e522c35e5da31976e1dc4d370d40ab6d2a0b398763208af4ea"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/stats.h",
+          "sha256": "db854f0c3c4a0db1751021ed676413c6d5ca00becc08bdc13258b29047450b8c"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/utilities.cc",
+          "sha256": "7141d5bb1e7b1bca0fdd7d14c30b27b2a4b3f177441b04106e460e013cd061ed"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/utilities.h",
+          "sha256": "0b126ab63cf1aedf8e71e6cb8179899d3ef02c46419100e847b2ca4284b8901b"
+        }
+      ]
+    },
+    {
+      "id": "sharp-win32-x64",
+      "referenceRevision": "0.34.5",
+      "source": "https://www.npmjs.com/package/sharp-win32-x64/v/0.34.5",
+      "file": "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt",
+      "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
+      "importRevision": null,
+      "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
+      "roots": [
+        "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64"
+      ],
+      "scope": "Windows x64 sharp prebuilt binary with statically linked libvips. The libvips portion is LGPL-3.0-or-later: corresponding source is available upstream (https://github.com/lovell/sharp-libvips), satisfying the source-availability obligation for this distribution.",
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "files": [
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/LICENSE",
+          "sha256": "dc1f5d2d43c5531dfe0acaf4e950ea5dbe3e61e1850cf0e983bda7efc10d6693"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/libvips-42.dll",
+          "sha256": "91e758c17a6588e0d2126f6940721ac2f5db69b2c1bb4586d665bd3ec780d628"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/libvips-cpp-8.17.3.dll",
+          "sha256": "df59657cf70a54609bd79bf8e5021e283281f21eb77e0433734dcc7100da8b44"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/sharp-win32-x64.node",
+          "sha256": "1154286b962070aacfedd5cf10166a22874af63692f6ce2c9156db35b2baa4c1"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/package.json",
+          "sha256": "3421485756b0a25573ee62e147a62908608e3014a2bfed64381473a22e9351d2"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/versions.json",
+          "sha256": "e823074bfa33ed7b1861b797dd3c60d7ef8c34cd2faa9a7d22ec32dd6d6ad8ad"
+        }
+      ]
+    },
+    {
+      "id": "detect-libc",
+      "referenceRevision": "2.1.2",
+      "source": "https://www.npmjs.com/package/detect-libc/v/2.1.2",
+      "file": "third-party/upstream/b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1.txt",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "importRevision": null,
+      "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
+      "roots": [
+        "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc"
+      ],
+      "scope": "libc detection helper used by the sharp runtime, carried in the computer-use plugin node_modules.",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/LICENSE",
+          "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/detect-libc.js",
+          "sha256": "5de6a1c1abec8bba5ea1261cf819d83a73c92ebe72b879ae48c59ca12320a462"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/elf.js",
+          "sha256": "0e8820f00ee11d179d94894d4f97a6e87c34ab59e5dd4d3a571dfabcecf043af"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/filesystem.js",
+          "sha256": "5c98fb66b559d0b4fa82c7a3e39d9ab6840f022c4c73e6b1a73ac6d16ec13fd7"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/process.js",
+          "sha256": "f37dd0ead9f70b50c6f5529c600e1cdf076e3c3bc8e6b4a0a9820a8d65244628"
+        },
+        {
+          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/package.json",
+          "sha256": "ee88e5b954fdf3a8480b1d01ef767d68d8ca2c6da269f58c5cf1c5550e9aa2a7"
         }
       ]
     }

@@ -6,10 +6,12 @@
     ".": "./src/index.ts",
     "./stdio": "./src/stdio.ts",
     "./remote": "./src/remote/index.ts",
-    "./remote/*.js": "./src/remote/*.ts"
+    "./remote/*.js": "./src/remote/*.ts",
+    "./relay": "./src/relay/webRemoteRelayServer.ts"
   },
   "scripts": {
     "dev": "tsup --watch --onSuccess 'node dist/entry-http.js'",
+    "relay": "node ../../scripts/web-remote-relay.mjs",
     "build": "tsup && pnpm run build:remote",
     "build:remote": "tsx build-remote.ts",
     "lint": "oxlint",

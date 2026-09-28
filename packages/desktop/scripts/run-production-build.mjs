@@ -17,9 +17,15 @@ export function resolveDesktopProductionCleanPaths(cwd) {
     resolve(cwd, "out/host"),
     resolve(cwd, "out/preload"),
     resolve(cwd, "out/renderer"),
+    // scheduler 是独立 tsup target:漏清理时旧 hash chunk 会与新 chunk 并存,被 out/**/*
+    // 一并打进 app.asar(2026-09-24 A16 实测:占位时代 chunk 藏在其中,标记扫描不过)。
+    resolve(cwd, "out/scheduler"),
     resolve(cwd, "out/.main-build-ready"),
     resolve(cwd, "out/.host-build-ready"),
     resolve(cwd, "out/.preload-build-ready"),
+    resolve(cwd, "out/.scheduler-build-ready"),
+    // 手机页 bundle 同理:旧 hash 资产并存会被 extraResources 全量拷进 resources/web-remote-mobile。
+    resolve(cwd, "..", "..", "packages", "web", "dist-mobile"),
   ];
 }
 
@@ -57,6 +63,14 @@ export function createDesktopProductionBuildPlan({ cwd, baseEnv = process.env })
           command: "pnpm",
           args: ["exec", "vite", "build"],
           cwd,
+          env,
+        },
+        {
+          // 移动端远控手机页 bundle（dist-mobile）：内嵌 LAN relay 的 /remote/v4 静态源，
+          // 由 electron-builder extraResources 随包分发。脚本在仓库根，自含 vite 配置。
+          command: "node",
+          args: ["scripts/build-web-remote-mobile-page.mjs"],
+          cwd: resolve(cwd, "..", ".."),
           env,
         },
       ],

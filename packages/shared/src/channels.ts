@@ -65,6 +65,14 @@ import type {
   OpenCuaPermissionOnboardingOptions,
   PrepareCuaHelperPermissionDragResult,
 } from "./cuaAccessibilitySettings.js";
+import type {
+  RemoteTaskListItem,
+  RemoteWorkspaceDescriptor,
+} from "./web-remote-control/app-messages.js";
+import type {
+  WebRemoteControlContext,
+  WebRemoteControlStatus,
+} from "./web-remote-control/status.js";
 
 // ============================================================================
 // RPC 服务频道 —— 通过 ChannelServer/ChannelClient 传输
@@ -91,6 +99,8 @@ export const ServiceChannels = {
   Broadcast: "broadcast",
   /** ZCode task wrapper 服务 */
   ZCodeTask: "zcode-task",
+  /** 机器人（Bot Channels）服务 */
+  Bots: "bots",
   /** 窗口 Host 聚合 workspace/task 投影与列表写路由 */
   WindowController: "window-controller",
   /** ZCode Protocol agent 服务 */
@@ -421,6 +431,32 @@ export const PlatformChannels = {
   MigrateLegacyCommonMcp: "zcode:migrate-legacy-common-mcp",
   /** Renderer → Main：获取当前设备的稳定标识符（deviceMid） */
   GetDeviceId: "zcode:get-device-id",
+  /** Renderer → Main：启动（或复用）当前窗口的移动端远程控制会话 */
+  StartWebRemoteControl: "zcode:start-web-remote-control",
+  /** Renderer → Main：刷新远控配对（rotate deviceSid/passHash，旧链接立即失效） */
+  ResetWebRemoteControlPairing: "zcode:reset-web-remote-control-pairing",
+  /** Renderer → Main：停止当前窗口远控会话（手机收到 desktop-disconnected） */
+  StopWebRemoteControl: "zcode:stop-web-remote-control",
+  /** Renderer → Main：查询远控运行状态 */
+  GetWebRemoteControlStatus: "zcode:get-web-remote-control-status",
+  /** Renderer → Main：列出配对网卡候选与当前钉选（LAN 地址选取，spec web-remote-control §5） */
+  ListWebRemoteControlPairNics: "zcode:web-remote-control-list-pair-nics",
+  /** Renderer → Main：钉选配对网卡 IP（空串=自动；活动会话即时重建配对 URL） */
+  SetWebRemoteControlPairAddress: "zcode:web-remote-control-set-pair-address",
+  /** Renderer → Main：读取远程访问自建中继 origin（空=内嵌局域网模式，spec §1.11） */
+  GetWebRemoteControlExternalRelay: "zcode:web-remote-control-get-external-relay",
+  /** Renderer → Main：设置/清空自建中继 origin（生效=重注册，旧链接失效） */
+  SetWebRemoteControlExternalRelay: "zcode:web-remote-control-set-external-relay",
+  /** Main → Renderer：远控状态变化推送 */
+  WebRemoteControlStatusChanged: "zcode:web-remote-control-status-changed",
+  /** Main → Renderer：手机端请求重连远程工作区（120s 应答超时） */
+  WebRemoteControlReconnectWorkspace: "zcode:web-remote-control-reconnect-workspace",
+  /** Main → Renderer：bot /reconnect 成功后广播（官方 zcode:bot-remote-workspace-reconnected，Root 刷状态投影） */
+  BotRemoteWorkspaceReconnected: "zcode:bot-remote-workspace-reconnected",
+  /** Renderer → Main：同步当前窗口里远控允许切换的 workspace 快照 */
+  SyncWebRemoteControlWorkspaces: "zcode:sync-web-remote-control-workspaces",
+  /** Renderer → Main：同步当前窗口里远控可展示的 task 快照 */
+  SyncWebRemoteControlTasks: "zcode:sync-web-remote-control-tasks",
 } as const;
 
 export type PlatformChannelName = (typeof PlatformChannels)[keyof typeof PlatformChannels];
@@ -532,6 +568,8 @@ export const HostMessageTypes = {
   TaskOwnerCommandDeliver: "task-owner-command-deliver",
   /** main → host：deliver owner command result to requester */
   TaskOwnerCommandResult: "task-owner-command-result",
+  /** main → host：bot /reconnect 远端重连结果（附录B §4.4 请求侧 E3；按 requestId 回给 RemoteWorkspaceGate） */
+  BotRemoteWorkspaceReconnectResult: "bot-remote-workspace-reconnect-result",
   /** main → host：把 session message 投递到该 host 管理的目标 session */
   SessionMessageDeliver: "session-message-deliver",
   /** main → host：把 session message 投递结果回写到源 session */
@@ -617,6 +655,8 @@ export const HostResponseTypes = {
   TaskOwnerCommandRequest: "task-owner-command-request",
   /** host → main：owner 返回 task command result */
   TaskOwnerCommandResult: "task-owner-command-result",
+  /** host → main：bot /reconnect 请求 main 执行远端重连（附录B §4.4 通知侧 A3；官方 ensureConnected 60s，FreeCodeZ 由 main 委托 renderer） */
+  BotRemoteWorkspaceReconnectRequest: "bot-remote-workspace-reconnect-request",
   /** host → main：Agent 请求向另一个 session 发送消息 */
   SessionMessageSendRequested: "session-message-send-requested",
   /** host → main：声明一个 ZCode Agent session 当前归属该 host */
@@ -648,6 +688,12 @@ export const HostResponseTypes = {
 // ============================================================================
 // 平台频道类型映射 —— request/response 类型安全
 // ============================================================================
+
+/** bot /reconnect 成功广播（main→全部 renderer）载荷；Root 据此刷新远端状态投影。 */
+export interface BotRemoteWorkspaceReconnectedEvent {
+  workspacePath: string;
+  workspaceIdentity?: string;
+}
 
 /** 平台频道的请求/响应类型映射 */
 export interface PlatformChannelMap {
@@ -749,6 +795,42 @@ export interface PlatformChannelMap {
   };
   [PlatformChannels.SyncWindowUnreadCount]: {
     request: number;
+    response: void;
+  };
+  [PlatformChannels.StartWebRemoteControl]: {
+    request: WebRemoteControlContext;
+    response: WebRemoteControlStatus | { status: "cancelled" };
+  };
+  [PlatformChannels.ResetWebRemoteControlPairing]: {
+    request: WebRemoteControlContext;
+    response: WebRemoteControlStatus | { status: "cancelled" };
+  };
+  [PlatformChannels.StopWebRemoteControl]: {
+    request: void;
+    response: void;
+  };
+  [PlatformChannels.GetWebRemoteControlStatus]: {
+    request: void;
+    response: WebRemoteControlStatus;
+  };
+  [PlatformChannels.WebRemoteControlStatusChanged]: {
+    request: WebRemoteControlStatus;
+    response: void;
+  };
+  [PlatformChannels.WebRemoteControlReconnectWorkspace]: {
+    request: { requestId: string; workspaceKey: string };
+    response: { success: boolean; error?: string };
+  };
+  [PlatformChannels.BotRemoteWorkspaceReconnected]: {
+    request: BotRemoteWorkspaceReconnectedEvent;
+    response: void;
+  };
+  [PlatformChannels.SyncWebRemoteControlWorkspaces]: {
+    request: RemoteWorkspaceDescriptor[];
+    response: void;
+  };
+  [PlatformChannels.SyncWebRemoteControlTasks]: {
+    request: RemoteTaskListItem[];
     response: void;
   };
   [PlatformChannels.SyncAppSettings]: {

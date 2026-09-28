@@ -14,8 +14,9 @@ import siliconflowLogo from "@/assets/provider-icons/model-provider-siliconflow.
 import baiduQianfanLogo from "@/assets/provider-icons/model-provider-baidu-qianfan.svg";
 import tencentHunyuanLogo from "@/assets/provider-icons/model-provider-tencent-hunyuan.svg";
 import ollamaLogo from "@/assets/provider-icons/model-provider-ollama.svg";
+import ollamaDarkLogo from "@/assets/provider-icons/model-provider-ollama-dark.svg";
 import lmStudioLogo from "@/assets/provider-icons/model-provider-lm-studio.svg";
-import llamacppLogo from "@/assets/provider-icons/model-provider-llamacpp.svg";
+import llamacppLogo from "@/assets/provider-icons/model-provider-llamacpp.png";
 import momaLogo from "@/assets/provider-icons/model-provider-moma.svg";
 import aliyunBailianLogo from "@/assets/provider-icons/model-provider-aliyun-bailian.svg";
 import deepSeekLogo from "@/assets/provider-icons/model-provider-deepseek.png";
@@ -54,7 +55,9 @@ const BUILTIN_PROVIDER_LOGO_ASSETS: Readonly<Record<string, BuiltinProviderLogoA
   xai: { light: xAiLogo },
   openrouter: { light: openrouterLight, dark: openrouterDark },
   opencode: { light: opencodeLight, dark: opencodeDark },
-  // P2 新厂商品牌标：品牌主色渐变 + 首字母（非官方 logo 复刻，规避商标风险）；
+  // P2 新厂商品牌标：替换为此前的"渐变+首字母"占位图，改用各厂商官方品牌标
+  // （出处与取证记录见同目录 model-provider-logo-sources.json；llama.cpp 用官方
+  // GitHub 组织头像、MoMA 用中国移动标）。Ollama 为单色剪影，按主题切换黑白两版。
   // 批次 D 订阅端点复用同品牌素材（bailian×2 / qianfan×2 / tencent×2 / stepfun×2 / xfyun×2）。
   volcengine: { light: volcengineLogo },
   stepfun: { light: stepfunLogo },
@@ -62,7 +65,7 @@ const BUILTIN_PROVIDER_LOGO_ASSETS: Readonly<Record<string, BuiltinProviderLogoA
   siliconflow: { light: siliconflowLogo },
   "baidu-qianfan": { light: baiduQianfanLogo },
   "tencent-hunyuan": { light: tencentHunyuanLogo },
-  ollama: { light: ollamaLogo },
+  ollama: { light: ollamaLogo, dark: ollamaDarkLogo },
   "lm-studio": { light: lmStudioLogo },
   llamacpp: { light: llamacppLogo },
   moma: { light: momaLogo },

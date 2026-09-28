@@ -2,7 +2,6 @@
   "name": "freecodez",
   "version": "3.14.0",
   "private": true,
-  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev:web": "concurrently -k -n server,web -c blue,green \"pnpm --filter @zcode/server dev\" \"pnpm --filter @zcode/web dev\"",
@@ -47,9 +46,32 @@
     "architecture:context": "node scripts/architecture/architecture-check.mjs context"
   },
   "dependencies": {
-    "border-beam": "^1.0.1",
-    "d3-path": "^3.1.0",
-    "tailwind-scrollbar-hide": "^4.0.0"
+    "@babel/runtime": "^7.24.5",
+    "@fiahfy/icns": "^0.0.7",
+    "@lydell/node-pty-linux-arm64": "1.2.0-beta.10",
+    "@lydell/node-pty-linux-x64": "1.2.0-beta.10",
+    "@zcode/client": "workspace:*",
+    "@zcode/provider": "workspace:*",
+    "@zcode/provider-node": "workspace:*",
+    "@zcode/rpc": "workspace:*",
+    "@zcode/server": "workspace:*",
+    "@zcode/services": "workspace:*",
+    "@zcode/shared": "workspace:*",
+    "@zcode/ui": "workspace:*",
+    "@zcode/zcode-cua": "workspace:*",
+    "module-details-from-path": "^1.0.4",
+    "node-forge": "^1.4.0",
+    "node-pty": "^1.0.0",
+    "playwright-core": "1.59.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "semver": "^7.7.4",
+    "ssh2": "^1.16.0",
+    "undici": "^6.23.0",
+    "ws": "^8.20.0",
+    "yaml": "^2.9.0",
+    "yauzl": "^3.3.0",
+    "yazl": "^3.3.1"
   },
   "devDependencies": {
     "@release-it/conventional-changelog": "^10.0.6",
@@ -72,21 +94,13 @@
     "turbo": "^2.4.0",
     "typescript": "^6.0.2"
   },
-  "peerDependencies": {
-    "@tanstack/react-virtual": "^3.13.23"
+  "description": "FreeCodeZ Desktop App",
+  "author": {
+    "name": "FreeCodeZ",
+    "email": "dev@freecodez.local"
   },
-  "engines": {
-    "node": ">=24.0.0"
-  },
-  "packageManager": "pnpm@10.33.2",
-  "pnpm": {
-    "overrides": {
-      "react": "19.2.7",
-      "react-dom": "19.2.7"
-    },
-    "patchedDependencies": {
-      "@ai-sdk/openai-compatible@2.0.60": "patches/@ai-sdk__openai-compatible@2.0.60.patch",
-      "@ai-sdk/anthropic@3.0.81": "patches/@ai-sdk__anthropic@3.0.81.patch"
-    }
-  }
+  "main": "out/main/index.js",
+  "productName": "FreeCodeZ",
+  "zcodeProductFlavor": "production",
+  "homepage": "https://freecodez.local"
 }

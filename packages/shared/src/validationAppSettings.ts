@@ -1,6 +1,5 @@
-/* oxlint-disable eslint(max-lines) -- AppSettings schema 聚合历史迁移、默认值和 patch 校验，拆分会削弱设置迁移的单一入口。 */
+/* eslint-disable max-lines -- AppSettings schema 聚合历史迁移、默认值和 patch 校验，拆分会削弱设置迁移的单一入口。 */
 import { z } from "zod";
-import type { AppSettings } from "./protocol.js";
 import { REMOTE_ASSET_INSTALL_MODES } from "./remoteAssetInstallMode.js";
 import { isKnownRemoteResourcePackageId } from "./remoteResourcePackages.js";
 import { wslUserSchema } from "./wslUserValidation.js";
@@ -41,6 +40,16 @@ const desktopWindowSizeSchema = z.object({
   width: z.number().int().min(480),
   height: z.number().int().min(640),
   maximized: z.boolean(),
+});
+// FreeCodeZ fork(移动端远程控制):relay 设备凭据与重启恢复上下文。
+// z.object 默认 strip，缺这两行会把键静默剥掉 → deviceSid 跨重启漂移、重启恢复失效。
+const webRemoteControlExternalRelayDeviceSchema = z.object({
+  deviceSid: nonEmptyStringSchema,
+});
+const webRemoteControlLastEnabledContextSchema = z.object({
+  workspacePath: nonEmptyStringSchema,
+  workspaceIdentity: nonEmptyStringSchema.optional(),
+  initialTaskId: nonEmptyStringSchema.optional(),
 });
 export const integratedTerminalShellSelectionSchema = z.discriminatedUnion("mode", [
   z.object({
@@ -449,6 +458,14 @@ const appSettingsObjectSchema = z.object({
   keepAwakeWhileRunning: z.boolean().default(false),
   desktopZoomLevel: desktopZoomLevelSchema.optional(),
   desktopWindowSize: desktopWindowSizeSchema.optional(),
+  webRemoteControlExternalRelayDevice: webRemoteControlExternalRelayDeviceSchema.optional(),
+  webRemoteControlLastEnabledContext: webRemoteControlLastEnabledContextSchema.optional(),
+  // 配对网卡钉选（spec web-remote-control §5）：空/缺省=自动（默认路由出口）；值为本机私网 IPv4。
+  webRemoteControlPairAddress: z.string().optional(),
+  // 局域网常驻可达（spec §1.10）：缺省=true（undefined 视为开启）。
+  webRemoteControlAutoEnabled: z.boolean().optional(),
+  // 远程访问开放能力（spec §1.11）：自建中继 origin；空=内嵌局域网模式。
+  webRemoteControlExternalRelayUrl: z.string().optional(),
   desktopChromiumHardwareAccelerationEnabled: z.boolean().default(true),
   messageStreamShowReasoning: z.boolean().default(true),
   messageStreamShowReasoningMigrationInitialized: z.boolean().default(true),
@@ -520,6 +537,14 @@ export const appSettingsPatchSchema = z.object({
   closeToTrayOnWindowsMigrationInitialized: z.boolean().optional(),
   desktopZoomLevel: desktopZoomLevelSchema.optional(),
   desktopWindowSize: desktopWindowSizeSchema.optional(),
+  webRemoteControlExternalRelayDevice: webRemoteControlExternalRelayDeviceSchema.optional(),
+  webRemoteControlLastEnabledContext: webRemoteControlLastEnabledContextSchema.optional(),
+  // 配对网卡钉选（spec web-remote-control §5）：空/缺省=自动（默认路由出口）；值为本机私网 IPv4。
+  webRemoteControlPairAddress: z.string().optional(),
+  // 局域网常驻可达（spec §1.10）：缺省=true（undefined 视为开启）。
+  webRemoteControlAutoEnabled: z.boolean().optional(),
+  // 远程访问开放能力（spec §1.11）：自建中继 origin；空=内嵌局域网模式。
+  webRemoteControlExternalRelayUrl: z.string().optional(),
   desktopChromiumHardwareAccelerationEnabled: z.boolean().optional(),
   messageStreamShowReasoning: z.boolean().optional(),
   messageStreamShowReasoningMigrationInitialized: z.boolean().optional(),

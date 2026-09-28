@@ -56,6 +56,8 @@
   "globals": {},
   "ignorePatterns": [
     "dist-release",
+    "packages/web/dist-mobile",
+    "packages/web/dist",
     "packages/ui/src/components/ui",
     "packages/ui/src/components/ai-elements",
     ".agents/skills",

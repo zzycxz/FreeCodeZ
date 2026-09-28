@@ -40,9 +40,10 @@ import {
 import type { UtilityProcess as ElectronUtilityProcess } from "electron";
 import { spawn } from "node:child_process";
 import { join } from "node:path";
-import { homedir } from "node:os";
+import { homedir, hostname } from "node:os";
 import {
   createSettingService,
+  createCredentialService,
   buildRuntimeProcessEnvPatch,
   captureLoginShellEnvSnapshot,
   getConversationWorkspaceDir,
@@ -64,8 +65,12 @@ import {
   resolveZCodeEndpointOrigin,
   type UpdateStatePayload,
   HostMessageTypes,
+  type LoadCliMcpFromUserDirectoryRequest,
+  type MigrateLegacyCommonMcpRequest,
+  type SaveCliMcpToUserDirectoryRequest,
 } from "@zcode/shared";
 import { logger } from "./logger.js";
+import { createBotRemoteWorkspaceReconnectExecutor } from "./botRemoteWorkspaceReconnect.js";
 import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
 import { BroadcastHub } from "./broadcastHub.js";
@@ -178,6 +183,7 @@ import {
 } from "./resourceManagerWindow.js";
 import { createDesktopHelpConfigReader } from "./desktopHelpConfig.js";
 import { registerPlatformIpcHandlers } from "./desktopMainIpcPlatform.js";
+import { createWebRemoteControlSubsystem } from "./webRemoteControl/index.js";
 import {
   loadCliMcpFromUserDirectory,
   migrateLegacyCommonMcp,
@@ -484,6 +490,9 @@ const WINDOWS_AGENT_FORCE_KILL_TIMEOUT_MS = 2_000;
 
 const broadcastHub = new BroadcastHub();
 const taskRealtimeBus = new TaskRealtimeBus({ logger });
+// bot /reconnect 链（附录D §3.2-1）：收 host 重连请求 → 委托窗口 renderer 重连（60s）→
+// 回结果给 host → 成功后广播 zcode:bot-remote-workspace-reconnected（官方同款）。
+const botRemoteWorkspaceReconnectExecutor = createBotRemoteWorkspaceReconnectExecutor({ logger });
 // 内存诊断计数器：周期 collect 一次写主日志。
 // will-download 监听数用于观察关窗后 defaultSession 是否残留监听。
 mainMemoryDiagnosticsRegistry.register("taskBus", () => taskRealtimeBus.collectMemoryDiagnostics());
@@ -695,6 +704,35 @@ const remoteSessionManager = createRemoteWorkspaceSessionManager({
 });
 
 const deviceMid = ensureDesktopDeviceMidSync();
+// 移动端远控 desktop main 子系统：Manager per-webContents 隔离；平台白名单 7 方法复用 main 同名 handler。
+const webRemoteControlSubsystem = createWebRemoteControlSubsystem({
+  logger,
+  windowHostProcessMap,
+  attachRemoteWorkspaceSessionHost: remoteSessionManager.attachRemoteWorkspaceSessionHost,
+  settingService: mainSettingService,
+  credentialService: createCredentialService(),
+  deviceMid,
+  deviceName: hostname(),
+  appVersion: ZCODE_VERSION || app.getVersion(),
+  platformHandlers: {
+    isDockerAvailable: () => isDockerDaemonAvailable(),
+    listWSLDistros: () => listAvailableWSLDistros(),
+    listDockerContainers: () => listAvailableDockerContainers(),
+    listSSHConfigAliases: () => listSSHConfigAliases(),
+    loadMcpFromUserDirectory: (args) =>
+      loadCliMcpFromUserDirectory(args as LoadCliMcpFromUserDirectoryRequest | undefined),
+    saveMcpToUserDirectory: async (args) => {
+      try {
+        await saveCliMcpToUserDirectory(args as SaveCliMcpToUserDirectoryRequest);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+      }
+    },
+    migrateLegacyCommonMcp: (args) =>
+      migrateLegacyCommonMcp(args as MigrateLegacyCommonMcpRequest | undefined),
+  },
+});
 // 帮助配置是公开读取，不能复用下面附带账号鉴权的灰度响应缓存。
 const readHelpConfig = createDesktopHelpConfigReader({
   appVersion: ZCODE_VERSION || app.getVersion(),
@@ -922,6 +960,8 @@ async function prepareAppQuit(reason: string, kind: AppShutdownKind = "normal"):
     // remote session、attachment 和 transport 都由窗口 Host 持有；这里先清理
     // Main 的请求关联，再由下方每窗口唯一 Host 的 shutdown barrier 释放真实连接与 Agent。
     remoteSessionManager.disposeAllAndWaitForAppShutdown(reason),
+    // 远控会话同批回收：先尽力通知手机 desktop-disconnected，再释放 bridge attachment 与 relay 链路。
+    webRemoteControlSubsystem.disposeAll(),
     ...hostProcesses.map((child, index) =>
       disposeHostProcessAndWait(
         child,
@@ -1556,8 +1596,8 @@ function createWindowInstance(startupBootstrap: StartupWindowBootstrap = {}) {
     windowHostProcessMap,
     onHostProcessReady: (windowKey) => cuaPipFocusRouter.refreshWindow(windowKey),
     awaitFirstHostSpawnDecision,
-    spawnHostProcess: (win, label, initMessage) =>
-      spawnHostProcess(
+    spawnHostProcess: (win, label, initMessage) => {
+      const child = spawnHostProcess(
         win,
         label,
         {
@@ -1595,7 +1635,11 @@ function createWindowInstance(startupBootstrap: StartupWindowBootstrap = {}) {
             },
           },
         },
-      ),
+      );
+      // bot /reconnect：挂接该 window Host 的消息泵，重连请求委托本窗口 renderer 执行。
+      botRemoteWorkspaceReconnectExecutor.attach(child, { webContentsId: win.webContents.id });
+      return child;
+    },
     disposeHostProcess: (child, label, forceKillDelayMs) =>
       disposeHostProcess(
         child,
@@ -1931,6 +1975,9 @@ app.whenReady().then(async () => {
     listSSHConfigAliases,
   });
 
+  // 移动端远控 8 通道 + SyncWindowTabs 挂 restore（全局一次性 + 首个匹配窗口独占）。
+  webRemoteControlSubsystem.registerIpc();
+
   // FreeCodeZ fork(P3 §3.1):ARMS 稳定性/资源/网络/数据体积/数仓监控已删。
   // 主窗口 renderer 的 60 秒 heap 样本入口；随 App 生命周期常驻，只注册一次。
   registerRendererHeapSampleIpc();
@@ -1977,6 +2024,8 @@ app.on("browser-window-created", (_, win) => {
     // 录制中关窗/崩溃时 renderer 不会发复位 IPC，这里按发起 webContents 复位录制态，
     // 防止菜单 accelerator 被永久摘除。
     resetShortcutRecordingForWebContents(windowWebContentsId);
+    // 关窗 → 手机收 app-error{desktop-disconnected} 并全量 teardown；lastEnabledContext 保留供重启恢复。
+    void webRemoteControlSubsystem.handleWindowClosed(windowWebContentsId);
   });
   // 渲染进程崩溃但窗口存活时 closed 不会触发，崩溃路径同样按 owner 复位
   // （owner 不匹配时天然幂等）。

@@ -68,6 +68,25 @@ export type {
 
 // ZCode task wrapper service — task 列表/置顶/归档等 app 侧包装状态入口。
 export { IZCodeTaskService } from "./session/zcodeTaskService.js";
+
+// Bots service — 机器人 / Bot Channels（channel "bots"）；createBotsService 由 @zcode/services/node 导出。
+export { IBotsService } from "./bots/bots.js";
+export type {
+  BotCallbackResponse,
+  BotProviderAdapter,
+  BotRuntimeStatusEntry,
+  BotTestResult,
+  BotWorkspaceRef,
+  BotsStatus,
+  CreateBindCodeParams,
+  CreateBindCodeResult,
+  FeishuRegistrationBegin,
+  FeishuRegistrationPoll,
+  SaveBotParams,
+  WatchAutomationRunParams,
+  WeixinRegistrationBegin,
+  WeixinRegistrationPoll,
+} from "./bots/bots.js";
 export type {
   ZCodeArchivedTaskDeletionResult,
   ZCodeModelTrajectory,

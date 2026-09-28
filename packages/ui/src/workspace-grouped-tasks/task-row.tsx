@@ -40,6 +40,7 @@ import { useTaskInteractionAutoResolutionSnooze } from "@/hooks/useTaskInteracti
 import { useOptionalTabStore } from "@/store/TabStoreProvider.js";
 import { isWorkspaceReadOnly } from "@/store/tabStore.js";
 import { TaskTitleOverflowText } from "@/components/TaskTitleOverflowText.js";
+import { useMobileActiveTaskKey } from "@/web-remote-control/useWebRemoteControlStatus.js";
 
 function GroupedTaskRowComponent({
   task,
@@ -98,6 +99,7 @@ function GroupedTaskRowComponent({
     sessionId: task.taskId,
   });
   const workspaceKey = buildTaskWorkspaceKey(task.workspacePath, task.workspaceIdentity);
+  const mobileActiveTaskKey = useMobileActiveTaskKey();
   const taskActivity = getTaskListRowActivity(task);
   const taskAttention = getTaskListAttention(task);
   // 交互胶囊是当前最高优先级的右侧状态；无论来自 sessions-index 摘要还是
@@ -134,7 +136,8 @@ function GroupedTaskRowComponent({
   const isActive =
     buildTaskWorkspaceKey(activeWorkspacePath, activeWorkspaceIdentity) === workspaceKey &&
     activeTaskId === task.taskId;
-  const isMobileActive = false;
+  // 手机 viewState 命中绿标（spec §1.9）：命中 key 形如 `workspaceKey:taskId`。
+  const isMobileActive = mobileActiveTaskKey === `${workspaceKey}:${task.taskId}`;
   const statusDotClassName =
     leadingIndicator === "error"
       ? "bg-destructive"

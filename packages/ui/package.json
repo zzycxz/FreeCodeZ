@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./mobile": "./src/mobile/index.ts",
     "./useTheme": "./src/useTheme.ts",
     "./conversation-share-readonly": "./src/v4/ConversationShareReadonlyTimeline.tsx",
     "./oauth-provider-icon": "./src/lib/oauthProviderIcon.tsx",
@@ -48,6 +49,7 @@
     "@zcode/shared": "workspace:*",
     "ai": "^6.0.138",
     "ansi-to-react": "^6.2.6",
+    "border-beam": "^1.4.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

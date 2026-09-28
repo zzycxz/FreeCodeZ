@@ -418,9 +418,11 @@ function assertRemoteOfficialPluginRuntime(plugin) {
 }
 
 function stageRemoteOfficialPlugins(glmDir) {
-  // C3 构建断言（A7）：清单 ↔ 包体在场校验，缺一即失败，防「删源漏改清单」复发。
+  // C3 构建断言(A7):清单 ↔ 包体在场校验,缺一即失败,防「删源漏改清单」复发。
   assertOfficialPluginSourcesExist(rootDir);
   for (const plugin of remoteOfficialPluginPackages) {
+    // R2:电脑控制仅 desktop-local 提供,不进远端资产(stageOnRemote:false)。
+    if (plugin.stageOnRemote === false) continue;
     const sourceRoot = join(rootDir, plugin.relativePath);
     const manifestPath = join(sourceRoot, ".zcode-plugin", "plugin.json");
     if (!existsSync(manifestPath)) {

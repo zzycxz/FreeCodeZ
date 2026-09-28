@@ -43,7 +43,8 @@ const HIDDEN_SETTINGS_SECTIONS = new Set<SettingsSectionId>([
   // 工作区搜索（.zcodeignore）设置入口先隐藏：规则文件仍生效并可手动编辑，
   // 编辑页代码保留，放开时从这里移除即可。
   "workspaceFileSearch",
-  "computerUse",
+  // W-14(V2.1 保真修复):电脑控制分区解隐——官方构建设置列表可见该分区(A1 前置),
+  // 此前与 workspaceFileSearch 一起被隐藏属占位时代遗留。
 ]);
 
 interface SettingsSectionIntentEventDetail {

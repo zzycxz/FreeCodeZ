@@ -9,6 +9,10 @@ const PRODUCTION_IDENTITY = Object.freeze({
   flavor: "production",
   // FreeCodeZ fork:appId/productName 与原版 ZCode 完全分离,保证 NSIS 卸载键、
   // 快捷方式 AUMID、更新通道派生身份互不冲突,支持并排安装(规格书 P1 §1.2)。
+  // R1b(2026-09-25 用户裁决):主 appId 必须用 app.freecodez.*——曾按 CUA V2.2 R1 回退
+  // dev.zcode.app,导致 NSIS 按"同一应用"判定直接覆盖用户已装的原版 ZCode 安装目录。
+  // CUA 锚点族不受影响:HELPER_BUNDLE_ID(dev.zcode.cua-helper)与
+  // WORKFLOW_BUNDLE_ID(dev.zcode.app.finder-open-workflow)是独立常量,继续对齐官方。
   appId: "app.freecodez.app",
   productName: "FreeCodeZ",
   linuxExecutableName: "freecodez",

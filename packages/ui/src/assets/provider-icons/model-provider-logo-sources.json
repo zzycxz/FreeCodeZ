@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-09-02",
+  "reviewedAt": "2026-09-28",
   "logos": [
     {
       "brand": "OpenRouter",
@@ -119,6 +119,98 @@
       "sourceUrl": "https://avatars.githubusercontent.com/u/130314967?v=4",
       "sourceOwner": "xAI",
       "normalization": "Official GitHub organization avatar downsampled from 460x460 to 80x80 RGB."
+    },
+    {
+      "brand": "Volcengine",
+      "file": "model-provider-volcengine.svg",
+      "providerIds": ["volcengine"],
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.95.1/icons/volcengine-color.svg",
+      "sourceOwner": "Volcengine (mark) / LobeHub lobe-icons (MIT vectorization)",
+      "normalization": "Official twin-peak mark from the MIT-licensed lobe-icons collection (traced from volcengine.com); cross-checked against the official github.com/volcengine organization avatar. Title element removed, intrinsic size normalized to 48x48. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "StepFun",
+      "file": "model-provider-stepfun.svg",
+      "providerIds": ["stepfun"],
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.95.1/icons/stepfun-color.svg",
+      "sourceOwner": "StepFun (mark) / LobeHub lobe-icons (MIT vectorization)",
+      "normalization": "Official stepped-blocks mark from the MIT-licensed lobe-icons collection (traced from stepfun.com); cross-checked against the official github.com/stepfun-ai organization avatar. Title element removed, intrinsic size normalized to 48x48. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "iFlytek Spark",
+      "file": "model-provider-xfyun.svg",
+      "providerIds": ["xfyun"],
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.95.1/icons/spark-color.svg",
+      "sourceOwner": "iFlytek (mark) / LobeHub lobe-icons (MIT vectorization)",
+      "normalization": "Official iFlytek Spark (讯飞星火) flame mark from the MIT-licensed lobe-icons collection (traced from xinghuo.xfyun.cn). Title element removed, intrinsic size normalized to 48x48. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "SiliconFlow",
+      "file": "model-provider-siliconflow.svg",
+      "providerIds": ["siliconflow"],
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.95.1/icons/siliconcloud-color.svg",
+      "sourceOwner": "SiliconFlow (mark) / LobeHub lobe-icons (MIT vectorization)",
+      "normalization": "SiliconCloud (SiliconFlow's cloud platform) brand mark from the MIT-licensed lobe-icons collection; identical to the official github.com/SiliconFlow organization avatar mark. Title element removed, intrinsic size normalized to 48x48. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "Baidu AI Cloud",
+      "file": "model-provider-baidu-qianfan.svg",
+      "providerIds": ["baidu-qianfan"],
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.95.1/icons/baiducloud-color.svg",
+      "sourceOwner": "Baidu AI Cloud (mark) / LobeHub lobe-icons (MIT vectorization)",
+      "normalization": "Baidu AI Cloud hexagon mark from the MIT-licensed lobe-icons collection (traced from cloud.baidu.com); the Qianfan endpoint qianfan.baidubce.com runs on the Baidu AI Cloud brand. Title element removed, intrinsic size normalized to 48x48. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "Tencent Hunyuan",
+      "file": "model-provider-tencent-hunyuan.svg",
+      "providerIds": ["tencent-hunyuan"],
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.95.1/icons/hunyuan-color.svg",
+      "sourceOwner": "Tencent (mark) / LobeHub lobe-icons (MIT vectorization)",
+      "normalization": "Official Tencent Hunyuan swirl mark from the MIT-licensed lobe-icons collection (traced from cloud.tencent.com/product/hunyuan). Title element removed, intrinsic size normalized to 48x48. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "Ollama",
+      "file": "model-provider-ollama.svg",
+      "darkFile": "model-provider-ollama-dark.svg",
+      "providerIds": ["ollama"],
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.95.1/icons/ollama.svg",
+      "darkSourceUrl": "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.95.1/icons/ollama.svg",
+      "sourceOwner": "Ollama (mark) / LobeHub lobe-icons (MIT vectorization)",
+      "normalization": "Official llama-silhouette mark from the MIT-licensed lobe-icons collection (matches the official ollama/ollama repository macapp/src/ollama.svg). Monochrome silhouette ships as a theme pair: black for light theme, white for dark theme. Title element removed, intrinsic size normalized to 48x48. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "LM Studio",
+      "file": "model-provider-lm-studio.svg",
+      "providerIds": ["lm-studio"],
+      "sourceUrl": "https://lmstudio.ai/assets/marketing/brand/download/logos/lm-studio-icon-color.svg",
+      "sourcePage": "https://lmstudio.ai/brand",
+      "sourceOwner": "LM Studio",
+      "normalization": "Official color app icon (512x512 rounded square with the stacked-bars glyph) from the LM Studio brand guidelines; intrinsic size normalized to 48x48, otherwise unchanged. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "llama.cpp",
+      "file": "model-provider-llamacpp.png",
+      "providerIds": ["llamacpp"],
+      "sourceUrl": "https://avatars.githubusercontent.com/ggml?size=512",
+      "sourcePage": "https://github.com/ggml/llama.cpp",
+      "sourceOwner": "ggml / llama.cpp",
+      "normalization": "Official GitHub organization avatar of ggml (the org hosting llama.cpp) downsampled from 512x512 to 80x80 RGBA. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "China Mobile MoMA",
+      "file": "model-provider-moma.svg",
+      "providerIds": ["moma"],
+      "sourceUrl": "https://upload.wikimedia.org/wikipedia/en/9/90/China_Mobile_logo_%282019%29.svg",
+      "sourceOwner": "China Mobile",
+      "normalization": "China Mobile corporate mark (symbol-only crop of the 2019 wordmark lockup, viewBox recentered on the symbol and squared); Inkscape editor metadata stripped. The MoMA endpoint moma.hq.cmcc is China Mobile's internal model-aggregation platform and has no public standalone mark. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
+    },
+    {
+      "brand": "Aliyun Bailian",
+      "file": "model-provider-aliyun-bailian.svg",
+      "providerIds": ["aliyun-bailian"],
+      "sourceUrl": "https://cdn.jsdelivr.net/npm/@lobehub/icons-static-svg@1.95.1/icons/bailian-color.svg",
+      "sourceOwner": "Alibaba Cloud (mark) / LobeHub lobe-icons (MIT vectorization)",
+      "normalization": "Official Bailian (百炼) layered-stack mark from the MIT-licensed lobe-icons collection (traced from bailian.aliyun.com); distinct from the Alibaba Cloud organization avatar used by the alibaba-model-studio key. Title element removed, intrinsic size normalized to 48x48. Replaces the former gradient-plus-letter placeholder. Retrieved 2026-09-28."
     }
   ]
 }

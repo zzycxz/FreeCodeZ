@@ -7,7 +7,10 @@
     "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f",
     "importRevision": null,
     "provenance": "The original copy revision is not recorded in the current checkout; this pinned license reference is not asserted to be the original import version.",
-    "roots": ["packages/ui/src/components/ui", "packages/ui/src/styles.css"],
+    "roots": [
+      "packages/ui/src/components/ui",
+      "packages/ui/src/styles.css"
+    ],
     "scope": "Upstream-derived portions only; ZCode-specific files in the same directory are not attributed to the upstream project.",
     "license": "MIT"
   },
@@ -19,7 +22,10 @@
     "sha256": "b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529",
     "importRevision": null,
     "provenance": "The original copy revision is not recorded in the current checkout; this pinned license reference is not asserted to be the original import version.",
-    "roots": ["packages/ui/src/components/ai-elements", ".agents/skills/ai-elements"],
+    "roots": [
+      "packages/ui/src/components/ai-elements",
+      ".agents/skills/ai-elements"
+    ],
     "scope": "Upstream-derived UI components, skill instructions, reference documentation and example scripts only; locally adapted for ZCode imports, styling and agent workflow. Original import revision not recorded.",
     "license": "Apache-2.0",
     "modifiedFiles": [
@@ -166,7 +172,9 @@
   },
   {
     "id": "Fig autocomplete registry",
-    "roots": ["apps/zcode-cli/packages/core/src/tool/handlers/generated/bash-command-registry.ts"],
+    "roots": [
+      "apps/zcode-cli/packages/core/src/tool/handlers/generated/bash-command-registry.ts"
+    ],
     "license": "MIT",
     "source": "https://raw.githubusercontent.com/withfig/autocomplete/aef52acff84c45edde61ae610cc2c964802b9a38/LICENSE",
     "file": "third-party/upstream/5129f8779dca579cfcb235570688a2f15822b270575e04f27ef906aabbcc0355.txt",
@@ -195,7 +203,11 @@
     "sha256": "014bb31e83d5c2e76aea1cc6e82217346ab41362f32cb355ad0f5c10aa0aeaff",
     "importRevision": null,
     "provenance": "Original import revision is not recorded. This pinned upstream license/source reference is not asserted to be the original import version.",
-    "roots": [".agents/skills/agent-browser", ".agents/skills/dogfood", ".agents/skills/electron"],
+    "roots": [
+      ".agents/skills/agent-browser",
+      ".agents/skills/dogfood",
+      ".agents/skills/electron"
+    ],
     "scope": "Upstream-derived instructions, reference documents and shell templates; locally adapted for the ZCode workspace. Reference release v0.20.0 contains all three skills.",
     "license": "Apache-2.0",
     "modifiedFiles": [
@@ -246,9 +258,53 @@
     "referenceRevision": "063bee94c3f4df8453406c830b0a7df0f2860278",
     "source": "https://github.com/vercel-labs/agent-skills/tree/063bee94c3f4df8453406c830b0a7df0f2860278",
     "importRevision": null,
-    "roots": [".agents/skills/react-best-practices"],
+    "roots": [
+      ".agents/skills/react-best-practices"
+    ],
     "license": "MIT",
     "scope": "Vendored React/Next.js guidance and local adaptations; local README preserves Shu Ding / Vercel attribution.",
     "reviewRequired": "Pinned upstream README and skill declare MIT, but a complete original copyright/license notice has not been obtained."
+  },
+  {
+    "id": "sharp",
+    "referenceRevision": "0.34.5",
+    "source": "https://www.npmjs.com/package/sharp/v/0.34.5",
+    "file": "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt",
+    "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
+    "importRevision": null,
+    "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
+    "roots": [
+      "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp"
+    ],
+    "scope": "Image metadata/resize runtime for Computer Use screenshot handling, carried in the computer-use plugin node_modules (koffi/sharp chain).",
+    "license": "Apache-2.0"
+  },
+  {
+    "id": "sharp-win32-x64",
+    "referenceRevision": "0.34.5",
+    "source": "https://www.npmjs.com/package/sharp-win32-x64/v/0.34.5",
+    "file": "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt",
+    "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
+    "importRevision": null,
+    "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
+    "roots": [
+      "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64"
+    ],
+    "scope": "Windows x64 sharp prebuilt binary with statically linked libvips. The libvips portion is LGPL-3.0-or-later: corresponding source is available upstream (https://github.com/lovell/sharp-libvips), satisfying the source-availability obligation for this distribution.",
+    "license": "Apache-2.0 AND LGPL-3.0-or-later"
+  },
+  {
+    "id": "detect-libc",
+    "referenceRevision": "2.1.2",
+    "source": "https://www.npmjs.com/package/detect-libc/v/2.1.2",
+    "file": "third-party/upstream/b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1.txt",
+    "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+    "importRevision": null,
+    "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
+    "roots": [
+      "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc"
+    ],
+    "scope": "libc detection helper used by the sharp runtime, carried in the computer-use plugin node_modules.",
+    "license": "Apache-2.0"
   }
 ]

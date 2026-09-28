@@ -7,6 +7,7 @@ import type { ITerminalService } from "./terminal/terminal.js";
 import type { ISettingService } from "./setting/setting.js";
 import type { ICredentialService } from "./credential/credential.js";
 import type { IBroadcastService } from "./broadcast/broadcast.js";
+import type { IBotsService } from "./bots/bots.js";
 import type { IZCodeTaskService } from "./session/zcodeTaskService.js";
 import type { IZCodeAgentService } from "./zcode-agent/zcodeAgent.js";
 import type { IZCodeSessionService } from "./zcode-session/zcodeSession.js";
@@ -49,6 +50,8 @@ export interface IServiceAccessor {
   readonly credentialService: ICredentialService;
   readonly broadcastService: IBroadcastService;
   readonly zcodeTaskService: IZCodeTaskService;
+  /** 机器人 / Bot Channels（channel "bots"）。 */
+  readonly botsService: IBotsService;
   /** 窗口 Host 聚合面；旧 server wire 或测试 double 可暂不提供。 */
   readonly windowControllerService?: IWindowControllerService;
   readonly zcodeAgentService: IZCodeAgentService;

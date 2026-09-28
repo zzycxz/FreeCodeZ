@@ -79,3 +79,19 @@ packages/desktop/.e2e-artifacts/
 packages/desktop/.e2e-cache/
 packages/desktop/.e2e-network-capture/
 .zcode-runtime/
+# FreeCodeZ 改名后的本地运行时实例（同 .zcode-runtime/ 性质，纯运行产物，本地可达 787MB）。
+/.freecodez-runtime/
+# 手机远控页构建产物（scripts/build-web-remote-mobile-page.mjs 生成；遵循 2026-09-22
+# "构建目录一律不入库"决定，名字带 -mobile 不被 dist/ 通配覆盖，需单列）。
+/packages/web/dist-mobile/
+# CUA 官方 3.14.3 解包资产落地树（scripts/vendor-cua-assets.mjs 从本地
+# upstream-assets-3.14.3/ 生成，含 node_modules；Z.ai 分发物不入公开仓库）。
+/apps/zcode-cli/dependencies/zcode-cua/
+# tsc 泄漏到 src 的编译产物（schedulerProtocol.ts 同名 .js/.d.ts 及 sourcemap）。
+packages/desktop/src/scheduler/schedulerProtocol.js
+packages/desktop/src/scheduler/schedulerProtocol.js.map
+packages/desktop/src/scheduler/schedulerProtocol.d.ts
+packages/desktop/src/scheduler/schedulerProtocol.d.ts.map
+# 本地打包日志与误落在仓库根的压缩产物（976KB minified bundle）。
+/dist-build*.log
+/index.js

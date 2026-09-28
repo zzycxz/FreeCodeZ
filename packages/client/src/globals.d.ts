@@ -46,6 +46,12 @@ import type {
   UpdateStatePayload,
   OpenInEditorOptions,
 } from "@zcode/shared";
+import type {
+  RemoteTaskListItem,
+  RemoteWorkspaceDescriptor,
+  WebRemoteControlContext,
+  WebRemoteControlStatus,
+} from "@zcode/shared/web-remote-control";
 
 /**
  * window.zcode 类型定义 —— 仅包含需要 main 进程参与的平台操作
@@ -102,6 +108,10 @@ declare global {
       onRemoteConnectionLog(handler: (entry: RemoteConnectionRuntimeLog) => void): () => void;
       /** 订阅远程 workspace session 关闭事件，返回 disposer */
       onRemoteSessionClosed(handler: (event: RemoteSessionClosedEvent) => void): () => void;
+      /** 订阅 bot /reconnect 成功广播（main→全部 renderer，Root 刷状态投影），返回 disposer */
+      onBotRemoteWorkspaceReconnected?(
+        callback: (event: import("@zcode/shared").BotRemoteWorkspaceReconnectedEvent) => void,
+      ): () => void;
       /** 检查目录是否已在其他窗口打开 */
       activateOrSetWorkspace?(path: string): Promise<{ activated: boolean }>;
       /** 同步当前窗口所有 tab 的 workspace 路径到 main 进程 */
@@ -315,6 +325,33 @@ declare global {
       getSystemLocale?(): Promise<Locale>;
       /** 同步标题栏亮暗色 */
       setTitleBarTheme(theme: DesktopTitleBarTheme): Promise<void>;
+      /** 启动（或复用）当前窗口的移动端远程控制会话 */
+      startWebRemoteControl?(context: WebRemoteControlContext): Promise<
+        WebRemoteControlStatus | { status: "cancelled" }
+      >;
+      /** 刷新远控配对（rotate deviceSid/passHash，旧链接立即失效） */
+      refreshWebRemoteControlPairing?(context: WebRemoteControlContext): Promise<
+        WebRemoteControlStatus | { status: "cancelled" }
+      >;
+      /** 停止当前窗口远控会话（手机收到 desktop-disconnected） */
+      stopWebRemoteControl?(): Promise<void>;
+      /** 查询当前窗口远控运行状态 */
+      getWebRemoteControlStatus?(): Promise<WebRemoteControlStatus>;
+      /** 订阅远控状态变化推送，返回 disposer */
+      onWebRemoteControlStatusChanged?(
+        callback: (status: WebRemoteControlStatus) => void,
+      ): () => void;
+      /** 注册手机端请求重连工作区的回调（双向 invoke，main 侧 120s 等待应答），返回 disposer */
+      onWebRemoteControlReconnectWorkspace?(
+        callback: (request: {
+          requestId: string;
+          workspaceKey: string;
+        }) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string },
+      ): () => void;
+      /** 同步当前窗口里 Web 远程控制允许切换的 workspace 快照 */
+      syncWebRemoteControlWorkspaces?(workspaces: RemoteWorkspaceDescriptor[]): void;
+      /** 同步当前窗口里 Web 远程控制可展示的 task 快照 */
+      syncWebRemoteControlTasks?(tasks: RemoteTaskListItem[]): void;
     };
   }
 }

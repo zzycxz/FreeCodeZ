@@ -20,7 +20,7 @@ import {
   resolveDesktopArtifactSuffix,
   resolveDesktopProductIdentity,
 } from "./scripts/desktop-product-identity.mjs";
-import { verifyStagedKoffi } from "./scripts/koffi-package-assets.mjs";
+import { verifyCuaPluginAssets } from "./scripts/koffi-package-assets.mjs";
 const ELECTRON_BUILDER_ARCH = {
   1: "x64",
   3: "arm64",
@@ -552,6 +552,19 @@ export default {
       assertPackagedNodePtyPrebuild(context),
     );
     if (actualWindowsTarget) {
+      // 电脑控制能力补位(B1-4/B1-5):插件原生运行时(koffi/sharp)与 helper manifest 哈希
+      // 校验挂入 afterPack,缺一即打包失败,防「装上即断」回流用户侧。
+      runTimedSync("afterPack:verifyCuaPluginAssets", () => {
+        const errors = verifyCuaPluginAssets({
+          resourcesDir: resolve(context.appOutDir, "resources"),
+          targetPlatform,
+        });
+        if (errors.length > 0) {
+          throw new Error(
+            `[electron-builder.config] CUA assets invalid:\n${errors.map((error) => `  - ${error}`).join("\n")}`,
+          );
+        }
+      });
       await runTimedAsync("afterPack:writeWindowsInstallManifest", () =>
         writeWindowsInstallManifest(context),
       );
@@ -559,6 +572,14 @@ export default {
   },
   extraResources: [
     { from: resolve(workspaceRoot, noticesFileName), to: noticesFileName },
+    {
+      // 移动端远控手机页 bundle（spec web-remote-control §5）：内嵌 LAN relay 在 /remote/v4
+      // 托管 resources/web-remote-mobile；主进程按 process.resourcesPath/web-remote-mobile 解析。
+      // 由 run-production-build 的 build-web-remote-mobile-page 步骤产出，缺失会导致安装包
+      // 手机页回退内置最小页（功能不可用），所以这里必须随包分发。
+      from: resolve(workspaceRoot, "packages/web/dist-mobile"),
+      to: "web-remote-mobile",
+    },
     ...(targetPlatform.os === "darwin"
       ? [
           {
@@ -628,6 +649,31 @@ export default {
       to: "tools/ripgrep",
       filter: ["**/*"],
     },
+    ...(targetPlatform.os === "win32"
+      ? [
+          {
+            // 电脑控制执行引擎(B1-5):vendored helper runtime(ax_native.node + windows-helper.js
+            // + node_modules + runtime-manifest.json)。manifest 由 scripts/vendor-cua-assets.mjs
+            // 生成(scripts 侧唯一事实源);仅 win32 随包(R2/Linux 不支持,mac 独立产线)。
+            from: resolve(workspaceRoot, "apps/zcode-cli/dependencies/zcode-cua/helper-runtime"),
+            to: "tools/cua-helper",
+            filter: ["**/*", "!SHA256SUMS"],
+          },
+          {
+            // B1-5 helper runtime deps (sharp chain + express stack) MUST be a separate entry:
+            // app-builder-lib createFilter hard-excludes the copy-root direct node_modules
+            // (filter.js: relative equals node_modules returns false unconditionally).
+            // Copying from inside node_modules avoids the rule. A16 (2026-09-24) measured:
+            // a merged entry silently drops 460 runtime files and the Helper breaks on first use.
+            from: resolve(
+              workspaceRoot,
+              "apps/zcode-cli/dependencies/zcode-cua/helper-runtime/node_modules",
+            ),
+            to: "tools/cua-helper/node_modules",
+            filter: ["**/*"],
+          },
+        ]
+      : []),
     ...nativeSearchReleasePlan.extraResourceToolIds.map((toolId) => ({
       from: `bundled-tools/${targetPlatform.key}/${toolId}`,
       to: `tools/${toolId}`,

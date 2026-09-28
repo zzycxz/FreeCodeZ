@@ -410,6 +410,16 @@ export const hostLocalMediaPreviewPathAuthorizeResultMessageSchema = z
   })
   .strict();
 
+// main → host：bot /reconnect 远端重连结果（按 requestId 关联 host 侧 RemoteWorkspaceGate pending）。
+export const hostBotRemoteWorkspaceReconnectResultMessageSchema = z
+  .object({
+    type: z.literal("bot-remote-workspace-reconnect-result"),
+    requestId: nonEmptyStringSchema,
+    ok: z.boolean(),
+    error: z.string().optional(),
+  })
+  .strict();
+
 export const hostCuaPipFocusChangedMessageSchema = z
   .object({
     type: z.literal("cua-pip-focus-changed"),
@@ -473,6 +483,7 @@ export const hostIncomingMessageSchema = z.discriminatedUnion("type", [
   hostOffPeakRunMessageSchema,
   hostBrowserExecuteResultMessageSchema,
   hostLocalMediaPreviewPathAuthorizeResultMessageSchema,
+  hostBotRemoteWorkspaceReconnectResultMessageSchema,
   hostCuaPipFocusChangedMessageSchema,
   hostProviderProvisioningExecuteMessageSchema,
 ]);
@@ -871,6 +882,17 @@ export const hostLocalMediaPreviewPathAuthorizeRequestResponseSchema = z
   })
   .strict();
 
+// host → main：bot /reconnect 请求 main 执行远端重连（官方 ensureConnected 60s；
+// FreeCodeZ 由 main 委托窗口 renderer 的 runReconnectRemoteWorkspaceEntry 执行）。
+export const hostBotRemoteWorkspaceReconnectRequestResponseSchema = z
+  .object({
+    type: z.literal("bot-remote-workspace-reconnect-request"),
+    requestId: nonEmptyStringSchema,
+    workspacePath: nonEmptyStringSchema,
+    workspaceIdentity: nonEmptyStringSchema.optional(),
+  })
+  .strict();
+
 export const networkObservationSchema = z.object({
   transport: z.enum(["http", "websocket", "rpc"]),
   interface: z.string(),
@@ -972,6 +994,7 @@ export const hostResponseMessageSchema = z.discriminatedUnion("type", [
   hostFeedbackLogArchiveRequestResponseSchema,
   hostBrowserExecuteRequestResponseSchema,
   hostLocalMediaPreviewPathAuthorizeRequestResponseSchema,
+  hostBotRemoteWorkspaceReconnectRequestResponseSchema,
   hostNetworkTelemetryBatchResponseSchema,
   hostProviderProvisioningSourceChangedResponseSchema,
   hostProviderProvisioningExecutionResultResponseSchema,

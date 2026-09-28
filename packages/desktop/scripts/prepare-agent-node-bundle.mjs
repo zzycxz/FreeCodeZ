@@ -16,6 +16,7 @@ import { basename, dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { runCommand } from "../../../scripts/spawn-command.mjs";
+import { resolveCuaHelperBuildId } from "../../../scripts/cua-helper-build-id.mjs";
 import {
   assertOfficialPluginSourcesExist,
   BROWSER_USE_PLUGIN_PACKAGE_NAME,
@@ -30,6 +31,8 @@ const cliBundlePath = resolve(repoRoot, "apps/zcode-cli/packages/cli/dist/zcode.
 const adaptersRoot = resolve(repoRoot, "apps/zcode-cli/packages/adapters");
 const pnpmRunEnv = {
   ...process.env,
+  // 电脑控制能力补位(B1-6):Helper 验签锚点同源注入(见 scripts/cua-helper-build-id.mjs)。
+  ZCODE_CUA_HELPER_BUILD_ID: resolveCuaHelperBuildId(process.env),
   // pnpm 11 会在 apps/zcode-cli 子 workspace 执行 run 前触发 install；
   // 子 workspace 不能解析根 workspace 的 @zcode/shared，Docker/web app 打包会因此卡在插件 runtime 构建。
   PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN: "false",
@@ -103,10 +106,41 @@ const excludedOfficialPluginAssetNames = new Set([
   "__pycache__",
   "node_modules",
 ]);
+// CUA 插件的 node_modules 白名单（B1-3）：koffi/sharp 链是 runtime 依赖，整体过滤必丢；
+// 仅 win32 目标携带（vendored 原生二进制为 win32 形态）。
+const CUA_CARRIED_NODE_MODULE_NAMES = new Set([
+  "koffi",
+  "sharp",
+  "@img",
+  "semver",
+  "detect-libc",
+]);
 
 function shouldCopyOfficialPluginAsset(sourcePath) {
   const name = basename(sourcePath);
   return !excludedOfficialPluginAssetNames.has(name) && !name.endsWith(".pyc");
+}
+
+function shouldCarryCuaNodeModule(sourcePath) {
+  const name = basename(sourcePath);
+  return CUA_CARRIED_NODE_MODULE_NAMES.has(name);
+}
+
+function stageCarriedNodeModules(plugin, sourceRoot, targetRoot) {
+  // B1-3:白名单内的 node_modules 随 CUA 插件携带(koffi/sharp 链是 runtime 依赖);
+  // 仅 win32 目标携带(vendored 原生二进制为 win32 形态)。
+  if (!plugin.carriedNodeModules || platform !== "win32") return;
+  const sourceNodeModules = resolve(sourceRoot, "node_modules");
+  if (!existsSync(sourceNodeModules)) return;
+  const targetNodeModules = resolve(targetRoot, "node_modules");
+  for (const name of plugin.carriedNodeModules) {
+    const from = resolve(sourceNodeModules, ...name.split("/"));
+    if (!existsSync(from)) continue;
+    cpSync(from, resolve(targetNodeModules, ...name.split("/")), { recursive: true });
+  }
+  if (!shouldCarryCuaNodeModule(resolve(targetNodeModules, "koffi"))) {
+    throw new Error(`[prepare:agent-bundle] missing carried node module: ${targetNodeModules}/koffi`);
+  }
 }
 const isBootstrapWithRemote = process.env.ZCODE_BOOTSTRAP_WITH_REMOTE === "1";
 
@@ -209,6 +243,7 @@ function stageOfficialPlugins() {
         filter: shouldCopyOfficialPluginAsset,
       });
     }
+    stageCarriedNodeModules(plugin, sourceRoot, targetRoot);
     for (const relativePath of plugin.requiredSeedPaths ?? []) {
       const stagedAssetPath = resolve(targetRoot, ...relativePath.split("/"));
       if (!existsSync(stagedAssetPath)) {

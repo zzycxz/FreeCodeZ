@@ -131,6 +131,7 @@ import {
   type WindowRemoteConnectionCloseEvent,
   type WindowRemoteConnectionHandle,
 } from "./windowRemoteConnectionRegistry.js";
+import { createBotRemoteWorkspaceGate } from "./botRemoteWorkspaceGate.js";
 import { createWindowHostControllerRuntime } from "./windowHostControllerService.js";
 import { resolveAutomationSubmissionModelSelection } from "./automationModelSelection.js";
 import { createRemoteConnectionProgressContext } from "@zcode/server/remote/remoteConnectionProgressContext.js";
@@ -1434,6 +1435,19 @@ const windowRemoteConnectionRegistry = createWindowRemoteConnectionRegistry<
   },
 });
 
+// bot /reconnect 的 RemoteWorkspaceGate：远端连接态查 windowRemoteConnectionRegistry，
+// 重连经 parentPort 委托 main→renderer（附录D §3.2-1），结果由消息泵按 requestId 分派回来。
+const botRemoteWorkspaceGate = createBotRemoteWorkspaceGate({
+  postToMain: (message) => {
+    if (!parentPort) {
+      throw new Error("parentPort unavailable");
+    }
+    parentPort.postMessage(message);
+  },
+  findSessionForWorkspace: (params) => windowRemoteConnectionRegistry.findSessionForWorkspace(params),
+  logger,
+});
+
 const windowHostControllerRuntime = createWindowHostControllerRuntime({
   createId: randomUUID,
   onSourceError: (scope, operation, error) => {
@@ -1965,6 +1979,12 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
     return;
   }
 
+  if (msg.type === HostMessageTypes.BotRemoteWorkspaceReconnectResult) {
+    // main 委托 renderer 完成 bot /reconnect 后回结果，按 requestId 回填 gate 的 pending。
+    botRemoteWorkspaceGate.handleReconnectResult(msg);
+    return;
+  }
+
   if (msg.type === HostMessageTypes.CronRun) {
     if (databaseStartup?.coordinator.snapshot.phase !== "ready") {
       parentPort.postMessage({
@@ -2446,6 +2466,8 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
               // browser-use：agent 的 interaction/browserExecute 经 zcodeAgentService 转到这个 executor，
               // 再经 parentPort 到 main 的 WebContentsView+CDP 执行。
               browserControlExecutor: browserControlMainBridge,
+              // bot /reconnect 与远端拦截：RemoteWorkspaceGate 以真实远程连接态判定，重连委托 main→renderer。
+              remoteWorkspaceService: botRemoteWorkspaceGate,
               // CUA 顶部提示属于物理 Windows 桌面投影；非 Windows 和远端 authority 都不得上报。
               cuaOperationStateReporter:
                 process.platform === "win32" ? cuaOperationStateReporter : undefined,

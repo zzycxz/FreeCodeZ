@@ -52,6 +52,7 @@ import { selectWorkspaceZCodeState, useZCodeSessionStore } from "@/store/zcodeSe
 import { useZCodeStore } from "@/store/StoreProvider.js";
 import type { Theme } from "@/useTheme.js";
 import { WorkspaceSidebarFooterUsageSummaryContent } from "@/WorkspaceSidebarFooterUsageSummary.js";
+import { WebRemoteControlTrigger } from "@/web-remote-control/WebRemoteControlTrigger.js";
 
 const DESKTOP_ZOOM_MIN_LEVEL = -3;
 const DESKTOP_ZOOM_MAX_LEVEL = 5;
@@ -378,6 +379,15 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
           </DropdownMenuContent>
         </DropdownMenu>
         <div className="flex shrink-0 items-center gap-1.5">
+          {/* 移动端远程控制入口（spec web-remote-control §1.1）：仅桌面 + 当前工作区可用，compact 图标钮。 */}
+          {isDesktop && workspacePath ? (
+            <WebRemoteControlTrigger
+              workspacePath={workspacePath}
+              workspaceIdentity={workspaceIdentity}
+              remoteSessionId={workspaceRemoteSessionId}
+              compact
+            />
+          ) : null}
           <ControlHintTooltip title={settingsButtonLabel}>
             <Button
               type="button"

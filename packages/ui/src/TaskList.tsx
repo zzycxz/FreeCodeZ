@@ -14,6 +14,7 @@ import { MemoTaskItem, TaskListItemContextMenuContent } from "@/TaskListItem.js"
 import { TaskListLoadingHint } from "@/TaskListLoadingHint.js";
 import { TaskRenameDialog } from "@/TaskRenameDialog.js";
 import { buildTaskWorkspaceKey } from "@/lib/taskQueryCache.js";
+import { useMobileActiveTaskKey } from "@/web-remote-control/useWebRemoteControlStatus.js";
 import { compareZCodeTaskListItems } from "@/lib/taskListOrdering.js";
 import { logger } from "@/logger.js";
 import { ControlHintTooltip } from "@/ControlHintTooltip.js";
@@ -70,6 +71,8 @@ export const TaskList = memo(function TaskList({
   readOnlyReason?: string;
 }) {
   const { intl } = useZCodeIntl();
+  // 手机 viewState 命中的任务要显示绿标；命中 key 形如 `workspaceKey:taskId`（spec §1.9）。
+  const mobileActiveTaskKey = useMobileActiveTaskKey();
   const pinnedTaskIdSet = useMemo(
     () => new Set(pinnedTasks.map((task) => task.taskId)),
     [pinnedTasks],
@@ -362,7 +365,11 @@ export const TaskList = memo(function TaskList({
         task={task}
         isPinned={isPinned}
         isActive={isWorkspaceActive && task.taskId === activeTaskId}
-        isMobileActive={false}
+        isMobileActive={
+          mobileActiveTaskKey !== null &&
+          mobileActiveTaskKey ===
+            `${buildTaskWorkspaceKey(workspacePath, workspaceIdentity)}:${task.taskId}`
+        }
         onSelectTask={handleSelectTaskItem}
         onArchiveTaskInline={handleArchiveTaskFromInline}
         onCancelArchiveConfirm={handleCancelArchiveConfirm}

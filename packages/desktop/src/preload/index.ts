@@ -51,6 +51,7 @@ import type {
   RendererHeapSample,
   PostUpdateReleaseNotesPayload,
   RemoteSessionClosedEvent,
+  BotRemoteWorkspaceReconnectedEvent,
   UpdateCheckResultPayload,
   UpdateStatePayload,
   ZCodeStdioTapDevState,
@@ -69,6 +70,12 @@ import type {
   ConfigureFinalArmsCustomEventE2ERequest,
   FinalArmsCustomEventE2EEntry,
 } from "@zcode/shared";
+import type {
+  RemoteTaskListItem,
+  RemoteWorkspaceDescriptor,
+  WebRemoteControlContext,
+  WebRemoteControlStatus,
+} from "@zcode/shared/web-remote-control";
 import {
   InternalChannels,
   PlatformChannels,
@@ -313,13 +320,94 @@ contextBridge.exposeInMainWorld("zcode", {
     ipcRenderer.on(PlatformChannels.RemoteSessionClosed, handler);
     return () => ipcRenderer.removeListener(PlatformChannels.RemoteSessionClosed, handler);
   },
+  /** 订阅 bot /reconnect 成功广播（main→全部 renderer），Root 刷状态投影，返回 disposer */
+  onBotRemoteWorkspaceReconnected: (callback: (event: BotRemoteWorkspaceReconnectedEvent) => void) => {
+    const handler = (_event: unknown, payload: unknown) =>
+      callback(payload as BotRemoteWorkspaceReconnectedEvent);
+    ipcRenderer.on(PlatformChannels.BotRemoteWorkspaceReconnected, handler);
+    return () => ipcRenderer.removeListener(PlatformChannels.BotRemoteWorkspaceReconnected, handler);
+  },
   /** 检查目录是否已在其他窗口打开 */
   activateOrSetWorkspace: (path: string): Promise<{ activated: boolean }> =>
     ipcRenderer.invoke(PlatformChannels.ActivateOrSetWorkspace, path),
   /** 同步当前窗口所有 tab 的 workspace 路径到 main 进程 */
   syncWindowTabs: (paths: string[]) => ipcRenderer.send(PlatformChannels.SyncWindowTabs, paths),
+  /** 启动（或复用）当前窗口的移动端远程控制会话 */
+  startWebRemoteControl: (
+    context: WebRemoteControlContext,
+  ): Promise<WebRemoteControlStatus | { status: "cancelled" }> =>
+    ipcRenderer.invoke(PlatformChannels.StartWebRemoteControl, context),
+  /** 刷新远控配对（rotate deviceSid/passHash，旧链接立即失效） */
+  refreshWebRemoteControlPairing: (
+    context: WebRemoteControlContext,
+  ): Promise<WebRemoteControlStatus | { status: "cancelled" }> =>
+    ipcRenderer.invoke(PlatformChannels.ResetWebRemoteControlPairing, context),
+  /** 停止当前窗口远控会话（手机收到 desktop-disconnected） */
+  stopWebRemoteControl: (): Promise<void> =>
+    ipcRenderer.invoke(PlatformChannels.StopWebRemoteControl),
+  /** 查询当前窗口远控运行状态 */
+  getWebRemoteControlStatus: (): Promise<WebRemoteControlStatus> =>
+    ipcRenderer.invoke(PlatformChannels.GetWebRemoteControlStatus),
+  /** 列出配对网卡候选与当前钉选（LAN 地址选取，spec web-remote-control §5） */
+  listWebRemoteControlPairNics: (): Promise<{
+    nics: Array<{ ip: string; name: string; label: string; isDefault: boolean; reason?: string }>;
+    pinned: string;
+  }> => ipcRenderer.invoke(PlatformChannels.ListWebRemoteControlPairNics),
+  /** 钉选配对网卡 IP（空串=自动；活动会话即时重建配对 URL） */
+  setWebRemoteControlPairAddress: (
+    address: string,
+  ): Promise<{ address: string; valid: boolean; error?: string }> =>
+    ipcRenderer.invoke(PlatformChannels.SetWebRemoteControlPairAddress, { address }),
+  /** 读取远程访问自建中继 origin（空=内嵌局域网模式，spec §1.11） */
+  getWebRemoteControlExternalRelay: (): Promise<string> =>
+    ipcRenderer.invoke(PlatformChannels.GetWebRemoteControlExternalRelay),
+  /** 设置/清空自建中继 origin（弹窗随后 refresh 重注册） */
+  setWebRemoteControlExternalRelay: (
+    url: string,
+  ): Promise<{ url: string; valid: boolean; error?: string }> =>
+    ipcRenderer.invoke(PlatformChannels.SetWebRemoteControlExternalRelay, { url }),
+  /** 订阅远控状态变化推送，返回 disposer */
+  onWebRemoteControlStatusChanged: (
+    callback: (status: WebRemoteControlStatus) => void,
+  ): (() => void) => {
+    const handler = (_event: unknown, status: WebRemoteControlStatus) => callback(status);
+    ipcRenderer.on(PlatformChannels.WebRemoteControlStatusChanged, handler);
+    return () => ipcRenderer.removeListener(PlatformChannels.WebRemoteControlStatusChanged, handler);
+  },
+  /** 注册手机端请求重连工作区的回调（双向 invoke：main 派发请求，callback 应答经同通道回传），返回 disposer */
+  onWebRemoteControlReconnectWorkspace: (
+    callback: (request: {
+      requestId: string;
+      workspaceKey: string;
+    }) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string },
+  ): (() => void) => {
+    const handler = (_event: unknown, request: { requestId: string; workspaceKey: string }) => {
+      void Promise.resolve()
+        .then(() => callback(request))
+        .then(
+          (result) =>
+            ipcRenderer.send(PlatformChannels.WebRemoteControlReconnectWorkspace, {
+              requestId: request.requestId,
+              success: result.success,
+              ...(result.error ? { error: result.error } : {}),
+            }),
+          (error: unknown) =>
+            ipcRenderer.send(PlatformChannels.WebRemoteControlReconnectWorkspace, {
+              requestId: request.requestId,
+              success: false,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+        );
+    };
+    ipcRenderer.on(PlatformChannels.WebRemoteControlReconnectWorkspace, handler);
+    return () => ipcRenderer.removeListener(PlatformChannels.WebRemoteControlReconnectWorkspace, handler);
+  },
   /** 同步当前窗口里 Web 远程控制允许切换的 workspace */
+  syncWebRemoteControlWorkspaces: (workspaces: RemoteWorkspaceDescriptor[]): void =>
+    ipcRenderer.send(PlatformChannels.SyncWebRemoteControlWorkspaces, workspaces),
   /** 同步当前窗口里 Web 远程控制可展示的 task 快照 */
+  syncWebRemoteControlTasks: (tasks: RemoteTaskListItem[]): void =>
+    ipcRenderer.send(PlatformChannels.SyncWebRemoteControlTasks, tasks),
   /** 同步当前窗口的未读 task 数到 main 进程 */
   syncWindowUnreadCount: (count: number) =>
     ipcRenderer.send(PlatformChannels.SyncWindowUnreadCount, count),

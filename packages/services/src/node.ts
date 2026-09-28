@@ -3,7 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import {
   createNodeProviderRuntimePathEnv,
   NodeModelSelectionConfigRepository,
@@ -83,6 +83,30 @@ export {
   createSettingServiceWithMigrations,
 } from "./setting/settingService.js";
 export { createCredentialService } from "./credential/credentialService.js";
+// Bots / Bot Channels（channel "bots"）：服务工厂 + 五渠道适配器 + 三渠道 runtime。
+export { createBotsService } from "./bots/botsService.js";
+export type {
+  CreateBotsServiceOptions,
+  BotRuntimeFactoryContext,
+  BotRuntimeHandle,
+} from "./bots/botsService.js";
+export {
+  createWebhookBotProvider,
+  verifyWebhookSecret,
+  postWebhookWithRetry,
+  WEBHOOK_SECRET_HEADER_NAME,
+} from "./bots/providers/webhookProvider.js";
+export { createTelegramBotProvider } from "./bots/providers/telegramProvider.js";
+export { createWeixinBotProvider } from "./bots/providers/weixinProvider.js";
+export {
+  createFeishuBotProvider,
+  beginFeishuAccountsRegistration,
+  pollFeishuAccountsRegistration,
+} from "./bots/providers/feishuProvider.js";
+export { createFeishuStreamingSender } from "./bots/providers/feishuStreaming.js";
+export { createTelegramRuntime } from "./bots/runtimes/telegramRuntime.js";
+export { createWeixinRuntime } from "./bots/runtimes/weixinRuntime.js";
+export { createFeishuRuntime } from "./bots/runtimes/feishuRuntime.js";
 export { createBroadcastService } from "./broadcast/broadcastService.js";
 export { createZCodeAgentService } from "./zcode-agent/zcodeAgentService.js";
 export { createZCodeTaskServiceAdapter } from "./zcode-agent/zcodeTaskServiceAdapter.js";
@@ -242,6 +266,16 @@ import { ISettingService } from "./setting/setting.js";
 import { IOnboardingRecordService } from "./onboarding/onboardingRecord.js";
 import { ICredentialService } from "./credential/credential.js";
 import { IBroadcastService } from "./broadcast/broadcast.js";
+import { IBotsService } from "./bots/bots.js";
+import { createBotsService } from "./bots/botsService.js";
+import type { RemoteWorkspaceGate } from "./bots/inboundPipeline.js";
+import { createWebhookBotProvider } from "./bots/providers/webhookProvider.js";
+import { createTelegramBotProvider } from "./bots/providers/telegramProvider.js";
+import { createWeixinBotProvider } from "./bots/providers/weixinProvider.js";
+import { createFeishuBotProvider } from "./bots/providers/feishuProvider.js";
+import { createTelegramRuntime } from "./bots/runtimes/telegramRuntime.js";
+import { createWeixinRuntime } from "./bots/runtimes/weixinRuntime.js";
+import { createFeishuRuntime } from "./bots/runtimes/feishuRuntime.js";
 import { IZCodeTaskService } from "./session/zcodeTaskService.js";
 import { IZCodeAgentService } from "./zcode-agent/zcodeAgent.js";
 import type { CuaOperationStateReporter } from "./zcode-agent/cuaOperationTurnTracker.js";
@@ -1226,6 +1260,8 @@ export function createLocalServices(options: {
   };
   /** Windows desktop-local Host 的 CUA turn 状态投影；其它 authority 会在装配层拒绝。 */
   cuaOperationStateReporter?: CuaOperationStateReporter;
+  /** bot /reconnect 与远端拦截的 RemoteWorkspaceGate（desktop host 注入真实远程连接态；缺省视为远端不可用）。 */
+  remoteWorkspaceService?: RemoteWorkspaceGate;
 }): ServiceCollection {
   const isDesktopAttachedRemote = options?.serviceAuthorityMode === "desktop-attached-remote";
   // host / remote server 以前直接沿用当前进程环境启动后续服务。
@@ -2031,6 +2067,134 @@ export function createLocalServices(options: {
     settingService,
     cuaProductMcpServerResolver,
   });
+  // 机器人 / Bot Channels：五渠道适配器 + 三渠道 runtime + 入站/回复管道（channel "bots"）。
+  const botsCredentialLoader = (key: string) => credentialService.load(key);
+  // /workspace //model 命令的数据源：工作区取 settings 的会话历史∪最近项目，
+  // 模型目录取 ModelSelectionFacade 投影（reasoningLevel.values 即推理档位表）。
+  const listBotsWorkspaceRefs = async (): Promise<
+    Array<{
+      label: string;
+      workspacePath: string;
+      workspaceIdentity?: string;
+      remote?: boolean;
+    }>
+  > => {
+    const settings = await settingService.get();
+    const seen = new Set<string>();
+    const refs: Array<{
+      label: string;
+      workspacePath: string;
+      workspaceIdentity?: string;
+      remote?: boolean;
+    }> = [];
+    const push = (workspacePath: string, workspaceIdentity?: string, remote?: boolean): void => {
+      const key = workspaceIdentity?.trim() || workspacePath;
+      if (!workspacePath || seen.has(key)) return;
+      seen.add(key);
+      refs.push({
+        label: remote ? (workspaceIdentity || workspacePath) : basename(workspacePath) || workspacePath,
+        workspacePath,
+        ...(workspaceIdentity ? { workspaceIdentity } : {}),
+        ...(remote ? { remote: true } : {}),
+      });
+    };
+    for (const entry of settings.lastWorkspaceSession ?? []) {
+      if (entry.kind === "remote") {
+        push(entry.workspacePath, entry.workspaceIdentity, true);
+      } else {
+        push(entry.workspacePath);
+      }
+    }
+    for (const path of settings.recentProjects ?? []) push(path);
+    return refs;
+  };
+  const listBotsModelCatalog = async (): Promise<
+    Array<{
+      id: string;
+      name: string;
+      models: Array<{ id: string; name: string; thoughtLevels?: string[] }>;
+    }>
+  > => {
+    const view = await providerRuntime.modelSelection.getView();
+    return view.providers.map((provider) => ({
+      id: provider.providerId,
+      name: provider.providerName || provider.providerId,
+      models: provider.models.map((model) => {
+        const levels = model.config?.optionSpecs?.reasoningLevel?.values;
+        return {
+          id: model.modelId,
+          name: model.modelId,
+          ...(levels?.length ? { thoughtLevels: [...levels] } : {}),
+        };
+      }),
+    }));
+  };
+  const botsService = createBotsService({
+    credentialService,
+    taskService: zcodeTaskService,
+    broadcastService,
+    settingService,
+    listWorkspaceRefs: listBotsWorkspaceRefs,
+    listModelCatalog: listBotsModelCatalog,
+    resolveModelSelection: async (context, requested) => {
+      const candidate = requested ?? context.draftOptions?.modelSelection;
+      const view = await providerRuntime.modelSelection.getView(
+        candidate ? { selection: candidate } : undefined,
+      );
+      return {
+        effectiveSelection: view.effectiveSelection ?? null,
+        ...(view.preferredSelection ? { preferredSelection: view.preferredSelection } : {}),
+        ...(view.selectionIssue ? { selectionIssue: view.selectionIssue } : {}),
+      };
+    },
+    // bot /reconnect 与远端拦截（附录B §6-10）：gate 由 desktop host 经 createLocalServices 注入；
+    // 其它宿主（server/web）缺省不注入，远端命令按 remoteReconnectUnavailable/未连接文案兜底。
+    ...(options?.remoteWorkspaceService
+      ? { remoteWorkspaceService: options?.remoteWorkspaceService }
+      : {}),
+    adapters: [
+      createWebhookBotProvider(),
+      createTelegramBotProvider({ credentialLoader: botsCredentialLoader }),
+      createWeixinBotProvider({ credentialLoader: botsCredentialLoader }),
+      createFeishuBotProvider({ credentialLoader: botsCredentialLoader }),
+    ],
+    createRuntimes: (botsRuntimeContext) => [
+      createTelegramRuntime({
+        fetchImpl: botsRuntimeContext.fetchImpl,
+        apiBase: botsRuntimeContext.apiBaseTelegram,
+        configDir: botsRuntimeContext.configDir,
+        credentialLoader: botsRuntimeContext.credentialLoader,
+        listBots: botsRuntimeContext.listBots,
+        readTelegramOffset: botsRuntimeContext.readTelegramOffset,
+        writeTelegramOffset: botsRuntimeContext.writeTelegramOffset,
+        handleInboundMessage: botsRuntimeContext.handleInboundMessage,
+        onStatus: botsRuntimeContext.onStatus,
+        logger: botsRuntimeContext.logger,
+        now: botsRuntimeContext.now,
+      }),
+      createWeixinRuntime({
+        fetchImpl: botsRuntimeContext.fetchImpl,
+        configDir: botsRuntimeContext.configDir,
+        credentialLoader: botsRuntimeContext.credentialLoader,
+        listBots: botsRuntimeContext.listBots,
+        readGetUpdatesBuf: botsRuntimeContext.readGetUpdatesBuf,
+        writeGetUpdatesBuf: botsRuntimeContext.writeGetUpdatesBuf,
+        handleInboundMessage: botsRuntimeContext.handleInboundMessage,
+        onStatus: botsRuntimeContext.onStatus,
+        logger: botsRuntimeContext.logger,
+        now: botsRuntimeContext.now,
+      }),
+      createFeishuRuntime({
+        configDir: botsRuntimeContext.configDir,
+        credentialLoader: botsRuntimeContext.credentialLoader,
+        listBots: botsRuntimeContext.listBots,
+        handleInboundMessage: botsRuntimeContext.handleInboundMessage,
+        onStatus: botsRuntimeContext.onStatus,
+        logger: botsRuntimeContext.logger,
+        now: botsRuntimeContext.now,
+      }),
+    ],
+  });
   const fileService = createFileService({
     workspaceFileSearchFilter: options?.workspaceFileSearchFilter,
   });
@@ -2054,6 +2218,7 @@ export function createLocalServices(options: {
     .register(ICredentialService, credentialService)
     .register(IBroadcastService, broadcastService)
     .register(IZCodeTaskService, zcodeTaskService)
+    .register(IBotsService, botsService)
     .register(IZCodeAgentService, zcodeAgentService)
     .register(IZCodeSessionService, zcodeSessionService)
     .register(ICuaPermissionService, cuaPermissionService)
@@ -2078,7 +2243,8 @@ export function createLocalServices(options: {
         }),
       }),
     )
-    .register(IClientScenesService, createClientScenesService({ apiClient }))
+    // Client Scenes 改随包内置，不再走 apiClient 外联（docs/spec/local-client-scenes.md）。
+    .register(IClientScenesService, createClientScenesService())
     .register(ISkillsService, skillsService)
     .register(ISkillSyncService, createSkillSyncService())
     .register(IMcpSyncService, mcpSyncService)
