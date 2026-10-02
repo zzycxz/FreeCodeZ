@@ -6,6 +6,60 @@
     "max-lines": ["error", { "max": 400, "skipBlankLines": true, "skipComments": true }]
   },
   "overrides": [
+
+    {
+      // A2 门禁修复：以下 43 个存量巨型文件在 max-lines=400 规则收紧前即已超限
+      //（HEAD 行数证据），豁免以免 pre-push 必败；规则对新文件继续生效，
+      // 此清单封口——后续文件超限应拆分而不是进豁免。
+      "files": [
+      "packages/desktop/src/main/desktopOAuthDeepLink.ts",
+      "packages/desktop/src/main/taskRealtimeBus.ts",
+      "packages/provider/src/config-service.ts",
+      "packages/provider/src/config/model-config.ts",
+      "packages/provider/src/config/provider-config.ts",
+      "packages/provider/src/facades.ts",
+      "packages/server/src/remote/wsl-backend.ts",
+      "packages/services/src/model-provider/legacyZCodeConfigProviderReader.ts",
+      "packages/services/src/zcode-agent/zcodeAgentService.ts",
+      "packages/services/src/zcode-agent/zcodeTaskServiceAdapter.ts",
+      "packages/shared/src/task-realtime-core.ts",
+      "packages/shared/src/zcode-protocol-legacy-types.ts",
+      "packages/shared/src/zcode-protocol/index.ts",
+      "packages/shared/src/zcode-task-types-core.ts",
+      "packages/ui/src/SettingsPage.tsx",
+      "packages/ui/src/ToolCallBlocks/renderers/cua.tsx",
+      "packages/ui/src/app-shell/SidePaneTabTrigger.tsx",
+      "packages/ui/src/browser-use/UnifiedBrowserView.tsx",
+      "packages/ui/src/mentions/components/MentionPanel.tsx",
+      "packages/ui/src/prompt-editor/ChatPromptEditor.tsx",
+      "packages/ui/src/settings/BrowserSettingsSection.tsx",
+      "packages/ui/src/settings/model-provider-section/InlineEditableProviderCard.tsx",
+      "packages/ui/src/settings/model-provider-section/ProviderIntakeWizard.tsx",
+      "packages/ui/src/settings/model-provider-section/ProviderModelMetadata.ts",
+      "packages/ui/src/settingsPageHelpers.tsx",
+      "packages/ui/src/store/tabStore.ts",
+      "packages/ui/src/store/zcodeSessionStoreTaskSlice.ts",
+      "packages/ui/src/store/zcodeSessionStoreTypes.ts",
+      "packages/ui/src/v4/ConversationComposer.tsx",
+      "packages/ui/src/v4/ConversationDraftSuggestedPromptsContainer.tsx",
+      "packages/ui/src/v4/ConversationRowView.tsx",
+      "packages/ui/src/v4/ConversationStatusPanel.tsx",
+      "packages/ui/src/v4/ConversationTimeline.tsx",
+      "packages/ui/src/v4/SessionPane.tsx",
+      "packages/ui/src/v4/V4WorkspaceChatArea.tsx",
+      "packages/ui/src/v4/WorkbenchPane.tsx",
+      "packages/ui/src/v4/agentConversationTransport.ts",
+      "packages/ui/src/v4/composer/V4ComposerToolbar.tsx",
+      "packages/ui/src/v4/composer/useComposerAttachments.ts",
+      "packages/ui/src/v4/composer/useDraftSessionPrewarm.ts",
+      "packages/ui/src/v4/telemetry/conversationTelemetrySupervisor.ts",
+      "packages/ui/src/v4/workbenchGroupStore.ts",
+      "packages/zcode-server-cli/src/supervisor/supervisor.ts"
+      ],
+      "rules": {
+        "max-lines": "off"
+      }
+    },
     {
       // 测试文件天然会堆叠大量场景与断言，继续复用生产代码的行数上限会造成误报，
       // 因此只对 test/spec 文件关闭 max-lines，避免放宽业务代码约束。

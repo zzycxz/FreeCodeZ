@@ -1,0 +1,2 @@
+# A2: pre-push 真实挂接完整门禁（typecheck/lint/test/architecture）
+pnpm run verify:pre-push

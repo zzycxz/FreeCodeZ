@@ -3,7 +3,7 @@
 // A19(R16 confused-deputy):broker 凭据同批才有效、半组即清、sanitize/passthrough 双面剔除。
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,7 +31,11 @@ const vendoredHelper = join(
 );
 
 function stageHelperResources() {
-  const resources = mkdtempSync(join(tmpdir(), "cua-integrity-"));
+  // macOS 的 os.tmpdir() 返回 /var/folders/...，而 /var 是指向 /private/var 的符号
+  // 链接——解析器的 samePhysicalPath 有意不解析符号链接（防运行时根被链接劫持），
+  // 在符号链接路径下搭台会让正例必被拒（存量失败，此前无 test 入口未被发现）。
+    // 先 realpath 再 mkdtemp，保证临时根与自身 realpath 逐字相等。
+  const resources = mkdtempSync(join(realpathSync(tmpdir()), "cua-integrity-"));
   const helperRoot = join(resources, "tools", "cua-helper");
   mkdirSync(join(helperRoot, "dist"), { recursive: true });
   mkdirSync(join(helperRoot, "build", "Release"), { recursive: true });
