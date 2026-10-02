@@ -206,6 +206,8 @@ export interface ToolExecutionContext {
   hasLoadedSkill?: (skillId: string) => boolean;
   bashShellSelection?: ExecutionShellSelection;
   embeddedSearch?: ToolEmbeddedSearchContext;
+  /** E-S3：会话级沙箱开关（workspace-write，macOS）；缺省/undefined=off。 */
+  sandboxEnabled?: boolean;
   setWorkingDirectory?: (cwd: string) => Promise<void> | void;
   workingDirectory: string;
   workspaceRoot: string;

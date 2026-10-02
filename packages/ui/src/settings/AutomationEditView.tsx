@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- 定时任务编辑整页集中维护 Settings/History 两个 tab、cron builder、项目/模型选择器与运行历史，集中更利于交互一致。 */
 import { useStartPlanRecommendation } from "@/hooks/useStartPlanRecommendation.js";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Switch } from "@/components/ui/switch.js";
 import { completeNewModelSelection } from "@zcode/provider";
 import {
   ArrowLeft,
@@ -107,6 +108,7 @@ import { ConfigSelect } from "@/chat-input-toolbar/display.js";
 import { ChatEmptyWorkspacePreviewMenu, type ChatEmptyWorkspaceMenuTab } from "@/ChatEmptyState.js";
 import {
   AUTOMATION_DEFAULT_MODE,
+  AUTOMATION_MODE_UNSET,
   buildAutomationModelSelectGroups,
   buildAutomationModeOption,
   buildAutomationThoughtLevelOption,
@@ -1230,6 +1232,15 @@ export function AutomationEditView({
   const modelSelection = useRef("");
   const [mode, setMode] = useState<string>(AUTOMATION_DEFAULT_MODE);
   const modeRef = useRef(AUTOMATION_DEFAULT_MODE);
+  // E-S3：沙箱开关（macOS seatbelt / Linux bwrap），新建缺省关；编辑回填已存值。
+  const [sandboxEnabled, setSandboxEnabled] = useState(false);
+  // E-S4：平台能力门控。Windows 版已实现、真机验证通过前禁用；Linux 依赖系统
+  // bwrap（缺失时执行侧 fail-open），文案明示需求。渲染层用 UA 判定平台
+  // （Electron UA 恒带平台标识）；真实执行仍以 CLI 侧分发器为准（fail-open 兜底）。
+  const platformAgent = typeof navigator === "undefined" ? "" : navigator.userAgent;
+  const sandboxUnsupported = /Windows/i.test(platformAgent);
+  const sandboxIsLinux = !sandboxUnsupported && /Linux/i.test(platformAgent);
+  const sandboxSupported = !sandboxUnsupported;
   const [thoughtLevel, setThoughtLevel] = useState<string>("");
   const thoughtLevelRef = useRef("");
   const modelManuallyChangedRef = useRef(false);
@@ -1310,6 +1321,7 @@ export function AutomationEditView({
       const editingMode = editing.mode?.trim() || AUTOMATION_DEFAULT_MODE;
       modeRef.current = editingMode;
       setMode(editingMode);
+      setSandboxEnabled(editing.sandboxEnabled === true);
       setThoughtLevel(editingThoughtLevel);
       setBuilder(initialBuilder(editing, initialDraft));
       setEndAt(editing.endAt);
@@ -1329,9 +1341,12 @@ export function AutomationEditView({
       setPrompt(initialDraft?.prompt ?? "");
       modelSelection.current = "";
       setModel("");
-      modeRef.current = AUTOMATION_DEFAULT_MODE;
+      // D2：新建不再预选默认 mode（旧静默默认 build 会让无人值守写任务必失败）；
+      // 用户必须显式选择后才能保存（canSubmit 门禁 + 提交边界双拦）。
+      modeRef.current = AUTOMATION_MODE_UNSET;
       thoughtLevelRef.current = "";
-      setMode(AUTOMATION_DEFAULT_MODE);
+      setMode(AUTOMATION_MODE_UNSET);
+      setSandboxEnabled(false);
       setThoughtLevel("");
       setBuilder(initialBuilder(editing, initialDraft));
       setEndAt(undefined);
@@ -1643,6 +1658,8 @@ export function AutomationEditView({
     [cronExpr, prompt, title],
   );
   const hasValidWorkspace = Boolean(editing || selectedWorkspace);
+  // D2：mode 未显式选择不得提交（编辑态的旧数据无 mode 已在加载时回退为 build 展示）。
+  const modeSelected = mode.trim().length > 0;
   const submissionContextReady =
     hasValidWorkspace &&
     (Boolean(editing) || selectedWorkspace !== null) &&
@@ -1650,7 +1667,7 @@ export function AutomationEditView({
     selectedModelItem !== null &&
     Boolean(effectiveReasoningLevel) &&
     !modelSelectionView?.selectionIssue;
-  const canSubmit = submissionContextReady && requiredFieldErrors.length === 0;
+  const canSubmit = submissionContextReady && requiredFieldErrors.length === 0 && modeSelected;
 
   const requestRequiredFieldValidation = useCallback(
     (source: "save" | "run-now") => {
@@ -1705,6 +1722,9 @@ export function AutomationEditView({
             : {}),
         ...(editing && touchedFields.has("schedule") ? { scheduleEditedByUser: true } : {}),
         mode: modeValue,
+        // E-S3：沙箱开关始终显式提交（false 也是有效值），与 mode 的必选语义一致；
+        // 不支持平台强制落 false，避免持久化一个永远无法生效的开关。
+        sandboxEnabled: sandboxSupported && sandboxEnabled,
         modelSelection: effectiveSelection,
       };
     },
@@ -1715,6 +1735,8 @@ export function AutomationEditView({
       endAt,
       preserveSessionCreatedSchedule,
       prompt,
+      sandboxEnabled,
+      sandboxSupported,
       effectiveSelection,
       effectiveReasoningLevel,
       title,
@@ -1775,6 +1797,8 @@ export function AutomationEditView({
         return false;
       }
       if (!canSubmit) return false;
+      // D2：快捷键/异步回调可能绕过按钮禁用，提交边界对未选 mode 双拦。
+      if (modeRef.current.trim().length === 0) return false;
       // 防止刚改选择尚未取得对应 View 时，快速保存采用上一个输入的有效结果。
       if (modelSelection.current !== model || thoughtLevelRef.current !== thoughtLevel)
         return false;
@@ -2660,6 +2684,42 @@ export function AutomationEditView({
                       provider={ZCODE_AGENT_PROVIDER}
                       restoreFocusSelector={null}
                     />
+                    {/* D2：mode 必选提示 + 两档语义说明。旧静默默认 build 会让无人值守
+                        写任务必失败，新建必须显式选择。 */}
+                    <p
+                      className={cn(
+                        "text-ui-xs leading-normal",
+                        modeSelected ? "text-foreground-subtlest" : "text-warning",
+                      )}
+                    >
+                      {intl.formatMessage({
+                        id: modeSelected
+                          ? "automations.form.mode.help"
+                          : "automations.form.mode.requiredHint",
+                      })}
+                    </p>
+                    {/* E-S3/S4：沙箱开关（macOS seatbelt / Linux bwrap）。默认关；开启后
+                        本任务的 Bash 以 workspace-write 沙箱执行（全盘读、项目内写），
+                        越界写被拒并带归因提示。正常命令零新增弹窗（沙箱运行时缺失时
+                        fail-open）。Windows 无纯 Node 文件写隔离方案，开关禁用并明示。 */}
+                    <label className="inline-flex min-w-0 items-center gap-1.5 text-ui-xs leading-normal text-foreground-subtlest">
+                      <Switch
+                        checked={sandboxSupported ? sandboxEnabled : false}
+                        onCheckedChange={setSandboxEnabled}
+                        disabled={!sandboxSupported}
+                        aria-label={intl.formatMessage({ id: "automations.form.sandbox.label" })}
+                        className="scale-75"
+                      />
+                      <span className="truncate">
+                        {intl.formatMessage({
+                          id: sandboxSupported
+                            ? sandboxIsLinux
+                              ? "automations.form.sandbox.linuxHint"
+                              : "automations.form.sandbox.label"
+                            : "automations.form.sandbox.unsupported",
+                        })}
+                      </span>
+                    </label>
                   </div>
 
                   {/* 模型 / 推理强度在右侧成组，和左侧 workspace / 权限形成清晰分区。 */}

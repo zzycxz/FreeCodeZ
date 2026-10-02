@@ -11,8 +11,15 @@ import { resolveV4ModelTriggerLabel } from "@/v4/composer/modelTriggerDisplay.js
 // 定时任务表单必须是纯本地草稿，不能借用 workspace 默认配置写接口来获取选项；
 // 否则仅打开或取消编辑也会改掉当前项目和 draft session 的运行配置。
 
-/** 权限模式默认值：Ask before changes。 */
+/**
+ * D2：新建定时任务**不再有静默默认 mode**——旧默认 build 是坏默认：无人值守链路写
+ * 操作必 ask，无人应答即失败（A1 修超时后也只"不挂死但做不成"）。新建必须显式选择；
+ * 本常量仅保留两个用途：编辑旧数据（无 mode）时的展示回退、以及防御性提交兜底。
+ */
 export const AUTOMATION_DEFAULT_MODE = "build";
+
+/** 新建表单的 mode 未选择态（提交门禁据此拒绝保存）。 */
+export const AUTOMATION_MODE_UNSET = "";
 
 /** 新建任务必须把目标 Host 的 preferredSelection 固化为具体模型，而不是保存虚拟“默认模型”。 */
 export function resolveAutomationPreferredModelValue(

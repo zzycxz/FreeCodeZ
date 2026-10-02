@@ -340,14 +340,18 @@ type SessionCreateCompatField =
   | "toolAllowlist"
   | "toolDenylist"
   | "offPeakToolEnabled"
-  | "dynamicWorkflowEnabled";
+  | "dynamicWorkflowEnabled"
+  | "permissionTimeoutMs"
+  | "sandboxEnabled";
 type SessionResumeCompatField =
   | "thoughtLevel"
   | "mcpServers"
   | "toolAllowlist"
   | "toolDenylist"
   | "offPeakToolEnabled"
-  | "dynamicWorkflowEnabled";
+  | "dynamicWorkflowEnabled"
+  | "sandboxEnabled"
+  | "permissionTimeoutMs";
 type SessionSendCompatField =
   | "browserAmbientContext"
   | "automationId"
@@ -368,6 +372,10 @@ const SESSION_CREATE_OPTIONAL_COMPAT_FIELDS = new Set<SessionCreateCompatField>(
   // 动态工作流灰度 flag 同理：旧 CLI 不认时
   // 省略重试，工作流工具簇随之不注册，绝不让整个 create 硬失败。
   "dynamicWorkflowEnabled",
+  // A1 审批超时缺省：旧 CLI 不认时省略重试（退回无超时现状，不硬失败）。
+  "permissionTimeoutMs",
+  // E-S3 沙箱开关：旧 CLI 不认时省略重试（退回无沙箱现状）。
+  "sandboxEnabled",
 ]);
 const SESSION_RESUME_OPTIONAL_COMPAT_FIELDS = new Set<SessionResumeCompatField>([
   "thoughtLevel",
@@ -377,6 +385,9 @@ const SESSION_RESUME_OPTIONAL_COMPAT_FIELDS = new Set<SessionResumeCompatField>(
   "toolDenylist",
   "offPeakToolEnabled",
   "dynamicWorkflowEnabled",
+  // E-S4/A1 补齐：旧 CLI 不认时省略重试（回落无沙箱/无超时现状）。
+  "sandboxEnabled",
+  "permissionTimeoutMs",
 ]);
 const SESSION_SEND_OPTIONAL_COMPAT_FIELDS = new Set<SessionSendCompatField>([
   "browserAmbientContext",
@@ -643,6 +654,14 @@ function buildSessionCreateParams(
     ...(params.dynamicWorkflowEnabled === true && !omittedFields.has("dynamicWorkflowEnabled")
       ? { dynamicWorkflowEnabled: true }
       : {}),
+    // A1：自动化会话的审批超时缺省。兼容省略重试时丢弃（旧 CLI 退回无超时现状）。
+    ...(params.permissionTimeoutMs !== undefined && !omittedFields.has("permissionTimeoutMs")
+      ? { permissionTimeoutMs: params.permissionTimeoutMs }
+      : {}),
+    // E-S3：会话级沙箱开关。兼容省略重试时丢弃（旧 CLI 退回无沙箱现状）。
+    ...(params.sandboxEnabled === true && !omittedFields.has("sandboxEnabled")
+      ? { sandboxEnabled: true }
+      : {}),
   };
 }
 
@@ -678,6 +697,13 @@ function buildSessionResumeParams(
     // 同因：resume 不带该 flag 会让冷恢复丢掉工作流工具簇。
     ...(params.dynamicWorkflowEnabled === true && !omittedFields.has("dynamicWorkflowEnabled")
       ? { dynamicWorkflowEnabled: true }
+      : {}),
+    // E-S4/A1 补齐：冷恢复回传沙箱开关与审批超时（兼容省略重试时丢弃）。
+    ...(params.sandboxEnabled === true && !omittedFields.has("sandboxEnabled")
+      ? { sandboxEnabled: true }
+      : {}),
+    ...(params.permissionTimeoutMs !== undefined && !omittedFields.has("permissionTimeoutMs")
+      ? { permissionTimeoutMs: params.permissionTimeoutMs }
       : {}),
   };
 }
@@ -887,6 +913,8 @@ function toProtocolAutomation(automation: ZCodeAutomation) {
     prompt: automation.prompt,
     modelSelection: automation.modelSelection,
     mode: automation.mode,
+    // E-S3：编辑页回填需要读到已存沙箱开关。
+    ...(automation.sandboxEnabled === true ? { sandboxEnabled: true } : {}),
     targetTaskId: automation.targetTaskId,
     enabled: automation.enabled,
     lifecycleStatus: automation.lifecycleStatus,
@@ -3767,6 +3795,7 @@ export function createZCodeAgentService(
         prompt: params.prompt,
         modelSelection: params.modelSelection,
         mode: params.mode as ZCodeTaskMode | undefined,
+        sandboxEnabled: params.sandboxEnabled === true,
         workspacePath: params.workspacePath,
         workspaceIdentity: params.workspaceIdentity,
         recurring: params.recurring ?? true,
@@ -3785,6 +3814,8 @@ export function createZCodeAgentService(
           prompt: params.prompt,
           modelSelection: params.modelSelection,
           mode: params.mode === null ? null : (params.mode as ZCodeTaskMode | undefined),
+          sandboxEnabled:
+            params.sandboxEnabled === undefined ? undefined : params.sandboxEnabled === true,
           recurring: params.recurring,
           maxRuns: params.maxRuns,
           endAt: params.endAt,

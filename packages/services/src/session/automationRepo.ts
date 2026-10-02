@@ -85,6 +85,8 @@ interface AutomationRow {
   last_error: string | null;
   created_at: number;
   updated_at: number;
+  /** E-S3（0004 迁移列）：缺列的旧库在迁移后保证存在。 */
+  sandbox_enabled: number;
 }
 
 interface AutomationRunRow {
@@ -119,6 +121,7 @@ function rowToAutomation(row: AutomationRow): ZCodeAutomation {
     // 历史版本曾把空字符串写进 mode，旧读取逻辑又直接强转为枚举，导致
     // automation/list 在协议层校验整个数组时被单条脏数据拖垮。历史非法值按未设置兼容。
     mode: normalizeAutomationMode(row.mode),
+    ...(row.sandbox_enabled === 1 ? { sandboxEnabled: true } : {}),
     workspaceKey: row.workspace_key,
     workspacePath: row.workspace_path,
     workspaceIdentity: row.workspace_identity ?? undefined,
@@ -338,7 +341,7 @@ export class AutomationRepo {
           run_count, enabled, lifecycle_status,
           next_run_at, last_run_at, running, claimed_at,
           dispatch_status, dispatch_attempts, retry_at, last_error,
-          mode, thought_level,
+          mode, thought_level, sandbox_enabled,
           created_at, updated_at
         ) VALUES (
           @automation_id, @title, @cron_expr, @prompt, @model, @provider, @model_selection,
@@ -347,7 +350,7 @@ export class AutomationRepo {
           0, @enabled, @lifecycle_status,
           @next_run_at, NULL, 0, NULL,
           'idle', 0, NULL, NULL,
-          @mode, @thought_level,
+          @mode, @thought_level, @sandbox_enabled,
           @created_at, @updated_at
         )`,
       ).run({
@@ -361,6 +364,7 @@ export class AutomationRepo {
         model_selection: serializeAutomationModelSelection(params.modelSelection) ?? "null",
         mode: params.mode ?? null,
         thought_level: null,
+        sandbox_enabled: params.sandboxEnabled === true ? 1 : 0,
         workspace_key: workspaceKey,
         workspace_path: params.workspacePath,
         workspace_identity: params.workspaceIdentity ?? null,
@@ -487,6 +491,13 @@ export class AutomationRepo {
           : (serializeAutomationModelSelection(params.modelSelection ?? undefined) ?? "null"),
       mode: params.mode === undefined ? existing.mode : params.mode,
       thought_level: existing.thought_level,
+      // E-S3：undefined=保留；显式 true/false 落列（null 按清空=false 处理）。
+      sandbox_enabled:
+        params.sandboxEnabled === undefined
+          ? existing.sandbox_enabled
+          : params.sandboxEnabled === true
+            ? 1
+            : 0,
       recurring: params.recurring === undefined ? existing.recurring : params.recurring ? 1 : 0,
       max_runs: params.maxRuns === undefined ? existing.max_runs : params.maxRuns,
       end_at: params.endAt === undefined ? existing.end_at : params.endAt,
@@ -774,6 +785,7 @@ export class AutomationRepo {
             a.model_selection AS a_model_selection,
             a.mode AS a_mode,
             a.thought_level AS a_thought_level,
+            a.sandbox_enabled AS a_sandbox_enabled,
             a.workspace_key AS a_workspace_key,
             a.workspace_path AS a_workspace_path,
             a.workspace_identity AS a_workspace_identity,
@@ -850,6 +862,7 @@ export class AutomationRepo {
             model_selection: (row["a_model_selection"] as string | null) ?? null,
             mode: (row["a_mode"] as string | null) ?? null,
             thought_level: (row["a_thought_level"] as string | null) ?? null,
+            sandbox_enabled: (row["a_sandbox_enabled"] as number | undefined) ?? 0,
             workspace_key: row["a_workspace_key"] as string,
             workspace_path: row["a_workspace_path"] as string,
             workspace_identity: (row["a_workspace_identity"] as string | null) ?? null,
@@ -1406,7 +1419,7 @@ export class AutomationRepo {
         `UPDATE automations SET
           title = @title, cron_expr = @cron_expr, prompt = @prompt, model = @model, provider = @provider,
           model_selection = @model_selection,
-          mode = @mode, thought_level = @thought_level,
+          mode = @mode, thought_level = @thought_level, sandbox_enabled = @sandbox_enabled,
           recurring = @recurring, max_runs = @max_runs, end_at = @end_at,
           schedule_rule = @schedule_rule,
           schedule_edited_by_user = @schedule_edited_by_user,
@@ -1425,6 +1438,7 @@ export class AutomationRepo {
         model_selection: row.model_selection,
         mode: row.mode,
         thought_level: row.thought_level,
+        sandbox_enabled: row.sandbox_enabled,
         recurring: row.recurring,
         max_runs: row.max_runs,
         end_at: row.end_at,

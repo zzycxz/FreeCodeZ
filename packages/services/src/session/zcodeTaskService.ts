@@ -227,6 +227,8 @@ export interface IZCodeTaskService {
     mcpServers?: ZCodeAgentMcpServer[];
     /** 定时任务派发时标记所属 automation，落 tasks-index 的 cron_automation_id 并归入 cron 分组。 */
     automationId?: string;
+    /** E-S3：automation 声明的沙箱开关，随 session 创建透传（macOS workspace-write）。 */
+    sandboxEnabled?: boolean;
     /** 闲时任务派发时标记所属 off-peak 任务，落 tasks-index 的 off_peak_task_id。 */
     offPeakTaskId?: string;
     /**
@@ -368,6 +370,9 @@ export interface IZCodeTaskService {
     /** 闲时续跑恢复 pre-会话时补写 off-peak 标记（新会话在 createTask 已盖章）。 */
     offPeakTaskId?: string;
     mcpServers?: ZCodeAgentMcpServer[];
+    /** E-S4/A1 补齐：冷恢复回传沙箱开关与审批超时缺省（不因重启丢防护）。 */
+    sandboxEnabled?: boolean;
+    permissionTimeoutMs?: number;
   }): Promise<ZCodeTaskMeta>;
 
   /** 列出 workspace 下所有已持久化的 task */

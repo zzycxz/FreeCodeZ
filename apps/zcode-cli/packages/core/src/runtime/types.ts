@@ -130,6 +130,8 @@ export interface AgentRuntimeConfig {
   modelContextBudgetStrategy?: "legacy" | "preflight-v1";
   maxTurns?: number;
   permissionTimeoutMs?: number;
+  /** E-S3：会话内 Bash 以 workspace-write 沙箱执行（macOS）；缺省 off。 */
+  sandboxEnabled?: boolean;
   compact?: AutoCompactPolicyConfig;
   targetCompletionVerification?: { enabled?: boolean };
   midConversationSystem?: {

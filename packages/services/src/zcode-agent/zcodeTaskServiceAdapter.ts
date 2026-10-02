@@ -122,6 +122,7 @@ import { createServiceLogger } from "#src/logger/serviceLogger.js";
 import {
   AUTOMATION_MUTATION_TOOL_NAMES,
   OFF_PEAK_MUTATION_TOOL_NAMES,
+  resolveAutomationPermissionTimeoutMs,
 } from "#src/zcode-agent/automationToolPolicy.js";
 import type { ISettingService } from "#src/setting/setting.js";
 import type {
@@ -197,6 +198,12 @@ interface TaskTargetWithMcpServers extends TaskTarget {
   thoughtLevel?: string;
   mcpServers?: ZCodeAgentMcpServer[];
   toolDenylist?: string[];
+  /** resumeTask 的 automation/off-peak 标记（A1 超时解析的输入）。 */
+  automationId?: string;
+  offPeakTaskId?: string;
+  /** E-S4/A1 补齐：冷恢复回传沙箱开关与审批超时缺省（IZCodeTaskService.resumeTask 声明）。 */
+  sandboxEnabled?: boolean;
+  permissionTimeoutMs?: number;
 }
 
 type WorkspaceEventInput = string | ZCodeWorkspaceEventSubscriptionParams;
@@ -1153,6 +1160,11 @@ export function createZCodeTaskServiceAdapter(
       ...(thoughtLevel ? { thoughtLevel } : {}),
       ...(mcpServers ? { mcpServers } : {}),
       ...(params.toolDenylist ? { toolDenylist: params.toolDenylist } : {}),
+      // E-S4/A1 补齐：冷恢复不丢沙箱与审批超时（A1 的超时解析同 create 路径）。
+      ...(params.sandboxEnabled === true ? { sandboxEnabled: true } : {}),
+      ...(resolveAutomationPermissionTimeoutMs(params) !== undefined
+        ? { permissionTimeoutMs: resolveAutomationPermissionTimeoutMs(params) }
+        : {}),
     });
   }
 
@@ -1847,6 +1859,13 @@ export function createZCodeTaskServiceAdapter(
                 titleGenerationEnabled: false,
               }
             : {}),
+          // A1：自动化会话注入审批超时缺省（120s），防无人值守 ask 永久挂起；
+          // 交互会话解析为 undefined 不下发，行为与现状逐字一致。
+          ...(resolveAutomationPermissionTimeoutMs(params) !== undefined
+            ? { permissionTimeoutMs: resolveAutomationPermissionTimeoutMs(params) }
+            : {}),
+          // E-S3：automation 声明的沙箱开关随 session 创建透传（缺省不下发=off）。
+          ...(params.sandboxEnabled === true ? { sandboxEnabled: true } : {}),
           // replayable task facade 创建 session 时同样会启动 runtime；
           // 之前这里丢掉 mcpServers，导致手机远控路径和 desktop-continuous 的 MCP 行为不一致。
           mcpServers,

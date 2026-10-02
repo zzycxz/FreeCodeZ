@@ -14,6 +14,8 @@
  * 3. 后续远端 connect / scoped attachment 都由同一 Host 处理
  */
 import { createHostDatabaseStartup } from "./hostDatabaseStartup.js";
+// A1/E-S4：自动化会话审批超时缺省（create/resume 两路共用）。
+import { resolveAutomationPermissionTimeoutMs } from "@zcode/services";
 import { randomUUID } from "node:crypto";
 import {
   MessagePortProtocol,
@@ -341,6 +343,8 @@ interface CronRunDispatchRequest {
   targetTaskId?: string;
   modelSelection?: ModelSelection;
   mode?: ZCodeTaskMode;
+  /** E-S3：automation 声明的沙箱开关（macOS workspace-write）。 */
+  sandboxEnabled?: boolean;
   workspacePath: string;
   workspaceIdentity?: string;
 }
@@ -545,6 +549,8 @@ async function dispatchCronRun(request: CronRunDispatchRequest): Promise<{
           mode: request.mode,
           thoughtLevel: submissionModelSelection.options?.reasoningLevel,
           automationId: request.automationId,
+          // E-S3：沙箱开关随派发透传，会话创建时落 AgentRuntimeConfig。
+          ...(request.sandboxEnabled === true ? { sandboxEnabled: true } : {}),
         });
     // 未绑定会话时不能沿用 createTask 的 session trace 作为首条 prompt trace：
     // CLI 无法从 inputId 还原 manual/schedule admission。
@@ -560,6 +566,12 @@ async function dispatchCronRun(request: CronRunDispatchRequest): Promise<{
         model: formatModelPickerValue(submissionModelSelection),
         thoughtLevel: submissionModelSelection.options?.reasoningLevel,
         automationId: request.automationId,
+        // E-S4/A1 补齐：targetTaskId 复用路径同样携带沙箱开关与超时缺省，
+        // 冷恢复重建 runtime 后防护不丢。
+        ...(request.sandboxEnabled === true ? { sandboxEnabled: true } : {}),
+        ...(resolveAutomationPermissionTimeoutMs(request)
+          ? { permissionTimeoutMs: resolveAutomationPermissionTimeoutMs(request) }
+          : {}),
       });
       await applyCronRunConfigToExistingTask({
         zcodeTaskService,

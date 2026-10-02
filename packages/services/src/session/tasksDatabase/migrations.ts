@@ -8,6 +8,7 @@ import {
 } from "#src/session/tasksDatabase/schema-v1.js";
 import { importLegacyAutomationSelections } from "#src/session/tasksDatabase/provider-selection-v2.js";
 import { OFFICIAL_GLM_SELECTION_MIGRATION_SQL } from "#src/session/tasksDatabase/official-glm-selection-v3.js";
+import { AUTOMATION_SANDBOX_MIGRATION_SQL } from "#src/session/tasksDatabase/automation-sandbox-v4.js";
 
 // 冻结历史列声明，不能以实时 Repo/schema 代替，否则新版构建会改变已应用 checksum。
 const columns = [
@@ -64,6 +65,11 @@ const definitions = [
     id: "0003_official_glm_selection",
     checksumInput: [OFFICIAL_GLM_SELECTION_MIGRATION_SQL],
   },
+  {
+    // E-S3：automations 加 sandbox_enabled 列。SQL 文本冻结（同 0003 纪律）。
+    id: "0004_automation_sandbox",
+    checksumInput: [AUTOMATION_SANDBOX_MIGRATION_SQL],
+  },
 ] as const;
 
 export function runTasksDatabaseMigrations(
@@ -113,6 +119,7 @@ export function runTasksDatabaseMigrations(
       options.onProgress?.("migrating", { ...migrationFacts });
       if (migration.id === "0001_adopt_task_schema") adoptSchema(db);
       else if (migration.id === "0002_provider_selection") importLegacyAutomationSelections(db);
+      else if (migration.id === "0004_automation_sandbox") addAutomationSandboxColumn(db);
       else db.exec(OFFICIAL_GLM_SELECTION_MIGRATION_SQL);
       migrationFacts.executedCount++;
       db.prepare("INSERT INTO tasks_schema_migration VALUES(?,?,?)").run(
@@ -154,6 +161,14 @@ function adoptSchema(db: DatabaseSync): void {
     GROUP BY workspace_key, session_id HAVING count(*)>1 LIMIT 1`)
     .get();
   if (!duplicate) db.exec(boundIndex);
+}
+
+/** E-S3：幂等加列。ALTER TABLE ADD COLUMN 无 IF NOT EXISTS；先 PRAGMA 检查，
+ * 兼容任何已手工加列/部分应用的库。 */
+function addAutomationSandboxColumn(db: DatabaseSync): void {
+  const existing = db.prepare(`PRAGMA table_info(automations)`).all();
+  if (existing.some((entry) => entry.name === "sandbox_enabled")) return;
+  db.exec(AUTOMATION_SANDBOX_MIGRATION_SQL);
 }
 
 /** 交接只复用已完成初始化；每个新连接仍按冻结账本确认，替换/清空文件不能假 ready。 */

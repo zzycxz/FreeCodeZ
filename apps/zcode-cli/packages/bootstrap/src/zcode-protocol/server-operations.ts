@@ -136,6 +136,10 @@ type ZCodeSessionRecordParams = (
       // 自动化会话会在创建期关闭标题二次生成，而 create/resume
       // 共用 record 初始化函数；resume 兼容分支也必须声明该策略字段。
       titleGenerationEnabled?: ZCodeSessionCreateParams["titleGenerationEnabled"];
+      // A1：审批超时缺省同样在创建期固定，resume 分支共用 record 初始化。
+      permissionTimeoutMs?: ZCodeSessionCreateParams["permissionTimeoutMs"];
+      // E-S3：会话级沙箱开关同在创建期固定。
+      sandboxEnabled?: ZCodeSessionCreateParams["sandboxEnabled"];
     })
 ) & { taskType?: SessionTaskType };
 
@@ -3360,6 +3364,11 @@ async function createRecord(
       // 不能只依赖 prompt 文本约束，否则内置工具和动态 MCP 工具仍可能越过调用面。
       toolAllowlist: "toolAllowlist" in params ? params.toolAllowlist : undefined,
       toolDisallowlist: "toolDenylist" in params ? params.toolDenylist : undefined,
+      // A1：自动化会话的审批超时缺省由 Host 在 create 边界注入（120s）；
+      // 缺席即 undefined，交互会话保持"无限等待用户应答"的现状语义。
+      permissionTimeoutMs: "permissionTimeoutMs" in params ? params.permissionTimeoutMs : undefined,
+      // E-S3：会话级沙箱开关；workspaceRoot 由 runtime 侧解析，协议只传开关。
+      sandboxEnabled: params.sandboxEnabled === true ? true : undefined,
       nativeSearchEnhancementsEnabled: startupPreferences.nativeSearchEnhancementsEnabled,
       modelContextBudgetStrategy: startupPreferences.modelContextBudgetStrategy,
       // FreeCodeZ fork(P6 §6.2):搜索/视觉偏好进 AgentRuntimeConfig,工具执行器消费。

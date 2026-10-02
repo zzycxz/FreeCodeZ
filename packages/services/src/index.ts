@@ -1,5 +1,7 @@
 // Descriptors & collection (browser-safe)
 export { type ServiceDescriptor, createServiceDescriptor } from "./descriptors.js";
+// A1/E-S4：自动化会话审批超时缺省（desktop host create/resume 两路共用）。
+export { resolveAutomationPermissionTimeoutMs, AUTOMATION_PERMISSION_TIMEOUT_MS } from "./zcode-agent/automationToolPolicy.js";
 export { ServiceCollection } from "./collection.js";
 export {
   IModelSelectionService,

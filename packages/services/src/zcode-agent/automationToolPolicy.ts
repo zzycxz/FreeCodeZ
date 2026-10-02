@@ -22,3 +22,16 @@ export function mergeOffPeakMutationToolDenylist(current: readonly string[] | un
   }
   return [...merged];
 }
+
+// A1：自动化会话（cron/闲时）的审批超时缺省（毫秒）。无人值守链路 ask 无人应答且
+// 无看门狗，缺省无超时会永久挂起；超时后走 PermissionTimeout → deny + 留痕收口。
+export const AUTOMATION_PERMISSION_TIMEOUT_MS = 120_000;
+
+export function resolveAutomationPermissionTimeoutMs(params: {
+  automationId?: string;
+  offPeakTaskId?: string;
+}): number | undefined {
+  return params.automationId || params.offPeakTaskId
+    ? AUTOMATION_PERMISSION_TIMEOUT_MS
+    : undefined;
+}

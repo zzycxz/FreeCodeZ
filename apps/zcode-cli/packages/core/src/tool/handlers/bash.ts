@@ -428,6 +428,15 @@ function createExecutionRequest(
     sandbox: {
       enabled: !input.dangerouslyDisableSandbox,
       dangerouslyDisableSandbox: input.dangerouslyDisableSandbox,
+      // E-S3：会话级沙箱开关（cron/闲时自动化创建时由 Host 注入）。激活必须显式
+      // mode——enabled 是历史遥测语义位（普通命令恒 true），不能作为激活条件。
+      ...(input.dangerouslyDisableSandbox !== true && context.sandboxEnabled === true
+        ? {
+            mode: "workspace-write" as const,
+            // workspaceRoot 缺失（理论不应发生）时退化为 cwd，宁窄勿宽。
+            workspaceRoot: context.workspaceRoot || context.workingDirectory,
+          }
+        : {}),
     },
     trace: {
       traceId: context.traceId,

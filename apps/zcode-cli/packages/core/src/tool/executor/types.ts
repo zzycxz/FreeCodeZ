@@ -98,6 +98,8 @@ export interface ToolExecutorOptions {
   model?: Model;
   embeddedSearchBackend?: EmbeddedSearchBackend;
   nativeSearchEnhancementsEnabled?: boolean;
+  /** E-S3：会话级 workspace-write 沙箱开关（macOS）；缺省 off。 */
+  sandboxEnabled?: boolean;
   skillPort?: SkillPort;
   /**
    * 会话已加载技能集合（skill 门控 R1 的唯一事实源）。executor 实例 = 会话生命周期，
@@ -210,6 +212,8 @@ export interface ToolExecutorDeps {
   model?: Model;
   embeddedSearchBackend?: EmbeddedSearchBackend;
   nativeSearchEnhancementsEnabled?: boolean;
+  /** E-S3：会话级 workspace-write 沙箱开关（macOS）；缺省 off。 */
+  sandboxEnabled?: boolean;
   skillPort?: SkillPort;
   /**
    * 会话已加载技能集合（skill 门控 R1 的唯一事实源）。executor 实例 = 会话生命周期，

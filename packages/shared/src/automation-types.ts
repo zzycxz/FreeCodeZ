@@ -71,6 +71,11 @@ export interface ZCodeAutomation {
   modelSelection?: ModelSelection;
   /** 权限模式；派发时透传给 createTask，缺省走 workspace 默认。 */
   mode?: ZCodeTaskMode;
+  /**
+   * E-S3：本任务在 macOS 上以 workspace-write 沙箱执行命令（默认关）。仅影响派发
+   * 会话的 Bash 执行包装；交互会话不受影响。详见沙箱实施版规格书。
+   */
+  sandboxEnabled?: boolean;
   /** workspaceIdentity?.trim() || workspacePath */
   workspaceKey: string;
   workspacePath: string;
@@ -153,6 +158,8 @@ export interface ZCodeAutomationCreateParams {
   prompt: string;
   modelSelection?: ModelSelection;
   mode?: ZCodeTaskMode;
+  /** E-S3：创建时即可启用 workspace-write 沙箱（默认关）。 */
+  sandboxEnabled?: boolean;
   workspacePath: string;
   workspaceIdentity?: string;
   /** 当前会话内创建时由 runtime 注入，模型不可控。 */
@@ -180,6 +187,8 @@ export interface ZCodeAutomationUpdateParams {
   modelSelection?: ModelSelection | null;
   /** undefined=不修改；null=清空，回退到 workspace 默认权限模式。 */
   mode?: ZCodeTaskMode | null;
+  /** E-S3：undefined=不修改；null/true/false 显式设置。 */
+  sandboxEnabled?: boolean | null;
   recurring?: boolean;
   /** undefined=通常不修改；recurring=true 时领域层会自动清空旧上限；显式 null 必须同时传 recurring=true。 */
   maxRuns?: number | null;

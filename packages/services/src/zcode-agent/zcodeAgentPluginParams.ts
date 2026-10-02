@@ -123,6 +123,8 @@ export interface ZCodeAgentCreateAutomationParams extends ZCodeAgentWorkspaceTar
   prompt: string;
   modelSelection?: ModelSelection;
   mode?: string;
+  /** E-S3：创建时启用 workspace-write 沙箱（macOS，默认关）。 */
+  sandboxEnabled?: boolean;
   recurring?: boolean;
   maxRuns?: number;
   endAt?: number;
@@ -136,6 +138,8 @@ export interface ZCodeAgentUpdateAutomationParams extends ZCodeAgentWorkspaceTar
   prompt?: string;
   modelSelection?: ModelSelection | null;
   mode?: string | null;
+  /** E-S3：undefined=不修改；true/false 显式设置。 */
+  sandboxEnabled?: boolean | null;
   recurring?: boolean;
   maxRuns?: number | null;
   endAt?: number | null;

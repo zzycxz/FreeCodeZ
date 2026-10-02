@@ -199,6 +199,8 @@ function postDispatchRequest(
       ? { modelSelection: fixedSelection ?? automation.modelSelection }
       : {}),
     ...(automation.mode ? { mode: automation.mode } : {}),
+    // E-S3：沙箱开关随派发请求透传（manual/schedule 两路共用本组装）。
+    ...(automation.sandboxEnabled === true ? { sandboxEnabled: true } : {}),
     workspacePath: automation.workspacePath,
     ...(automation.workspaceIdentity ? { workspaceIdentity: automation.workspaceIdentity } : {}),
   };

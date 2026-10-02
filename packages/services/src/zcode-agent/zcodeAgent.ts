@@ -156,6 +156,9 @@ export interface ZCodeAgentResumeSessionParams extends ZCodeAgentSessionTarget {
   // 禁 Bash 等）。否则 resume 后模型可见工具面/执行权限会比创建时更宽。
   toolAllowlist?: string[];
   toolDenylist?: string[];
+  /** E-S4/A1 补齐：冷恢复回传沙箱开关与审批超时缺省（自动化会话不因重启丢失防护）。 */
+  sandboxEnabled?: boolean;
+  permissionTimeoutMs?: number;
 }
 
 export interface ZCodeAgentInitializeResult {
@@ -206,6 +209,10 @@ export interface ZCodeAgentCreateSessionParams extends ZCodeAgentWorkspaceTarget
   toolAllowlist?: string[];
   toolDenylist?: string[];
   importedHistory?: ZCodeSessionImportHistory;
+  /** A1：自动化会话（cron/闲时）注入的审批超时缺省（毫秒）；交互会话不携带。 */
+  permissionTimeoutMs?: number;
+  /** E-S3：会话内 Bash 以 workspace-write 沙箱执行（macOS）；缺省不携带=off。 */
+  sandboxEnabled?: boolean;
 }
 
 export interface ZCodeAgentListSessionsParams extends ZCodeAgentWorkspaceTarget {

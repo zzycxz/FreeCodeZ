@@ -13,6 +13,8 @@ export type SchedulerToMainMessage =
       targetTaskId?: string;
       modelSelection?: ModelSelection;
       mode?: string;
+      /** E-S3：automation 声明的沙箱开关（macOS/Linux/Windows 分发器消费）。 */
+      sandboxEnabled?: boolean;
       workspacePath: string;
       workspaceIdentity?: string;
     }

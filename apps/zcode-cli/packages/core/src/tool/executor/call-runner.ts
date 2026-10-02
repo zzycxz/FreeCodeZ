@@ -402,6 +402,7 @@ async function executeToolCallImpl(
         enabled: embeddedSearchDecision?.useEmbeddedSearchBranch ?? false,
         ...(deps.nativeSearchEnhancementsEnabled === false ? { findAndGrepEnabled: false } : {}),
       },
+      ...(deps.sandboxEnabled === true ? { sandboxEnabled: true } : {}),
       skillPort: deps.skillPort,
       subagentPort: deps.subagentPort,
       coordinatorResponsePort: deps.coordinatorResponsePort,
