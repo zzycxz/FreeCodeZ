@@ -6,7 +6,13 @@ export * from "./usage-quota.js";
 import type { UsageMcpQuotaSnapshot, UsageQuotaSnapshot } from "./usage-quota.js";
 import type { ZCodeAccountAccess, ZCodeProviderAccountAccess } from "./zcode-protocol/index.js";
 
-export const ESTIMATED_TOKEN_CHAR_DIVISOR = 3;
+// B1：估算口径迁移至 token-estimate.ts（全仓唯一实现，CJK×3÷4）；此处 re-export
+// 保持既有 import 路径（services/core 多处按 "@zcode/shared" 引用 divisor）不变。
+export {
+  ESTIMATED_TOKEN_CHAR_DIVISOR,
+  CJK_CHAR_ESTIMATE_WEIGHT,
+  estimateTokensFromText,
+} from "./token-estimate.js";
 
 export type UsageStatsRange = "all" | "7d" | "30d";
 export type CodingPlanUsageRange = "today" | "7d" | "30d" | "custom";

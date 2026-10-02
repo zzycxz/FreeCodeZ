@@ -18,7 +18,23 @@ import { TASK_TOOL_NAME } from "../compat.js";
 import type { ToolEntry, ToolHandler } from "../types.js";
 import { formatAgentProfilesForPrompt, type AgentProfile } from "../../subagent/profile.js";
 
-const MAX_AGENT_MODEL_BYTES = 120_000;
+// B4 子代理回传预算：回传内容是子代理的最终 assistant 消息（模型合成的摘要，信息
+// 密度高），但旧默认 120KB 允许单条超长最终消息吃掉父上下文 ~30K token（多代理
+// fan-out 场景最容易“跑着跑着失忆”）。收紧为 16KB；超限走既有 artifact 信封
+// （预览 + 完整结果路径，result-serialization 机制不变），信息不丢只是按需再读。
+// 需要旧行为时用 AGENT_RESULT_BUDGET_BYTES 环境变量调回（对齐 bash-output-policy
+// 的 BASH_MAX_OUTPUT_LENGTH env 覆盖先例）。
+export const DEFAULT_AGENT_MODEL_BYTES = 16_000;
+
+export function resolveAgentResultBudgetBytes(env: NodeJS.ProcessEnv): number {
+  const parsed = env.AGENT_RESULT_BUDGET_BYTES === undefined ? Number.NaN : Number(env.AGENT_RESULT_BUDGET_BYTES);
+  if (Number.isFinite(parsed) && parsed >= 1024 && parsed <= 1_000_000) {
+    return Math.floor(parsed);
+  }
+  return DEFAULT_AGENT_MODEL_BYTES;
+}
+
+const MAX_AGENT_MODEL_BYTES = resolveAgentResultBudgetBytes(process.env);
 
 const AGENT_TOOL_OUTPUT_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",

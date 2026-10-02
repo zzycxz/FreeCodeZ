@@ -1,18 +1,7 @@
 // ============================================================
 // Token Estimation
 // ============================================================
-
-import { ESTIMATED_TOKEN_CHAR_DIVISOR } from "@zcode/shared";
-
-/**
- * 估算文本的 token 数量
- * 使用共享字符估算除数，中文字符保留额外权重
- * 这是一个粗略估算，对于调试和监控足够用
- */
-export function estimateTokens(text: string): number {
-  // 中文字符通常比英文字符占用更多 token，因此按两个估算字符计入。
-  const chineseChars = (text.match(/[一-鿿]/g) || []).length;
-  const otherChars = text.length - chineseChars;
-
-  return Math.ceil((chineseChars * 2 + otherChars) / ESTIMATED_TOKEN_CHAR_DIVISOR);
-}
+// B1：估算实现迁移至 @zcode/shared 的 token-estimate（全仓唯一口径：CJK 按 3 个
+// 估算字符计、总和 ÷4）。本文件保留同名导出，避免几十处 `estimateTokens` 引用
+// 逐个改 import；行为变化见 token-estimate.ts 头注（英文下调 25%、中文不低于旧口径）。
+export { estimateTokensFromText as estimateTokens } from "@zcode/shared";

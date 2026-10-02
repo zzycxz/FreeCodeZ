@@ -106,8 +106,18 @@ export interface ExecutionEmbeddedSearchPrelude {
 }
 
 export interface ExecutionSandboxPolicy {
+  /**
+   * 历史语义位（遥测/能力标记）：Bash handler 对普通命令恒为 true，**不构成
+   * 沙箱激活条件**。激活必须显式 mode="workspace-write"（默认 off 红线）。
+   */
   enabled: boolean;
   profile?: string;
+  /** E-S1/S3：显式策略模式。executor 只在 mode==="workspace-write" 时包装。 */
+  mode?: "workspace-write" | "off";
+  /** workspace-write 的可写根（项目根；含 .git——不抄 codex 只读 .git 的反面教训）。 */
+  workspaceRoot?: string;
+  /** 用户追加的可写根（绝对路径）。 */
+  writableRoots?: string[];
   dangerouslyDisableSandbox?: boolean;
   metadata?: Record<string, unknown>;
 }
@@ -174,6 +184,8 @@ export interface ExecutionStreamResult {
   text: string;
   bytes: number;
   truncated: boolean;
+  /** B3：inline 首尾保留时中段被省略的字节数（truncated=true 时 >0；未超限缺省）。 */
+  omittedBytes?: number;
   artifactPath?: string;
   artifactBytes?: number;
   artifactTruncated?: boolean;

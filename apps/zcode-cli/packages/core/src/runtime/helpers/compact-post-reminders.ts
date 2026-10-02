@@ -1,4 +1,4 @@
-import { ESTIMATED_TOKEN_CHAR_DIVISOR } from "@zcode/shared";
+import { estimateTokensFromText } from "@zcode/shared";
 import type { ReadFileStateEntry, ReadFileStateMap } from "../deps.js";
 import {
   systemReminderAttachmentEntry,
@@ -33,7 +33,8 @@ export function buildPostCompactReadStateReminderEntries(input: {
   for (const entry of candidates) {
     if (selected.length >= maxFiles) break;
 
-    const approxTokens = Math.ceil(entry.content.length / ESTIMATED_TOKEN_CHAR_DIVISOR);
+    // B1：统一估算口径（CJK 加权 + ÷4），替换旧的纯字符数 ÷3。
+    const approxTokens = estimateTokensFromText(entry.content);
     if (approxTokens > maxFileApproxTokens) {
       selected.push(buildPostCompactReadStateEntry(formatCompactFileReference(entry)));
       continue;

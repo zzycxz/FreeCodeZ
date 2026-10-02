@@ -1,5 +1,5 @@
 import { CompactTrigger } from "@zcode/contracts";
-import { ESTIMATED_TOKEN_CHAR_DIVISOR } from "@zcode/shared";
+import { estimateTokensFromText } from "@zcode/shared";
 import type {
   CompactBoundaryPayload,
   CompactPhase,
@@ -101,15 +101,15 @@ export function buildManualCompactBoundary(
 
 export function estimateMessageTokens(messages: readonly CompactModelMessage[]): number {
   return messages.reduce((total, message) => {
-    let estimatedCharacterCount = modelMessageContentToTokenEstimateText(message.content).length;
+    // B1：改用统一估算函数（CJK 加权 + ÷4）。旧实现按纯字符数 ÷3 且无 CJK 加权，
+    // 与 context/utils 口径分裂——英文高估致压缩提前，中文低估有溢出风险。
+    let estimateText = modelMessageContentToTokenEstimateText(message.content);
     // assistant toolCalls 独立保存在 content 之外，旧估算只读取 content，
     // 大型工具入参会被完整发给 provider，却在 auto compact 和 preflight 中计为 0。
     for (const toolCall of message.toolCalls ?? []) {
-      estimatedCharacterCount += (
-        toolCall.name + stringifyToolCallInputForTokenEstimate(toolCall.input)
-      ).length;
+      estimateText += toolCall.name + stringifyToolCallInputForTokenEstimate(toolCall.input);
     }
-    return total + Math.ceil(estimatedCharacterCount / ESTIMATED_TOKEN_CHAR_DIVISOR);
+    return total + estimateTokensFromText(estimateText);
   }, 0);
 }
 

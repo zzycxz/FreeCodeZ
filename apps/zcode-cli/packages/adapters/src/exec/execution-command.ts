@@ -16,6 +16,41 @@ import type {
 
 const WINDOWS_COMMAND_SHIM_EXTENSIONS = new Set([".cmd", ".bat"]);
 
+// B2 输出卫生：用户 shell 配置常带 color alias（如 alias ls='ls --color=always'），
+// ANSI 转义对模型是纯冗余编码——E3 实测 git diff +27%、grep +30% token 膨胀，重 diff
+// 会话损耗 15-59% 压缩阈值。注入无色化/分页禁用变量（git 工具侧 services/git/config.ts
+// 已有同款先例），并提供 ZCODE_PRESERVE_COLOR=1 逃生口（如需彩色 artifact）。
+const OUTPUT_HYGIENE_ENV_SET: Readonly<Record<string, string>> = {
+  NO_COLOR: "1",
+  TERM: "dumb",
+  COLORTERM: "",
+  PAGER: "cat",
+  GIT_PAGER: "cat",
+  GH_PAGER: "cat",
+};
+// 这些变量会越过 NO_COLOR 强制开色，需一并摘除。
+const OUTPUT_HYGIENE_ENV_UNSET: readonly string[] = ["FORCE_COLOR", "CLICOLOR_FORCE"];
+const PRESERVE_COLOR_ENV_KEY = "ZCODE_PRESERVE_COLOR";
+
+function isPreserveColorRequested(sourceEnv: NodeJS.ProcessEnv): boolean {
+  const value = sourceEnv[PRESERVE_COLOR_ENV_KEY];
+  return value === "1" || value === "true";
+}
+
+function applyOutputHygieneEnv(
+  env: Record<string, string>,
+  platform: NodeJS.Platform,
+  options: { preserveColor: boolean },
+): void {
+  if (options.preserveColor) return;
+  for (const key of OUTPUT_HYGIENE_ENV_UNSET) {
+    deleteEnvKey(env, key, platform);
+  }
+  for (const [key, value] of Object.entries(OUTPUT_HYGIENE_ENV_SET)) {
+    setEnvKey(env, key, value, platform);
+  }
+}
+
 export interface ResolvedSpawnCommand {
   args: string[];
   cwdDialect: ExecutionShellDialect;
@@ -49,6 +84,10 @@ export function buildExecutionEnv(
   }
 
   applyExecutionTextEnv(env, platform);
+
+  applyOutputHygieneEnv(env, platform, {
+    preserveColor: isPreserveColorRequested(sourceEnv),
+  });
 
   applyNetworkEgressEnv(env, {
     network: options.network,
