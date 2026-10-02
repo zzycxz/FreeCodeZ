@@ -1,4 +1,6 @@
-const SORTED_PROVIDER_TOOL_NAMES = new Set([
+// A4 守卫测试需要对照"排序白名单里有、注册表里没有"的幽灵名（如 ScheduleWakeup），
+// 因此导出该集合；它仍只影响排序，不代表任何工具存在。
+export const SORTED_PROVIDER_TOOL_NAMES = new Set([
   "Agent",
   "AskUserQuestion",
   "Bash",

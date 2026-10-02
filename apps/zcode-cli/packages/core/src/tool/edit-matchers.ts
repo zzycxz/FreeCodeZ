@@ -5,6 +5,7 @@ type EditMatchStrategy =
   | "escape_normalized"
   | "unicode_escape_normalized"
   | "line_trimmed"
+  | "line_normalized"
   | "indentation_flexible"
   | "block_anchor";
 
@@ -54,6 +55,7 @@ export function findEditMatch(input: {
     "escape_normalized",
     "unicode_escape_normalized",
     "line_trimmed",
+    "line_normalized",
     "indentation_flexible",
     "block_anchor",
   ];
@@ -122,6 +124,8 @@ function collectCandidates(
       return collectUnicodeEscapeNormalizedCandidates(content, search);
     case "line_trimmed":
       return collectLineTrimmedCandidates(content, search);
+    case "line_normalized":
+      return collectLineNormalizedCandidates(content, search);
     case "indentation_flexible":
       return collectIndentationFlexibleCandidates(content, search);
     case "block_anchor":
@@ -181,6 +185,82 @@ function collectLineTrimmedCandidates(content: string, search: string): Candidat
   for (let index = 0; index <= contentLines.length - searchLines.length; index += 1) {
     const block = contentLines.slice(index, index + searchLines.length);
     if (!block.every((line, offset) => line.trim() === searchLines[offset]!.trim())) continue;
+    candidates.push(blockCandidate(contentLines, index, searchLines.length));
+  }
+  return candidates;
+}
+
+// C1 组合噪声归一表：逐行 trim + Unicode 标点归一，覆盖“弯引号+尾随空白叠加”且
+// 污染首尾锚行的组合噪声（实测八级全 miss 的缺口边界）。码点表参照 codex
+// apply-patch seek_sequence 的 L4 归一（连字符族/引号族/空白族）。
+const PUNCTUATION_NORMALIZATION: Readonly<Record<string, string>> = {
+  // 连字符/破折号族
+  "\u2010": "-",
+  "\u2011": "-",
+  "\u2012": "-",
+  "\u2013": "-",
+  "\u2014": "-",
+  "\u2015": "-",
+  "\u2212": "-",
+  // 单引号族
+  "\u2018": "'",
+  "\u2019": "'",
+  "\u201A": "'",
+  "\u201B": "'",
+  "\u2032": "'",
+  "\u0060": "'",
+  "\u00B4": "'",
+  // 双引号族
+  "\u201C": '"',
+  "\u201D": '"',
+  "\u201E": '"',
+  "\u201F": '"',
+  "\u2033": '"',
+  // 空白族（不间断/排版空格等）
+  "\u00A0": " ",
+  "\u1680": " ",
+  "\u2000": " ",
+  "\u2001": " ",
+  "\u2002": " ",
+  "\u2003": " ",
+  "\u2004": " ",
+  "\u2005": " ",
+  "\u2006": " ",
+  "\u2007": " ",
+  "\u2008": " ",
+  "\u2009": " ",
+  "\u200A": " ",
+  "\u202F": " ",
+  "\u205F": " ",
+  "\u3000": " ",
+};
+
+function normalizeLineNoise(line: string): string {
+  let result = "";
+  for (const char of line.trim()) {
+    result += PUNCTUATION_NORMALIZATION[char] ?? char;
+  }
+  return result;
+}
+
+// 注意：该级**不加入 BROAD_MATCHERS**——replaceAll=true 时仍保留（C1 修复点）。
+// 旧行为 replaceAll 跳过全部宽策略，导致“单纯尾随空白 + replaceAll”也 not_found
+// （bug 级缺口，比组合噪声更宽）。line_normalized 归一后仍要求逐行全等，误替换
+// 风险与 line_trimmed 同级，可安全用于 replaceAll。
+function collectLineNormalizedCandidates(content: string, search: string): Candidate[] {
+  const contentLines = content.split("\n");
+  const searchLines = trimTrailingEmptyLine(search.split("\n"));
+  if (searchLines.length === 0) return [];
+
+  const normalizedSearch = searchLines.map((line) => normalizeLineNoise(line));
+  const candidates: Candidate[] = [];
+  for (let index = 0; index <= contentLines.length - searchLines.length; index += 1) {
+    const block = contentLines.slice(index, index + searchLines.length);
+    if (
+      !block.every((line, offset) => normalizeLineNoise(line) === normalizedSearch[offset]!)
+    ) {
+      continue;
+    }
     candidates.push(blockCandidate(contentLines, index, searchLines.length));
   }
   return candidates;

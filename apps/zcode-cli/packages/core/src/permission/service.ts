@@ -20,6 +20,7 @@ import { webFetchRuleSubjects, wildcardToRegExp } from "./rule-matching.js";
 import { isPreapprovedWorkflowDraftWrite } from "./workflow-draft-path.js";
 import { applyPermissionUpdates } from "../tool/executor/permission-rules.js";
 import { isWebFetchPreapprovedUrl } from "../tool/webfetch-preapproved.js";
+import { findCatastrophicBashCommand } from "../tool/bash-catastrophic-policy.js";
 import type { ToolPermissionRulePolicy } from "../tool/types.js";
 
 // -----------------------------------------------
@@ -134,6 +135,24 @@ export class PermissionService {
 
     const planEnabled = context.planEnabled ?? context.mode === "plan";
     if (context.mode === "yolo" && !planEnabled) {
+      // D1 灾难形态地板：yolo 全放行的唯一例外。bots 建任务被强制锁死在 yolo
+      // （taskBridge §6.9），一条公网聊天消息即可驱动无限制执行；此处只拦灾难
+      // 形态（格式化/裸设备写/删根删家/关机），正常命令零影响、零新增弹窗。
+      // 解析不安全的命令不拦（保守方向），界内破坏由审批/沙箱层负责。
+      if (context.toolName === "Bash") {
+        const command = extractBashCommand(context.input);
+        if (command) {
+          const catastrophic = findCatastrophicBashCommand(command);
+          if (catastrophic) {
+            return this.deny(
+              context,
+              capability,
+              "rule.catastrophicFloor",
+              catastrophic.reason,
+            );
+          }
+        }
+      }
       return this.allow(context, capability, "mode.yolo", "Yolo mode bypasses permission prompts");
     }
 
@@ -688,3 +707,12 @@ export const defaultPermissionConfig: PermissionConfig = {
   autoApproveHighRisk: false,
   allowMediumRiskInAutoMode: false,
 };
+
+// D1：从 Bash 工具入参安全取命令文本。入参形态异常时返回 undefined——
+// 灾难地板宁可漏拦（交给后续层）也不在形态不确定时瞎猜。
+function extractBashCommand(input: unknown): string | undefined {
+  if (typeof input === "string") return input;
+  if (!input || typeof input !== "object") return undefined;
+  const command = (input as Record<string, unknown>).command;
+  return typeof command === "string" && command.length > 0 ? command : undefined;
+}

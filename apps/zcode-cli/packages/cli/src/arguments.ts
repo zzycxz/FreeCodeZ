@@ -34,6 +34,11 @@ export const parseGlobalArgs = (argv: string[]) =>
       "memory-bench": {
         type: "boolean",
       },
+      // C4：headless 失败退出码的退回开关。默认 projection.status=error 时进程退出码
+      // 为 1（脚本/CI 靠退出码判断成败）；旧行为（恒 0）可用该旗标恢复。
+      "no-fail-on-error": {
+        type: "boolean",
+      },
       attach: {
         multiple: true,
         type: "string",

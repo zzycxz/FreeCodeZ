@@ -35,6 +35,8 @@ export type GlobalOptions = {
   json: boolean;
   locale?: GlobalLocale;
   memoryBench?: boolean;
+  /** C4：恢复 headless 旧行为（projection.error 也退出 0）。 */
+  noFailOnError?: boolean;
   noColor: boolean;
   outputFormat?: GlobalOutputFormat;
   verbose: boolean;

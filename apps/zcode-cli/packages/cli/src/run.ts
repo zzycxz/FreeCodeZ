@@ -103,6 +103,7 @@ const globalOptions = (
     json: values.json === true,
     locale,
     ...(values["memory-bench"] === true ? { memoryBench: true } : {}),
+    ...(values["no-fail-on-error"] === true ? { noFailOnError: true } : {}),
     noColor: values["no-color"] === true,
     ...(outputFormat ? { outputFormat } : {}),
     verbose: values.verbose === true,

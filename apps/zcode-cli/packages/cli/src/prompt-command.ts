@@ -50,6 +50,20 @@ const wantsJsonSummary = (options: GlobalOptions): boolean =>
 const wantsEventStream = (options: GlobalOptions): boolean =>
   options.outputFormat === "stream-json";
 
+/**
+ * C4：headless 失败退出码。旧实现三个正常返回路径恒 return 0——turn 以 error 收口
+ * （工具链失败/模型异常等）时脚本与 CI 无法靠退出码判断成败，只能解析 JSON。
+ * 现按 projection.status 判定：error → 1，其余（completed/idle 等）→ 0；
+ * `--no-fail-on-error` 恢复旧行为。异常路径（catch）维持 return 1 不变。
+ */
+export function exitCodeForProjection(
+  status: string,
+  options: Pick<GlobalOptions, "noFailOnError">,
+): number {
+  if (options.noFailOnError === true) return 0;
+  return status === "error" ? 1 : 0;
+}
+
 const IMAGE_EXTENSIONS = new Set([".gif", ".jpeg", ".jpg", ".png", ".webp"]);
 const VIDEO_EXTENSIONS = new Set([".mp4", ".m4v", ".mov", ".webm", ".mkv", ".avi"]);
 const EMPTY_PROMPT_ERROR = "--prompt requires non-empty text.";
@@ -365,7 +379,7 @@ export const runPrompt = async (
           },
         })}\n`,
       );
-      return 0;
+      return exitCodeForProjection(result.projection.status, options);
     }
 
     if (wantsJsonSummary(options)) {
@@ -407,14 +421,14 @@ export const runPrompt = async (
           },
         }),
       );
-      return 0;
+      return exitCodeForProjection(result.projection.status, options);
     }
 
     if (hookTrustDiagnostic) writeHeadlessWorkspaceHookTrustDiagnostic(ctx, hookTrustDiagnostic);
     // 每个回合的文本按到达序打印，所以最后一段自然就是结算后的总结。
     // 单回合时这与 `${result.response}\n` 逐字节相同。
     ctx.stdout.write(`${turnResponses.join("\n\n")}\n`);
-    return 0;
+    return exitCodeForProjection(result.projection.status, options);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     ctx.stderr.write(`Error: ${message}${traceId ? ` (traceId: ${traceId})` : ""}\n`);
