@@ -30,8 +30,9 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { logger } from "@/logger.js";
 import { McpServerForm } from "@/settings/McpServerForm.js";
 import { McpServerList, McpStatusDot } from "@/settings/McpServerList.js";
+import { McpServerToolsDialog } from "@/settings/McpServerToolsDialog.js";
 import {
-  formToConfig,
+  buildMcpServerSaveConfig,
   type FormState,
   type McpEditorMode,
   type ServerScope,
@@ -416,10 +417,12 @@ function buildPendingMcpOAuthAuthorizationRefreshKey(
 function PluginMcpServerList({
   items,
   pluginListingById,
+  snapshotByName,
   onOpenAuthorization,
 }: {
   items: PluginMcpServerItem[];
   pluginListingById: ReadonlyMap<string, ZCodeAvailablePluginSummary["listing"]>;
+  snapshotByName?: Record<string, ZCodeMcpServerStatusSnapshot>;
   onOpenAuthorization?: (item: PluginMcpServerItem) => void;
 }) {
   const { intl } = useZCodeIntl();
@@ -477,6 +480,14 @@ function PluginMcpServerList({
       getKey={(item) => item.id}
       renderItem={(item) => {
         const statusDescription = resolveStatusDescription(item);
+        // 插件 MCP 同样享受观测徽章（spec 规则 2.2 不区分自建/插件）；
+        // runtimeServerName 即运行时 server 名，直接映射 snapshot。工具开关不开放
+        //（插件 config 由 manifest 管理），仅展示 N/M 与估算。
+        const snapshot = snapshotByName?.[item.runtimeServerName];
+        const badgeTokens =
+          snapshot?.tools && snapshot.tools.length > 0
+            ? snapshot.tools.reduce((total, tool) => total + tool.estimatedTokens, 0)
+            : null;
         return (
           <div
             className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-hover"
@@ -502,7 +513,29 @@ function PluginMcpServerList({
               </span>
             </div>
             <div className="min-w-0">
-              <div className="truncate text-ui-base font-medium text-foreground">{item.name}</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="truncate text-ui-base font-medium text-foreground">{item.name}</span>
+                {snapshot?.visibleToolCount !== undefined &&
+                snapshot.visibleToolCount !== snapshot.toolCount ? (
+                  <span
+                    className="inline-flex rounded-md bg-surface px-1.5 py-0.5 text-ui-sm text-foreground-subtle ring-1 ring-border"
+                    title={intl.formatMessage(
+                      { id: "settings.mcp.status.toolCountFilteredReason" },
+                      { count: String(snapshot.toolCount - snapshot.visibleToolCount) },
+                    )}
+                  >
+                    {intl.formatMessage(
+                      { id: "settings.mcp.status.toolCountFiltered" },
+                      { visible: String(snapshot.visibleToolCount), count: String(snapshot.toolCount) },
+                    )}
+                  </span>
+                ) : null}
+                {badgeTokens !== null ? (
+                  <span className="inline-flex rounded-md bg-surface px-1.5 py-0.5 text-ui-sm text-foreground-subtlest ring-1 ring-border">
+                    ~{badgeTokens} tk
+                  </span>
+                ) : null}
+              </div>
               {item.status === "error" ? (
                 <McpFailurePresentation error={item.error} failureKind={item.failureKind} />
               ) : (
@@ -616,6 +649,7 @@ export function McpSettingsSection({
   const [showForm, setShowForm] = useState(false);
   const [formScopeKey, setFormScopeKey] = useState(parentScopeKey);
   const [editingServer, setEditingServer] = useState<ZCodeMcpServer | null>(null);
+  const [toolsDialogServer, setToolsDialogServer] = useState<ZCodeMcpServer | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [remoteMcpSyncOpen, setRemoteMcpSyncOpen] = useState(false);
   const query = searchQuery;
@@ -1256,10 +1290,7 @@ export function McpSettingsSection({
     if (!loaded) {
       return;
     }
-    const config = {
-      ...formToConfig(form),
-      ...(prev?.enabled === false ? { enable: false } : {}),
-    };
+    const config = buildMcpServerSaveConfig(form, prev);
     // 表单 Scope 可以独立于父页面切换，不能继续读取可能仍属于旧目标的
     // currentProjectPath；保存目标必须使用表单已解析并完成加载的 workspace props。
     const projectPath = formScopeKey === "user" ? undefined : activeWorkspacePath;
@@ -1486,10 +1517,12 @@ export function McpSettingsSection({
             <McpServerList
               hideMetadata
               servers={installedServers}
+              snapshotByName={statusSnapshots}
               onCreate={handleCreate}
               onEdit={handleEdit}
               onToggle={handleToggle}
               onOpenAuthorization={handleOpenAuthorization}
+              onOpenTools={setToolsDialogServer}
               emptyTitle={intl.formatMessage({ id: "settings.mcp.emptyTitle" })}
               emptyDescription={intl.formatMessage({
                 id: "settings.mcp.emptyDescription",
@@ -1551,6 +1584,7 @@ export function McpSettingsSection({
             <PluginMcpServerList
               items={group.items}
               pluginListingById={pluginListingById}
+              snapshotByName={statusSnapshots}
               onOpenAuthorization={handleOpenPluginAuthorization}
             />
           </section>
@@ -1567,6 +1601,31 @@ export function McpSettingsSection({
         onImported={async () => {
           await loadMcpFromUserDirectory(services.mcpSyncService, activeWorkspaceIdentity);
         }}
+      />
+      <McpServerToolsDialog
+        serverName={toolsDialogServer?.name ?? ""}
+        tools={
+          (toolsDialogServer ? statusSnapshots[toolsDialogServer.name]?.tools : undefined) ?? []
+        }
+        disabledTools={toolsDialogServer?.config.disabledTools ?? []}
+        open={Boolean(toolsDialogServer)}
+        onOpenChange={(open) => {
+          if (!open) setToolsDialogServer(null);
+        }}
+        onDisabledToolsChange={
+          toolsDialogServer
+            ? (next) => {
+                // 走既有 scoped update 落盘路径（spec §3 唯一写路径）：
+                // config 收敛在 agent 侧豁免 disabledTools（不重连），下次装配即生效。
+                void updateScopedMcpServer(
+                  DEFAULT_MCP_SOURCE,
+                  toolsDialogServer.name,
+                  { ...toolsDialogServer.config, disabledTools: next },
+                  toolsDialogServer.scope === "user" ? undefined : (activeWorkspacePath ?? undefined),
+                );
+              }
+            : undefined
+        }
       />
       <RemoteSyncDialogs
         canSyncSkills={false}

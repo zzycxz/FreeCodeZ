@@ -2,7 +2,7 @@
 
 import type { JsonSchema } from "../model/index.js";
 import type { TraceContext } from "../tracing/tracer.js";
-import type { McpServerFailureKind } from "@zcode/shared";
+import type { McpServerFailureKind, ZCodeMcpToolSummary } from "@zcode/shared";
 
 export type McpServerTransportType = "stdio" | "http" | "sse";
 export type McpProtocolVersion = "legacy" | "auto" | "2026-07-28";
@@ -20,6 +20,12 @@ export interface McpServerConfigBase {
   /** 仅限宿主生成，公共配置 schema 会拒绝该字段。 */
   source?: McpServerRuntimeSource;
   timeoutMs?: number;
+  /**
+   * 工具级开关（denylist 语义，shared McpServerConfig.disabledTools 同义）：
+   * 缺省/空 = 全放行。不参与连接收敛相等性比较（spec 规则 2.1：
+   * 拨开关不得触发 closeRecord/重连），仅影响 listTools() 装配输出。
+   */
+  disabledTools?: string[];
 }
 
 export interface McpClientCredentialsOAuthConfig {
@@ -78,6 +84,11 @@ export interface McpServerStatus {
   status: McpServerStatusKind;
   transport: McpServerTransportType;
   toolCount: number;
+  /**
+   * 过滤后进入模型装配的工具数（= toolCount − disabledTools 命中 − 服务端声明不可见）。
+   * 缺省等于 toolCount（无过滤）。toolCount 保留连接事实（tools/list 原始长度）。
+   */
+  visibleToolCount?: number;
   updatedAt: string;
   error?: string;
   failureKind?: McpServerFailureKind;
@@ -131,6 +142,13 @@ export interface McpToolDescriptor {
   inputSchema: JsonSchema;
   outputSchema?: JsonSchema;
   annotations?: McpToolAnnotations;
+  /**
+   * 服务端 `_meta.ui.visibility` 判定结果（shared mcpToolModelVisible）。
+   * 缺省 true：未声明或形态异常一律放行（spec 红线 R1）。
+   * 这是 raw descriptor 上的事实字段；装配过滤（disabledTools + !modelVisible）
+   * 发生在 manager.listTools() 输出处，record.tools 始终保留原始全量。
+   */
+  modelVisible?: boolean;
 }
 
 export type McpContentBlock = Record<string, unknown>;
@@ -207,6 +225,12 @@ export interface McpPort {
   pingServer?(name: string, options?: { timeoutMs?: number }): Promise<boolean>;
   status(): Promise<Record<string, McpServerStatus>>;
   listTools(): Promise<McpToolDescriptor[]>;
+  /**
+   * 单 server 的工具观测明细（含用户/服务端两侧不可见归因与成本估算），
+   * 数据源为 record.tools 原始全量 + config.disabledTools；未连接或不存在返回 undefined。
+   * 仅供设置页透传（协议 snapshot connect 模式），不参与模型装配。
+   */
+  serverToolSummaries?(name: string): ZCodeMcpToolSummary[] | undefined;
   callTool(request: McpCallToolRequest, options?: McpCallToolOptions): Promise<McpToolCallResult>;
   close(): Promise<void>;
 }

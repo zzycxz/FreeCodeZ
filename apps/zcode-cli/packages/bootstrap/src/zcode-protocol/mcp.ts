@@ -127,7 +127,27 @@ export async function listMcpServers(
     configuredMcpServers,
     untrustedProjectMcpServers,
   );
-  return zcodeMcpListResultSchema.parse({ statuses });
+  // connect 模式才附加工具观测明细（spec 规则 2.2/2.3）：设置页展开详情即取即用；
+  // status 轮询（OAuth 1s 级）不携带，避免体积放大。
+  return zcodeMcpListResultSchema.parse({ statuses: attachServerToolSummaries(mcpPort, statuses) });
+}
+
+/**
+ * 为 connected 状态的 snapshot 附加每工具观测明细（不可见归因 + 成本估算）。
+ * 工具明细来自 record.tools 原始全量 + config.disabledTools，不影响模型装配。
+ */
+function attachServerToolSummaries(
+  mcpPort: McpPort | undefined,
+  statuses: Record<string, McpServerStatus>,
+): Record<string, McpServerStatus> {
+  if (!mcpPort?.serverToolSummaries) return statuses;
+  return Object.fromEntries(
+    Object.entries(statuses).map(([name, status]) => {
+      if (status.status !== "connected") return [name, status] as const;
+      const tools = mcpPort.serverToolSummaries?.(name);
+      return tools ? ([name, { ...status, tools }] as const) : ([name, status] as const);
+    }),
+  );
 }
 
 async function waitForOAuthAuthorizationSnapshot(

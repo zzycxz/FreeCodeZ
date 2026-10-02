@@ -70,6 +70,17 @@ export function serverToForm(server: ZCodeMcpServer): FormState {
   };
 }
 
+// A3 修复：服务器编辑表单保存时的配置组装。表单不管理工具级开关（disabledTools
+// 的唯一写路径是工具清单弹窗 McpServerToolsDialog），而 updateScopedMcpServer 是
+// 整键 upsert——不透传旧值会把用户已关闭的工具开关静默清空。抽为纯函数以便回归测试。
+export function buildMcpServerSaveConfig(form: FormState, prev?: ZCodeMcpServer): McpServerConfig {
+  return {
+    ...formToConfig(form),
+    ...(prev?.enabled === false ? { enable: false } : {}),
+    ...(prev?.config?.disabledTools?.length ? { disabledTools: prev.config.disabledTools } : {}),
+  };
+}
+
 export function formToConfig(form: FormState): McpServerConfig {
   const timeoutMs = parseTimeoutMs(form.timeoutMs);
   if (form.type === "stdio") {

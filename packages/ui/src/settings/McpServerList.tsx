@@ -4,6 +4,7 @@ import {
   testId,
   type McpServerStatus,
   type ZCodeMcpServer,
+  type ZCodeMcpServerStatusSnapshot,
 } from "@zcode/shared";
 import { Button } from "@/components/ui/button.js";
 import { Switch } from "@/components/ui/switch.js";
@@ -17,7 +18,7 @@ import {
 } from "@/settings/McpFailurePresentation.js";
 import { SettingsResourceList } from "@/settings/SettingsResourceGroup.js";
 import { runUserAction } from "@/lib/userActionTelemetry.js";
-import { CircleIcon, Cable, Loader2Icon, ExternalLink, Plus } from "lucide-react";
+import { CircleIcon, Cable, Loader2Icon, ExternalLink, Plus, Wrench } from "lucide-react";
 
 export function McpStatusDot({
   status,
@@ -63,15 +64,20 @@ function ScopeBadge({ scope }: { scope?: string }) {
 
 function McpServerItem({
   server,
+  snapshot,
   onEdit,
   onToggle,
   onOpenAuthorization,
+  onOpenTools,
   hideMetadata,
 }: {
   server: ZCodeMcpServer;
+  snapshot?: ZCodeMcpServerStatusSnapshot;
   onEdit: (server: ZCodeMcpServer) => void;
   onToggle: (id: string, enabled: boolean) => void;
   onOpenAuthorization?: (server: ZCodeMcpServer) => void;
+  /** 工具观测清单入口；仅 connected 且有 tools 明细的 server 传入。 */
+  onOpenTools?: (server: ZCodeMcpServer) => void;
   hideMetadata: boolean;
 }) {
   const { intl } = useZCodeIntl();
@@ -101,6 +107,11 @@ function McpServerItem({
     : server.config.command
       ? `${typeLabel} · ${server.config.command} ${(server.config.args ?? []).join(" ")}`
       : typeLabel;
+  // 工具观测明细存在（connected + connect 模式刷新）才提供清单入口；
+  // tokens 徽章与 N/M 计数都来自 snapshot，缺失时回落到既有 toolCount 单计数展示。
+  const snapshotTools = snapshot?.tools;
+  const canOpenTools =
+    Boolean(onOpenTools) && server.status === "connected" && (snapshotTools?.length ?? 0) > 0;
 
   return (
     <div
@@ -124,13 +135,18 @@ function McpServerItem({
           <span className="truncate text-ui-base font-medium text-foreground">{server.name}</span>
           {!hideMetadata ? <ScopeBadge scope={server.scope} /> : null}
           {!hideMetadata && typeof server.toolCount === "number" && (
-            <span className="inline-flex rounded-md bg-surface px-1.5 py-0.5 text-ui-sm text-foreground-subtle ring-1 ring-border">
-              {intl.formatMessage(
-                { id: "settings.mcp.status.toolCount" },
-                { count: String(server.toolCount) },
-              )}
+            <span
+              className="inline-flex rounded-md bg-surface px-1.5 py-0.5 text-ui-sm text-foreground-subtle ring-1 ring-border"
+              title={resolveToolBadgeTitle(intl, snapshot)}
+            >
+              {resolveToolBadgeText(intl, server.toolCount, snapshot)}
             </span>
           )}
+          {resolveToolBadgeTokens(snapshot) !== null && !hideMetadata ? (
+            <span className="inline-flex rounded-md bg-surface px-1.5 py-0.5 text-ui-sm text-foreground-subtlest ring-1 ring-border">
+              ~{resolveToolBadgeTokens(snapshot)} tk
+            </span>
+          ) : null}
         </div>
         <div className="mt-1 truncate text-ui-sm text-foreground-subtle">{description}</div>
         {server.status === "error" ? (
@@ -138,6 +154,20 @@ function McpServerItem({
         ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        {canOpenTools && (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={intl.formatMessage({ id: "settings.mcp.tools.open" })}
+            title={intl.formatMessage({ id: "settings.mcp.tools.open" })}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenTools?.(server);
+            }}
+          >
+            <Wrench className="size-4" aria-hidden="true" />
+          </Button>
+        )}
         {canOpenAuthorization && (
           <Button
             variant="link"
@@ -167,19 +197,23 @@ function McpServerItem({
 
 export function McpServerList({
   servers,
+  snapshotByName,
   onCreate,
   onEdit,
   onToggle,
   onOpenAuthorization,
+  onOpenTools,
   emptyTitle,
   emptyDescription,
   hideMetadata = false,
 }: {
   servers: ZCodeMcpServer[];
+  snapshotByName?: Record<string, ZCodeMcpServerStatusSnapshot>;
   onCreate: () => void;
   onEdit: (server: ZCodeMcpServer) => void;
   onToggle: (id: string, enabled: boolean) => void;
   onOpenAuthorization?: (server: ZCodeMcpServer) => void;
+  onOpenTools?: (server: ZCodeMcpServer) => void;
   emptyTitle: string;
   emptyDescription: string;
   hideMetadata?: boolean;
@@ -210,12 +244,54 @@ export function McpServerList({
       renderItem={(server) => (
         <McpServerItem
           server={server}
+          snapshot={snapshotByName?.[server.name]}
           onEdit={onEdit}
           onToggle={onToggle}
           onOpenAuthorization={onOpenAuthorization}
+          onOpenTools={onOpenTools}
           hideMetadata={hideMetadata}
         />
       )}
     />
   );
+}
+
+/** 工具计数徽章文案：有过滤时显示「N/M」，否则维持单计数（旧 CLI 兼容回落）。 */
+function resolveToolBadgeText(
+  intl: ReturnType<typeof useZCodeIntl>["intl"],
+  toolCount: number,
+  snapshot?: ZCodeMcpServerStatusSnapshot,
+): string {
+  if (
+    snapshot?.visibleToolCount !== undefined &&
+    snapshot.visibleToolCount !== snapshot.toolCount
+  ) {
+    return intl.formatMessage(
+      { id: "settings.mcp.status.toolCountFiltered" },
+      { visible: String(snapshot.visibleToolCount), count: String(snapshot.toolCount) },
+    );
+  }
+  return intl.formatMessage({ id: "settings.mcp.status.toolCount" }, { count: String(toolCount) });
+}
+
+function resolveToolBadgeTitle(
+  intl: ReturnType<typeof useZCodeIntl>["intl"],
+  snapshot?: ZCodeMcpServerStatusSnapshot,
+): string | undefined {
+  if (
+    snapshot?.visibleToolCount === undefined ||
+    snapshot.visibleToolCount === snapshot.toolCount
+  ) {
+    return undefined;
+  }
+  return intl.formatMessage(
+    { id: "settings.mcp.status.toolCountFilteredReason" },
+    { count: String(snapshot.toolCount - snapshot.visibleToolCount) },
+  );
+}
+
+/** 工具 tokens 徽章值：tools 明细缺席（status 轮询/旧 CLI）时返回 null 不展示。 */
+function resolveToolBadgeTokens(snapshot?: ZCodeMcpServerStatusSnapshot): number | null {
+  if (!snapshot?.tools || snapshot.tools.length === 0) return null;
+  return snapshot.tools.reduce((total, tool) => total + tool.estimatedTokens, 0);
 }

@@ -34,7 +34,14 @@ import type {
 } from "@zcode/contracts";
 import { normalizeMcpToolDescriptor } from "./descriptor.js";
 import {
+  McpToolCatalogCache,
+  toolCatalogConnectionFingerprint,
+} from "./tool-catalog-cache.js";
+import {
+  estimateMcpToolTokens,
+  mcpToolSchemaBytes,
   type McpServerFailureKind,
+  type ZCodeMcpToolSummary,
 } from "@zcode/shared";
 import {
   buildMcpStdioEnv,
@@ -174,6 +181,7 @@ class NodeMcpAdapter implements McpPort {
     Pick<McpServerStatus, "failureKind" | "serverRequestId">
   >();
   private readonly records = new Map<string, McpServerRecord>();
+  private readonly toolCatalogCache = new McpToolCatalogCache();
   private readonly workingDirectory?: string;
 
   constructor(options: CreateMcpAdapterOptions) {
@@ -223,6 +231,18 @@ class NodeMcpAdapter implements McpPort {
           // 会关闭原 session，使浏览器中已打开的授权 URL、PKCE/state 和 callback 一并失效。
           // 连接生命周期可以共享，但 Session 的 15 秒等待预算和 AbortSignal 不能继承设置页的 5 分钟预算。
           return this.waitForSharedConnection(name, record, options);
+        }
+        // 仅 disabledTools 变化（连接相关字段全部相等）时豁免重连（spec 规则 2.1）：
+        // 连接与 tools/list 结果保持复用，只更新 config 与过滤口径，下次装配自然生效。
+        if (
+          record &&
+          record.status.status === "connected" &&
+          connectionRelevantConfigEqual(record.config, config) &&
+          !isDeepStrictEqual(record.config, config)
+        ) {
+          this.records.set(name, { ...record, config });
+          this.refreshVisibleToolCount(name);
+          return Promise.resolve(record.status);
         }
         return this.connectServer(name, config, options);
       }),
@@ -384,7 +404,102 @@ class NodeMcpAdapter implements McpPort {
   }
 
   async listTools(): Promise<McpToolDescriptor[]> {
-    return Array.from(this.records.values()).flatMap((record) => record.tools);
+    // 装配过滤发生在汇总输出处（spec 规则 2.1）：record.tools 始终保留原始全量，
+    // 仅剔除用户 disabledTools 命中与服务端声明不可见的工具。缺省（空名单/未声明）= 全放行。
+    // connecting 中且尚无工具的 server 若目录缓存命中则并入缓存工具（spec 规则 2.5）：
+    // 慢速远程 MCP 冷启动期间工具即可装配；连接完成后 record.tools 自然接管。
+    const assembled: McpToolDescriptor[] = [];
+    for (const [name, record] of this.records) {
+      // C2：断连 server 的工具是幻影——server 已不可达，继续装配只会浪费每轮 token
+      // 并诱导模型调用必然失败的路径。摘除仅影响装配汇总；record.tools 保留原始
+      // 全量，重连成功/list_changed 后自然回归；调用路径的懒重连
+      // （reconnectForCall）不经过 listTools，行为不变。
+      if (record.status.status === "disconnected") continue;
+      let tools = record.tools;
+      if (tools.length === 0 && record.status.status === "connecting") {
+        const cached = this.toolCatalogCache.get(
+          name,
+          toolCatalogConnectionFingerprint(record.config),
+        );
+        if (cached) tools = cached.tools;
+      }
+      assembled.push(...filterModelAssemblyTools(tools, record.config.disabledTools));
+    }
+    return assembled;
+  }
+
+  serverToolSummaries(name: string): ZCodeMcpToolSummary[] | undefined {
+    const record = this.records.get(name);
+    if (!record) return undefined;
+    const disabled = new Set(record.config.disabledTools ?? []);
+    return record.tools.map((tool) => ({
+      toolName: tool.toolName,
+      description: tool.description,
+      schemaBytes: mcpToolSchemaBytes(tool.inputSchema),
+      modelVisible: tool.modelVisible !== false,
+      disabled: disabled.has(tool.toolName),
+      estimatedTokens: estimateMcpToolTokens({
+        name: tool.toolName,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+      }),
+    }));
+  }
+
+  /** disabledTools 变更后重算既有连接的过滤口径；连接与工具清单保持不动（规则 2.1）。 */
+  private refreshVisibleToolCount(name: string): void {
+    const record = this.records.get(name);
+    if (!record) return;
+    record.status = {
+      ...record.status,
+      visibleToolCount: filterModelAssemblyTools(record.tools, record.config.disabledTools).length,
+    };
+  }
+
+  /**
+   * tools/list_changed 回调（SDK autoRefresh 已重拉并防抖）。
+   * 刷新 record.tools 与 status 双计数、更新目录缓存；新工具默认放行（规则 2.1 denylist）。
+   * 代际不匹配（连接已被替换/关闭）时丢弃，防止旧连接回调覆盖新连接的工具集。
+   */
+  private async handleToolListChanged(
+    name: string,
+    generation: number,
+    error: unknown,
+    tools: readonly unknown[] | null,
+  ): Promise<void> {
+    const record = this.records.get(name);
+    if (!record || !this.isCurrentConnection(name, generation)) return;
+    if (error) {
+      this.logger?.warn("MCP tool list changed refresh failed", {
+        event: "mcp.tools.list_changed.failed",
+        mcpServerName: name,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
+    if (!tools) return;
+    const descriptors = tools.map((tool) =>
+      normalizeMcpToolDescriptor(name, tool, record.config.timeoutMs, false),
+    );
+    record.tools = descriptors;
+    record.status = {
+      ...record.status,
+      toolCount: descriptors.length,
+      visibleToolCount: filterModelAssemblyTools(
+        descriptors,
+        record.config.disabledTools,
+      ).length,
+    };
+    this.toolCatalogCache.set(name, {
+      tools: descriptors,
+      connectionFingerprint: toolCatalogConnectionFingerprint(record.config),
+      storedAt: Date.now(),
+    });
+    this.logger?.info("MCP tool list changed", {
+      event: "mcp.tools.list_changed",
+      mcpServerName: name,
+      toolCount: descriptors.length,
+    });
   }
 
   async callTool(
@@ -863,6 +978,16 @@ class NodeMcpAdapter implements McpPort {
         },
         {
           versionNegotiation: resolveVersionNegotiation(config, timeoutMs),
+          // tools/list_changed 订阅（spec 规则 2.5 第三路失效）：SDK 仅在 server 声明
+          // listChanged capability 时接线；autoRefresh 默认 true，SDK 重拉并防抖后回调。
+          // 缓存失效与 record.tools 刷新都在回调里完成，不改变可见性（新工具默认放行）。
+          listChanged: {
+            tools: {
+              onChanged: (error, tools) => {
+                void this.handleToolListChanged(name, generation, error, tools);
+              },
+            },
+          },
         },
       );
       this.updateCurrentRecord(name, generation, {
@@ -909,6 +1034,7 @@ class NodeMcpAdapter implements McpPort {
       const status = this.createStatus(config, "connected", {
         protocolEra: negotiatedProtocolEra,
         toolCount: tools.length,
+        visibleToolCount: filterModelAssemblyTools(tools, config.disabledTools).length,
       });
       if (!this.isCurrentConnection(name, generation)) {
         await this.closeClientAndTransport(name, client, transport);
@@ -921,6 +1047,13 @@ class NodeMcpAdapter implements McpPort {
         status,
         tools,
         transport,
+      });
+      // 连接成功的 tools/list 结果写入目录缓存（spec 规则 2.5）：
+      // 供该 server 下一次重连的 connecting 窗口内继续装配。
+      this.toolCatalogCache.set(name, {
+        tools,
+        connectionFingerprint: toolCatalogConnectionFingerprint(config),
+        storedAt: Date.now(),
       });
       const mcpTransportPid = getStdioTransportPid(transport);
       const mcpProcessIdentity =
@@ -1473,12 +1606,17 @@ class NodeMcpAdapter implements McpPort {
       protocolEra?: McpServerStatus["protocolEra"];
       serverRequestId?: string;
       toolCount?: number;
+      /** 过滤后进入模型装配的工具数；缺省省略（无过滤场景 UI 回退 toolCount）。 */
+      visibleToolCount?: number;
     } = {},
   ): McpServerStatus {
     return {
       status,
       transport: config.type,
       toolCount: extra.toolCount ?? 0,
+      ...(extra.visibleToolCount !== undefined
+        ? { visibleToolCount: extra.visibleToolCount }
+        : {}),
       updatedAt: new Date().toISOString(),
       authorization: extra.authorization,
       error: extra.error,
@@ -1487,6 +1625,42 @@ class NodeMcpAdapter implements McpPort {
       serverRequestId: extra.serverRequestId,
     };
   }
+}
+
+/**
+ * 模型装配过滤（spec 规则 2.1/2.4）：record.tools 为原始全量，仅此处按
+ * disabledTools（denylist，未命中即放行）与服务端声明（modelVisible === false）剔除。
+ */
+export function filterModelAssemblyTools(
+  tools: readonly McpToolDescriptor[],
+  disabledTools: readonly string[] | undefined,
+): McpToolDescriptor[] {
+  const disabled = disabledTools && disabledTools.length > 0 ? new Set(disabledTools) : undefined;
+  return tools.filter(
+    (tool) =>
+      tool.modelVisible !== false && (disabled === undefined || !disabled.has(tool.toolName)),
+  );
+}
+
+/**
+ * 连接收敛的相等性口径（spec 规则 2.1 豁免）：disabledTools 变化只影响装配过滤，
+ * 不构成重连理由。比较连接相关字段子集；其余键（含 disabledTools）忽略。
+ */
+export function connectionRelevantConfigEqual(
+  a: McpServerConfig | undefined,
+  b: McpServerConfig | undefined,
+): boolean {
+  if (!a || !b) return false;
+  return isDeepStrictEqual(connectionRelevantConfig(a), connectionRelevantConfig(b));
+}
+
+function connectionRelevantConfig(config: McpServerConfig): Record<string, unknown> {
+  const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    disabledTools: _disabledTools,
+    ...rest
+  } = config;
+  return rest;
 }
 
 function mcpRequestMeta(request: McpCallToolRequest): Record<string, unknown> {

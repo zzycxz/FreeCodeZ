@@ -5,6 +5,7 @@
 
 import type { SettingsDirectoryLocation } from "./settings-source.js";
 import type { McpServerFailureKind } from "./zcode-protocol/index.js";
+import { estimateTokensFromText } from "./token-estimate.js";
 
 // CUA official plugin 身份常量（port 自 feat；UI 设置面板 + bootstrap 复用以避免字面量漂移）。
 export const ZCODE_CUA_OFFICIAL_PLUGIN_ID = "computer-use@zcode-plugins-official";
@@ -30,6 +31,10 @@ export interface McpServerConfig {
   headers?: Record<string, string>; // HTTP/SSE server request headers
   http_headers?: Record<string, string>; // 兼容旧配置字段，历史 BigModel MCP 配置会把鉴权头写在这里
   oauth?: McpOAuthConfig; // HTTP/SSE OAuth 机器凭据配置
+  // 工具级开关（denylist 语义，spec docs/spec/mcp-availability-first-cost-management.md 规则 2.1）：
+  // 缺省/空 = 全放行；命中名单的工具不进模型 tools 装配。server 后续新增工具一律默认放行。
+  // 该字段不参与连接收敛的相等性比较（拨开关不得触发断连重连）。
+  disabledTools?: string[];
   // Linear specific fields
   apiKey?: string;
   projectId?: string;
@@ -371,4 +376,62 @@ function isValidMcpOAuthConfig(value: unknown): value is McpOAuthConfig {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// ============================================================
+// MCP 工具可见性 / 成本观测（spec: mcp-availability-first-cost-management）
+// 全部为纯函数；判定依据只来自服务端显式声明，缺省一律放行（红线 R1/R4）。
+// ============================================================
+
+/** 工具 schema 序列化超过该字节数时 UI 标注「schema 偏大」；仅提示，不截断（红线 R3）。 */
+export const MCP_TOOL_SCHEMA_LARGE_BYTES = 4096;
+
+/**
+ * MCP Apps 规范的工具可见性判定（codex tool_is_model_visible 同义）：
+ * `_meta.ui.visibility` 为数组且不含 "model" 时该工具不对模型暴露；
+ * 无 `_meta`、字段缺失或形态异常一律放行——服务端不声明就不隐藏。
+ */
+export function mcpToolModelVisible(meta: unknown): boolean {
+  if (!isRecord(meta)) return true;
+  const ui = meta.ui;
+  if (!isRecord(ui)) return true;
+  const visibility = ui.visibility;
+  if (!Array.isArray(visibility)) return true;
+  return visibility.some((target) => target === "model");
+}
+
+export interface McpToolTokenEstimateInput {
+  name: string;
+  description?: string | null;
+  /** 原始 JSON Schema（未知形态时按空对象计）。 */
+  inputSchema?: unknown;
+}
+
+/**
+ * 单工具上下文成本估算（token）。B1 起口径统一为 token-estimate 的全仓唯一实现
+ * （CJK 按 3 个估算字符计、总和 ÷4）。schema 以 JSON 序列化长度参与估算。
+ */
+export function estimateMcpToolTokens(input: McpToolTokenEstimateInput): number {
+  const schemaText = input.inputSchema === undefined ? "" : safeJsonText(input.inputSchema);
+  return estimateTokensFromText(`${input.name}\n${input.description ?? ""}\n${schemaText}`);
+}
+
+/** 单工具 inputSchema 的 JSON 序列化字节数（UTF-16 code unit 数，UI「schema 偏大」标注用）。 */
+export function mcpToolSchemaBytes(inputSchema: unknown): number {
+  return inputSchema === undefined ? 0 : safeJsonText(inputSchema).length;
+}
+
+function safeJsonText(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/** UI 工具清单条目类型（ZCodeMcpToolSummary）以协议 schema 推导为准：
+ * packages/shared/src/zcode-protocol/index.ts 的 zcodeMcpToolSummarySchema。 */
+
+export function estimateMcpServerToolsTokens(tools: readonly McpToolTokenEstimateInput[]): number {
+  return tools.reduce((total, tool) => total + estimateMcpToolTokens(tool), 0);
 }

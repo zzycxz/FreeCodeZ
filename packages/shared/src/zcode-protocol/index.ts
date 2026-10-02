@@ -679,11 +679,29 @@ export const MCP_SERVER_FAILURE_KINDS = [
 ] as const;
 export const mcpServerFailureKindSchema = z.enum(MCP_SERVER_FAILURE_KINDS);
 export type McpServerFailureKind = z.infer<typeof mcpServerFailureKindSchema>;
+export const zcodeMcpToolSummarySchema = z
+  .object({
+    toolName: nonEmptyString,
+    description: z.string().optional(),
+    schemaBytes: z.number().int().nonnegative(),
+    /** 服务端 `_meta.ui.visibility` 判定；false = 服务端声明仅界面使用。 */
+    modelVisible: z.boolean(),
+    /** 用户 disabledTools 命中（denylist）。与 modelVisible 同为不可见归因闭集（spec R4）。 */
+    disabled: z.boolean(),
+    estimatedTokens: z.number().int().nonnegative(),
+  })
+  .strict();
+export type ZCodeMcpToolSummary = z.infer<typeof zcodeMcpToolSummarySchema>;
+
 export const zcodeMcpServerStatusSnapshotSchema = z
   .object({
     status: zcodeMcpServerStatusKindSchema,
     transport: z.enum(["stdio", "http", "sse"]),
     toolCount: z.number().int().nonnegative(),
+    /** 过滤后进入模型装配的工具数；缺省 = toolCount（旧 CLI 无过滤）。 */
+    visibleToolCount: z.number().int().nonnegative().optional(),
+    /** 工具观测明细（connect 模式填充；status 轮询不带，避免 OAuth 轮询放大体积）。 */
+    tools: z.array(zcodeMcpToolSummarySchema).optional(),
     updatedAt: nonEmptyString,
     error: z.string().optional(),
     failureKind: mcpServerFailureKindSchema.optional(),
@@ -1571,12 +1589,24 @@ export const zcodeSessionCreateParamsSchema = z
     // 动态工作流灰度：与 offPeakToolEnabled 同一
     // 模式——host 裁决后下发，缺省不下发 = 不注册工作流工具簇（fail-closed）。
     dynamicWorkflowEnabled: z.boolean().optional(),
+    // A1：自动化会话（cron/闲时）创建时由 Host 注入的审批超时缺省（毫秒）。
+    // 无人值守链路没有"人稍后应答"，而 broker 缺省无超时、派发侧也没有看门狗，
+    // ask 会永久挂起。仅自动化来源注入；交互会话不携带，保持"用户可以慢慢想"。
+    permissionTimeoutMs: z.number().int().positive().max(3_600_000).optional(),
+    // E-S3：本会话的 Bash 以 workspace-write 沙箱执行（macOS；默认不携带=off）。
+    // workspaceRoot 由 CLI runtime 侧解析，协议只传开关。
+    sandboxEnabled: z.boolean().optional(),
   })
   .strict();
 export type ZCodeSessionCreateParams = z.infer<typeof zcodeSessionCreateParamsSchema>;
 
 export const zcodeSessionResumeParamsSchema = z
   .object({
+
+    // E-S4/A1 补齐：冷恢复重建 runtime 时，自动化会话的沙箱开关与审批超时缺省必须
+    // 随 resume 回传——否则重启过的定时任务静默丢失这两层（fail-open 方向）。
+    sandboxEnabled: z.boolean().optional(),
+    permissionTimeoutMs: z.number().int().positive().max(3_600_000).optional(),
     sessionId: nonEmptyString,
     workspace: zcodeWorkspaceRefSchema.optional(),
     // 旧 session 尚无 runtime/model_selection entry 时，由同 task 的索引元数据提供迁移 hint。
@@ -3378,6 +3408,8 @@ export const zcodeAutomationProtocolSchema = z
     prompt: nonEmptyString,
     modelSelection: modelSelectionSchema.optional(),
     mode: zcodeTaskModeSchema.optional(),
+    // E-S3：本任务以 workspace-write 沙箱执行（默认关，缺省字段兼容旧端）。
+    sandboxEnabled: z.boolean().optional(),
     targetTaskId: nonEmptyString.optional(),
     enabled: z.boolean(),
     lifecycleStatus: z.enum(["active", "completed", "failed", "paused"]),
@@ -3401,6 +3433,8 @@ export const zcodeAutomationCreateParamsSchema = z
     prompt: nonEmptyString,
     modelSelection: modelSelectionSchema.optional(),
     mode: zcodeTaskModeSchema.optional(),
+    // E-S3：创建时启用 workspace-write 沙箱（macOS）。
+    sandboxEnabled: z.boolean().optional(),
     targetTaskId: nonEmptyString.optional(),
     recurring: z.boolean().optional(),
     maxRuns: z.number().int().positive().optional(),
