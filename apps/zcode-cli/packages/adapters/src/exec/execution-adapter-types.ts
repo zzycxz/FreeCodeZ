@@ -63,6 +63,17 @@ export interface PreparedChildSpawn {
   cwdDialect: ExecutionShellDialect;
   cwdFilePath?: string;
   spawnOptions: SpawnOptions;
+  /** E-S1/S4：沙箱包装结果。applied=false 且 skippedReason 非 "disabled" 时表示
+   * 显式请求了沙箱但无法满足（fail-open），调用方可观测留痕。 */
+  sandbox?: {
+    applied: boolean;
+    skippedReason?:
+      | "disabled"
+      | "non-darwin"
+      | "sandbox-exec-missing"
+      | "no-workspace-root"
+      | "unsupported-platform";
+  };
 }
 
 export interface ActiveExecutionRecord {

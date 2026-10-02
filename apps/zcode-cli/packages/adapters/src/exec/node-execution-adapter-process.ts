@@ -11,6 +11,12 @@ import {
 import { NodeExecutionAdapterResults } from "./node-execution-adapter-results.js";
 import { createExecutionOutputStreamDecoder } from "./outputEncoding.js";
 import type { OutputCollector } from "./output-collector.js";
+import { wrapCommandWithSandbox } from "./sandbox/wrap.js";
+
+/** E-S4(W)：Windows 包装结果额外携带的 workspace 降标指令（icacls 参数）。 */
+interface SandboxLabelExtras {
+  labelArgs?: string[];
+}
 import {
   BASH_SIGTERM_TO_SIGKILL_MS,
   signalPosixProcessTree,
@@ -122,11 +128,48 @@ export class NodeExecutionAdapterProcess extends NodeExecutionAdapterResults {
             resolvedShell,
           });
     const spawnEnv = command.envOverlay ? { ...env, ...command.envOverlay } : env;
+    // E-S1/S4：沙箱包装是 spawn 前的最后一跳（darwin=seatbelt / linux=bwrap /
+    // win32=低完整级 MIC）。cwd 捕获/输出采集/进程树终止都作用在包装后的进程上，
+    // 链路照旧。默认 off（policy 未启用原样返回，行为与现状一致）。
+    const sandboxWrap = wrapCommandWithSandbox({
+      policy: request.sandbox,
+      platform: this.platform,
+      command,
+    });
+    // E-S4(W)：Windows MIC 方案的 workspace 降标（icacls，幂等、~10ms、无需恢复
+    // ——Medium 进程写 Low 标对象是向下写仍然允许，不影响正常工作流）。
+    const labelArgs = (sandboxWrap as SandboxLabelExtras).labelArgs;
+    if (labelArgs) {
+      await new Promise<void>((resolve) => {
+        const labeller = spawn("icacls.exe", labelArgs, { stdio: "ignore", windowsHide: true });
+        labeller.on("error", () => resolve());
+        labeller.on("close", () => resolve());
+      });
+    }
+    // E-S3 配套：沙箱激活时预重定向包管理器缓存到 workspace 内。E2 实测 npm install
+    // 必死于 ~/.npm（EPERM 且报错误导）；预注入让首次安装直接成功（零弹窗零失败），
+    // 用户显式设置的变量不被覆盖。pip 同理（~/.cache/pip 在界外）。
+    if (sandboxWrap.sandboxed && request.sandbox?.workspaceRoot) {
+      const cacheRoot = `${request.sandbox.workspaceRoot.replace(/[\\/]+$/, "")}/.tmp`;
+      if (!hasEnvValue(spawnEnv, "npm_config_cache") && !hasEnvValue(spawnEnv, "NPM_CONFIG_CACHE")) {
+        spawnEnv.npm_config_cache = `${cacheRoot}/npm-cache`;
+      }
+      if (!hasEnvValue(spawnEnv, "PIP_CACHE_DIR")) {
+        spawnEnv.PIP_CACHE_DIR = `${cacheRoot}/pip-cache`;
+      }
+      // Windows MIC：用户 TEMP 是 Medium IL，Low IL 进程写不了——必须一并重定向
+      // 进 workspace（其 Low 标可继承），否则大量工具在临时目录上首步即败。
+      if (this.platform === "win32") {
+        if (!hasEnvValue(spawnEnv, "TMP")) spawnEnv.TMP = `${cacheRoot}/tmp`;
+        if (!hasEnvValue(spawnEnv, "TEMP")) spawnEnv.TEMP = `${cacheRoot}/tmp`;
+      }
+    }
+    const effectiveCommand = sandboxWrap.command;
     const baseOptions = {
       cwd: request.cwd,
       detached: this.platform !== "win32",
       env: spawnEnv,
-      shell: command.shell,
+      shell: effectiveCommand.shell,
       stdio: [
         request.stdin === undefined ? "ignore" : "pipe",
         "pipe",
@@ -136,10 +179,13 @@ export class NodeExecutionAdapterProcess extends NodeExecutionAdapterResults {
     };
 
     return {
-      command,
-      cwdDialect: command.cwdDialect,
+      command: effectiveCommand,
+      cwdDialect: effectiveCommand.cwdDialect,
       cwdFilePath: capturePlan.cwdFilePath,
       spawnOptions: baseOptions,
+      // fail-open 留痕：显式要求沙箱但无法满足（平台不支持/运行时缺失/无根）时
+      // 原样执行并暴露原因——绝不让正常命令因沙箱不可用而失败（红线：零新增失败）。
+      sandbox: { applied: sandboxWrap.sandboxed, skippedReason: sandboxWrap.skippedReason },
     };
   }
 
@@ -265,4 +311,16 @@ export class NodeExecutionAdapterProcess extends NodeExecutionAdapterResults {
     if (!terminationRequested) this.terminateProcessTree(child, false);
     if (!(await waitForPromise(closed, IO_DRAIN_TIMEOUT_MS))) this.destroyChildOutputStreams(child);
   }
+}
+
+// E-S3：env 键存在性检查（Windows 大小写不敏感兜底）。
+function hasEnvValue(env: Record<string, string | undefined>, key: string): boolean {
+  if (env[key] !== undefined && env[key] !== "") return true;
+  const lower = key.toLowerCase();
+  if (process.platform === "win32") {
+    return Object.keys(env).some(
+      (existing) => existing.toLowerCase() === lower && env[existing] !== undefined && env[existing] !== "",
+    );
+  }
+  return false;
 }

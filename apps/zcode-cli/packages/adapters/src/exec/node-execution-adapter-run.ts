@@ -4,6 +4,7 @@ import { readCapturedCwd } from "./cwd-capture.js";
 import { defaultCwdDialect } from "./execution-command.js";
 import { NodeExecutionAdapterProcess } from "./node-execution-adapter-process.js";
 import { resolveLegacyExecutionOutputEncoding } from "./outputEncoding.js";
+import { classifySandboxViolation } from "./sandbox/violation.js";
 import {
   DEFAULT_TIMEOUT_MS,
   FORCE_EXIT_AFTER_KILL_MS,
@@ -342,6 +343,22 @@ export class NodeExecutionAdapterRun extends NodeExecutionAdapterProcess {
           ? { type: "output_limit" as const, message: "Command killed: output file exceeded 5GB" }
           : (this.statusFailure(timedOut, cancelled, outputLimitExceeded, timeoutMs) ??
             unexpectedStdinFailure);
+      // E-S2：沙箱内失败且无其它明确原因（超时/取消不覆盖）→ 归因分类。裸 EPERM
+      // 对模型不可修正（E2 实测 npm 报 EPERM 不提路径）；归因后含被拒路径与修正
+      // 指引（如缓存重定向进工作区），模型可自我修正或向用户申请放行。
+      const resolvedFailure =
+        failure ??
+        (prepared.sandbox?.applied === true && baseStatus === "failed"
+          ? (() => {
+              const violation = classifySandboxViolation({
+                stderr: stderrResult.text,
+                stdout: stdoutResult.text,
+              });
+              return violation
+                ? { type: "sandbox_violation" as const, message: violation.message }
+                : undefined;
+            })()
+          : undefined);
       const status = unexpectedStdinFailure ? "failed" : baseStatus;
       const resolvedCwd =
         status === "completed" && exitState.code === 0
@@ -358,7 +375,7 @@ export class NodeExecutionAdapterRun extends NodeExecutionAdapterProcess {
         stderr: stderrResult,
         timedOut,
         cancelled,
-        error: failure,
+        error: resolvedFailure,
         resolvedCwd,
       });
 
