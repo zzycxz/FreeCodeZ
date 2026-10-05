@@ -33,8 +33,11 @@ import {
   dialog,
   ipcMain,
   nativeImage,
+  net as electronNet,
+  Notification as ElectronNotification,
   protocol,
   session,
+  shell as electronShell,
   webContents,
 } from "electron";
 import type { UtilityProcess as ElectronUtilityProcess } from "electron";
@@ -75,6 +78,7 @@ import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
 import { createCuaCursorHud, type CuaCursorHud } from "./cuaCursorHud.js";
 import { startCuaAppshot } from "./cuaAppshot.js";
+import { createUpdateChecker } from "./updateChecker.js";
 import { BrowserWindow as HudBrowserWindow, screen as HudScreen } from "electron";
 import { BroadcastHub } from "./broadcastHub.js";
 
@@ -592,6 +596,46 @@ const cuaCursorHud: CuaCursorHud | undefined =
         },
       })
     : undefined;
+
+// 条目 3：更新检查器。设置键 updateManifestUrl 为空=功能关闭（零网络零定时器）；
+// 设置后 production 形态启动延迟 60s 首查、按日复查（受管 timer），新版本系统通知+查看新版。
+const updateCheckerDeps = {
+  fetchJson: async (url: string) => {
+    const response = await electronNet.fetch(url, {
+      headers: { accept: "application/vnd.github+json" },
+      signal: AbortSignal.timeout(8_000),
+    });
+    const body =
+      response.status === 200
+        ? ((await response.json().catch(() => undefined)) ?? undefined)
+        : undefined;
+    return { status: response.status, body: body as Record<string, unknown> | undefined };
+  },
+  notify: ({ title, body, openUrl }: { title: string; body: string; openUrl?: string }) => {
+    if (!ElectronNotification.isSupported()) return;
+    const notification = new ElectronNotification({ title, body });
+    if (openUrl) notification.on("click", () => void electronShell.openExternal(openUrl));
+    notification.show();
+  },
+  log: (message: string, context?: Record<string, unknown>) => logger.info(message, context),
+};
+// manifestUrl 运行时读（设置是 async；空=关）。菜单手动触发与周期共用同一检查器实例。
+let updateChecker = createUpdateChecker({
+  currentVersion: app.getVersion(),
+  manifestUrl: undefined,
+  deps: updateCheckerDeps,
+});
+if (app.isPackaged) {
+  // dev/preview 不跑周期（手动入口仍可用）；打包态才启用（手册 v3.3 受管 timer 语义）。
+  void mainSettingService.get().then((settings) => {
+    updateChecker = createUpdateChecker({
+      currentVersion: app.getVersion(),
+      manifestUrl: settings.updateManifestUrl,
+      deps: updateCheckerDeps,
+    });
+    updateChecker.startPeriodic();
+  });
+}
 
 // Phase 3a：Appshot 双击热键（FREECODEZ_APPSHOT_HOTKEY=cmd|alt|shift|off，默认 off——
 // 显式开启才有全局轮询；触发后截图+AX 树注入聚焦会话 composer）。
@@ -1287,6 +1331,17 @@ async function executeDesktopCommandForApp(
       rebuildMenu();
     },
     settingService: mainSettingService,
+    checkForUpdates: async () => {
+      // 手动路径：读最新设置里的 manifestUrl 再查（设置可能刚改）。
+      const settings = await mainSettingService.get();
+      if (!settings.updateManifestUrl?.trim()) return undefined;
+      const checker = createUpdateChecker({
+        currentVersion: app.getVersion(),
+        manifestUrl: settings.updateManifestUrl,
+        deps: updateCheckerDeps,
+      });
+      return await checker.checkOnce();
+    },
     onZCodeEndpointChanged: handleZCodeEndpointChanged,
     zcodeEndpointEnvBaseOrigin: resolveZCodeEndpointEnvBaseOrigin(hostProcessLocalEnv),
     onRelaunchApp: async () => {
@@ -2073,6 +2128,7 @@ app.on("before-quit", (event) => {  // Windows 最后窗口关闭会在 close �
   // Phase 2-1c：光标 HUD 覆盖窗随退出关闭（UDP 监听 + 透明窗不留残影）。
   cuaCursorHud?.dispose();
   cuaAppshotController.stop();
+  updateChecker.stopPeriodic();
   // macOS 的 Cmd+Q / 菜单退出不会走该窗口关闭确认，必须在 before-quit 保留应用级确认兜底。
   if (!forceQuitRef.current && shouldConfirmAppQuit() && !confirmAppQuit()) {
     event.preventDefault();

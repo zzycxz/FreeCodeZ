@@ -494,6 +494,8 @@ export async function executeDesktopCommand(options: {
     ): Promise<void>;
   };
   zcodeEndpointEnvBaseOrigin?: string | null;
+  /** 条目 3：手动检查更新（updateChecker.checkOnce 的包装）；缺席=未配置 manifestUrl。 */
+  checkForUpdates?: () => Promise<unknown>;
   credentialsDir: string;
   currentApplicationLocale: Locale;
 }) {
@@ -589,8 +591,13 @@ export async function executeDesktopCommand(options: {
       );
       return;
     case DesktopCommandIds.CheckForUpdates:
-      // FreeCodeZ fork:更新链已整删(规格书 P3 §3.6);入口保留但提示手动分发。
-      options.logger.info("[auto-update] FreeCodeZ 无自动更新,请手动下载新版本");
+      // 条目 3（升级实施手册）：手动检查更新。manifestUrl 未配置时保持手动分发提示；
+      // 配置后走 GitHub Release API（404=无更新不报错，断网静默）。结果走系统通知。
+      if (typeof options.checkForUpdates === "function") {
+        await options.checkForUpdates();
+        return;
+      }
+      options.logger.info("[auto-update] update.manifestUrl 未配置,请手动下载新版本");
       return;
     case DesktopCommandIds.RelaunchApp:
       await options.onRelaunchApp();

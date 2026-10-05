@@ -371,6 +371,11 @@ export interface AppSettings {
   settingsSyncFirstRunPromptHandled?: boolean;
   /** 设置页里的临时 endpoint override；正式/测试默认 base url 由 ZCODE_BASE_URL env 管理。 */
   zcodeEndpointOrigin?: string;
+  /**
+   * 条目 3（升级实施手册）：更新检查源（GitHub releases/latest API 或同形状 JSON 端点）。
+   * 空 = 功能关闭（零网络零定时器）；设置后 production 形态按日检查并系统通知。
+   */
+  updateManifestUrl?: string;
   /** 移动端远控的外部 relay 设备身份；deviceSid 由 relay 注册分配，刷新配对（rotate）时清空换新。 */
   webRemoteControlExternalRelayDevice?: { deviceSid: string };
   /** 上次开启移动端远控的窗口上下文；桌面重启后由首个匹配窗口独占恢复（全局一次性，恢复后保留记录）。 */
