@@ -14,6 +14,13 @@
 // 坐标系：macOS 全局点（CGEvent）与 Electron DIP 在 macOS 上 1:1。
 
 import { createSocket, type Socket } from "node:dgram";
+import {
+  cursorMotionStep,
+  isCloseEnough,
+  scootTransform,
+  type CursorMotionState,
+  type Vec2,
+} from "@zcode/zcode-cua/macos/cursor-animation";
 import type { BrowserWindow } from "electron";
 
 /** UDP 端口：与 node-repl-host 注入的 ZCODE_CUA_CURSOR_BROADCAST_PORT 对齐。 */
@@ -227,6 +234,47 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
     return bannerWindow;
   };
 
+  // Phase 2 第二步：弹簧插值动画状态（30 参数规格见 cursor-animation.js）。
+  let motion: CursorMotionState | undefined;
+  let motionTarget: Vec2 | undefined;
+  let motionTimer: NodeJS.Timeout | undefined;
+
+  const stopMotion = () => {
+    if (motionTimer) {
+      clearInterval(motionTimer);
+      motionTimer = undefined;
+    }
+  };
+
+  /** 弹簧插值循环（~60fps；每帧 setPosition 近似 rAF——main 侧无渲染帧时钟）。 */
+  const startMotionTo = (targetDip: Vec2, distanceHintPt: number) => {
+    stopMotion();
+    motion ??= { position: targetDip, velocity: { x: 0, y: 0 } };
+    motionTarget = targetDip;
+    const startedAt = Date.now();
+    motionTimer = setInterval(() => {
+      if (disposed || !motionTarget) {
+        stopMotion();
+        return;
+      }
+      const distance = Math.hypot(motionTarget.x - motion.position.x, motionTarget.y - motion.position.y);
+      motion = cursorMotionStep(motion, motionTarget, distanceHintPt, 1 / 60);
+      const cursor = cursorWindow;
+      if (cursor && !cursor.isDestroyed()) {
+        const windowPosition = {
+          x: Math.round(motion.position.x) - 4,
+          y: Math.round(motion.position.y) - 4,
+        };
+        cursor.setPosition(windowPosition.x, windowPosition.y);
+        // closeEnough 提前放行：到位后停循环（连续操作的下一帧会重启）。
+        if (isCloseEnough(motion.position, motionTarget) || Date.now() - startedAt > 3_000) {
+          stopMotion();
+        }
+      }
+    }, 16);
+    motionTimer.unref?.();
+  };
+
   const handleFrame = (frame: CuaCursorEventFrame) => {
     if (disposed) return;
     const cursor = ensureCursorWindow();
@@ -235,8 +283,19 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
     if (position) {
       // CGEvent 发的是屏幕点；setPosition 吃 DIP。缩放非 1 的显示器上不换算会偏移
       // （2026-10-05 Electron 实测：109px 窗/期望 120DIP——比例即 scaleFactor）。
-      const dip = deps.screen.screenToDipPoint?.(position) ?? position;
-      cursor.setPosition(Math.round(dip.x), Math.round(dip.y));
+      const dip = deps.screen.screenToDipPoint?.({ x: position.x + 4, y: position.y + 4 }) ?? {
+        x: position.x + 4,
+        y: position.y + 4,
+      };
+      if (motion && (frame.kind === "point" || frame.kind === "down" || frame.kind === "up")) {
+        // 第二步：已有动画态的目标点走弹簧弧线（frame 携带的点=目标）。
+        const distanceHint = Math.hypot(dip.x - motion.position.x, dip.y - motion.position.y);
+        startMotionTo(dip, distanceHint);
+      } else {
+        // 首帧直落（无前态无从弹起）；点击类特效帧同走直落保证视觉即时。
+        motion = { position: dip, velocity: { x: 0, y: 0 } };
+        cursor.setPosition(position.x, position.y);
+      }
     }
     // 特效（data:URL 无 ipc）：main 侧调用页面全局函数；失败静默（窗口未就绪竞态）。
     const effect =
@@ -291,6 +350,7 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
     dispose() {
       if (disposed) return;
       disposed = true;
+      stopMotion();
       if (idleTimer) clearTimeout(idleTimer);
       listener.close();
       for (const win of [cursorWindow, bannerWindow]) {

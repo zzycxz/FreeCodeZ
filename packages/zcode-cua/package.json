@@ -58,6 +58,11 @@
       "types": "./macos/index.d.ts",
       "import": "./macos/index.js",
       "require": "./macos/index.js"
+    },
+    "./macos/cursor-animation": {
+      "types": "./macos/cursor-animation.d.ts",
+      "import": "./macos/cursor-animation.js",
+      "require": "./macos/cursor-animation.js"
     }
   }
 }

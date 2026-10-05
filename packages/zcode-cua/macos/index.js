@@ -24,3 +24,23 @@ export {
   MODIFIER_KEY_CODES,
   DOUBLE_TAP_WINDOW_MS,
 } from "./hotkey-tap.js";
+export {
+  primarySpringResponse,
+  cursorMotionStep,
+  isCloseEnough,
+  bezierPathCandidates,
+  scootTransform,
+  clickTransform,
+  clamp,
+  PRIMARY_SPRING_DAMPING,
+  SCOOT_THRESHOLD_PT,
+  SCOOT_RESPONSE,
+  SCOOT_DAMPING,
+  SCOOT_STRETCH,
+  SCOOT_MAX_ROTATION_DEG,
+  CLICK_ANGLE_DEG,
+  BEZIER_PARAMS,
+  STRAIGHT_LINE_THRESHOLD_PT,
+  CLOSE_ENOUGH_PT,
+  STRETCH_PIVOT_X,
+} from "./cursor-animation.js";
