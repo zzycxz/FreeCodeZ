@@ -21,6 +21,10 @@ import type {
   Logger,
   McpCallToolOptions,
   McpCallToolRequest,
+  McpResourceDescriptor,
+  McpResourceContent,
+  McpPromptDescriptor,
+  McpPromptMessage,
   McpConnectOptions,
   McpConnectionSnapshot,
   McpContentBlock,
@@ -500,6 +504,60 @@ class NodeMcpAdapter implements McpPort {
       mcpServerName: name,
       toolCount: descriptors.length,
     });
+  }
+
+  /**
+   * 条目 9（升级实施手册）：resources/prompts 能力面。SDK 2.0.0 原生支持
+   * （listResources/readResource/listPrompts/getPrompt 实测在场）；server 未声明
+   * 该 capability 时 SDK 抛错——统一折空数组/结构化错误，不让宿主崩。
+   */
+  async listResources(name: string): Promise<McpResourceDescriptor[]> {
+    const client = await this.connectedClientFor(name);
+    if (!client) return [];
+    try {
+      const result = await client.listResources();
+      return (result.resources ?? []) as McpResourceDescriptor[];
+    } catch (error) {
+      this.logger?.debug("MCP listResources unavailable", { mcpServerName: name, error: String(error) });
+      return [];
+    }
+  }
+
+  async readResource(name: string, uri: string): Promise<McpResourceContent[]> {
+    const client = await this.connectedClientFor(name);
+    if (!client) throw new Error(`MCP server "${name}" is not connected`);
+    const result = await client.readResource({ uri });
+    return (result.contents ?? []) as McpResourceContent[];
+  }
+
+  async listPrompts(name: string): Promise<McpPromptDescriptor[]> {
+    const client = await this.connectedClientFor(name);
+    if (!client) return [];
+    try {
+      const result = await client.listPrompts();
+      return (result.prompts ?? []) as McpPromptDescriptor[];
+    } catch (error) {
+      this.logger?.debug("MCP listPrompts unavailable", { mcpServerName: name, error: String(error) });
+      return [];
+    }
+  }
+
+  async getPrompt(
+    name: string,
+    promptName: string,
+    args?: Record<string, string>,
+  ): Promise<McpPromptMessage[]> {
+    const client = await this.connectedClientFor(name);
+    if (!client) throw new Error(`MCP server "${name}" is not connected`);
+    const result = await client.getPrompt({ name: promptName, arguments: args });
+    return (result.messages ?? []) as McpPromptMessage[];
+  }
+
+  /** 取已连接 client（复用 callTool 的懒重连语义的最小面：仅在线记录）。 */
+  private async connectedClientFor(name: string): Promise<McpClient | undefined> {
+    const record = this.records.get(name);
+    if (!record || record.status.status !== "connected") return undefined;
+    return record.client;
   }
 
   async callTool(

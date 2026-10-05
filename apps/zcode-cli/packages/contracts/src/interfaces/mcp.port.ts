@@ -194,6 +194,31 @@ export interface McpConnectOptions {
   workspaceIdentity?: string;
 }
 
+export interface McpResourceDescriptor {
+  uri: string;
+  name?: string;
+  description?: string;
+  mimeType?: string;
+}
+
+export interface McpResourceContent {
+  uri: string;
+  mimeType?: string;
+  text?: string;
+  blob?: string;
+}
+
+export interface McpPromptDescriptor {
+  name: string;
+  description?: string;
+  arguments?: Array<{ name: string; description?: string; required?: boolean }>;
+}
+
+export interface McpPromptMessage {
+  role: "user" | "assistant";
+  content: { type: "text"; text: string };
+}
+
 export interface McpCallToolRequest {
   serverName: string;
   toolName: string;
@@ -242,5 +267,13 @@ export interface McpPort {
    */
   serverToolSummaries?(name: string): ZCodeMcpToolSummary[] | undefined;
   callTool(request: McpCallToolRequest, options?: McpCallToolOptions): Promise<McpToolCallResult>;
+  /**
+   * 条目 9（升级实施手册）：resources/prompts 能力面（可选——SDK 2.0.0 已支持，
+   * 宿主未接线时缺席不报错）。按 server 聚合枚举；read/get 单点取回。
+   */
+  listResources?(name: string): Promise<McpResourceDescriptor[]>;
+  readResource?(name: string, uri: string): Promise<McpResourceContent[]>;
+  listPrompts?(name: string): Promise<McpPromptDescriptor[]>;
+  getPrompt?(name: string, promptName: string, args?: Record<string, string>): Promise<McpPromptMessage[]>;
   close(): Promise<void>;
 }

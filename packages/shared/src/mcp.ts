@@ -462,3 +462,26 @@ function safeJsonText(value: unknown): string {
 export function estimateMcpServerToolsTokens(tools: readonly McpToolTokenEstimateInput[]): number {
   return tools.reduce((total, tool) => total + estimateMcpToolTokens(tool), 0);
 }
+
+// 条目 9（升级实施手册）：resources/prompts 能力面类型投影（实现端口在 contracts McpPort）。
+export type McpResourceDescriptor = {
+  uri: string;
+  name?: string;
+  description?: string;
+  mimeType?: string;
+};
+export type McpResourceContent = {
+  uri: string;
+  mimeType?: string;
+  text?: string;
+  blob?: string;
+};
+export type McpPromptDescriptor = {
+  name: string;
+  description?: string;
+  arguments?: Array<{ name: string; description?: string; required?: boolean }>;
+};
+export type McpPromptMessage = {
+  role: "user" | "assistant";
+  content: { type: "text"; text: string };
+};
