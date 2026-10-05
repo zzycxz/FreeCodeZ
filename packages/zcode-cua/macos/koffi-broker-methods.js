@@ -42,6 +42,13 @@ import {
   elementSetValue,
   elementPerformAction,
 } from "./ax-actions.js";
+import {
+  cursorEventsForClick,
+  cursorEventsForDrag,
+  cursorEventsForKey,
+  cursorEventsForText,
+  emitCursorEvents,
+} from "./cursor-events.js";
 
 // ── 方法表工厂 ─────────────────────────────────────────────
 
@@ -53,6 +60,9 @@ export function createKoffiBrokerMethods(options = {}) {
   const bindings = loadKoffiBindings();
   if (!bindings) return null;
   const allowActions = options.allowActions === true;
+  // Phase 2-1a：输入事件旁路（HUD 光标消费）。发射失败不影响动作本体。
+  const onInputEvent = typeof options.onInputEvent === "function" ? options.onInputEvent : null;
+  const emit = (events) => emitCursorEvents(onInputEvent, events);
   const handles = new ElementHandleTable();
   const methods = {};
 
@@ -249,10 +259,12 @@ export function createKoffiBrokerMethods(options = {}) {
       const point = params?.point;
       const x = Number(Array.isArray(point) ? point[0] : point?.x);
       const y = Number(Array.isArray(point) ? point[1] : point?.y);
+      const button = params?.button === "right" || params?.button === "middle" ? params.button : "left";
+      emit(cursorEventsForClick({ x, y, button }));
       const result = clickAtPoint({
         x,
         y,
-        button: params?.button === "right" || params?.button === "middle" ? params.button : "left",
+        button,
         clickCount: Math.max(1, Math.min(Number(params?.clicks) || 1, 3)),
       });
       return result.ok
@@ -273,11 +285,13 @@ export function createKoffiBrokerMethods(options = {}) {
     };
 
     methods.press_key = async (params) => {
+      emit(cursorEventsForKey({ key: params?.key }));
       const result = pressKey({ key: params?.key });
       return result.ok ? { ok: true, action_sent: true, dispatch_status: "delivered" } : result;
     };
 
     methods.type_text = async (params) => {
+      emit(cursorEventsForText({ text: params?.text }));
       const result = typeAsciiText({ text: params?.text });
       return result.ok
         ? { ok: true, action_sent: true, dispatch_status: "delivered", typed: result.typed }
@@ -381,6 +395,7 @@ export function createKoffiBrokerMethods(options = {}) {
       if (![fx, fy, tx, ty].every(Number.isFinite)) {
         return { ok: false, error: { code: "invalid_params", message: "drag needs from_point and to_point" } };
       }
+      emit(cursorEventsForDrag({ fromX: fx, fromY: fy, toX: tx, toY: ty }));
       let source;
       try {
         source = bindings.CGEventSourceCreate(0);

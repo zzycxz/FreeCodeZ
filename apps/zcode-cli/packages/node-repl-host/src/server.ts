@@ -14,6 +14,7 @@ import {
   type NodeReplRequestMeta,
   type NodeReplRunResult,
 } from "@zcode/core/repl";
+import { createSocket } from "node:dgram";
 import { createComputerUseRuntime, type ComputerUseRuntime } from "@zcode/zcode-cua";
 import { createKoffiBrokerMethods } from "@zcode/zcode-cua/macos";
 import { z } from "zod";
@@ -377,13 +378,24 @@ export function captureComputerUseRuntimeFromEnvironment(
   // darwin + ZCODE_CUA_KOFFI_EXECUTION=1 + 绑定可用 → 旁路 socket 直调；
   // 动作面由 ZCODE_CUA_KOFFI_ACTIONS=1 二次放行（缺省只读观测）。
   if (env.ZCODE_CUA_KOFFI_EXECUTION?.trim() === "1" && process.platform === "darwin") {
+    // Phase 2-1b：输入事件 UDP 广播（HUD 光标消费）。端口 env 显式给才开——
+    // desktop main 侧 HUD 监听器在位时注入；无端口=无广播（零开销）。
+    const cursorPort = Number(env.ZCODE_CUA_CURSOR_BROADCAST_PORT?.trim() ?? 0);
+    const cursorBroadcast =
+      Number.isInteger(cursorPort) && cursorPort > 0 && cursorPort < 65536
+        ? createCursorEventUdpBroadcaster(cursorPort)
+        : undefined;
     const backend = createKoffiBrokerMethods({
       allowActions: env.ZCODE_CUA_KOFFI_ACTIONS?.trim() === "1",
+      ...(cursorBroadcast ? { onInputEvent: cursorBroadcast.send } : {}),
     });
     if (backend) {
       return createComputerUseRuntime({
         inProcessMethods: backend.methods,
-        disposeInProcess: backend.dispose,
+        disposeInProcess: () => {
+          backend.dispose();
+          cursorBroadcast?.close();
+        },
       });
     }
   }
@@ -407,4 +419,40 @@ if (isMainThread && (await isDirectMcpEntrypoint(import.meta.url, process.argv[1
     );
     process.exitCode = 1;
   });
+}
+
+
+/**
+ * Phase 2-1b：光标事件 UDP 广播器（127.0.0.1 单播，HUD 监听端口）。
+ * dgram socket 惰性建 + unref（不钉住进程）；发送失败静默（可视化旁路）。
+ */
+function createCursorEventUdpBroadcaster(port: number): {
+  send: (event: { v: number; kind: string; x?: number; y?: number; detail?: string }) => void;
+  close: () => void;
+} {
+  let socket: import("node:dgram").Socket | undefined;
+  const ensureSocket = () => {
+    if (socket) return socket;
+    socket = createSocket("udp4");
+    socket.unref();
+    return socket;
+  };
+  return {
+    send(event) {
+      try {
+        const payload = Buffer.from(JSON.stringify(event), "utf8");
+        ensureSocket().send(payload, port, "127.0.0.1");
+      } catch {
+        // 广播失败不影响输入合成本体。
+      }
+    },
+    close() {
+      try {
+        socket?.close();
+      } catch {
+        // 双 close 防御。
+      }
+      socket = undefined;
+    },
+  };
 }

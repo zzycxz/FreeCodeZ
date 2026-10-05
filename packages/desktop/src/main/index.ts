@@ -73,6 +73,8 @@ import { logger } from "./logger.js";
 import { createBotRemoteWorkspaceReconnectExecutor } from "./botRemoteWorkspaceReconnect.js";
 import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
+import { createCuaCursorHud, type CuaCursorHud } from "./cuaCursorHud.js";
+import { BrowserWindow as HudBrowserWindow, screen as HudScreen } from "electron";
 import { BroadcastHub } from "./broadcastHub.js";
 
 // ---- FreeCodeZ fork 更新链空壳(P3 §3.6):autoUpdater 已删,以下符号改为本地 no-op ----
@@ -575,6 +577,18 @@ const windowWorkspaceMap = new Map<number, Set<string>>();
 const windowTaskRealtimeHostIdMap = new Map<number, string>();
 const windowUnreadCountMap = new Map<number, number>();
 const windowHostProcessMap = new Map<number, ElectronUtilityProcess>();
+// Phase 2-1c（升级实施手册 桌面控制 Phase 2 第一步）：CUA 光标 HUD。
+// darwin 常驻 UDP 监听（无事件零成本）；窗口在执行层首个输入事件时惰性创建，
+// 6 秒静默自动隐藏。HUD 只在 ZCODE_CUA_KOFFI_ACTIONS 链路广播端口时才有源——
+// 监听器自身无害，先装上（darwin only；其他平台光标层走各自宿主）。
+const cuaCursorHud: CuaCursorHud | undefined =
+  process.platform === "darwin" && process.env.ZCODE_CUA_CURSOR_HUD !== "0"
+    ? createCuaCursorHud({
+        BrowserWindow: HudBrowserWindow,
+        screen: HudScreen,
+      })
+    : undefined;
+
 const cuaPipFocusRouter = createCuaPipFocusRouter({
   send: (windowId, event) => {
     windowHostProcessMap.get(windowId)?.postMessage({
@@ -933,7 +947,8 @@ async function prepareAppQuit(reason: string, kind: AppShutdownKind = "normal"):
     await appQuitPreparationInFlight;
     return;
   }
-  markForceQuit(reason);
+
+  markForceQuit(reason);
   windowsCuaOperationIndicator.dispose();
   browserScreenshotSurfaceCoordinator.dispose();
 
@@ -2042,6 +2057,8 @@ app.on("window-all-closed", () => {
   app.quit();
 });
 app.on("before-quit", (event) => {  // Windows 最后窗口关闭会在 close 阶段提前确认并标记 forceQuit；
+  // Phase 2-1c：光标 HUD 覆盖窗随退出关闭（UDP 监听 + 透明窗不留残影）。
+  cuaCursorHud?.dispose();
   // macOS 的 Cmd+Q / 菜单退出不会走该窗口关闭确认，必须在 before-quit 保留应用级确认兜底。
   if (!forceQuitRef.current && shouldConfirmAppQuit() && !confirmAppQuit()) {
     event.preventDefault();
