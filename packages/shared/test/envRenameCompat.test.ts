@@ -11,6 +11,9 @@ import { warnLegacyZCodeEnvKeys, MIGRATION_BRIDGED_ZCODE_KEYS } from "../src/run
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+// 迁移 warn 在 dev/test 默认静默（复查修）——测试 warn 逻辑本身需显式开。
+process.env.FREECODEZ_MIGRATION_WARN = "1";
+
 function withEnv(env: Record<string, string | undefined>, run: () => void): void {
   const saved: Record<string, string | undefined> = {};
   for (const key of [...Object.keys(env), "FREECODEZ_DATA_BASE_DIR", "ZCODE_DATA_BASE_DIR"]) {

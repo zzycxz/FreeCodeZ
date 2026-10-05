@@ -247,6 +247,12 @@ const migrationWarnedKeys = new Set<string>();
  */
 export function warnLegacyZCodeEnvKeys(env: Record<string, string | undefined>): void {
   if (process.env.FREECODEZ_DISABLE_MIGRATION_WARN === "1") return;
+  // 复查修（2026-10-05）：dev/test 下宿主 env 泄漏的 ZCODE_* 会刷屏（每键一条）。
+  // 迁移提示的生产价值在真实部署（用户 shell 里设的旧键），dev/test 环境噪声大
+  // 于信息量——只在 NODE_ENV=production 或显式 FREECODEZ_MIGRATION_WARN=1 时输出。
+  if (process.env.NODE_ENV !== "production" && process.env.FREECODEZ_MIGRATION_WARN !== "1") {
+    return;
+  }
   for (const key of Object.keys(env)) {
     if (!key.startsWith("ZCODE_") || MIGRATION_BRIDGED_ZCODE_KEYS.has(key)) continue;
     if (migrationWarnedKeys.has(key)) continue;
