@@ -78,6 +78,25 @@ function resolveBashPermissionCapability(
   input: unknown,
   context?: ToolRuntimePermissionCapabilityContext,
 ): ToolRuntimePermissionCapability | undefined {
+  // 0-2（升级实施手册）：dangerouslyDisableSandbox 是模型可见参数且直通关沙箱——提示注入可
+  // 一句话关沙箱（plan/build 也会被静默放行）。该参数置真即强制用户审批（alwaysAsk 压过
+  // yolo 直通与只读直通，见 PermissionService.checkAlwaysAsk）；批准后按原请求执行（沙箱关闭
+  // 仅本条生效），拒绝则本条不执行——模型去掉该参数重试即走正常判定（沙箱内或常规审批）。
+  if (readBooleanProperty(input, "dangerouslyDisableSandbox")) {
+    return {
+      alwaysAsk: true,
+      destructive: false,
+      needsApproval: true,
+      readOnly: false,
+      riskLevel: "high" as const,
+      sideEffectScope: "system" as const,
+      permission: {
+        needsApproval: true,
+        riskLevel: "high" as const,
+        sideEffectScope: "system" as const,
+      },
+    };
+  }
   const command = readStringProperty(input, "command");
   if (!command || !isRuntimeReadOnlyBashCommand(command, context)) return undefined;
   return {
@@ -92,6 +111,11 @@ function resolveBashPermissionCapability(
       sideEffectScope: "none" as const,
     },
   };
+}
+
+function readBooleanProperty(input: unknown, key: string): boolean {
+  if (!input || typeof input !== "object") return false;
+  return (input as Record<string, unknown>)[key] === true;
 }
 
 const bashHandler: ToolHandler = (input, context) =>

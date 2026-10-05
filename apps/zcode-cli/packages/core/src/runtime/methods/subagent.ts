@@ -274,6 +274,10 @@ export function createDefaultSubagentPort(
           // 父 registry 可见的工具名）本来就够，但**自定义 agent profile 显式写
           // `allowedTools: ["CreateWorkflow"]` 时会跳过那次交集**，只剩这一道能挡住。
           dynamicWorkflowEnabled: this.config.dynamicWorkflowEnabled,
+          // 0-3（升级实施手册）：E-S3 会话级沙箱开关必须结构性继承——父会话开着沙箱而
+          // 子代理漏继承，Agent 工具就成了关掉沙箱的后门（子代理 bash 在沙箱外执行）。
+          // workflow actor 走 ...inheritedConfig 展开天然继承；本处逐字段构造，需显式传递。
+          sandboxEnabled: this.config.sandboxEnabled,
           // 默认 subagent 已从 Explore 调整为 general-purpose。
           // toolset 不能再依赖 DEFAULT_SUBAGENT_TYPE，否则默认通用 agent 会被误降级为只读搜索工具面。
           toolset: builtInExplore ? "explore" : "main",

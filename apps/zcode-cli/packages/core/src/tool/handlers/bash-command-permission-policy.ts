@@ -88,7 +88,25 @@ export function resolveBashPermissionRulePolicy(
 ): ToolPermissionRulePolicy | undefined {
   const command = readCommand(input);
   if (command === undefined) return undefined;
-  return createBashPermissionRulePolicy(command, context);
+  const policy = createBashPermissionRulePolicy(command, context);
+  // 0-2（升级实施手册）：携带 dangerouslyDisableSandbox 的调用不吃任何 allow 规则（会话免确认/
+  // 项目 allow）——规则是按命令文本授予的，提示注入可在已被放行的命令上夹带关沙箱参数绕过
+  // alwaysAsk 门（checkAlwaysAsk 的 session.allow 命中即放行）。deny/ask 规则照常生效。
+  if (isDangerouslyDisableSandboxInput(input)) {
+    return {
+      ...policy,
+      evaluateRules(behavior, rules) {
+        if (behavior === "allow") return false;
+        return policy.evaluateRules(behavior, rules);
+      },
+    };
+  }
+  return policy;
+}
+
+function isDangerouslyDisableSandboxInput(input: unknown): boolean {
+  if (!input || typeof input !== "object") return false;
+  return (input as Record<string, unknown>).dangerouslyDisableSandbox === true;
 }
 
 function createBashPermissionRulePolicy(

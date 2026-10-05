@@ -16,7 +16,11 @@ import {
   setReactErrorArmsReporter,
 } from "@zcode/ui";
 import "@zcode/ui/styles.css";
-import { connectViaMessagePort, createMessagePortServiceConnection } from "@zcode/client";
+import {
+  connectViaMessagePort,
+  createMessagePortServiceConnection,
+  type MessagePortServiceConnection,
+} from "@zcode/client";
 import {
   InternalChannels,
   databaseStartupStateSchema,
@@ -138,6 +142,11 @@ const initialLocale: Locale =
     ? initialLocaleFlag
     : DEFAULT_LOCALE;
 let baseServicesForRemoteSessions: IServiceAccessor | null = null;
+// 0-7（升级实施手册）：基础 port 的连接对象必须可达，否则 ChannelClient 与底层 port
+// 无法释放（旧 connectViaMessagePort 只回 services，dispose 句柄直接丢成不可达）。
+// renderer 进程生命周期 = 窗口生命周期，正常 reload 由进程 teardown 兜底；此引用
+// 保证未来任何"换代/卸载基础连接"的路径都有可调用的释放句柄。
+let baseServiceConnection: MessagePortServiceConnection | null = null;
 const pendingRemoteWorkspaceServicePorts: RemoteWorkspaceServicePortRegistration[] = [];
 
 const desktopPlatform = createDesktopPlatform({ isLocalDevelopmentRuntime });
@@ -302,7 +311,9 @@ function handleServicePortMessage(event: MessageEvent): void {
 
 function initializeBusinessRoot(port: MessagePort): void {
   appInitialized = true;
-  const services = connectViaMessagePort(port);
+  const connection = connectViaMessagePort(port);
+  baseServiceConnection = connection;
+  const services = connection.services;
   baseServicesForRemoteSessions = services;
   registerBaseWorkspaceServices(services);
   flushPendingRemoteWorkspaceServicePorts();

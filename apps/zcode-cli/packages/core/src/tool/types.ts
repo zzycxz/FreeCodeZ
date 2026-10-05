@@ -407,6 +407,8 @@ export interface ToolPersistedModelContentInput {
 
 export interface ToolRuntimePermissionCapability {
   allowedInPlanMode?: boolean;
+  /** 与 PermissionToolCapability.alwaysAsk 同义；运行时按输入动态声明（如 Bash 携带 dangerouslyDisableSandbox）。 */
+  alwaysAsk?: boolean;
   destructive?: boolean;
   needsApproval?: boolean;
   readOnly?: boolean;

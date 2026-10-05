@@ -53,7 +53,11 @@ export function createMessagePortServiceConnection(
  *
  * Desktop 模式下，utilityProcess（或 main 进程的远程代理）通过 MessagePort
  * 暴露 ChannelServer，renderer 用此函数建立 ChannelClient 连接。
+ *
+ * 0-7（升级实施手册）：返回带 dispose 的完整连接对象——旧签名只回 services 会把
+ * connection（含 dispose 句柄）丢成不可达，基础 port 的 ChannelClient 与底层 port
+ * 从此无法释放。调用方必须持有连接对象，换代/卸载时调用 dispose。
  */
-export function connectViaMessagePort(port: MessagePort): IServiceAccessor {
-  return createMessagePortServiceConnection(port).services;
+export function connectViaMessagePort(port: MessagePort): MessagePortServiceConnection {
+  return createMessagePortServiceConnection(port);
 }

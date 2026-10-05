@@ -5,6 +5,9 @@
 // 正常命令照旧 allow；build 模式行为不受地板影响（仍走既有 ask/判定链）。
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdtempSync, symlinkSync, rmSync } from "node:fs";
+import { tmpdir, homedir } from "node:os";
+import { join } from "node:path";
 import {
   findCatastrophicBashCommand,
   type CatastrophicBashCategory,
@@ -27,6 +30,31 @@ const CATASTROPHIC_CASES: ReadonlyArray<[string, CatastrophicBashCategory]> = [
   ["sudo reboot", "system-shutdown"],
   ["nohup halt", "system-shutdown"],
   ["poweroff", "system-shutdown"],
+  // 0-5 ①：词法归一 + realpath 绕过样本（实测全放行 → 全拦）
+  ["rm -rf /var/..", "root-home-delete"],
+  ["rm -rf /var/../..", "root-home-delete"],
+  ["rm -rf ~/..", "root-home-delete"],
+  ["rm -rf $HOME/..", "root-home-delete"],
+  ["rm -rf /etc/../../..", "root-home-delete"],
+  // 0-5 ②：解释器 -c 二次解析
+  ["bash -c 'rm -rf /'", "root-home-delete"],
+  ["sh -c 'rm -rf ~'", "root-home-delete"],
+  ["sudo bash -c \"rm -rf $HOME\"", "root-home-delete"],
+  ["zsh -c 'dd if=/dev/zero of=/dev/sda'", "raw-device-write"],
+  ["bash -lc 'poweroff'", "system-shutdown"],
+  // 0-5 ③：busybox/env/git rm 剥壳
+  ["busybox rm -rf /", "root-home-delete"],
+  ["sudo busybox rm -rf ~", "root-home-delete"],
+  ["env rm -rf /", "root-home-delete"],
+  ["sudo env rm -rf /", "root-home-delete"],
+  ["env -u FOO BAR=1 rm -rf /", "root-home-delete"],
+  ["git rm -rf /", "root-home-delete"],
+  ["busybox poweroff", "system-shutdown"],
+  // 0-5 ④：$HOME 族静态展开
+  ["rm -rf $HOME", "root-home-delete"],
+  ["rm -rf ${HOME}", "root-home-delete"],
+  ["rm -rf \"$HOME\"", "root-home-delete"],
+  ["rm -rf $HOME/", "root-home-delete"],
 ];
 
 const LEGITIMATE_CASES: readonly string[] = [
@@ -68,11 +96,32 @@ test("近邻合法样本零误杀", () => {
   }
 });
 
-test("保守方向：解析不安全（动态词/语法错误）不拦", () => {
-  // $HOME 是变量展开（动态词）——按 R3 保守规则不拦，交给审批/沙箱层。
-  assert.equal(findCatastrophicBashCommand("rm -rf $HOME"), undefined);
-  // 命令替换同理。
+test("保守方向：动态词（命令替换/非 HOME 变量）不拦；realpath 失败不崩溃", () => {
+  // 0-5 ④ 之后 $HOME 是静态展开的例外；其余动态词维持保守放行。
   assert.equal(findCatastrophicBashCommand("rm -rf $(echo /)"), undefined);
+  assert.equal(findCatastrophicBashCommand("rm -rf $TARGET"), undefined);
+  assert.equal(findCatastrophicBashCommand("rm -rf $HOMEFOO"), undefined);
+  // realpath/lstat 失败路径（不存在的深路径、类似网络挂载的不可达目标）不得崩溃、不得误拦。
+  assert.equal(findCatastrophicBashCommand("rm -rf /nonexistent-deep-path/x/y"), undefined);
+  assert.equal(findCatastrophicBashCommand("rm -rf /net/nowhere-mount/data"), undefined);
+  // 相对路径 .. 链无法静态定深（不知 cwd 距根几层），仍归审批/沙箱层。
+  assert.equal(findCatastrophicBashCommand("rm -rf ../../../.."), undefined);
+});
+
+test("符号链接：删链接本体无害放行；解引用形态（尾斜杠）realpath 后拦", () => {
+  const dir = mkdtempSync(join(tmpdir(), "cata-floor-"));
+  try {
+    const link = join(dir, "home-link");
+    symlinkSync(homedir(), link);
+    // rm 不解引用目标本身：删符号链接只是删链接，放行。
+    assert.equal(findCatastrophicBashCommand(`rm -rf ${link}`), undefined);
+    // 尾斜杠强制解引用：realpath 落到真实家目录，必须拦。
+    const hit = findCatastrophicBashCommand(`rm -rf ${link}/`);
+    assert.ok(hit, "解引用家目录符号链接应命中");
+    assert.equal(hit.category, "root-home-delete");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 function bashContext(command: string, mode: "yolo" | "build") {

@@ -531,6 +531,10 @@ export class BotTaskBridge {
         : {}),
       provider: "glm",
       ...(params.modelSelection ? { modelSelection: params.modelSelection } : {}),
+      // 0-4（升级实施手册）：bots 任务强制 yolo（§6.9 modeLocked）+ 公网聊天消息驱动，
+      // 是提示注入的高危面；建任务时强制注入沙箱（E-S3 链透传到 session 创建）。
+      // 平台可用性由沙箱执行体分发（wrapCommandWithSandbox）内部处理，此处只管声明。
+      sandboxEnabled: true,
     });
     // 建任务后强制 yolo（§6.9 modeLocked）；失败不阻断建任务结果
     await this.options.taskService.setMode({ taskId: task.taskId, mode: "yolo" }).catch(() => undefined);
@@ -544,6 +548,9 @@ export class BotTaskBridge {
       ...(params.context.workspaceIdentity
         ? { workspaceIdentity: params.context.workspaceIdentity }
         : {}),
+      // 0-4：与 createBotTask 对称——bots 任务恒 yolo，冷恢复/重启后不得丢沙箱防护
+      // （任务 meta 不持久化沙箱位，resume 边界必须重新注入）。
+      sandboxEnabled: true,
     });
   }
 

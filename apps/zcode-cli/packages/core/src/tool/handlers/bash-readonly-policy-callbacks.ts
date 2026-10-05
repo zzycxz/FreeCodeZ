@@ -79,8 +79,20 @@ export function sedCommandIsDangerous(_commandText: string, args: readonly strin
   return false;
 }
 
+// 0-1 修复（升级实施手册）：旧正则只认无地址前缀的命令位 w，实测三类绕过均被误判只读——
+// ① s 命令的 w/e 后缀标志（`s/a/b/w /tmp/pwn` 写文件、`s/.*/cmd/e` GNU 执行替换结果）；
+// ② 地址前缀后的 w（`/re/w f`、`1,2w f`、`\|re|w f`）；③ w 紧跟文件名（`w/tmp/x`）。
+// 判定依据（BSD+GNU sed 实证，样本钉死在 bashReadonlyPolicyCallbacks.test.ts）：
+// - s 后第三定界符的合法 flag 字母（g p i I m M d + 数字）不含 w/e，flags 区出现即非良性；
+// - 命令位 w/W/e 无良性同形命令（分支标签只能跟在 b/t/T/: 之后），w 无论后跟什么都可能是文件名；
+// - 宁误杀：误判只多一次审批弹窗，不阻断命令。
+const SED_S_COMMAND_DANGEROUS_FLAG =
+  /(?:^|[;{\n])[^;{\n]*?s([^a-zA-Z0-9\s\\])(?:\\.|[^\\\n])*?\1(?:\\.|[^\\\n])*?\1[a-zA-Z0-9]*[we]/;
+const SED_ADDRESS_ATOMS =
+  /(?:^|[;{\n}])\s*(?:(?:[0-9]+|\$)|\/(?:\\.|[^\/\\\n])*\/|\\([^a-zA-Z0-9\s])(?:\\.|[^\n])*?\1|[!~+,\s])*[wWe]/;
+
 function sedScriptWritesToFile(script: string): boolean {
-  return /(?:^|[;{\n])\s*(?:[0-9,$!+~-]+)?\s*w(?:\s|$)/.test(script);
+  return SED_S_COMMAND_DANGEROUS_FLAG.test(script) || SED_ADDRESS_ATOMS.test(script);
 }
 
 export function dateCommandIsDangerous(_commandText: string, args: readonly string[]): boolean {

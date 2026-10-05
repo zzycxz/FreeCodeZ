@@ -124,6 +124,8 @@ function normalizeBotCurrentOptions(input: unknown): BotConfig["currentOptions"]
   const draft: BotConfig["currentOptions"] = {};
   if (modelSelection) draft.modelSelection = modelSelection;
   if (typeof source.mode === "string") draft.mode = source.mode;
+  // sandboxMode 是历史遗留的惰性透传：schema 接受（存量持久化数据兼容，两侧 strict 不能删）
+  // 但无任何消费方。bots 任务的沙箱由 taskBridge 建/续边界强制注入（0-4），不走该字段。
   if (typeof source.sandboxMode === "string") draft.sandboxMode = source.sandboxMode;
   if (typeof source.approvalPolicy === "string") draft.approvalPolicy = source.approvalPolicy;
   const cli = source.cli;

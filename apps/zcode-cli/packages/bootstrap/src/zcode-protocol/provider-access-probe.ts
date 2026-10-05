@@ -51,8 +51,15 @@ function buildAuthHeaders(apiType: ProviderApiTypeValue, apiKey: string): Record
   if (!key) return {};
   // anthropic 兼容网关同时接受 x-api-key 与 Bearer；显式双发对两类端点都成立（对齐
   // model-execution 的 withAnthropicAuthorizationHeader 语义）。
+  // 0-8（升级实施手册）：官方 Anthropic 端点强制要求 anthropic-version 头，缺失一律 401——
+  // 探测会把有效 key 误报成 invalid-key。chat 链由 AI SDK 自动带头不受影响；兼容网关
+  // 对多余的标准头一律忽略，双发安全。
   return apiType === "anthropic-messages"
-    ? { "x-api-key": key, authorization: `Bearer ${key}` }
+    ? {
+        "x-api-key": key,
+        authorization: `Bearer ${key}`,
+        "anthropic-version": "2023-06-01",
+      }
     : { authorization: `Bearer ${key}` };
 }
 

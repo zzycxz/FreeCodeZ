@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { hostname } from "node:os";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
-import { Hono } from "hono";
+import { Hono, type Context, type Next } from "hono";
 import type { WebSocket } from "ws";
 import type { WebSocketServer } from "ws";
 import {
@@ -119,22 +119,29 @@ export async function createCoreHttpServer(
     port?: number;
     serverId?: string;
     hostCapabilityStore?: HostCapabilityStore;
+    /**
+     * 0-6（升级实施手册）：访问 token（测试注入口；缺省读 ZCODE_SERVER_TOKEN，与 lite
+     * server P2 §4.11 同键同语义）。设置后 /ws 与 capability 发放口需要 token；
+     * 未设置时回环绑定保持现状（非回环绑定仍被上方守卫 fail-closed 拒绝）。
+     */
+    authToken?: string;
   } = {},
 ): Promise<CoreHttpServer> {
   const app = new Hono();
   const { injectWebSocket, upgradeWebSocket, wss } = createNodeWebSocket({ app });
   const host = options.host ?? "127.0.0.1";
   if (!isLoopbackHost(host)) {
-    // 当前只有本机/SSH 隧道入口，Core 尚未接入 token middleware；对外监听必须 fail-closed。
+    // 非回环绑定必须显式 token；未配置即 fail-closed 拒绝监听。
     throw new Error(
       `Non-loopback host ${host} requires authentication before the server can listen`,
     );
   }
+  const authToken = (options.authToken ?? process.env.ZCODE_SERVER_TOKEN ?? "").trim() || undefined;
   const info: ServerRemoteInfo = {
     serverId: options.serverId ?? hostname() ?? "zcode-server",
     version: ZCODE_VERSION,
     protocolVersion: SERVER_REMOTE_PROTOCOL_VERSION,
-    authRequired: false,
+    authRequired: Boolean(authToken),
     workspaces: [],
     capabilities: {
       desktopContinuous: true,
@@ -145,6 +152,25 @@ export async function createCoreHttpServer(
   // 裸 Set 无法落实 expiresAt，未消费的 capability 会一直有效并持续累积。
   // 使用与 packages/server 兼容的 TTL 一次性 store，使有效期和消费语义与返回信息一致。
   const capabilities = options.hostCapabilityStore ?? createHostCapabilityStore();
+  // 0-6（升级实施手册）：/ws 零鉴权 + capability 发放口不设门——任何本地进程都能直连
+  // agent RPC 或凭空铸造 host capability（拿到即 trusted-host-relay 全权）。设置 token 后
+  // 两处同守卫；Bearer 头供程序客户端，?token= 供浏览器 WS（本服务无静态面，不需要 cookie 面）。
+  if (authToken) {
+    const requireToken = async (context: Context, next: Next) => {
+      const authorization = context.req.header("authorization");
+      if (
+        (authorization?.startsWith("Bearer ") &&
+          authorization.slice(7).trim() === authToken) ||
+        context.req.query("token") === authToken
+      ) {
+        await next();
+        return;
+      }
+      return context.json({ error: "Missing or invalid server token" }, 401);
+    };
+    app.use("/ws", requireToken);
+    app.use("/api/rpc-host-capability", requireToken);
+  }
   app.get("/api/server-info", (context) => context.json(info));
   app.get(
     "/ws",

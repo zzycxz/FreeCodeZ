@@ -57,6 +57,32 @@ test("sbpl：缺省 tmpDir 放行真实 os.tmpdir()（process.tmpdir 误写回�
   );
 });
 
+test("0-9：凭据文件 deny 行存在且位于 (allow file-read*) 之后（seatbelt 后匹配胜出）", () => {
+  const profile = buildWorkspaceWriteSeatbeltProfile({
+    workspaceRoot: WORKSPACE,
+    credentialDenyPath: "/Users/demo/.freecodez/v2/credentials.json",
+  });
+  const denyLine = '(deny file-read* (subpath "/Users/demo/.freecodez/v2/credentials.json"))';
+  assert.ok(profile.includes(denyLine), "必须包含凭据文件 deny 行");
+  assert.ok(
+    profile.indexOf(denyLine) > profile.indexOf("(allow file-read*)"),
+    "deny 行必须在 allow file-read* 之后（后匹配规则胜出语义）",
+  );
+  // 只 deny 这一个文件：不得出现对整个数据目录的 deny（provider config/任务库在旁边）。
+  assert.ok(!profile.includes('(deny file-read* (subpath "/Users/demo/.freecodez"))'));
+});
+
+test("0-9：凭据 deny 路径缺省构造与 ZCODE_DATA_BASE_DIR 覆盖", () => {
+  const home = homedir();
+  const defaultProfile = buildWorkspaceWriteSeatbeltProfile({ workspaceRoot: WORKSPACE });
+  assert.ok(
+    defaultProfile.includes(
+      `(deny file-read* (subpath "${join(home, ".freecodez", "v2", "credentials.json")}"))`,
+    ),
+    `缺省 deny 目标应是 ${join(home, ".freecodez", "v2", "credentials.json")}`,
+  );
+});
+
 test("wrap：argv 与 shell 模式统一抬进 sandbox-exec；激活必须显式 mode", () => {
   const argvCommand = { args: ["-c", "ls"], cwdDialect: "posix" as const, file: "/bin/bash", shell: false };
   const wrapped = wrapCommandWithSeatbelt({
@@ -222,6 +248,20 @@ test("集成（darwin）：对照——无沙箱时同一命令可写（证明�
   const run = spawnSync("/bin/bash", ["-c", `touch '${outside}'`], { encoding: "utf8" });
   assert.equal(run.status, 0);
   rmSync(outside);
+});
+
+test("集成（darwin）：V9——沙箱内读凭据文件被拒，邻居文件不受影响", { skip: !IS_DARWIN }, () => {
+  const credentialsPath = join(homedir(), ".freecodez", "v2", "credentials.json");
+  // 0-9 验收①：cat credentials.json 必须被拒（deny 行优先于全盘 allow file-read*）。
+  const denied = runSandboxed(`cat '${credentialsPath}'`);
+  assert.notEqual(denied.exitCode, 0, "沙箱内读凭据文件必须失败");
+  assert.ok(
+    /Operation not permitted|Permission denied/i.test(denied.stderr),
+    `拒绝应来自沙箱 deny 而非文件缺失：${denied.stderr}`,
+  );
+  // 0-9 验收③：同目录邻居（任务库/其他文件）不受影响——只 deny 这一个文件。
+  const neighborOk = runSandboxed(`ls '${join(homedir(), ".freecodez", "v2")}' >/dev/null && echo NEIGHBOR-OK`);
+  assert.equal(neighborOk.exitCode, 0, `目录列举不受影响：${neighborOk.stderr}`);
 });
 
 if (IS_DARWIN) {
