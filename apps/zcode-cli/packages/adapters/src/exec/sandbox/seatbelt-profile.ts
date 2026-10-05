@@ -9,6 +9,8 @@
 //   - 进程族放行（process*）。旧族操作（signal*/sysctl*/mach*/ipc*）在新 macOS
 //     seatbelt 或为非法或致 profile 行为异常——本机逐项实测后从模板剔除。
 // 注意：sbpl 无注释语法；subpath 路径必须引号包裹且不带尾斜杠。
+import { tmpdir } from "node:os";
+
 export interface WorkspaceWriteSeatbeltInput {
   workspaceRoot: string;
   writableRoots?: readonly string[];
@@ -51,8 +53,9 @@ export function buildWorkspaceWriteSeatbeltProfile(
 }
 
 function defaultTmpDir(): string {
-  // 延迟读取：纯函数模块不直接 import node:os，便于在任意上下文测试。
-  return typeof process !== "undefined" && typeof process.tmpdir === "function"
-    ? process.tmpdir()
-    : "/tmp";
+  // 原实现误写成 process.tmpdir：Node 无此 API（运行时恒 undefined），守卫恒假
+  // 导致永远回退 "/tmp"，macOS 上漏放行 per-user 临时目录（/var/folders/...）；
+  // 且 @types/node 的 Process 类型无该属性，tsc 直接编译失败（TS2339）。
+  // 正确 API 是 os.tmpdir()，顶层 import 内置模块不影响纯函数测试。
+  return tmpdir();
 }

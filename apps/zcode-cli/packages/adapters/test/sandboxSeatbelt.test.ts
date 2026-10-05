@@ -44,6 +44,19 @@ test("sbpl：/tmp 族默认可写、尾斜杠归一、writableRoots 去重", () 
   assert.ok(profile.includes('(subpath "/var/folders/xx/T")'));
 });
 
+test("sbpl：缺省 tmpDir 放行真实 os.tmpdir()（process.tmpdir 误写回归锚）", () => {
+  // 原实现误写 process.tmpdir（运行时恒 undefined），守卫恒假导致永远只放行
+  // "/tmp"，macOS per-user 临时目录（/var/folders/...）被漏——缺省路径必须以
+  // 真实 os.tmpdir() 为根（尾斜杠归一后比对）。
+  const profile = buildWorkspaceWriteSeatbeltProfile({ workspaceRoot: WORKSPACE });
+  const raw = tmpdir();
+  const expected = raw.length > 1 && raw.endsWith("/") ? raw.slice(0, -1) : raw;
+  assert.ok(
+    profile.includes(`(subpath "${expected}")`),
+    `缺省 profile 应放行真实临时目录 ${expected}`,
+  );
+});
+
 test("wrap：argv 与 shell 模式统一抬进 sandbox-exec；激活必须显式 mode", () => {
   const argvCommand = { args: ["-c", "ls"], cwdDialect: "posix" as const, file: "/bin/bash", shell: false };
   const wrapped = wrapCommandWithSeatbelt({
