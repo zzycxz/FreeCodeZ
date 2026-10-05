@@ -286,7 +286,7 @@ export function formatAppStateTree(state) {
     ? `surface: kind=${win.surface_kind} actual_window_id=${win.actual_window_id ?? win.window_id ?? "unknown"} presentation_window_id=${win.presentation_window_id ?? win.window_id ?? "unknown"} lifecycle=${win.surface_lifecycle ?? "stable"}`
     : "";
   const maxElements = (() => {
-    const raw = Number.parseInt(process.env.ZCODE_CUA_MAX_ELEMENTS ?? "", 10);
+    const raw = Number.parseInt((process.env.FREECODEZ_CUA_MAX_ELEMENTS ?? process.env.ZCODE_CUA_MAX_ELEMENTS) ?? "", 10);
     return Number.isInteger(raw) && raw >= 50 && raw <= 4000 ? raw : 1500;
   })();
   let entries = state.elements.map((el, index) => ({ el, index }));

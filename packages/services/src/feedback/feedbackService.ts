@@ -36,7 +36,7 @@ export interface CreateFeedbackServiceOptions {
 function resolveApiBaseUrl(explicit?: string): string {
   return (
     explicit?.trim() ||
-    process.env.ZCODE_FEEDBACK_API_BASE?.trim() ||
+    (process.env.FREECODEZ_FEEDBACK_API_BASE ?? process.env.ZCODE_FEEDBACK_API_BASE)?.trim() ||
     buildRuntimeZCodeApiUrl(process.env, "/api/v1")
   );
 }

@@ -58,7 +58,7 @@ export async function prepareTuiAppRuntime(
   const appEnv = prepareTelemetry
     ? await prepareTelemetry(env, {
         cliVersion: version,
-        productVersion: env.ZCODE_APP_VERSION,
+        productVersion: (env.FREECODEZ_APP_VERSION ?? env.ZCODE_APP_VERSION),
       })
     : env;
   const startProviderRegistryRuntime =

@@ -304,12 +304,12 @@ export function disabledNetworkCaptureStatus(): NetworkCaptureStatus {
 export function createNetworkCaptureServiceFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): NetworkCaptureService | undefined {
-  if (isDisabled(env.ZCODE_DEBUG_NETWORK_CAPTURE)) return undefined;
+  if (isDisabled((env.FREECODEZ_DEBUG_NETWORK_CAPTURE ?? env.ZCODE_DEBUG_NETWORK_CAPTURE))) return undefined;
   return new NetworkCaptureService({
-    host: env.ZCODE_DEBUG_NETWORK_HOST || undefined,
-    port: parsePositiveInteger(env.ZCODE_DEBUG_NETWORK_PORT) ?? DEFAULT_PORT,
-    caDir: env.ZCODE_DEBUG_NETWORK_CA_DIR || undefined,
-    maxEntries: parsePositiveInteger(env.ZCODE_DEBUG_NETWORK_MAX_ENTRIES) ?? DEFAULT_MAX_ENTRIES,
+    host: (env.FREECODEZ_DEBUG_NETWORK_HOST ?? env.ZCODE_DEBUG_NETWORK_HOST) || undefined,
+    port: parsePositiveInteger((env.FREECODEZ_DEBUG_NETWORK_PORT ?? env.ZCODE_DEBUG_NETWORK_PORT)) ?? DEFAULT_PORT,
+    caDir: (env.FREECODEZ_DEBUG_NETWORK_CA_DIR ?? env.ZCODE_DEBUG_NETWORK_CA_DIR) || undefined,
+    maxEntries: parsePositiveInteger((env.FREECODEZ_DEBUG_NETWORK_MAX_ENTRIES ?? env.ZCODE_DEBUG_NETWORK_MAX_ENTRIES)) ?? DEFAULT_MAX_ENTRIES,
   });
 }
 

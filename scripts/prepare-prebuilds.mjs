@@ -56,7 +56,7 @@ const nodeVersion = "v22.16.0";
 const componentSchemaVersion = 1;
 const remotePlatforms = ["linux-arm64", "linux-x64", "darwin-arm64", "darwin-x64"];
 const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-const isBootstrapWithRemote = process.env.ZCODE_BOOTSTRAP_WITH_REMOTE === "1";
+const isBootstrapWithRemote = (process.env.FREECODEZ_BOOTSTRAP_WITH_REMOTE ?? process.env.ZCODE_BOOTSTRAP_WITH_REMOTE) === "1";
 
 /**
  * Node dist 下载源。默认走国内镜像，`ZCODE_NODE_DIST_MIRROR` 可覆盖（与
@@ -74,7 +74,7 @@ const isBootstrapWithRemote = process.env.ZCODE_BOOTSTRAP_WITH_REMOTE === "1";
 export const DEFAULT_NODE_DIST_BASE = "https://cdn.npmmirror.com/binaries/node";
 
 export function nodeDistBase(env = process.env) {
-  const mirror = env.ZCODE_NODE_DIST_MIRROR?.trim();
+  const mirror = (env.FREECODEZ_NODE_DIST_MIRROR ?? env.ZCODE_NODE_DIST_MIRROR)?.trim();
   return (mirror || DEFAULT_NODE_DIST_BASE).replace(/\/+$/u, "");
 }
 // 内置插件 stage 清单已收敛为单一事实源 ./official-plugin-staging-list.mjs。

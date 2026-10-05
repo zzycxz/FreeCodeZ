@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
   // 启动脚本通过 process.env 显式选择 test/production；它必须优先于 .env 文件，
   // 否则 share:test 可能被 mode 的旧配置误解析到错误 endpoint。
   const env = { ...loadEnv(mode, REPO_ROOT, ""), ...process.env };
-  const zcodeEnv = resolveZCodeEnv(env.ZCODE_ENV);
+  const zcodeEnv = resolveZCodeEnv((env.FREECODEZ_ENV ?? env.ZCODE_ENV));
   const endpointEnv = {
     ...env,
     ZCODE_ENV: zcodeEnv,
@@ -84,7 +84,7 @@ export default defineConfig(({ mode }) => {
     define: {
       __ZCODE_ENDPOINT_ENV__: JSON.stringify(pickProductEndpointEnv(env)),
       __ZCODE_VERSION__: JSON.stringify(version),
-      __ZCODE_COMMIT__: JSON.stringify(env.ZCODE_COMMIT || "unknown"),
+      __ZCODE_COMMIT__: JSON.stringify((env.FREECODEZ_COMMIT ?? env.ZCODE_COMMIT) || "unknown"),
       __ZCODE_ENV__: JSON.stringify(zcodeEnv),
       "import.meta.env.VITE_ZCODE_BASE_URL": JSON.stringify(zcodeEndpointOrigin),
       // 兼容旧 Web runtime 读取名；新代码统一读 VITE_ZCODE_BASE_URL。

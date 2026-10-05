@@ -65,7 +65,7 @@ export async function ensureSeaRuntimeTools(
   }
 
   const env = options.env ?? process.env;
-  const configuredStorageRoot = options.storageRoot ?? env.ZCODE_STORAGE_DIR?.trim();
+  const configuredStorageRoot = options.storageRoot ?? (env.FREECODEZ_STORAGE_DIR ?? env.ZCODE_STORAGE_DIR)?.trim();
   const storageRoot = configuredStorageRoot || join(homedir(), ".freecodez");
   const runtimeEnv: CliEnv = {};
 

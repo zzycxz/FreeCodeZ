@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 export function resolveCuaHelperBuildId(env = process.env) {
-  const explicit = env.ZCODE_CUA_HELPER_BUILD_ID?.trim();
+  const explicit = (env.FREECODEZ_CUA_HELPER_BUILD_ID ?? env.ZCODE_CUA_HELPER_BUILD_ID)?.trim();
   if (explicit) return explicit;
   const zcodeCuaVersion = JSON.parse(
     readFileSync(join(repoRoot, "packages", "zcode-cua", "package.json"), "utf8"),

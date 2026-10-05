@@ -33,7 +33,7 @@ const repoRoot = resolve(scriptDir, "..");
 const DEFAULT_SOURCE = "C:/Users/13852/Downloads/zcode-3.14.3-unpacked/app/resources";
 
 function parseArgs(argv) {
-  const args = { source: process.env.ZCODE_CUA_ASSET_SOURCE?.trim() || DEFAULT_SOURCE };
+  const args = { source: (process.env.FREECODEZ_CUA_ASSET_SOURCE ?? process.env.ZCODE_CUA_ASSET_SOURCE)?.trim() || DEFAULT_SOURCE };
   for (let i = 2; i < argv.length; i += 1) {
     if (argv[i] === "--source" && argv[i + 1]) {
       args.source = argv[i + 1];

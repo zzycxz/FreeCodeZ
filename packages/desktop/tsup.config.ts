@@ -34,7 +34,7 @@ function loadEnvFiles(): Record<string, string> {
     }
   }
   // 真实环境变量优先级最高
-  if (process.env.ZCODE_ENV) vars.ZCODE_ENV = process.env.ZCODE_ENV;
+  if ((process.env.FREECODEZ_ENV ?? process.env.ZCODE_ENV)) vars.ZCODE_ENV = (process.env.FREECODEZ_ENV ?? process.env.ZCODE_ENV);
   if (process.env.ZCODE_BASE_URL) vars.ZCODE_BASE_URL = process.env.ZCODE_BASE_URL;
   if (process.env.VITE_ZCODE_BASE_URL) vars.VITE_ZCODE_BASE_URL = process.env.VITE_ZCODE_BASE_URL;
   // OAuth origin/client_id 由 host runtime 读取；这里保留覆盖入口，方便开发构建时观察统一 env 来源。
@@ -111,7 +111,7 @@ function createSharedDefines() {
     // 与 node-repl-host/scripts/build.mjs 的同名 define 同源(cua-helper-build-id.mjs);env 可覆盖。
     __ZCODE_CUA_HELPER_BUILD_ID__: JSON.stringify(resolveCuaHelperBuildId(env)),
     // 客户端只有一个 CDN 配置，与发布端 OSS 目标列表分离。
-    __ZCODE_CDN_BASE_URL__: JSON.stringify(env.ZCODE_CDN_BASE_URL?.trim() || ""),
+    __ZCODE_CDN_BASE_URL__: JSON.stringify((env.FREECODEZ_CDN_BASE_URL ?? env.ZCODE_CDN_BASE_URL)?.trim() || ""),
   };
 }
 

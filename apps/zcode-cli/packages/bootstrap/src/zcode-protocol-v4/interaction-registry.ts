@@ -38,7 +38,7 @@ interface V4InteractionRegistryOptions {
 export function resolveV4InteractionRegistryOptionsFromEnv(
   env: NodeJS.ProcessEnv,
 ): V4InteractionRegistryOptions | undefined {
-  if (env.ZCODE_ENV !== "test") return undefined;
+  if ((env.FREECODEZ_ENV ?? env.ZCODE_ENV) !== "test") return undefined;
   const rawScale = env[ASK_USER_QUESTION_E2E_CLOCK_SCALE_ENV]?.trim();
   if (!rawScale) return undefined;
   const scale = Number(rawScale);

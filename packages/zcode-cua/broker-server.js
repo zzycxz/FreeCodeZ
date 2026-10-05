@@ -86,7 +86,7 @@ export function createCuaHelperInstaller(options = {}) {
     async ensureInstalled() {
       const buildId = resolveExpectedCuaHelperBuildId() ?? "";
       const devEscape =
-        isCuaLocalDevelopmentRuntime(env) || env.ZCODE_CUA_HELPER_ALLOW_UNSIGNED_LOCAL === "1";
+        isCuaLocalDevelopmentRuntime(env) || (env.FREECODEZ_CUA_HELPER_ALLOW_UNSIGNED_LOCAL ?? env.ZCODE_CUA_HELPER_ALLOW_UNSIGNED_LOCAL) === "1";
       if (!buildId && !devEscape) {
         throw new CuaHelperError(
           "Packaged ZCode is missing its embedded Computer Use Helper build identity; refusing an unpinned Helper install",
@@ -96,7 +96,7 @@ export function createCuaHelperInstaller(options = {}) {
       const bundledAppPath = options.bundledAppPath;
       if (typeof bundledAppPath !== "string" || !bundledAppPath) {
         // dev 逃生口:无内置 Helper.app 且允许未签名本地产物时回退安装目录之外的本地路径。
-        if (isCuaLocalDevelopmentRuntime(env) || env.ZCODE_CUA_HELPER_ALLOW_UNSIGNED_LOCAL === "1") {
+        if (isCuaLocalDevelopmentRuntime(env) || (env.FREECODEZ_CUA_HELPER_ALLOW_UNSIGNED_LOCAL ?? env.ZCODE_CUA_HELPER_ALLOW_UNSIGNED_LOCAL) === "1") {
           throw new CuaHelperError(`${UNAVAILABLE} (no bundled Helper app in this build)`, {
             code: "not_authorized",
           });
@@ -145,7 +145,7 @@ export function createCuaHelperInstaller(options = {}) {
           code: "not_authorized",
         });
       });
-      const expectedTeam = env.ZCODE_CUA_HELPER_TEAM_ID?.trim();
+      const expectedTeam = (env.FREECODEZ_CUA_HELPER_TEAM_ID ?? env.ZCODE_CUA_HELPER_TEAM_ID)?.trim();
       if (expectedTeam) {
         const team = await dependencies.verifyTeamIdentifier(appPath).catch(() => {
           throw new CuaHelperError(`${UNAUTHORIZED} (TeamIdentifier verification unavailable)`, {

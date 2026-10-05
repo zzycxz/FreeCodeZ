@@ -11,21 +11,21 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const desktopRoot = resolve(scriptDir, "..");
 const workspaceRoot = resolve(desktopRoot, "../..");
 const sourceRoot = resolve(desktopRoot, "native/windows-browser-import-helper");
-const targetArch = (process.env.ZCODE_TARGET_ARCH ?? arch()).toLowerCase();
+const targetArch = ((process.env.FREECODEZ_TARGET_ARCH ?? process.env.ZCODE_TARGET_ARCH) ?? arch()).toLowerCase();
 const targetKey = `win32-${targetArch}`;
 const outputDir = resolve(desktopRoot, `bundled-tools/${targetKey}/browser-import`);
 const outputPath = resolve(outputDir, "zcode-browser-import-helper.exe");
 const generatedAssemblyInfoPath = resolve(outputDir, "BrowserImportAssemblyInfo.g.cs");
 const appVersion = JSON.parse(readFileSync(resolve(workspaceRoot, "package.json"), "utf8")).version;
 const buildCommit = (
-  process.env.ZCODE_COMMIT ??
+  (process.env.FREECODEZ_COMMIT ?? process.env.ZCODE_COMMIT) ??
   execFileSync("git", ["rev-parse", "--short=8", "HEAD"], {
     cwd: workspaceRoot,
     encoding: "utf8",
   })
 ).trim();
 const cscCandidates = [
-  process.env.ZCODE_CSC_PATH,
+  (process.env.FREECODEZ_CSC_PATH ?? process.env.ZCODE_CSC_PATH),
   "C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe",
   "C:/Windows/Microsoft.NET/Framework/v4.0.30319/csc.exe",
 ].filter(Boolean);
@@ -38,7 +38,7 @@ if (platform() !== "win32") {
 if (targetArch !== "x64" && targetArch !== "arm64") {
   throw new Error(`Unsupported Windows browser import helper architecture: ${targetArch}`);
 }
-if (targetArch === "arm64" && !process.env.ZCODE_CSC_PATH) {
+if (targetArch === "arm64" && !(process.env.FREECODEZ_CSC_PATH ?? process.env.ZCODE_CSC_PATH)) {
   throw new Error(
     "Windows arm64 browser import helper requires ZCODE_CSC_PATH pointing to an arm64-capable Roslyn csc.exe",
   );

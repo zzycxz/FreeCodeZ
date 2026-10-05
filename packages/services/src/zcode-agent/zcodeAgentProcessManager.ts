@@ -182,8 +182,8 @@ if (coverageDirectory) {
 `;
 
 function buildE2EAgentCoverageEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
-  const artifactDir = env.ZCODE_E2E_ARTIFACT_DIR?.trim();
-  if (env.ZCODE_E2E_COVERAGE !== "1" || !artifactDir) {
+  const artifactDir = (env.FREECODEZ_E2E_ARTIFACT_DIR ?? env.ZCODE_E2E_ARTIFACT_DIR)?.trim();
+  if ((env.FREECODEZ_E2E_COVERAGE ?? env.ZCODE_E2E_COVERAGE) !== "1" || !artifactDir) {
     return {};
   }
   const directory = resolve(artifactDir, "coverage", "raw", "cli");
@@ -356,7 +356,7 @@ function resolveBundledWorkspaceZCodeAgentCommand(
   const distEntrypoint = findUpward("apps/zcode-cli/packages/cli/dist/zcode.cjs");
   if (distEntrypoint) {
     const useBytecode =
-      process.versions.electron && process.env.ZCODE_DESKTOP_AGENT_BYTECODE === "1";
+      process.versions.electron && (process.env.FREECODEZ_DESKTOP_AGENT_BYTECODE ?? process.env.ZCODE_DESKTOP_AGENT_BYTECODE) === "1";
     const entrypoint = useBytecode
       ? join(dirname(distEntrypoint), "zcode.bytecode.cjs")
       : distEntrypoint;
@@ -438,13 +438,13 @@ function resolveElectronRuntimeZCodeAgentCommand(
 export function resolveDefaultZCodeAgentCommand(
   context: ZCodeAgentCommandResolverContext,
 ): ZCodeAgentCommand | null {
-  const command = process.env.ZCODE_AGENT_SERVER_COMMAND?.trim();
+  const command = (process.env.FREECODEZ_AGENT_SERVER_COMMAND ?? process.env.ZCODE_AGENT_SERVER_COMMAND)?.trim();
   if (command) {
     return applyPresentationSurfaceToCommand(
       {
         command,
-        args: parseArgsJson(process.env.ZCODE_AGENT_SERVER_ARGS_JSON) ?? ["app-server", "--stdio"],
-        cwd: process.env.ZCODE_AGENT_SERVER_CWD?.trim() || context.workspacePath,
+        args: parseArgsJson((process.env.FREECODEZ_AGENT_SERVER_ARGS_JSON ?? process.env.ZCODE_AGENT_SERVER_ARGS_JSON)) ?? ["app-server", "--stdio"],
+        cwd: (process.env.FREECODEZ_AGENT_SERVER_CWD ?? process.env.ZCODE_AGENT_SERVER_CWD)?.trim() || context.workspacePath,
       },
       context.presentationSurface,
     );

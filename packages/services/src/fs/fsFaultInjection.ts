@@ -310,7 +310,7 @@ function createFsFaultInjectorFromEnv(
   }
 
   // 测试故障注入必须默认被生产环境隔离，避免用户机器残留环境变量后误伤真实配置和会话落盘。
-  if (env.ZCODE_ENV !== "test" && env[ZCODE_E2E_FS_FAULTS_ALLOW_ENV] !== "1") {
+  if ((env.FREECODEZ_ENV ?? env.ZCODE_ENV) !== "test" && env[ZCODE_E2E_FS_FAULTS_ALLOW_ENV] !== "1") {
     return createFsFaultInjector();
   }
 

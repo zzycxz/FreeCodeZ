@@ -6,7 +6,7 @@ import { getAppConfigDir, maybeThrowInjectedFsFault } from "@zcode/services/node
 
 function getLogDir() {
   const e2eLogDir =
-    process.env.ZCODE_ENV === "test" ? process.env.ZCODE_E2E_RUNTIME_LOG_DIR?.trim() : undefined;
+    (process.env.FREECODEZ_ENV ?? process.env.ZCODE_ENV) === "test" ? (process.env.FREECODEZ_E2E_RUNTIME_LOG_DIR ?? process.env.ZCODE_E2E_RUNTIME_LOG_DIR)?.trim() : undefined;
   if (e2eLogDir) {
     return e2eLogDir;
   }

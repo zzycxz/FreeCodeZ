@@ -30,7 +30,7 @@ export function resolveDesktopProductionCleanPaths(cwd) {
 }
 
 export async function cleanDesktopProductionOutput({ cwd }) {
-  if (process.env.ZCODE_E2E_KEEP_BUILD_CACHE === "1") {
+  if ((process.env.FREECODEZ_E2E_KEEP_BUILD_CACHE ?? process.env.ZCODE_E2E_KEEP_BUILD_CACHE) === "1") {
     console.log("[build] ZCODE_E2E_KEEP_BUILD_CACHE=1, skipping clean");
     return;
   }

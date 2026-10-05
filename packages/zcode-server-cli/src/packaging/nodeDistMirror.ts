@@ -18,6 +18,6 @@
 export const DEFAULT_NODE_DIST_BASE = "https://cdn.npmmirror.com/binaries/node";
 
 export function resolveNodeDistBase(env: NodeJS.ProcessEnv = process.env): string {
-  const mirror = env.ZCODE_NODE_DIST_MIRROR?.trim();
+  const mirror = (env.FREECODEZ_NODE_DIST_MIRROR ?? env.ZCODE_NODE_DIST_MIRROR)?.trim();
   return (mirror || DEFAULT_NODE_DIST_BASE).replace(/\/+$/u, "");
 }

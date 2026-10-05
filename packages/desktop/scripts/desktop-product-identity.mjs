@@ -35,7 +35,7 @@ export const desktopProductIdentities = Object.freeze({
 });
 
 function normalizeDesktopZCodeEnv(env) {
-  return env.ZCODE_ENV?.trim().toLowerCase() === "production" ? "production" : "test";
+  return (env.FREECODEZ_ENV ?? env.ZCODE_ENV)?.trim().toLowerCase() === "production" ? "production" : "test";
 }
 
 /**

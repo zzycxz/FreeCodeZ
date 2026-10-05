@@ -12,7 +12,7 @@ export async function resolveBuiltinProviderBuildEnvironment({
   root = repositoryRoot,
   env = process.env,
 } = {}) {
-  let value = env.ZCODE_ENV;
+  let value = (env.FREECODEZ_ENV ?? env.ZCODE_ENV);
   if (!value?.trim()) {
     const files = [
       ".env",

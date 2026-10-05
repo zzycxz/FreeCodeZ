@@ -67,7 +67,7 @@ export function parseEnvConfig(
  */
 export function getToolConcurrencyConfig(): { maxConcurrency: number } {
   return {
-    maxConcurrency: normalizeNumber(process.env.ZCODE_MAX_TOOL_CONCURRENCY ?? "10"),
+    maxConcurrency: normalizeNumber((process.env.FREECODEZ_MAX_TOOL_CONCURRENCY ?? process.env.ZCODE_MAX_TOOL_CONCURRENCY) ?? "10"),
   };
 }
 

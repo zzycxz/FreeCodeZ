@@ -1726,7 +1726,7 @@ async function execGitCommand(args: string[], signal?: AbortSignal): Promise<voi
   try {
     // 显式二进制覆盖既支持非标准 Git 安装位置，也让跨进程 E2E 能把 Git 指向不存在的
     // 绝对路径，真实证明 Archive 主链路不依赖开发机上偶然存在的 Git。
-    const gitBinary = process.env.ZCODE_GIT_BINARY?.trim() || "git";
+    const gitBinary = (process.env.FREECODEZ_GIT_BINARY ?? process.env.ZCODE_GIT_BINARY)?.trim() || "git";
     await execFileAsync(gitBinary, args, {
       env: buildMarketplaceGitEnv(),
       killSignal: "SIGTERM",

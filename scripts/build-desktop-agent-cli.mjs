@@ -14,8 +14,8 @@ import {
 } from "./builtin-provider-config.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const useTurboBuild = process.env.ZCODE_DESKTOP_AGENT_BUILD_MODE === "turbo";
-const useBootstrapWithRemoteBuild = process.env.ZCODE_BOOTSTRAP_WITH_REMOTE === "1";
+const useTurboBuild = (process.env.FREECODEZ_DESKTOP_AGENT_BUILD_MODE ?? process.env.ZCODE_DESKTOP_AGENT_BUILD_MODE) === "turbo";
+const useBootstrapWithRemoteBuild = (process.env.FREECODEZ_BOOTSTRAP_WITH_REMOTE ?? process.env.ZCODE_BOOTSTRAP_WITH_REMOTE) === "1";
 const pnpmRunEnv = {
   ...process.env,
   // 电脑控制能力补位(B1-6):Helper 验签锚点在插件 runtime 构建前写入 env,

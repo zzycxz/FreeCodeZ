@@ -249,7 +249,7 @@ function formatZCodeAgentLogDate(now: Date): string {
 }
 
 function resolveZCodeAgentCurrentLogFilePath(now = new Date()): string {
-  const configuredLogDir = process.env.ZCODE_LOG_DIR?.trim();
+  const configuredLogDir = (process.env.FREECODEZ_LOG_DIR ?? process.env.ZCODE_LOG_DIR)?.trim();
   const logDir = configuredLogDir || join(homedir(), ".freecodez", "cli", "log");
   return join(logDir, `zcode-${formatZCodeAgentLogDate(now)}.jsonl`);
 }

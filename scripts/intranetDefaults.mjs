@@ -17,7 +17,7 @@ export const INTRANET_DEPS_BASE_URL = INTRANET_ASSET_BASE_URL
 
 export function resolveIntranetDepsBaseUrl(env = process.env) {
   env = { ...endpointEnv, ...env };
-  const depsBaseUrl = env.ZCODE_DEPS_BASE_URL?.trim();
+  const depsBaseUrl = (env.FREECODEZ_DEPS_BASE_URL ?? env.ZCODE_DEPS_BASE_URL)?.trim();
   if (depsBaseUrl) {
     return depsBaseUrl.replace(/\/+$/, "");
   }

@@ -1007,7 +1007,7 @@ async function collectSkillMarkdownPaths(
 }
 
 function resolveCapabilities(options?: SkillsServiceOptions): SkillsCapability {
-  const isDesktopRuntime = options?.isDesktopRuntime ?? Boolean(process.env.ZCODE_PROCESS_LABEL);
+  const isDesktopRuntime = options?.isDesktopRuntime ?? Boolean((process.env.FREECODEZ_PROCESS_LABEL ?? process.env.ZCODE_PROCESS_LABEL));
   if (isDesktopRuntime) {
     return { userScopeAvailable: true };
   }

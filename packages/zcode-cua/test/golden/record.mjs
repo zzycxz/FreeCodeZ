@@ -11,7 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const OFFICIAL =
-  process.env.ZCODE_CUA_ASSET_SOURCE?.replace(/resources\/?$/u, "") ||
+  (process.env.FREECODEZ_CUA_ASSET_SOURCE ?? process.env.ZCODE_CUA_ASSET_SOURCE)?.replace(/resources\/?$/u, "") ||
   "C:/Users/13852/Downloads/zcode-3.14.3-unpacked/app";
 const HELPER_ROOT = join(OFFICIAL, "resources", "tools", "cua-helper");
 const here = dirname(fileURLToPath(import.meta.url));

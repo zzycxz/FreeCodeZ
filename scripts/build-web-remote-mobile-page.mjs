@@ -40,7 +40,7 @@ async function loadViteBuild() {
 
 async function main() {
   const build = await loadViteBuild();
-  const outDir = process.env.ZCODE_WEB_REMOTE_MOBILE_PAGE_OUTDIR?.trim() || "dist-mobile";
+  const outDir = (process.env.FREECODEZ_WEB_REMOTE_MOBILE_PAGE_OUTDIR ?? process.env.ZCODE_WEB_REMOTE_MOBILE_PAGE_OUTDIR)?.trim() || "dist-mobile";
   const d3PathEntry = resolveD3PathEntry();
   // base 固定 /remote/v4/：页面由 relay 的 /remote/v4 挂载，资源前缀保持同源子路径。
   // 输入是独立的 mobile.html（packages/web/mobile.html），不打包 Root/侧栏图。

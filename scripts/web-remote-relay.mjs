@@ -36,9 +36,9 @@ async function loadRelayModule() {
 
 async function main() {
   const { createWebRemoteRelayServer } = await loadRelayModule();
-  const host = process.env.ZCODE_WEB_REMOTE_RELAY_HOST?.trim() || "127.0.0.1";
-  const port = Number(process.env.ZCODE_WEB_REMOTE_RELAY_PORT) || 37843;
-  const logLevel = process.env.ZCODE_WEB_REMOTE_RELAY_LOG?.trim() || "info";
+  const host = (process.env.FREECODEZ_WEB_REMOTE_RELAY_HOST ?? process.env.ZCODE_WEB_REMOTE_RELAY_HOST)?.trim() || "127.0.0.1";
+  const port = Number((process.env.FREECODEZ_WEB_REMOTE_RELAY_PORT ?? process.env.ZCODE_WEB_REMOTE_RELAY_PORT)) || 37843;
+  const logLevel = (process.env.FREECODEZ_WEB_REMOTE_RELAY_LOG ?? process.env.ZCODE_WEB_REMOTE_RELAY_LOG)?.trim() || "info";
 
   const relay = createWebRemoteRelayServer({ host, port, logLevel });
 

@@ -52,7 +52,7 @@ const stderr = (io: CliIO, value: unknown): void =>
   io.stderr?.write(`${value instanceof Error ? value.message : String(value)}\n`);
 
 export function serviceRegistrationEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.ZCODE_SERVER_SKIP_SERVICE_REGISTRATION !== "1";
+  return (env.FREECODEZ_SERVER_SKIP_SERVICE_REGISTRATION ?? env.ZCODE_SERVER_SKIP_SERVICE_REGISTRATION) !== "1";
 }
 
 export function daemonStartupMode(env: NodeJS.ProcessEnv = process.env): "service" | "fallback" {
@@ -504,7 +504,7 @@ async function readControlStatus(
 
 async function delegateLegacyCli(argv: readonly string[], io: CliIO): Promise<number> {
   const candidate =
-    process.env.ZCODE_LEGACY_CLI_ENTRY?.trim() ||
+    (process.env.FREECODEZ_LEGACY_CLI_ENTRY ?? process.env.ZCODE_LEGACY_CLI_ENTRY)?.trim() ||
     join(dirname(fileURLToPath(import.meta.url)), "zcode.cjs");
   try {
     await access(candidate);

@@ -43,7 +43,7 @@ export const ZCODE_BUILD_COMMIT_ID_ENV = "ZCODE_BUILD_COMMIT_ID" as const;
 // ── 运行时环境变量（不经过编译打包，启动时从 process.env 读取） ──
 // 启用调试模式，值为 inspect-brk 的端口号，如 ZCODE_DEBUG=9230
 export const RUNTIME_ZCODE_DEBUG =
-  typeof process !== "undefined" ? process.env.ZCODE_DEBUG : undefined;
+  typeof process !== "undefined" ? (process.env.FREECODEZ_DEBUG ?? process.env.ZCODE_DEBUG) : undefined;
 
 // FreeCodeZ fork(P3 §3.7):旧遥测常量族已删(数仓/ARMS 链均不存在)。
 

@@ -216,7 +216,7 @@ function createStorageFsFaultInjectorFromEnv(
   env: Record<string, string | undefined> = process.env,
 ): StorageFsFaultInjector {
   const rawValue = env[ZCODE_E2E_FS_FAULTS_ENV]?.trim();
-  if (!rawValue || (env.ZCODE_ENV !== "test" && env[ZCODE_E2E_FS_FAULTS_ALLOW_ENV] !== "1")) {
+  if (!rawValue || ((env.FREECODEZ_ENV ?? env.ZCODE_ENV) !== "test" && env[ZCODE_E2E_FS_FAULTS_ALLOW_ENV] !== "1")) {
     return createStorageFsFaultInjector();
   }
   return createStorageFsFaultInjector(parseRules(rawValue));

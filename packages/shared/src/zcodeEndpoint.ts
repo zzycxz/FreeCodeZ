@@ -134,7 +134,7 @@ export function resolveRuntimeZCodeEnv(
   env: RuntimeZCodeEndpointEnv = readProductEndpointEnv(),
 ): ZCodeEnv {
   // 产品身份仅用于既有展示与安装标识，不参与地址解析。
-  return env.ZCODE_ENV?.trim().toLowerCase() === "test" ? "test" : "production";
+  return (env.FREECODEZ_ENV ?? env.ZCODE_ENV)?.trim().toLowerCase() === "test" ? "test" : "production";
 }
 
 export function resolveRuntimeZCodeEndpointOrigin(

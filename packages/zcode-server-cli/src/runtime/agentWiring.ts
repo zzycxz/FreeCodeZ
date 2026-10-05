@@ -11,7 +11,7 @@ export function createReleaseAgentWiring(
   runtimeNode: string,
   env: Record<string, string | undefined>,
 ): BundledAgentWiring | null {
-  if (env.ZCODE_AGENT_SERVER_COMMAND?.trim()) return null;
+  if ((env.FREECODEZ_AGENT_SERVER_COMMAND ?? env.ZCODE_AGENT_SERVER_COMMAND)?.trim()) return null;
   return {
     ZCODE_AGENT_SERVER_COMMAND: runtimeNode,
     ZCODE_AGENT_SERVER_ARGS_JSON: JSON.stringify([
@@ -32,7 +32,7 @@ export async function resolveBundledAgentWiring(
   entryDir: string,
   env: Record<string, string | undefined>,
 ): Promise<BundledAgentWiring | null> {
-  if (env.ZCODE_AGENT_SERVER_COMMAND?.trim()) {
+  if ((env.FREECODEZ_AGENT_SERVER_COMMAND ?? env.ZCODE_AGENT_SERVER_COMMAND)?.trim()) {
     return null;
   }
   const bundlePath = join(entryDir, "zcode.cjs");

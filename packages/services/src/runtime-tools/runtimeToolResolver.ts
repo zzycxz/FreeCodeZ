@@ -115,7 +115,7 @@ function findRuntimeToolBinary(
     typeof (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath === "string"
       ? (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
       : null;
-  const runtimeRoot = env.ZCODE_SERVER_RUNTIME_ROOT?.trim();
+  const runtimeRoot = (env.FREECODEZ_SERVER_RUNTIME_ROOT ?? env.ZCODE_SERVER_RUNTIME_ROOT)?.trim();
   const moduleDir: string | undefined = import.meta.dirname;
   const candidate = resolveExistingPath([
     runtimeRoot

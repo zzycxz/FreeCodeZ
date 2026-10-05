@@ -41,7 +41,7 @@ const runtimeModuleLookupRoots = [
 const pnpmCommand = "pnpm";
 const DEFAULT_TARGET_OS = "mac";
 const DEFAULT_TARGET_ARCH = "arm64";
-const desktopDistDir = process.env.ZCODE_DESKTOP_DIST_DIR || "dist";
+const desktopDistDir = (process.env.FREECODEZ_DESKTOP_DIST_DIR ?? process.env.ZCODE_DESKTOP_DIST_DIR) || "dist";
 const desktopDistRoot = resolve(desktopRoot, desktopDistDir);
 const desktopProductIdentity = resolveDesktopProductIdentity(process.env);
 
@@ -150,7 +150,7 @@ export function createElectronRuntimeMirrorEnv(mirror) {
 }
 
 function resolveDefaultElectronBuilderBinariesMirror(env = process.env) {
-  return env.ZCODE_DEPS_BASE_URL?.trim() || env.INTRANET_MACHINE_HOST?.trim()
+  return (env.FREECODEZ_DEPS_BASE_URL ?? env.ZCODE_DEPS_BASE_URL)?.trim() || env.INTRANET_MACHINE_HOST?.trim()
     ? `${resolveIntranetDepsBaseUrl(env)}/electron-builder-binaries/`
     : NPMMIRROR_ELECTRON_BUILDER_BINARIES_MIRROR;
 }
@@ -272,10 +272,10 @@ function normalizeArch(rawArch) {
 
 function parseArgs(argv) {
   const options = {
-    os: process.env.ZCODE_TARGET_OS ?? null,
-    arch: process.env.ZCODE_TARGET_ARCH ?? null,
-    skipPrepare: process.env.ZCODE_SKIP_PREPARE === "1",
-    skipBuild: process.env.ZCODE_SKIP_BUILD === "1",
+    os: (process.env.FREECODEZ_TARGET_OS ?? process.env.ZCODE_TARGET_OS) ?? null,
+    arch: (process.env.FREECODEZ_TARGET_ARCH ?? process.env.ZCODE_TARGET_ARCH) ?? null,
+    skipPrepare: (process.env.FREECODEZ_SKIP_PREPARE ?? process.env.ZCODE_SKIP_PREPARE) === "1",
+    skipBuild: (process.env.FREECODEZ_SKIP_BUILD ?? process.env.ZCODE_SKIP_BUILD) === "1",
     dryRun: false,
     positionals: [],
   };

@@ -120,7 +120,7 @@ export class SearchSqliteCache {
     this.#ns = namespace;
     const storageRoot =
       dbPath ??
-      process.env.ZCODE_STORAGE_DIR?.trim() ??
+      (process.env.FREECODEZ_STORAGE_DIR ?? process.env.ZCODE_STORAGE_DIR)?.trim() ??
       join(homedir(), ".freecodez");
     try {
       mkdirSync(join(storageRoot, "cache"), { recursive: true });

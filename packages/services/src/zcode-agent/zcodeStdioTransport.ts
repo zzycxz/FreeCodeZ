@@ -157,7 +157,7 @@ export class ZCodeStdioTransport implements ZCodeProtocolTransport {
       // coverage CLI bundle 未压缩且带完整 source map，启动/收尾明显慢于发布包。
       // coverage 下继续保留额外写盘宽限；普通窗口覆盖 CLI 的 1500ms 退出 deadline。
       const configuredEofWaitMs =
-        process.env.ZCODE_E2E_COVERAGE === "1"
+        (process.env.FREECODEZ_E2E_COVERAGE ?? process.env.ZCODE_E2E_COVERAGE) === "1"
           ? E2E_COVERAGE_STDIO_EOF_EXIT_WAIT_MS
           : STDIO_EOF_EXIT_WAIT_MS;
       const remainingCleanupMs =

@@ -144,7 +144,7 @@ export default defineConfig(({ mode }) => {
   // `.env*` 只提供链接常量；当前产品环境由启动脚本或 CI 注入 ZCODE_ENV。
   const env = { ...loadEnv(mode, "../..", ""), ...process.env };
   const repoRoot = resolve(__dirname, "../..");
-  const zcodeEnv = resolveZCodeEnv(env.ZCODE_ENV);
+  const zcodeEnv = resolveZCodeEnv((env.FREECODEZ_ENV ?? env.ZCODE_ENV));
   // 安装包身份与后端环境分轴；renderer 用它决定是否展示更新入口。
   const zcodeProductFlavor = resolveDesktopProductFlavor({
     ...process.env,
@@ -152,7 +152,7 @@ export default defineConfig(({ mode }) => {
     ZCODE_ENV: zcodeEnv,
   });
   const e2eCoverageEnabled =
-    env.ZCODE_E2E_COVERAGE === "1" || process.env.ZCODE_E2E_COVERAGE === "1";
+    (env.FREECODEZ_E2E_COVERAGE ?? env.ZCODE_E2E_COVERAGE) === "1" || (process.env.FREECODEZ_E2E_COVERAGE ?? process.env.ZCODE_E2E_COVERAGE) === "1";
   const e2eStoreBridgeEnabled =
     env.VITE_ZCODE_E2E_STORE_BRIDGE === "1" || process.env.VITE_ZCODE_E2E_STORE_BRIDGE === "1";
   const zcodeEndpointOrigin = resolveZCodeEndpointOrigin({

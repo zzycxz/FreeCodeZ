@@ -73,8 +73,8 @@ function normalizeArch(raw) {
   }
 }
 
-const platform = normalizePlatform(process.env.ZCODE_TARGET_OS || "") || process.platform;
-const arch = normalizeArch(process.env.ZCODE_TARGET_ARCH || "") || process.arch;
+const platform = normalizePlatform((process.env.FREECODEZ_TARGET_OS ?? process.env.ZCODE_TARGET_OS) || "") || process.platform;
+const arch = normalizeArch((process.env.FREECODEZ_TARGET_ARCH ?? process.env.ZCODE_TARGET_ARCH) || "") || process.arch;
 const platformKey = `${platform}-${arch}`;
 
 const glmDir = resolve(desktopRoot, "bundled-agents", platformKey, "glm");
@@ -142,7 +142,7 @@ function stageCarriedNodeModules(plugin, sourceRoot, targetRoot) {
     throw new Error(`[prepare:agent-bundle] missing carried node module: ${targetNodeModules}/koffi`);
   }
 }
-const isBootstrapWithRemote = process.env.ZCODE_BOOTSTRAP_WITH_REMOTE === "1";
+const isBootstrapWithRemote = (process.env.FREECODEZ_BOOTSTRAP_WITH_REMOTE ?? process.env.ZCODE_BOOTSTRAP_WITH_REMOTE) === "1";
 
 function buildCliBundle() {
   console.log("[prepare:agent-bundle] building zcode-cli app-server bundle ...");
