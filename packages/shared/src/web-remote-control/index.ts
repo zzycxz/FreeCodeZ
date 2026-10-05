@@ -3,3 +3,4 @@ export * from "./relay-frames.js";
 export * from "./rpc-frames.js";
 export * from "./app-messages.js";
 export * from "./status.js";
+export * from "./relay-ops.js";
