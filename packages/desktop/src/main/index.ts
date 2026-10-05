@@ -74,6 +74,7 @@ import { createBotRemoteWorkspaceReconnectExecutor } from "./botRemoteWorkspaceR
 import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
 import { createCuaCursorHud, type CuaCursorHud } from "./cuaCursorHud.js";
+import { startCuaAppshot } from "./cuaAppshot.js";
 import { BrowserWindow as HudBrowserWindow, screen as HudScreen } from "electron";
 import { BroadcastHub } from "./broadcastHub.js";
 
@@ -588,6 +589,15 @@ const cuaCursorHud: CuaCursorHud | undefined =
         screen: HudScreen,
       })
     : undefined;
+
+// Phase 3a：Appshot 双击热键（FREECODEZ_APPSHOT_HOTKEY=cmd|alt|shift|off，默认 off——
+// 显式开启才有全局轮询；触发后截图+AX 树注入聚焦会话 composer）。
+const cuaAppshotController = startCuaAppshot({
+  getFocusedWindow: () => BrowserWindow.getFocusedWindow() ?? undefined,
+  log: (message, context) => {
+    logger.info(message, context);
+  },
+});
 
 const cuaPipFocusRouter = createCuaPipFocusRouter({
   send: (windowId, event) => {
@@ -2059,6 +2069,7 @@ app.on("window-all-closed", () => {
 app.on("before-quit", (event) => {  // Windows 最后窗口关闭会在 close 阶段提前确认并标记 forceQuit；
   // Phase 2-1c：光标 HUD 覆盖窗随退出关闭（UDP 监听 + 透明窗不留残影）。
   cuaCursorHud?.dispose();
+  cuaAppshotController.stop();
   // macOS 的 Cmd+Q / 菜单退出不会走该窗口关闭确认，必须在 before-quit 保留应用级确认兜底。
   if (!forceQuitRef.current && shouldConfirmAppQuit() && !confirmAppQuit()) {
     event.preventDefault();

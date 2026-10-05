@@ -903,7 +903,24 @@ export function useComposerAttachments(
     };
     window.addEventListener(WHITEBOARD_ADD_TO_CHAT_EVENT, handle);
     return () => window.removeEventListener(WHITEBOARD_ADD_TO_CHAT_EVENT, handle);
-  }, [addWhiteboardToChat, listenAddToChatEvents, workspaceIdentity, workspacePath]);
+  }, [listenAddToChatEvents, workspacePath, workspaceIdentity, addWhiteboardToChat]);
+
+  // Phase 3a（升级实施手册 Appshot）：desktop main 双击热键注入的前台截图。
+  // 与 whiteboard 同款聚焦门控（只有聚焦 composer 消费）；事件只在被触发的那个
+  // 窗口派发（main 定向 executeJavaScript），无跨 workspace 泄漏面。
+  useEffect(() => {
+    if (!listenAddToChatEvents || typeof window === "undefined") return;
+    const handleAppshot = (event: Event) => {
+      const detail = (event as CustomEvent<{ path?: string; note?: string }>).detail;
+      if (!detail || typeof detail !== "object") return;
+      event.preventDefault();
+      if (typeof detail.path === "string" && detail.path) {
+        void addAttachmentLocalPaths([detail.path]);
+      }
+    };
+    window.addEventListener("freecodez:appshot-add-to-chat", handleAppshot);
+    return () => window.removeEventListener("freecodez:appshot-add-to-chat", handleAppshot);
+  }, [listenAddToChatEvents, addAttachmentLocalPaths]);
 
   const removeAttachment = useCallback(
     (id: string) => {

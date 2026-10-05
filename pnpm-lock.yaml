@@ -706,6 +706,9 @@ importers:
       '@zcode/zcode-cua':
         specifier: workspace:*
         version: link:../zcode-cua
+      koffi:
+        specifier: ^2.15.6
+        version: 2.15.6
       module-details-from-path:
         specifier: ^1.0.4
         version: 1.0.4

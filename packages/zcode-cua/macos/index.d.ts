@@ -23,3 +23,45 @@ export function cursorEventsForText(input: { text?: string }): KoffiCursorEvent[
 export function emitCursorEvents(onInputEvent: ((event: KoffiCursorEvent) => void) | null, events: KoffiCursorEvent[]): void;
 export const CURSOR_EVENT_WIRE_VERSION: 1;
 export const CURSOR_HOTSPOT: { x: number; y: number };
+
+export interface AppshotWindowInfo {
+  windowId: number;
+  pid: number;
+  layer: number;
+  ownerName?: string;
+  bounds?: { x: number; y: number; width: number; height: number };
+}
+export function pickFrontmostAppWindow(
+  windows: AppshotWindowInfo[],
+  options?: { excludePids?: number[]; minSize?: { width: number; height: number } },
+): AppshotWindowInfo | undefined;
+export function appshotSnapshot(options?: {
+  excludePids?: number[];
+  readWindows?: () => AppshotWindowInfo[];
+  capture?: (windowId: number) => Promise<{ ok: true; path: string; bytes: number } | { ok: false; error: { code: string; message: string } }>;
+}): Promise<
+  | {
+      ok: true;
+      app: { pid: number; name: string };
+      windowId: number;
+      bounds?: { x: number; y: number; width: number; height: number };
+      capture?: { path: string; bytes: number };
+      captureError?: { code: string; message: string };
+      axTree: { elementCount: number; note?: string };
+      note?: string;
+    }
+  | { ok: false; error: { code: string; message: string } }
+>;
+export function nextDoubleTapState(
+  state: { phase: string; lastReleaseAt?: number; lastTriggerAt?: number } | undefined,
+  isDown: boolean,
+  now: number,
+  options?: { windowMs?: number; refractoryMs?: number },
+): { state: { phase: string; lastReleaseAt?: number; lastTriggerAt?: number }; triggered: boolean };
+export function createModifierDoubleTapWatcher(options: {
+  modifier: "cmd" | "alt" | "shift";
+  onTrigger: () => void;
+  intervalMs?: number;
+  platform?: string;
+  loadBindings?: () => unknown;
+}): { stop(): void; available: boolean };

@@ -117,6 +117,8 @@ function createSharedDefines() {
 
 const desktopNodeRuntimeExternals = [
   "electron",
+  // Phase 3a：koffi 原生模块——desktop main 直调 macOS C API（Appshot 窗口列表/热键轮询）。
+  "koffi",
   "node-pty",
   "ssh2",
   "undici",

@@ -11,3 +11,16 @@ export {
   CURSOR_EVENT_WIRE_VERSION,
   CURSOR_HOTSPOT,
 } from "./cursor-events.js";
+export {
+  appshotSnapshot,
+  captureWindowPng,
+  pickFrontmostAppWindow,
+  buildOnScreenWindowsReader,
+  FRONTMOST_MIN_WINDOW_SIZE,
+} from "./appshot.js";
+export {
+  createModifierDoubleTapWatcher,
+  nextDoubleTapState,
+  MODIFIER_KEY_CODES,
+  DOUBLE_TAP_WINDOW_MS,
+} from "./hotkey-tap.js";

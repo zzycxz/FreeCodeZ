@@ -56,7 +56,8 @@
     },
     "./macos": {
       "types": "./macos/index.d.ts",
-      "import": "./macos/index.js"
+      "import": "./macos/index.js",
+      "require": "./macos/index.js"
     }
   }
 }
