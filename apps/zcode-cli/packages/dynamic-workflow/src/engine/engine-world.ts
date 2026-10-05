@@ -8,7 +8,7 @@
 
 import { canonicalJson, inputHash } from "./hash.js";
 import { boundWorldReadInput } from "./world-read-input.js";
-import { hashMismatch } from "./scheduler.js";
+import { hashMismatch } from "./hash.js";
 import type { EngineState } from "./engine-state.js";
 import type {
   InstanceRef,

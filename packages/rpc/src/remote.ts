@@ -292,6 +292,9 @@ export class RemoteAgentConnection implements IDisposable {
 
     // Step 5: 监听断线，触发重连
     this.protocol.onSocketClose(() => {
+      // 0C-4③（升级实施手册）：dispose 后的迟到 close 不得再触发重连——旧版会把一个
+      // 已释放的连接又拉起来（协议/事件发射器都已 dispose，半僵尸状态）。
+      if (this.disposed) return;
       this._onDidStateChange.fire({ type: "reconnecting" });
       this.reconnect(resolved, 0);
     });
@@ -301,6 +304,9 @@ export class RemoteAgentConnection implements IDisposable {
   }
 
   private async reconnect(resolved: ResolvedAuthority, attempt: number): Promise<void> {
+    if (this.disposed) {
+      throw new Error("RemoteAgentConnection is disposed; reconnect is not allowed.");
+    }
     if (attempt >= RECONNECT_DELAYS.length) {
       this._onDidStateChange.fire({ type: "disconnected" });
       return;
@@ -321,7 +327,11 @@ export class RemoteAgentConnection implements IDisposable {
     }
   }
 
+  private disposed = false;
+
   dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
     this.client?.dispose();
     this.protocol?.dispose();
     this._onDidStateChange.dispose();

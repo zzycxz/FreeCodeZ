@@ -1,3 +1,4 @@
+import { refToString, WorkflowError, type InstanceRef } from "./types.js";
 /**
  * 包内自带的确定性哈希：FNV-1a（32 位）作用在规范化 JSON 上。
  * 不用 node:crypto——src/ 保持纯净可移植，哈希只作为 replay 时的防御性一致性校验
@@ -47,4 +48,16 @@ export function fnv1a(input: string): string {
 /** 计算一个 host 调用输入的防御性哈希：对规范化 JSON 取 FNV-1a。 */
 export function inputHash(value: unknown): string {
   return fnv1a(canonicalJson(value));
+}
+
+/** replay 命中但 inputHash 不一致——纯度契约被破坏，run 大声失败。（0C 从 scheduler.ts 拆入：inputHash 的家） */
+export function hashMismatch(instance: InstanceRef, expected: string, got: string): WorkflowError {
+  return new WorkflowError(
+    "InputHashMismatch",
+    `Replay hit at ${refToString(instance)} but inputHash differs (expected ${expected}, got ` +
+      `${got}): the script is not deterministic, so the journal cannot be replayed.`,
+    // 结构化 mismatch 与 ScriptHashMismatch 对齐：两个哈希不一致错误共用同一个字段，
+    // 读端不必再从 message 文本里抠哈希。
+    { mismatch: { expected, got } },
+  );
 }

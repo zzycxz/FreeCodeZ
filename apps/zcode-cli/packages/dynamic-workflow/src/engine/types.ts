@@ -111,9 +111,9 @@ export type ImportCloseCause = "mutating-tool" | "world-run";
  * run 级别的容量上限，submit 时固定并存入 dwf_run；当前只有并发上界，
  * 取消是唯一的控制面。
  */
-export interface Caps {
-  maxConcurrency: number;
-}
+import type { Caps } from "./caps-types.js";
+
+export type { Caps } from "./caps-types.js";
 
 // 终态相关的结构化明细（ProviderStop 明细、run 级停滞观察）住在 run-terminal.ts，从这里
 // 原样再导出：本文件已抵 400 行门，而它们的消费者按惯例仍从 types 取。
@@ -169,6 +169,7 @@ export type WorkflowErrorCode =
   | "UnknownActor"
   | "MissingAskSpec"
   | "DuplicateActorName"
+  | "ActorLimitExceeded"
   | "ScriptHashMismatch"
   | "Interrupted"
   | "ProviderStop"

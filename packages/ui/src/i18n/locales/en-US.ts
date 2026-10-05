@@ -5054,6 +5054,8 @@ const enUS: Record<string, string> = {
     "This run's records are too old to carry its finished work over.",
   "chat.toolCall.workflow.run.settings.rejection.amend_in_flight":
     "Another amendment of this run is already in progress; wait for it to settle, then amend its successor.",
+  "chat.toolCall.workflow.run.settings.rejection.predecessor_running_elsewhere":
+    "This run is still running in another process (or was left non-terminal by a dead one); this process can neither stop nor await it. Amend a different run, or wait for the owning process to settle.",
   "chat.toolCall.workflow.run.settings.rejection.start_failed":
     "The new run could not be started ({message}).",
   "chat.toolCall.workflow.run.settings.rejection.unsupported":

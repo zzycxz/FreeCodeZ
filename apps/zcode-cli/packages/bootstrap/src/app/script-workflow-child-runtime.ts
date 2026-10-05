@@ -108,6 +108,18 @@ export function createScriptWorkflowAgentRuntime(input: {
     throw new Error(`Workflow child model must be provider-qualified: ${input.request.opts.model}`);
   }
   const modelSelection = requestedSelection ?? parentSelection;
+  // 0C-1③：策略白名单（configOverrides.toolAllowlist，来自 workflowActorToolPolicy）与
+  // 脚本声明的 opts.tools 都落在 toolAllowlist——同键必须合并而非覆盖：交集语义 = 声明
+  // 只能在白名单内收窄。submit_result/escalate 的补回在 core 的 appendChildControlTool
+  // （对 workflow_child 无条件追加），此处无需感知控制工具。
+  const declaredTools = input.request.opts?.tools;
+  const policyAllowlist = input.configOverrides?.toolAllowlist;
+  const effectiveToolAllowlist =
+    policyAllowlist === undefined
+      ? declaredTools
+      : declaredTools === undefined
+        ? policyAllowlist
+        : policyAllowlist.filter((toolName) => declaredTools.includes(toolName));
   return new AgentRuntime(
     input.childSessionId,
     {
@@ -120,9 +132,10 @@ export function createScriptWorkflowAgentRuntime(input: {
       parentSessionId: input.deps.sessionId,
       subagents: { enabled: false },
       taskType: "workflow_child",
-      toolAllowlist: input.request.opts?.tools,
-      workingDirectory: input.deps.workingDirectory,
+      // 显式键放在 configOverrides 展开之后：合并结果必须胜过策略的原始白名单。
       ...input.configOverrides,
+      toolAllowlist: effectiveToolAllowlist,
+      workingDirectory: input.deps.workingDirectory,
     },
     {
       ...createRuntimeDeps(input.deps, input.traceContext, input.childSessionId, {

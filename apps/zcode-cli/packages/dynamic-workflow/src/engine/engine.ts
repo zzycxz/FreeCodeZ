@@ -53,6 +53,8 @@ import type {
   WorldReadOp,
 } from "./types.js";
 import { refToString, WorkflowError } from "./types.js";
+import { buildActorLimitError } from "./caps.js";
+import { enrichProviderStopPhase } from "./run-terminal.js";
 import { runLaunchedEvent, type RunLaunchConfig } from "./engine-launch.js";
 
 /** 引擎构造配置。 */
@@ -384,6 +386,9 @@ export class WorkflowEngine implements WorkflowHostApi, WorkflowReportSink {
    */
   createActor(siteId: string, name?: string, persona?: string | PersonaSpec): ActorId {
     this.assertRunning("createActor");
+    // 0C-1②：创建门（判定在 caps.ts）——超限 = run 级拒绝（与 DuplicateActorName 同姿态）。
+    const actorLimitError = buildActorLimitError(this.scheduler.actorCount(), this.caps);
+    if (actorLimitError) { this.failRun(actorLimitError); throw actorLimitError; }
     const ordinal = this.nextOrdinal(siteId);
     const ref = { siteId, ordinal };
     const id = refToString(ref);
@@ -682,25 +687,4 @@ export class WorkflowEngine implements WorkflowHostApi, WorkflowReportSink {
     typeof persona === "string" ? { system: persona } : persona ? { ...persona } : {};
   if (base.name === undefined && name !== undefined) base.name = name;
   return base;
-}
-
-/**
- * 给 `ProviderStop` 补上触发停止的子代理的**出生阶段**：driver 只知道 actor ref，阶段只有引擎知道（`instancePhases`，
- * 与事件流上 `phaseName` 的同一张表）。没有 providerStop、没有 subagent、或该 ref 出生在
- * 任何 `phase()` 标记之前 → 原样返回。
- */
-function enrichProviderStopPhase(
-  error: WorkflowError,
-  instancePhases: ReadonlyMap<string, string>,
-): WorkflowError {
-  const details = error.providerStop;
-  if (details === undefined || details.subagent === undefined || details.phase !== undefined) {
-    return error;
-  }
-  const phase = instancePhases.get(details.subagent);
-  if (phase === undefined) return error;
-  return new WorkflowError(error.code, error.message, {
-    providerStop: { ...details, phase },
-    cause: (error as { cause?: unknown }).cause,
-  });
 }

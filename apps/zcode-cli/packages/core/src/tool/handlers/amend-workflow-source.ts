@@ -30,6 +30,7 @@ export const AMEND_WORKFLOW_ERROR_CODE = {
   SCRIPT_FILE: 25,
   SCRIPT_UNAVAILABLE: 26,
   AMEND_IN_FLIGHT: 27,
+  PREDECESSOR_RUNNING_ELSEWHERE: 28,
 } as const;
 
 /** 入参级违规（两个来源都给了）的码，与 `CreateWorkflow` 的同一个 400。 */

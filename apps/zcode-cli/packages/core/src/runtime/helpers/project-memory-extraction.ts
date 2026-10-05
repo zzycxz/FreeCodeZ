@@ -1,5 +1,8 @@
 import type { MessageId } from "@zcode/contracts";
+import { MICROCOMPACT_CLEARED_TOOL_RESULT_MESSAGE } from "../../compact/microcompact.js";
 import { selectActiveConversationBranch, type TraceContext } from "../deps.js";
+import type { RuntimeMessageEntry } from "../../agent/message-history.js";
+import type { MessageWithParts } from "@zcode/contracts";
 import {
   buildMemoryExtractionPrompt,
   createMemoryExtractionScheduler,
@@ -72,6 +75,14 @@ export function scheduleProjectMemoryExtraction(
         ...snapshotBase,
         boundaryMessageId: snapshotBoundaryMessageId,
         durableMessages: activeMessages.slice(0, boundaryIndex + 1),
+        // 0C-2②（升级实施手册）：providerEntries 拍自内存 messageHistory——microcompact
+        // 已把旧工具结果换成占位符（那是模型上下文的省 token 视角），抽取 subagent 的
+        // 输入不该被侵蚀：按 toolCallId 从持久化消息找回原文。只替换命中占位符的条目，
+        // 其余逐字保留（零保真风险）；占位符不在场时零拷贝。
+        providerEntries: restoreClearedToolResults(
+          snapshotBase.providerEntries,
+          activeMessages.slice(0, boundaryIndex + 1),
+        ),
       };
     },
   );
@@ -90,6 +101,54 @@ export function scheduleProjectMemoryExtraction(
     },
   );
   runtime.memoryExtractionScheduler.schedule(snapshot);
+}
+
+/**
+ * 0C-2②：恢复被 microcompact 清掉的工具结果。占位符消息保留 role/toolCallId/toolName、
+ * 只换 content——按 toolCallId 在持久化消息里找回原输出。找不到（理论上不应发生，
+ * 防御）保持占位符，抽取 subagent 至少还能看到"曾有一个被清理的结果"。
+ */
+export function restoreClearedToolResults(
+  entries: readonly RuntimeMessageEntry[],
+  durableMessages: readonly MessageWithParts[],
+): RuntimeMessageEntry[] {
+  const needsRestore = entries.some((entry) => isClearedToolResultEntry(entry));
+  if (!needsRestore) return [...entries];
+  const outputsByToolCallId = new Map<string, unknown>();
+  for (const message of durableMessages) {
+    for (const part of message.parts) {
+      if (part.type !== "tool") continue;
+      const toolPart = part as { toolCallId?: string; state?: { output?: unknown } };
+      if (typeof toolPart.toolCallId === "string") {
+        outputsByToolCallId.set(toolPart.toolCallId, toolPart.state?.output);
+      }
+    }
+  }
+  return entries.map((entry) => {
+    if (!isClearedToolResultEntry(entry) || !("message" in entry)) return entry;
+    const toolCallId = entry.message.toolCallId;
+    const original = toolCallId === undefined ? undefined : outputsByToolCallId.get(toolCallId);
+    if (original === undefined) return entry;
+    return {
+      ...entry,
+      message: { ...entry.message, content: serializeDurableToolOutput(original) },
+    };
+  });
+}
+
+function isClearedToolResultEntry(entry: RuntimeMessageEntry): boolean {
+  if (!("message" in entry)) return false;
+  const message = entry.message;
+  return (
+    message.role === "tool" &&
+    message.content === MICROCOMPACT_CLEARED_TOOL_RESULT_MESSAGE &&
+    typeof message.toolCallId === "string" &&
+    message.toolCallId.length > 0
+  );
+}
+
+function serializeDurableToolOutput(output: unknown): string {
+  return typeof output === "string" ? output : JSON.stringify(output);
 }
 
 const MEMORY_EXTRACTION_CURSOR_ENTRY_ID = "memory-extraction-cursor";

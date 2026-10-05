@@ -5,6 +5,7 @@
 // 事件的载荷。词汇（RunStatus / RunStopReason / WorkflowErrorCode）仍在 types.ts，这里只有
 // 「明细」——它们不参与联合类型，拆走不影响穷举消费者。
 
+import { WorkflowError } from "./types.js";
 /**
  * `ProviderStop` 的结构化明细：通知与
  * GetWorkflowRun 据此选文案，绝不从 message 反向解析。`reason` 是 contracts 的
@@ -39,4 +40,25 @@ export interface RunStallInfo {
   sinceMs: number;
   reason?: string;
   cap?: number;
+}
+
+/**
+ * 给 `ProviderStop` 补上触发停止的子代理的**出生阶段**：driver 只知道 actor ref，阶段只有引擎知道（`instancePhases`，
+ * 与事件流上 `phaseName` 的同一张表）。没有 providerStop、没有 subagent、或该 ref 出生在
+ * 任何 `phase()` 标记之前 → 原样返回。
+ */
+export function enrichProviderStopPhase(
+  error: WorkflowError,
+  instancePhases: ReadonlyMap<string, string>,
+): WorkflowError {
+  const details = error.providerStop;
+  if (details === undefined || details.subagent === undefined || details.phase !== undefined) {
+    return error;
+  }
+  const phase = instancePhases.get(details.subagent);
+  if (phase === undefined) return error;
+  return new WorkflowError(error.code, error.message, {
+    providerStop: { ...details, phase },
+    cause: (error as { cause?: unknown }).cause,
+  });
 }

@@ -1,10 +1,12 @@
 import {
   AMEND_WORKFLOW_TOOL_NAME,
   CREATE_WORKFLOW_TOOL_NAME,
+  ESCALATE_TOOL_NAME,
   RESOLVE_WORKFLOW_QUESTION_TOOL_NAME,
   RESPOND_TO_COORDINATOR_TOOL_NAME,
   RESUME_WORKFLOW_RUN_TOOL_NAME,
   SAVE_WORKFLOW_TOOL_NAME,
+  SUBMIT_RESULT_TOOL_NAME,
 } from "@zcode/contracts";
 import { EXPLORE_AGENT_ALLOWED_TOOLS } from "../../subagent/explore-tools.js";
 import type { AgentRuntimeConfig } from "../types.js";
@@ -111,9 +113,16 @@ function appendChildControlTool(
     return [...allowlist, RESPOND_TO_COORDINATOR_TOOL_NAME];
   }
 
-  // workflow child 没有 allowlist 收窄（persona 无工具档位，工具面只有减法，见
-  // bootstrap 的 workflow-actor-tools.ts），submit_result / escalate 由 includeSubmitResult /
-  // includeEscalate 两道门注册，不需要在这里补回。
+  // 0C-1③：workflow child 的工具面是白名单（workflow-actor-tools 的策略 ∩ 脚本声明），
+  // 注册面的 allowedTools 过滤不区分来源——submit_result / escalate 是 actor 的生命周期
+  // 通道（typed ask 没有提交就永远无法结束），必须在最终结果无条件补回，不能被脚本
+  // 声明面的交集挤掉。端口门（includeSubmitResult/includeEscalate）仍是注册开关。
+  if (config.taskType === "workflow_child") {
+    const controlTools = [SUBMIT_RESULT_TOOL_NAME, ESCALATE_TOOL_NAME];
+    const missing = controlTools.filter((toolName) => !allowlist.includes(toolName));
+    return missing.length === 0 ? allowlist : [...allowlist, ...missing];
+  }
+
   return allowlist;
 }
 

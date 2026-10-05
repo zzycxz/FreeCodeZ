@@ -33,6 +33,7 @@ import {
   isRetryableProviderBusinessTimeoutFailure,
 } from "./failure-provider-business-codes.js";
 import { isModelStreamIdleTimeoutError } from "./stream-idle-timeout.js";
+import { isModelStreamInterruptedError } from "./stream-interrupted.js";
 
 const PROVIDER_BUSINESS_ERROR_WRAPPER_CODE = "PROVIDER_BUSINESS_ERROR";
 
@@ -129,6 +130,18 @@ export function classifyModelFailure(
       message: unwrapped.message,
       reason: ModelFailureReasonValue.StreamIdleTimeout,
       retryReason: ModelRetryReasonValue.StreamIdleTimeout,
+      retryable: true,
+      retryAfterMs,
+      statusCode,
+    };
+  }
+
+  if (isModelStreamInterruptedError(unwrapped)) {
+    return {
+      code: ModelErrorCode.ModelRequestFailed,
+      message: unwrapped.message,
+      reason: ModelFailureReasonValue.NetworkError,
+      retryReason: ModelRetryReasonValue.NetworkError,
       retryable: true,
       retryAfterMs,
       statusCode,

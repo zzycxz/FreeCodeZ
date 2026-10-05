@@ -9,7 +9,7 @@
  * （拆分原因：oxlint max-lines 上限 400 行）。SchedulerHost 在此原地再导出，导入路径不变。
  */
 
-import { inputHash } from "./hash.js";
+import { hashMismatch, inputHash } from "./hash.js";
 import { importedAskRecord, type ImportedActorState } from "./imported-cache.js";
 import { ReplaySettleOrder, recoverReplaySettleOrder } from "./scheduler-replay.js";
 import { defer, type Actor, type AskNode, type Deferred, type SchedulerHost } from "./scheduler-types.js";
@@ -70,6 +70,11 @@ export class AskScheduler {
 
   hasActor(id: ActorId): boolean {
     return this.actors.has(id);
+  }
+
+  /** 0C-1②：已注册 actor 总数（创建门执法用）。 */
+  actorCount(): number {
+    return this.actors.size;
   }
 
   /**
@@ -516,18 +521,6 @@ export class AskScheduler {
     void _dropped;
     return rest as AskStats;
   }
-}
-
-/** replay 命中但 inputHash 不一致——纯度契约被破坏，run 大声失败。 */
-export function hashMismatch(instance: InstanceRef, expected: string, got: string): WorkflowError {
-  return new WorkflowError(
-    "InputHashMismatch",
-    `Replay hit at ${refToString(instance)} but inputHash differs (expected ${expected}, got ` +
-      `${got}): the script is not deterministic, so the journal cannot be replayed.`,
-    // 结构化 mismatch 与 ScriptHashMismatch 对齐：两个哈希不一致错误共用同一个字段，
-    // 读端不必再从 message 文本里抠哈希。
-    { mismatch: { expected, got } },
-  );
 }
 
 /** cause → 一行有界文本（Error 取 message，其余 String()；空则给占位）。 */

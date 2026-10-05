@@ -76,6 +76,13 @@ function amendRefusalFor(reason: string, runId: string): ToolHandlerFailure {
         errorCode: AMEND_WORKFLOW_ERROR_CODE.MISSING_BOUNDARIES,
         message: `workflow_amend_missing_boundaries: run ${runId}'s journal predates transcript-boundary bookkeeping (or its boundaries were never recorded), so its finished asks cannot seed an amended run — there is no fallback. Submit this script as a fresh CreateWorkflow instead. Nothing was stopped or created.`,
       };
+    case "predecessor_running_elsewhere":
+      // 0C-1①：跨进程所有权——本进程停不了也等不到持有方进程的结算。
+      return {
+        result: false,
+        errorCode: AMEND_WORKFLOW_ERROR_CODE.PREDECESSOR_RUNNING_ELSEWHERE,
+        message: `workflow_amend_predecessor_running_elsewhere: run ${runId} is still running in another process (or was left non-terminal by a dead one), so this process can neither stop it nor wait for its settlement. Amend a different run, or wait for the owning process to settle it first. Nothing was stopped or created.`,
+      };
     case "amend_in_flight":
       // 0B-3：同前驱并发第二笔修订——放行会血统分叉；拒绝零副作用，指明下一步。
       return {

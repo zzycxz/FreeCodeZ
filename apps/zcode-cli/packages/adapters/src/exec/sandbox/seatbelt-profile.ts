@@ -36,7 +36,7 @@ function sbplPath(path: string): string {
  * provider_config.json，凭据消费方（credentialService/oauth-refresh/搜索 key）全在
  * agent 进程内——沙箱只包 bash 子进程，deny 该文件不影响任何合法链路。
  */
-function resolveCredentialDenyPath(env: Record<string, string | undefined>): string | undefined {
+function resolveCredentialDenyPath(env: Record<string, string | undefined>): string {
   const baseDir = env.ZCODE_DATA_BASE_DIR?.trim() || homedir();
   const resolvedBase =
     baseDir === "~" ? homedir() : baseDir.startsWith("~/") ? join(homedir(), baseDir.slice(2)) : resolve(baseDir);

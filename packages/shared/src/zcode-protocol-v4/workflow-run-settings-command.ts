@@ -64,6 +64,7 @@ export const workflowRunSettingsRejectionReasonSchema = z.enum([
   "compile_failed",
   "missing_boundaries",
   "amend_in_flight",
+  "predecessor_running_elsewhere",
   "start_failed",
 ]);
 export type WorkflowRunSettingsRejectionReason = z.infer<

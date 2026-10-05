@@ -291,8 +291,19 @@ function assertWritableExistingFileIsFresh(
     });
   }
 
+  // 0C-2③：内容强标识同 Edit——full read 内容不同必 stale，堵 revisionId(mtime,size)
+  // 弱标识在同秒同长度改写下的盲区。跨进程并发由 writeTextFile 的 expectedRevision
+  // CAS（stale_write）兜底，此处是内容级的最后一道。
+  if (isStrictFullRead(lastRead) && lastRead.content !== currentRead.content) {
+    throw createCoreError(CoreErrorType.ToolExecutionFailed, WRITE_STALE_MESSAGE, {
+      context: {
+        code: "write_file_stale",
+        filePath,
+      },
+      recoverable: true,
+    });
+  }
   if (!hasReadStateChanged(lastRead, currentRead)) return;
-  if (isStrictFullRead(lastRead) && lastRead.content === currentRead.content) return;
 
   throw createCoreError(CoreErrorType.ToolExecutionFailed, WRITE_STALE_MESSAGE, {
     context: {

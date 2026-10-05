@@ -1,3 +1,5 @@
+import { createModelStreamInterruptedError } from "./stream-interrupted.js";
+
 type ProviderFetch = typeof globalThis.fetch;
 
 const SSE_FRAME_SEPARATOR_PATTERN = /\r\n\r\n|\n\n|\r\r/;
@@ -173,7 +175,12 @@ function createAnthropicStreamCompatTransform(): TransformStream<Uint8Array, Uin
       pending += decoder.decode();
       pending = emitCompleteFrames(pending, controller, encoder, state);
       if (pending.length > 0) {
-        emitFrame(pending, "", controller, encoder, state);
+        // 0C-3③：flush 时仍未出现分隔符 = 上游在帧中间断流。直通半帧会让下游把
+        // 网络中断解析成坏响应（不可重试）；以类型化失败终结流，分类器归
+        // network_error（可重试），流恢复链接管。
+        controller.error(
+          createModelStreamInterruptedError({ pendingBytes: pending.length }),
+        );
       }
     },
   });

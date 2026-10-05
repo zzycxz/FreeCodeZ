@@ -608,8 +608,8 @@ export async function createZCodeApp(options: ZCodeAppOptions): Promise<ZCodeApp
                     ...(persona.name === undefined ? {} : { name: persona.name }),
                     ...(persona.system === undefined ? {} : { persona: persona.system }),
                   },
-                  // actor 的工具面是减法（全集减去会悬挂/越权的交互工具），只能经 configOverrides
-                  // 表达（request.opts.tools 只有 allowlist）。
+                  // actor 的工具面是白名单（0C-1③：内建工作面；MCP/plugin 动态工具结构性
+                  // 排除）。与脚本声明 opts.tools 的交集在 script-workflow-child-runtime 合并。
                   ...workflowActorToolPolicy(),
                   // 模型面：`runSubagentModel` 是本 run 自己的选择（`subagent_model`），在场时整条
                   // 覆盖，排在 pin 之上——主代理不受它影响。没有它也没有 pin 就不覆盖——child runtime

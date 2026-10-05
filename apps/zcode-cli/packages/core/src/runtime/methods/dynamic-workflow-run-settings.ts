@@ -51,6 +51,7 @@ export type AmendWorkflowRunSettingsRejection =
   | "compile_failed"
   | "missing_boundaries"
   | "amend_in_flight"
+  | "predecessor_running_elsewhere"
   | "start_failed";
 
 export type AmendWorkflowRunSettingsResult =
@@ -280,7 +281,9 @@ export async function amendWorkflowRunSettings(
           ? "not_found"
           : amended.reason === "amend_in_flight"
             ? "amend_in_flight"
-            : "missing_boundaries",
+            : amended.reason === "predecessor_running_elsewhere"
+              ? "predecessor_running_elsewhere"
+              : "missing_boundaries",
     };
   }
 

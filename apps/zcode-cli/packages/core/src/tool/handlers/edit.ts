@@ -418,7 +418,7 @@ function levenshteinDistance(left: string, right: string): number {
   return previous[right.length] ?? 0;
 }
 
-function getEditableReadStateFailure(
+export function getEditableReadStateFailure(
   filePath: string,
   currentRead: FileSystemReadTextResult,
   readFileState: ReadFileStateMap | undefined,
@@ -430,8 +430,13 @@ function getEditableReadStateFailure(
     return editFailure(EditErrorCode.FILE_NOT_READ, EDIT_NOT_READ_MESSAGE);
   }
 
+  // 0C-2③（升级实施手册）：内容是 full read 的强标识。revisionId 是 mtime:ms+size 的
+  // 弱标识——粗粒度 mtime 文件系统（网络挂载/同步盘）上同秒同长度的两次不同改写不可分辨；
+  // 内容都不同就必须判 stale，即使 mtime/size 恰好相同（两次读取走同一归一管线，字符串可比）。
+  if (isStrictFullRead(lastRead) && lastRead.content !== currentRead.content) {
+    return editFailure(EditErrorCode.STALE_FILE, EDIT_STALE_MESSAGE);
+  }
   if (!hasReadStateChanged(lastRead, currentRead)) return undefined;
-  if (isStrictFullRead(lastRead) && lastRead.content === currentRead.content) return undefined;
 
   return editFailure(EditErrorCode.STALE_FILE, EDIT_STALE_MESSAGE);
 }

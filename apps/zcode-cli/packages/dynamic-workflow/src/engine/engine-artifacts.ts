@@ -14,7 +14,7 @@ import {
   type ArtifactPresetOp,
 } from "../facade/registry.js";
 import { validateArtifactSpec } from "./artifact-spec.js";
-import { hashMismatch } from "./scheduler.js";
+import { hashMismatch } from "./hash.js";
 import type { EngineState } from "./engine-state.js";
 import type {
   ArtifactPublishRequest,

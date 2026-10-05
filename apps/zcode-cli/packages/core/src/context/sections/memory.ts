@@ -14,7 +14,9 @@ export function buildMemorySection(memoryRoot: string | undefined): ContextSecti
     name: "Memory",
     source: "memory",
     injectionTarget: "system",
-    cacheHint: "dynamic",
+    // 0C-2①：本段是编译期常量文本（同版本全站逐字节一致），标 dynamic 会把它排进
+    // 前缀不稳定区白白打断缓存。stable 不等于"永不变"——版本升级换文本属正常换前缀。
+    cacheHint: "stable",
     chars: content.length,
     tokens: estimateTokens(content),
     content,

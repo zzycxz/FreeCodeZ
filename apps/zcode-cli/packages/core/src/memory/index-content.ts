@@ -1,7 +1,9 @@
 import { Lexer } from "marked";
 
 const MEMORY_INDEX_LINE_LIMIT = 200;
-const MEMORY_INDEX_CHARACTER_LIMIT = 25_000;
+// 0C-2①（升级实施手册）：索引注入上限 25K→10K——MEMORY.md 是每轮常驻注入面，
+// 25K（≈6K token）最坏形态吃掉首屏预算却只换来指针列表；超限截断提示照旧。
+const MEMORY_INDEX_CHARACTER_LIMIT = 10_000;
 const LEADING_FRONTMATTER_PATTERN = /^---\s*\n[\s\S]*?---\s*\n?/u;
 const HTML_COMMENT_PATTERN = /<!--[\s\S]*?-->/gu;
 

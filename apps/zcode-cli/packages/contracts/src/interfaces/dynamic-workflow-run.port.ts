@@ -176,7 +176,13 @@ export type DynamicWorkflowRunAmendRefusalReason =
    * 并发第二笔若放行会从同一前驱 fork 出两个后继（血统分叉），故结构化拒绝——零副作用，
    * 前驱与在途修订均不动；模型应等在途修订结算后改修订它的后继。
    */
-  | "amend_in_flight";
+  | "amend_in_flight"
+  /**
+   * 0C-1①（升级实施手册）：前驱在本进程注册表里不在飞、journal 却说它未结算——另一个
+   * 进程（或死进程）持有它。本进程停不了也等不到它的结算，旧版把这种情况当接线故障
+   * 裸 throw；现改为结构化拒绝：模型可换 run 或等持有方结算后再修订。
+   */
+  | "predecessor_running_elsewhere";
 
 export type DynamicWorkflowRunAmendResult =
   | {

@@ -127,7 +127,10 @@ function statusToErrorKind(status: number): ProviderAccessErrorKind {
 }
 
 /**
- * 按候选链探测：200 即有效；401/403/429 等明确结论立即失败；仅 404/405 换下一候选。
+ * 按候选链探测：200 即有效；401/403/429 等明确结论立即失败；404/405 与 5xx 换下一候选。
+ * 0C-3①（P0-2，升级实施手册）：5xx 是候选端点的瞬时/路由态（网关择路、上游重启），
+ * 旧版把首个候选的 5xx 当终态直接失败——候选 2 明明可用也不试。5xx 改为换候选，
+ * 全链皆 5xx 才按最后一个状态失败。
  * 全部候选 404/405（网络可达但无模型列表端点）→ ok + unverified 温和放行（§P1.R2）。
  */
 export async function probeProviderAccess(
@@ -139,6 +142,7 @@ export async function probeProviderAccess(
   const headers = buildAuthHeaders(params.apiType, params.apiKey);
   const candidates = buildModelListCandidates(params.apiType, params.baseUrl, params.modelsUrl);
   let sawEndpointMiss = false;
+  let lastServerErrorStatus: number | undefined;
   for (const candidate of candidates) {
     const result = await fetchCandidate(candidate, headers, network, abortSignal);
     if (result.errorKind) return failure(result.errorKind, result.message ?? "request failed");
@@ -148,7 +152,17 @@ export async function probeProviderAccess(
       sawEndpointMiss = true;
       continue;
     }
+    if (status >= 500) {
+      lastServerErrorStatus = status;
+      continue;
+    }
     return failure(statusToErrorKind(status), `unexpected status ${status}`);
+  }
+  if (lastServerErrorStatus !== undefined && !sawEndpointMiss) {
+    return failure(
+      statusToErrorKind(lastServerErrorStatus),
+      `unexpected status ${lastServerErrorStatus} (all ${candidates.length} candidates returned server errors)`,
+    );
   }
   return sawEndpointMiss ? { ok: true, unverified: true } : failure("unknown", "no probe candidates");
 }

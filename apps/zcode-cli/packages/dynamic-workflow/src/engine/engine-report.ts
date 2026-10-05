@@ -8,7 +8,7 @@
 import { inputHash } from "./hash.js";
 import { REPORT_CAPS } from "../facade/report-caps.js";
 import { declaredPresetIds, isDeclaredPreset } from "./engine-artifacts.js";
-import { hashMismatch } from "./scheduler.js";
+import { hashMismatch } from "./hash.js";
 import type { EngineState } from "./engine-state.js";
 import type { InstanceRef } from "./types.js";
 import { refToString, WorkflowError } from "./types.js";

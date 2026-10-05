@@ -196,10 +196,16 @@ async function amendRunInternal(
   );
   if (!built.ok) {
     // 预检刚通过：run 存在、边界齐全；到这里还被拒只剩「前驱非终态」——注册表说它不在飞而
-    // journal 说它还在跑（别的进程持有）。这不是模型能改的输入，按接线故障上抛。
-    throw new Error(
-      `dynamic workflow amend could not import from run ${request.predecessorRunId} after preflight: ${built.reason}`,
-    );
+    // journal 说它还在跑（别的进程持有，0C-1①）。本进程停不了也等不到它，旧版当接线故障
+    // 裸 throw（模型只见崩溃）；结构化拒绝并留警示日志，零副作用（没有 dwf_run 行、注册表不动）。
+    deps.logger?.warn?.("Dynamic workflow amend refused: predecessor run is owned by another process", {
+      builtReason: built.reason,
+      event: "dynamic_workflow.amend.refused",
+      module: "bootstrap.app",
+      predecessorRunId: request.predecessorRunId,
+      reason: "predecessor_running_elsewhere",
+    });
+    return { ok: false, reason: "predecessor_running_elsewhere" };
   }
 
   // 用量起点：**前驱结算之后**再读一次行。preflight 那一份是停止之前的快照，用它会漏掉前驱最后几轮的

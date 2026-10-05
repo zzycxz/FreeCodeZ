@@ -339,7 +339,28 @@ const DOCKER_DANGEROUS_SHORT_FLAGS = new Set(
 );
 
 export function dockerCommandIsDangerous(_commandText: string, args: readonly string[]): boolean {
+  // V10（升级实施手册）：`docker inspect -f '{{.Config.Env}}'` 经只读白名单零审批泄露
+  // 容器内全部环境变量（密钥/凭据常驻 Env）。-f/--format 的模板值引用 .Config.Env
+  // 即判危险（json/纯文本/range 变体全盖住——任何围绕它的模板都会把值渲染出来）。
+  if (dockerFormatFlagLeaksContainerEnv(args)) return true;
   return hasDangerousDockerOption(args);
+}
+
+function dockerFormatFlagLeaksContainerEnv(args: readonly string[]): boolean {
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index] ?? "";
+    const inlineMatch = /^(?:-f|--format)=(.*)$/u.exec(arg);
+    if (inlineMatch) {
+      if (inlineMatch[1]?.includes(".Config.Env")) return true;
+      continue;
+    }
+    if (arg === "-f" || arg === "--format") {
+      const value = args[index + 1] ?? "";
+      if (value.includes(".Config.Env")) return true;
+      index += 1;
+    }
+  }
+  return false;
 }
 
 export function hasDangerousDockerOption(args: readonly string[]): boolean {
