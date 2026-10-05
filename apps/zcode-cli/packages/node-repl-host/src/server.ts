@@ -15,6 +15,7 @@ import {
   type NodeReplRunResult,
 } from "@zcode/core/repl";
 import { createComputerUseRuntime, type ComputerUseRuntime } from "@zcode/zcode-cua";
+import { createKoffiBrokerMethods } from "@zcode/zcode-cua/macos";
 import { z } from "zod";
 import { createBrowserBridgeGlobals, type ActiveNodeReplCall } from "./browser-bridge.js";
 import {
@@ -372,6 +373,20 @@ if (!isMainThread && isWorkerCallData(workerData)) {
 export function captureComputerUseRuntimeFromEnvironment(
   env: NodeJS.ProcessEnv = process.env,
 ): ComputerUseRuntime | undefined {
+  // Phase 1-d（升级实施手册）：koffi 进程内执行层（三道保险之一——总开关默认关）。
+  // darwin + ZCODE_CUA_KOFFI_EXECUTION=1 + 绑定可用 → 旁路 socket 直调；
+  // 动作面由 ZCODE_CUA_KOFFI_ACTIONS=1 二次放行（缺省只读观测）。
+  if (env.ZCODE_CUA_KOFFI_EXECUTION?.trim() === "1" && process.platform === "darwin") {
+    const backend = createKoffiBrokerMethods({
+      allowActions: env.ZCODE_CUA_KOFFI_ACTIONS?.trim() === "1",
+    });
+    if (backend) {
+      return createComputerUseRuntime({
+        inProcessMethods: backend.methods,
+        disposeInProcess: backend.dispose,
+      });
+    }
+  }
   const socketPath = env.ZCODE_CUA_PERMISSION_BROKER_SOCKET?.trim();
   if (!socketPath) return undefined;
   return createComputerUseRuntime({

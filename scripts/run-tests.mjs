@@ -16,7 +16,12 @@ function* walk(dir) {
     if (entry.isDirectory()) {
       if (EXCLUDE_DIRS.has(entry.name)) continue;
       yield* walk(join(dir, entry.name));
-    } else if (entry.isFile() && entry.name.endsWith(".test.ts")) {
+    } else if (
+      entry.isFile() &&
+      // .test.mjs：纯 JS 包（如 packages/zcode-cua 的 broker 协议测试）同样进门禁——
+      // 2026-10-05 前只认 .test.ts，该包 29 个存量失败（socket 名超限）从未被门禁看见。
+      (entry.name.endsWith(".test.ts") || entry.name.endsWith(".test.mjs"))
+    ) {
       yield join(dir, entry.name);
     }
   }

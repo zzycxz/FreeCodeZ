@@ -2,6 +2,8 @@
 // A16 源码级占位标记归零;A16 的 14 工具挂载齐全对照。
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { join } from "node:path";
 import test from "node:test";
 import {
@@ -120,11 +122,13 @@ test("附录 B 映射:broker_unavailable/stale_socket 归 CUA_NOT_READY 信封(�
 
 test("A16 源码级:占位标记在打包面源码 0 次", () => {
   const marker = "Computer Use is not available in this build";
+  // 仓库根从本文件位置解析——cwd 可能是包目录（node --test 从包内跑）或根（runner 分组跑）。
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
   const roots = [
-    join(process.cwd(), "packages", "zcode-cua"),
-    join(process.cwd(), "packages", "services", "src"),
-    join(process.cwd(), "packages", "desktop", "src"),
-    join(process.cwd(), "apps", "zcode-cli", "packages", "node-repl-host", "src"),
+    join(repoRoot, "packages", "zcode-cua"),
+    join(repoRoot, "packages", "services", "src"),
+    join(repoRoot, "packages", "desktop", "src"),
+    join(repoRoot, "apps", "zcode-cli", "packages", "node-repl-host", "src"),
   ];
   const offenders = [];
   const walk = (dir) => {

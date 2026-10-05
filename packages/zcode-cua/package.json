@@ -53,6 +53,10 @@
     "./broker/helperHealth": {
       "types": "./broker-helper-health.d.ts",
       "import": "./broker-helper-health.js"
+    },
+    "./macos": {
+      "types": "./macos/index.d.ts",
+      "import": "./macos/index.js"
     }
   }
 }

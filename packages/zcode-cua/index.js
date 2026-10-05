@@ -128,6 +128,10 @@ function isBrokerUnavailableException(error) {
 export function createComputerUseRuntime(options = {}) {
   const env = options.env ?? process.env;
   const socketPath = options.brokerSocketPath ?? resolveBrokerSocketPath({ env });
+  // Phase 1-d（升级实施手册）：koffi 进程内方法表——存在时 callBroker 直接查表分发，
+  // 不走 Helper socket（mac 无 Helper 进程）。表内容按阶段开关构造（见 macos/）。
+  const inProcessMethods = options.inProcessMethods ?? null;
+  const inProcessDispose = typeof options.disposeInProcess === "function" ? options.disposeInProcess : null;
   const sessions = new Map();
   const lease = new ControllerLease();
   const settler = new ActionSettler(
@@ -179,6 +183,14 @@ export function createComputerUseRuntime(options = {}) {
   };
 
   const callBroker = async (method, params, context, session, opts = {}) => {
+    if (inProcessMethods) {
+      const handler = inProcessMethods[method];
+      if (typeof handler !== "function") {
+        // 与 socket 路径的 unknown-method 语义对齐（fail-closed，不静默）。
+        throw new Error(`Computer Use broker method is not available in the in-process backend: ${method}`);
+      }
+      return await handler(params ?? {}, context);
+    }
     await ensureFreshBroker();
     return await callBrokerMethod({
       socketPath,

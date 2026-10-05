@@ -144,7 +144,9 @@ export function isReadOnlyBrokerMethod(method) {
 // ───────────────────────────────── socket 命名(官方固定命名;占位包的随机 sock 形状废弃) ─────────────────────────────────
 
 const BROKER_SOCKET_FILENAME = "broker.sock";
-export const WINDOWS_NAMED_PIPE_PREFIX = "\\\\.\\pipe\\zcode-cua-helper-";
+// P1-g（升级实施手册 品牌独立）：pipe 与 socket 目录用 freecodez 命名空间。
+// 协议契约（runtimeId zcode-cua-pip-session-v2 等 wire 值）不改——那是握手语义不是品牌面。
+export const WINDOWS_NAMED_PIPE_PREFIX = "\\\\.\\pipe\\freecodez-cua-helper-";
 
 function brokerRuntimeDir(env) {
   const xdg = env.XDG_RUNTIME_DIR;
@@ -162,7 +164,7 @@ function brokerRuntimeDir(env) {
   }
   if (process.platform === "darwin") {
     const uid = typeof process.getuid === "function" ? process.getuid() : "nouid";
-    return join("/tmp", `zcode-cua-${uid}`);
+    return join("/tmp", `freecodez-cua-${uid}`);
   }
   return join(homedir(), ".freecodez", "cua-broker");
 }

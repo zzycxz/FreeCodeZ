@@ -1,13 +1,15 @@
 // 测试共用:helper 线协议 mock(NDJSON + authenticate 首请求门 + 可编程失败模式)。
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 export function mockSocketPath() {
+  // macOS sun_path 上限 104 字节：tmpdir(48B)+zcode-cua-test-(15)+uuid(36)+.sock(5)
+  // 恰好越线 → listen EINVAL（2026-10-05 修复：短前缀+8 字节随机段，73B 稳在限内）。
   return process.platform === "win32"
-    ? `\\\\.\\pipe\\zcode-cua-test-${randomUUID()}`
-    : join(tmpdir(), `zcode-cua-test-${randomUUID()}.sock`);
+    ? `\\.\pipe\zcode-cua-test-${randomUUID()}`
+    : join(tmpdir(), `zct-${randomBytes(8).toString("hex")}.sock`);
 }
 
 /**

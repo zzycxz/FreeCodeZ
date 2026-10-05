@@ -115,8 +115,8 @@ test("socket 固定命名:env 覆盖优先,win32 固定管道,mint/resolve 同�
   const resolved = resolveBrokerSocketPath({ env: {} });
   assert.equal(resolved, minted);
   if (process.platform === "win32") {
-    assert.equal(minted, "\\\\.\\pipe\\zcode-cua-helper-default");
-    assert.ok(minted.startsWith("\\\\.\\pipe\\zcode-cua-helper-"));
+    assert.equal(minted, "\\\\.\\pipe\\freecodez-cua-helper-default");
+    assert.ok(minted.startsWith("\\\\.\\pipe\\freecodez-cua-helper-"));
   } else {
     assert.ok(minted.endsWith("broker.sock"));
     assert.match(minted, /zcode-cua|freecodez/);
