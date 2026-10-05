@@ -768,6 +768,9 @@ const enUS: Record<string, string> = {
   "diff.placeholder.badge": "UI placeholder",
   "diff.placeholder.description":
     "This phase focuses on the right-side Diff panel shell first. Real Git services and command execution will be connected later.",
+  "git.discardConfirm.title": "Discard all changes in this file?",
+  "git.discardConfirm.description": "{path} will be restored via git restore. This cannot be undone.",
+  "git.discardConfirm.confirm": "Discard changes",
   "diff.action.failed.toast": "Git action failed; retry or check the logs.",
   "diff.placeholder.toast":
     "The Diff panel is still using UI placeholder mode for now because the Git service is not fully wired up yet.",

@@ -26,6 +26,18 @@ import {
   getSourceMessageId,
 } from "@/GitPane/helpers.js";
 import { GitPaneChangeCard } from "@/GitPaneChangeCard.js";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog.js";
+import { hashContent } from "@zcode/shared";
+import { useGitActions } from "@/hooks/useGitActions.js";
 import { getFileChangeFindState } from "@/GitPane/fileChangeFindSearch.js";
 import { logger } from "@/logger.js";
 import { useZCodeStore } from "@/store/StoreProvider.js";
@@ -72,6 +84,10 @@ export function GitPane({
   onRevealFileInTree?: (path: string) => void;
 }) {
   const { gitService } = useServices();
+  // 条目 7：hunk 级拒绝/文件级 discard（确认弹窗在本地态）。
+  const gitActions = useGitActions({ workspacePath });
+  const [discardConfirm, setDiscardConfirm] = useState<GitPaneFileChange | null>(null);
+
   const { intl } = useZCodeIntl();
   const theme = useZCodeStore((state) => state.theme);
   const codePreviewSettings = useZCodeStore((state) => state.codePreviewSettings);
@@ -99,6 +115,28 @@ export function GitPane({
   const currentSourceOption =
     gitState.sourceOptions.find((option) => option.id === selectedSourceId) ?? defaultSourceOption;
   const currentDataset = gitState.datasets[currentSourceOption.id] ?? gitState.datasets.unstaged;
+  // 条目 7：hunk 拒绝（漂移预检指纹取观察时 afterContent——hunk_drift/stale 结构化
+  // 错误 toast 呈现，文件内容不被部分写入（服务层原子性已保证））。
+  const handleRejectHunks = useCallback(
+    async (change: GitPaneFileChange, hunkIndexes: number[]) => {
+      const diffState = diffStateByKey[getDiffCacheKey(currentDataset.id, change.path)]?.diff
+        ?? change.diff;
+      if (!diffState?.patch) return;
+      const result = await gitActions.rejectHunks({
+        path: change.path,
+        patch: diffState.patch,
+        hunkIndexes,
+        ...(diffState.afterContent !== null
+          ? { expectedContentHash: hashContent(diffState.afterContent) }
+          : {}),
+      });
+      if (!result.ok && result.code !== "stale_content" && result.code !== "hunk_drift") {
+        logger.warn("[GitPane] rejectHunks failed", { code: result.code, message: result.message });
+      }
+    },
+    [gitActions, diffStateByKey, currentDataset.id],
+  );
+
   const currentChanges = useMemo(
     () => currentDataset.sections.flatMap((section) => section.changes),
     [currentDataset],
@@ -512,6 +550,8 @@ export function GitPane({
                       change={change}
                       contextMenuLabels={contextMenuLabels}
                       diffState={diffState}
+                      onRejectHunks={handleRejectHunks}
+                      onRejectAll={setDiscardConfirm}
                       isDiffLoading={isDiffLoading}
                       isExpanded={isExpanded}
                       canRevealInFileManager={fileActions.canRevealInFileManager({
@@ -540,6 +580,42 @@ export function GitPane({
             <p className="mt-1 text-ui-base text-foreground-subtle">{emptyStateCopy.description}</p>
           </div>
         )}
+      <AlertDialog
+        open={discardConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open) setDiscardConfirm(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {intl.formatMessage({ id: "git.discardConfirm.title" })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {intl.formatMessage(
+                { id: "git.discardConfirm.description" },
+                { path: discardConfirm?.workspaceRelativePath ?? "" },
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {intl.formatMessage({ id: "common.cancel" })}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-discard-confirm-action
+              onClick={() => {
+                if (discardConfirm) {
+                  void gitActions.discardPaths([discardConfirm.path]);
+                }
+                setDiscardConfirm(null);
+              }}
+            >
+              {intl.formatMessage({ id: "git.discardConfirm.confirm" })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </section>
   );

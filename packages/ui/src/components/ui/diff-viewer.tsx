@@ -77,7 +77,8 @@ function DiffViewerComponent(props: DiffViewerProps) {
   );
   const options = useMemo<FileDiffOptions<undefined>>(
     () => ({
-      diffStyle: "unified",
+      // 条目 7：split/unified 由调用方覆盖（缺省 unified 保持现状）。
+      diffStyle: optionsOverride?.diffStyle ?? "unified",
       diffIndicators: "bars",
       disableFileHeader: true,
       // PatchDiff 只有 patch 里的局部上下文，未包含完整 before/after 内容。

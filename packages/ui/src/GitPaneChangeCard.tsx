@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { GitDiffResult } from "@zcode/shared";
 import { ChevronDownIcon, CopyIcon, FolderOpenIcon, ListTreeIcon } from "lucide-react";
 import { DiffViewer } from "@/components/ui/diff-viewer.js";
@@ -11,6 +11,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu.js";
 import { getDiffFallbackMessageId, getGitPaneDiffPreviewPlan } from "@/GitPane/helpers.js";
+import { GitHunkToolbar, diffStyleForSplit } from "@/GitPane/GitHunkToolbar.js";
 import { FileDisplayInline } from "@/lib/fileDisplay.js";
 import type { GitPaneFileChange } from "@/hooks/useGitRepository.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
@@ -32,6 +33,8 @@ export function GitPaneChangeCard({
   onOpenChange,
   onRevealInFileManager,
   onRevealInFileTree,
+  onRejectHunks,
+  onRejectAll,
 }: {
   change: GitPaneFileChange;
   contextMenuLabels: {
@@ -51,8 +54,14 @@ export function GitPaneChangeCard({
   onOpenChange: (change: GitPaneFileChange, nextOpen: boolean) => void;
   onRevealInFileManager: (change: GitPaneFileChange) => void;
   onRevealInFileTree?: (change: GitPaneFileChange) => void;
+  /** 条目 7：hunk 级拒绝（presence 即启用工具条）。 */
+  onRejectHunks?: (change: GitPaneFileChange, hunkIndexes: number[]) => Promise<void>;
+  /** 条目 7：全部拒绝（destructive——GitPane 层先弹确认再传）。 */
+  onRejectAll?: (change: GitPaneFileChange) => void;
 }) {
   const { intl } = useZCodeIntl();
+  // 条目 7：split/unified 态（工具条切换；DiffViewer options 透传——滚动容器不变不丢位置）。
+  const [split, setSplit] = useState(false);
   const diffPreviewPlan = useMemo(() => getGitPaneDiffPreviewPlan(diffState), [diffState]);
   const multiFileDiffFiles = useMemo(() => {
     if (diffState?.availability !== "patch" || diffState.afterContent === null) {
@@ -152,6 +161,16 @@ export function GitPaneChangeCard({
       </ContextMenu>
       {isExpanded ? (
         <div className="w-full min-w-0 overflow-x-auto overflow-y-hidden bg-background">
+          {onRejectHunks && diffState?.availability === "patch" && diffState.patch ? (
+            <GitHunkToolbar
+              diff={diffState}
+              busy={isDiffLoading}
+              split={split}
+              onSplitChange={setSplit}
+              onRejectHunks={(hunkIndexes) => onRejectHunks(change, hunkIndexes)}
+              onRejectAll={onRejectAll ? () => onRejectAll(change) : undefined}
+            />
+          ) : null}
           {isDiffLoading ? (
             <div className="flex items-center justify-center py-4 text-ui-base text-foreground-subtle">
               {intl.formatMessage({ id: "common.loading" })}
@@ -171,6 +190,7 @@ export function GitPaneChangeCard({
                 会同步比较整文件并拖慢点击反馈；这里改走 patch 输入，让高亮继续由 worker 异步完成。 */}
               <DiffViewer
                 patch={diffState.patch}
+                options={diffStyleForSplit(split)}
                 diffClassName="block"
                 fontSizePx={codePreviewSettings.fontSizePx}
                 lightTheme={codePreviewSettings.lightTheme}
@@ -187,6 +207,7 @@ export function GitPaneChangeCard({
               <DiffViewer
                 oldFile={multiFileDiffFiles.oldFile}
                 newFile={multiFileDiffFiles.newFile}
+                options={diffStyleForSplit(split)}
                 diffClassName="block"
                 fontSizePx={codePreviewSettings.fontSizePx}
                 lightTheme={codePreviewSettings.lightTheme}
