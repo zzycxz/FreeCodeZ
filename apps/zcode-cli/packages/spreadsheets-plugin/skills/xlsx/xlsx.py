@@ -25,6 +25,7 @@ import platform
 import re
 import shutil
 import subprocess
+import tempfile
 import sys
 import zipfile
 from collections import defaultdict
@@ -169,16 +170,17 @@ def _find_soffice() -> Optional[str]:
     return None
 
 
-def _setup_libreoffice_macro() -> bool:
-    """Setup LibreOffice macro for recalculation if not already configured."""
-    if platform.system() == "Darwin":
-        macro_dir = os.path.expanduser(
-            "~/Library/Application Support/LibreOffice/4/user/basic/Standard"
-        )
-    else:
-        macro_dir = os.path.expanduser(
-            "~/.config/libreoffice/4/user/basic/Standard"
-        )
+def _isolated_profile_root() -> str:
+    """隔离 LibreOffice profile（条目 12 子项：宏写真实 profile 是 bug——
+    宏写用户真实 profile 污染其 LibreOffice 配置且多任务互踩）。每进程独立
+    tmp 目录，soffice 经 -env:UserInstallation 指向它；宏只落隔离区。"""
+    return tempfile.mkdtemp(prefix="freecodez-lo-profile-")
+
+
+def _setup_libreoffice_macro(profile_root: str) -> bool:
+    """Setup LibreOffice macro in the isolated profile (never touches the user's)."""
+    # 隔离 profile 的 Basic 库结构：<root>/user/basic/Standard/
+    macro_dir = os.path.join(profile_root, "user", "basic", "Standard")
 
     macro_file = os.path.join(macro_dir, "Module1.xba")
 
@@ -190,9 +192,11 @@ def _setup_libreoffice_macro() -> bool:
     if not os.path.exists(macro_dir):
         soffice_bin = _find_soffice()
         if soffice_bin:
+            # 首启初始化隔离 profile（自动生成 script.xlb 骨架）；绝不碰真实 profile。
             subprocess.run(
-                [soffice_bin, "--headless", "--terminate_after_init"],
-                capture_output=True, timeout=10,
+                [soffice_bin, "--headless", "--terminate_after_init",
+                 f"-env:UserInstallation=file://{profile_root}"],
+                capture_output=True, timeout=20,
             )
         os.makedirs(macro_dir, exist_ok=True)
 
@@ -226,8 +230,9 @@ def _libreoffice_recalc(filename: str, timeout: int = 30) -> Dict[str, Any]:
 
     abs_path = str(Path(filename).absolute())
 
-    if not _setup_libreoffice_macro():
-        return {"error": "Failed to setup LibreOffice macro"}
+    profile_root = _isolated_profile_root()
+    if not _setup_libreoffice_macro(profile_root):
+        return {"error": "Failed to setup LibreOffice macro in isolated profile"}
 
     # Locate soffice binary (cross-platform)
     soffice_bin = _find_soffice()
@@ -249,6 +254,9 @@ def _libreoffice_recalc(filename: str, timeout: int = 30) -> Dict[str, Any]:
 
     lo_cmd: List[str] = [
         soffice_bin, "--headless", "--norestore",
+        # 隔离 profile：location=application 指向隔离区的应用宏（上面写入的 Module1.xba），
+        # 而非用户真实 profile——手册条目 12 裁决（宏写真实 profile 是 bug）。
+        f"-env:UserInstallation=file://{profile_root}",
         "vnd.sun.star.script:Standard.Module1.RecalculateAndSave"
         "?language=Basic&location=application",
         abs_path,
