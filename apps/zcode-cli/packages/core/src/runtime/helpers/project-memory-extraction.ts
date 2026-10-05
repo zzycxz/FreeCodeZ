@@ -1,7 +1,9 @@
+import type { MessageId } from "@zcode/contracts";
 import { selectActiveConversationBranch, type TraceContext } from "../deps.js";
 import {
   buildMemoryExtractionPrompt,
   createMemoryExtractionScheduler,
+  MEMORY_EXTRACTION_CURSOR_ENTRY_TYPE,
   type MemoryExtractionScheduler,
   type MemoryExtractionSnapshot,
 } from "../../memory/extraction.js";
@@ -74,10 +76,63 @@ export function scheduleProjectMemoryExtraction(
     },
   );
 
-  runtime.memoryExtractionScheduler ??= createMemoryExtractionScheduler((extraction) =>
-    executeProjectMemoryExtraction(runtime, extraction),
+  runtime.memoryExtractionScheduler ??= createMemoryExtractionScheduler(
+    (extraction) => executeProjectMemoryExtraction(runtime, extraction),
+    {
+      // 0B-4（升级实施手册）：cursor 落 session entry——重启后只抽新增段（旧版纯内存
+      // cursor，冷恢复必然全史重抽）。读取失败按全量处理（宁重抽不漏抽）；落盘在
+      // 会话行未落地（0B-1 同款 FK 窗口）或写入失败时静默跳过——内存 cursor 已推进，
+      // 下次推进重写同一稳定 entry。
+      loadCursor: () => loadPersistedMemoryExtractionCursor(runtime),
+      onCursorAdvance: (cursor) => {
+        void persistMemoryExtractionCursor(runtime, cursor);
+      },
+    },
   );
   runtime.memoryExtractionScheduler.schedule(snapshot);
+}
+
+const MEMORY_EXTRACTION_CURSOR_ENTRY_ID = "memory-extraction-cursor";
+
+async function loadPersistedMemoryExtractionCursor(
+  runtime: AgentRuntimeInternal,
+): Promise<MessageId | undefined> {
+  if (!runtime.sessionStore?.sessionEntries) return undefined;
+  try {
+    const entries = await runtime.sessionStore.sessionEntries({
+      sessionID: runtime.sessionId,
+      type: MEMORY_EXTRACTION_CURSOR_ENTRY_TYPE,
+    });
+    const latest = entries.at(-1);
+    const cursor = (latest?.data as { cursorMessageId?: unknown } | undefined)?.cursorMessageId;
+    return typeof cursor === "string" && cursor.length > 0
+      ? (cursor as MessageId)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function persistMemoryExtractionCursor(
+  runtime: AgentRuntimeInternal,
+  cursor: string,
+): Promise<void> {
+  if (!runtime.sessionStore?.saveSessionEntry) return;
+  if (!runtime.sessionPersisted) return;
+  const timestamp = Date.now();
+  try {
+    await runtime.sessionStore.saveSessionEntry({
+      id: `${runtime.sessionId}:${MEMORY_EXTRACTION_CURSOR_ENTRY_ID}`,
+      sessionID: runtime.sessionId,
+      type: MEMORY_EXTRACTION_CURSOR_ENTRY_TYPE,
+      touchSession: false,
+      time: { created: timestamp, updated: timestamp },
+      // 后台抽取的记账不是用户活动，不触碰 session.time_updated（与 model-selection 同款论证）。
+      data: { cursorMessageId: cursor },
+    });
+  } catch {
+    // 落盘失败不回滚内存 cursor：下次推进重写同一 entry；最坏退化是重启后重抽一段。
+  }
 }
 
 export async function drainMemoryExtractions(

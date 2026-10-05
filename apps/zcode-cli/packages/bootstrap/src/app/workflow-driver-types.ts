@@ -180,8 +180,13 @@ export interface AgentRuntimeWorkflowDriverDeps {
   /**
    * 时钟与定时器：run 级 stall 时钟与瞬态失败的退避
    * 重驱都用它。可注入只为测试假时间；`stallAfterMs` 缺省 20 分钟；`random` 供退避抖动。
+   * `escalationTimeoutMs`（0B-3）是升级问答停驻的超时撤表上限，缺省 30 分钟；0 = 不限时。
    */
-  clock?: WorkflowClock & { stallAfterMs?: number; random?: () => number };
+  clock?: WorkflowClock & {
+    stallAfterMs?: number;
+    escalationTimeoutMs?: number;
+    random?: () => number;
+  };
 }
 
 /**
@@ -210,6 +215,12 @@ export interface SessionState {
    * 几个 escalate 工具调用，每个都是一次独立的问答（上限由 escalationsUsed 管）。
    */
   readonly pendingEscalations: Map<string, Deferred<string>>;
+  /**
+   * 0B-3（升级实施手册）：每个停驻 escalation 的超时撤表句柄（键 = qid，与
+   * pendingEscalations 同键）。作答/撤下/超时三条退场路径都必须取消对应定时器，
+   * 否则已退场的 qid 会被迟到的定时器再撤一次（对已 settle 的 deferred 二次 reject）。
+   */
+  readonly escalationTimers: Map<string, () => void>;
   /**
    * 本次 ask 已用掉的升级次数（含被上限短路掉的那几次不计——见 makeEscalatePort）。
    * per-ask 计数，startAsk 归零；nudge 轮**不归零**（nudge 仍在同一个 ask 里）。

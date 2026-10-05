@@ -52,7 +52,8 @@ export const amendWorkflowRunSettingsResultSchema = z.object({
 /**
  * 拒绝词表。所有拒绝都发生在停下或新建任何东西之前：
  * not_found / not_configurable / unchanged / script_missing / model_unavailable / compile_failed
- * 是命令自己的检查，missing_boundaries 是端口预检，start_failed 是端口缺席或抛错。
+ * 是命令自己的检查，missing_boundaries 与 amend_in_flight（0B-3 并发互斥）是端口预检，
+ * start_failed 是端口缺席或抛错。
  */
 export const workflowRunSettingsRejectionReasonSchema = z.enum([
   "not_found",
@@ -62,6 +63,7 @@ export const workflowRunSettingsRejectionReasonSchema = z.enum([
   "model_unavailable",
   "compile_failed",
   "missing_boundaries",
+  "amend_in_flight",
   "start_failed",
 ]);
 export type WorkflowRunSettingsRejectionReason = z.infer<

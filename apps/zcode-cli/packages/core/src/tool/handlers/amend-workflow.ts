@@ -76,6 +76,13 @@ function amendRefusalFor(reason: string, runId: string): ToolHandlerFailure {
         errorCode: AMEND_WORKFLOW_ERROR_CODE.MISSING_BOUNDARIES,
         message: `workflow_amend_missing_boundaries: run ${runId}'s journal predates transcript-boundary bookkeeping (or its boundaries were never recorded), so its finished asks cannot seed an amended run — there is no fallback. Submit this script as a fresh CreateWorkflow instead. Nothing was stopped or created.`,
       };
+    case "amend_in_flight":
+      // 0B-3：同前驱并发第二笔修订——放行会血统分叉；拒绝零副作用，指明下一步。
+      return {
+        result: false,
+        errorCode: AMEND_WORKFLOW_ERROR_CODE.AMEND_IN_FLIGHT,
+        message: `workflow_amend_in_flight: another amendment of run ${runId} is already being processed (stopping the predecessor and importing its work). Concurrent forks from one predecessor are refused. Wait for that amendment to settle, then amend its successor run. Nothing new was stopped or created.`,
+      };
     default:
       // 端口契约外的 reason：仍回结构化失败（throw 是接线故障的通道），文案带原词供日志排查。
       return {

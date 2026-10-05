@@ -50,6 +50,7 @@ export type AmendWorkflowRunSettingsRejection =
   | "model_unavailable"
   | "compile_failed"
   | "missing_boundaries"
+  | "amend_in_flight"
   | "start_failed";
 
 export type AmendWorkflowRunSettingsResult =
@@ -274,7 +275,12 @@ export async function amendWorkflowRunSettings(
   if (!amended.ok) {
     return {
       ok: false,
-      reason: amended.reason === "run_not_found" ? "not_found" : "missing_boundaries",
+      reason:
+        amended.reason === "run_not_found"
+          ? "not_found"
+          : amended.reason === "amend_in_flight"
+            ? "amend_in_flight"
+            : "missing_boundaries",
     };
   }
 

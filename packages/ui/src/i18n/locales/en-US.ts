@@ -5052,6 +5052,8 @@ const enUS: Record<string, string> = {
     "The stored script no longer compiles with this version of the workflow facade. Ask the agent to amend the workflow.",
   "chat.toolCall.workflow.run.settings.rejection.missing_boundaries":
     "This run's records are too old to carry its finished work over.",
+  "chat.toolCall.workflow.run.settings.rejection.amend_in_flight":
+    "Another amendment of this run is already in progress; wait for it to settle, then amend its successor.",
   "chat.toolCall.workflow.run.settings.rejection.start_failed":
     "The new run could not be started ({message}).",
   "chat.toolCall.workflow.run.settings.rejection.unsupported":

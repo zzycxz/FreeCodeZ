@@ -170,7 +170,13 @@ export type DynamicWorkflowRunAmendRefusalReason =
   /** journal 里没有这个前驱 run。 */
   | "run_not_found"
   /** 前驱有已完结却缺消息边界记账的 ask，导入的转录截断无从谈起（整体拒绝，无降级回退）。 */
-  | "missing_boundaries";
+  | "missing_boundaries"
+  /**
+   * 0B-3（升级实施手册）：同一前驱上已有一笔 amend 在处理（停止→等结算→建缓存的窗口）。
+   * 并发第二笔若放行会从同一前驱 fork 出两个后继（血统分叉），故结构化拒绝——零副作用，
+   * 前驱与在途修订均不动；模型应等在途修订结算后改修订它的后继。
+   */
+  | "amend_in_flight";
 
 export type DynamicWorkflowRunAmendResult =
   | {

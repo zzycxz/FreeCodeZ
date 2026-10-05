@@ -32,6 +32,13 @@ import {
 } from "./workflow-driver-helpers.js";
 import type { AgentRuntimeWorkflowDriverDeps, SessionState } from "./workflow-driver-types.js";
 
+/** 缺省定时器（与 workflow-driver-concurrency 的 defaultSchedule 同语义：不钉住进程 + 测试注入 clock 时用不到）。 */
+function defaultSchedule(callback: () => void, delayMs: number): () => void {
+  const timer = setTimeout(callback, delayMs);
+  if (typeof timer === "object" && timer !== null && "unref" in timer) timer.unref();
+  return () => clearTimeout(timer);
+}
+
 /**
  * driver 交给升级桥接的宿主面。全是 driver 私有状态的**引用**（不是副本）：`sessions` /
  * `qidToSession` 就是类里的那两张表，`nextEscalationSeq` 递增类里的 per-run 序号，`record` 是
@@ -44,6 +51,12 @@ export interface EscalationHost {
   /** 取下一个 per-run 单调的升级序号（qid 的第二段）。 */
   nextEscalationSeq(): number;
   record(event: RunEvent): void;
+  /**
+   * 0B-3（升级实施手册）：停驻给 run 级 stall 时钟喂一个节拍。stall 时钟只有
+   * 成功/重试两个节拍（workflow-driver-concurrency），escalation 停驻期间零请求零重试，
+   * 闹钟永不上膛——挂死探测不到。节拍让 20 分钟停滞通知照常发（纯观察，不做决策）。
+   */
+  noteEscalationParked(): void;
 }
 
 /**
@@ -64,6 +77,9 @@ export function respondToParkedEscalation(
   const deferred = state.pendingEscalations.get(qid);
   host.qidToSession.delete(qid);
   state.pendingEscalations.delete(qid);
+  // 0B-3：作答退场必须撤掉超时定时器（见 SessionState.escalationTimers 注释）。
+  state.escalationTimers.get(qid)?.();
+  state.escalationTimers.delete(qid);
   if (deferred === undefined) return false;
   try {
     host.record({ type: "escalation-resolved", qid, answer });
@@ -95,6 +111,11 @@ export function withdrawSessionEscalations(host: EscalationHost, state: SessionS
   if (state.pendingEscalations.size === 0) return;
   const entries = [...state.pendingEscalations];
   state.pendingEscalations.clear();
+  // 0B-3：撤下与超时互斥——先撤表再撤定时器，迟到的定时器对空表无事可做。
+  for (const [qid] of entries) {
+    state.escalationTimers.get(qid)?.();
+    state.escalationTimers.delete(qid);
+  }
   for (const [qid, deferred] of entries) {
     host.qidToSession.delete(qid);
     host.deps.escalationRegistry.withdraw(qid);
@@ -184,6 +205,39 @@ export function makeSessionEscalatePort(
         host.qidToSession.delete(qid);
         host.deps.escalationRegistry.withdraw(qid);
         throw error;
+      }
+      // 0B-3（升级实施手册）：主修——deferred 原先无超时，无人作答的 escalation
+      //（自动化 run、UI 无人值守）让 actor 永久阻塞、run 无限挂死。超时撤下走结构化
+      // 拒绝（actor 可 catch WorkflowError 再升级或按缺省继续），提问已进 journal/emit
+      // 双轨不留哑账；同时向 stall 时钟喂节拍（见 EscalationHost.noteEscalationParked）。
+      host.noteEscalationParked();
+      const escalationTimeoutMs = host.deps.clock?.escalationTimeoutMs ?? 30 * 60_000;
+      if (escalationTimeoutMs > 0) {
+        const cancelTimer = (host.deps.clock?.schedule ?? defaultSchedule)((() => {
+          const stillPending = state.pendingEscalations.get(qid) === deferred;
+          if (!stillPending) return;
+          state.pendingEscalations.delete(qid);
+          state.escalationTimers.delete(qid);
+          host.qidToSession.delete(qid);
+          host.deps.escalationRegistry.withdraw(qid);
+          host.deps.logger?.warn?.("Dynamic workflow escalation timed out", {
+            event: "dynamic_workflow.escalation.timed_out",
+            module: "bootstrap.app",
+            qid,
+            runId: host.deps.runId ?? "run",
+            waitedMs: escalationTimeoutMs,
+          });
+          // 码表是封闭联合（加成员会波及引擎侧 exhaustive switch）——用 DriverError，
+          // 超时语义由消息文本承载，消费方（actor 工具错误面）只按消息呈现。
+          deferred.reject(
+            new WorkflowError(
+              "DriverError",
+              `Escalation ${qid} timed out after ${escalationTimeoutMs}ms and was withdrawn; ` +
+                `the ask continues without this answer (re-escalate within budget if still blocked).`,
+            ),
+          );
+        }) as () => void, escalationTimeoutMs);
+        state.escalationTimers.set(qid, cancelTimer);
       }
       return deferred.promise.then((answer) => ({ kind: "answered", answer, qid }) as const);
     },

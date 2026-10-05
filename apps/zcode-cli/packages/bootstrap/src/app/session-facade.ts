@@ -650,6 +650,11 @@ async function persistSessionModelSelection(deps: CreateSessionFacadeDeps): Prom
   if (!deps.sessionStore.saveSessionEntry) return;
   const selection = deps.runtime.getSessionModelSelection();
   if (!selection) return;
+  // 0B-1（升级实施手册）：会话行懒落库完成前写 session_entries 必触发 FK 失败
+  //（session_create 后立即切模型的窗口）。选型已在 runtime 内存生效；懒落库的
+  // 初始选型回写（core events.ts ensureSessionPersisted）会在行创建后落同一稳定
+  // entry，此处跳过不丢数据。
+  if (!deps.runtime.isSessionPersisted()) return;
   const timestamp = Date.now();
   try {
     await deps.sessionStore.saveSessionEntry({

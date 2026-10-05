@@ -146,6 +146,8 @@ class AgentRuntimeWorkflowDriver implements WorkflowDriver {
       qidToSession: this.qidToSession,
       nextEscalationSeq: () => ++this.escalationSeq,
       record: (event) => this.record(event),
+      // 0B-3：停驻节拍（闭包在调用期取 stallClock——构造顺序早于 stallClock 赋值也安全）。
+      noteEscalationParked: () => this.stallClock.noteRetryScheduled("escalation-parked"),
     };
     this.modelFailureHost = {
       deps,
@@ -261,6 +263,7 @@ class AgentRuntimeWorkflowDriver implements WorkflowDriver {
       cancelled: false,
       turnGeneration: 0,
       pendingEscalations: new Map(),
+      escalationTimers: new Map(),
       escalationsUsed: 0,
       modelActivity,
       actor,

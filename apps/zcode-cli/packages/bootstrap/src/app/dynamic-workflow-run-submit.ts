@@ -116,7 +116,38 @@ export async function submitDynamicWorkflowRun(
  * 旧版让 `submit({resumeFrom})` 对在飞前驱回 `not_amendable`，模型只能 TaskStop → 轮询到
  * stopped → 重提交三步；本方法把停止与结算等待收进 service，竞态随之消失。
  */
+/**
+ * 0B-3（升级实施手册）：同前驱 amend 互斥表。停止→等结算→建缓存之间存在窗口：并发第二笔
+ * amend 会穿过同一窗口（预检都过、注册表先后看到同一前驱），从同一前驱 fork 出两个后继
+ * （血统分叉：两条修订链各自宣称 resumedFrom=同一前驱）。键 = 前驱 runId，进程级——
+ * 与 runs 注册表同一作用域；跨 service 实例宁可误拒（第二笔收到结构化拒绝）也不放行分叉。
+ */
+const amendInFlightByPredecessor = new Map<string, Promise<unknown>>();
+
 export async function amendDynamicWorkflowRun(
+  ctx: DynamicWorkflowRunEntryContext,
+  request: DynamicWorkflowRunAmendRequest,
+): Promise<DynamicWorkflowRunAmendResult> {
+  const { deps, runs } = ctx;
+  if (amendInFlightByPredecessor.has(request.predecessorRunId)) {
+    deps.logger?.info?.("Dynamic workflow amend refused: another amend is in flight", {
+      event: "dynamic_workflow.amend.refused",
+      module: "bootstrap.app",
+      predecessorRunId: request.predecessorRunId,
+      reason: "amend_in_flight",
+    });
+    return { ok: false, reason: "amend_in_flight" };
+  }
+  const attempt = amendRunInternal(ctx, request);
+  amendInFlightByPredecessor.set(request.predecessorRunId, attempt);
+  try {
+    return await attempt;
+  } finally {
+    amendInFlightByPredecessor.delete(request.predecessorRunId);
+  }
+}
+
+async function amendRunInternal(
   ctx: DynamicWorkflowRunEntryContext,
   request: DynamicWorkflowRunAmendRequest,
 ): Promise<DynamicWorkflowRunAmendResult> {

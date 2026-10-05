@@ -91,8 +91,15 @@ export function sameModelSelection(
 export async function persistRuntimeModelSelection(
   runtime: AgentRuntimeInternal,
   selection: ModelSelection,
+  options?: { rowExists?: boolean },
 ): Promise<void> {
   if (!runtime.sessionStore?.saveSessionEntry) return;
+  // 0B-1（升级实施手册）：session_entries.sessionID 外键指向 sessions 行；懒落库完成前
+  // 写入必触发 FOREIGN KEY constraint failed（session_create 后切模型/首轮流内定选型均撞
+  // 此窗口）。会话行未落地时跳过——选型已先写入 runtime 内存（setSessionModelSelection），
+  // 懒落库的初始选型回写（events.ts ensureSessionPersisted）会在行创建后落同一稳定 entry，
+  // 不丢数据。rowExists 供回写路径自证（createSession 返回后行已在）。
+  if (!options?.rowExists && !runtime.sessionPersisted) return;
   const timestamp = Date.now();
   try {
     await runtime.sessionStore.saveSessionEntry({

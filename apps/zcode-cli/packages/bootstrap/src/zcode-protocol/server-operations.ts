@@ -1697,6 +1697,17 @@ export async function listSessionSubagents(
 
   const parentSession = await store.getSession(params.sessionId as SessionId);
   if (!parentSession) {
+    // 0B-1（升级实施手册）：会话行懒落库窗口（session_create 后、首条消息前）——会话
+    // 在内存中活着只是行未落地，此时子代理列表必然为空，返回空形状而非
+    // sessionUnavailable gateway_error（与无 store 分支同形）。
+    if (liveParent) {
+      return {
+        revision: liveParent.stateRevision ?? 0,
+        childSessionIds: [],
+        running: [],
+        ended: { total: 0, items: [] },
+      };
+    }
     // 诊断：hydrate 会复用子任务种子读取；若 task index/旧 ACP task 残留了无效 ID，
     // 这里会把“持久化记录不存在”包装成 v4.hydrate，必须记录调用阶段而不是只看错误文本。
     context.logger?.warn("ZCode Protocol session subagents has no persisted parent", {

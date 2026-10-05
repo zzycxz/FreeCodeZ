@@ -29,6 +29,20 @@ interface MemoryExtractionExecutionInput {
   snapshot: MemoryExtractionSnapshot;
 }
 
+/** session entry type：memory 抽取 cursor（0B-4）。开放 string 类型面，不入 SESSION_ENTRY_TYPES 常量表。 */
+export const MEMORY_EXTRACTION_CURSOR_ENTRY_TYPE = "runtime/memory_extraction_cursor";
+
+export interface MemoryExtractionSchedulerOptions {
+  /**
+   * 0B-4（升级实施手册）：cursor 持久化钩子。`loadCursor` 在首个快照处理前恢复一次
+   * （重启后只抽新增段，不再全史重抽）；`onCursorAdvance` 在 cursor 推进（skip 或
+   * success/no-op）时同步回调，落盘失败由调用方吞——内存 cursor 已推进，下次推进重写。
+   * 两者缺席即纯内存旧语义（测试装配零改动）。
+   */
+  loadCursor?: () => Promise<MessageId | undefined>;
+  onCursorAdvance?: (cursor: MessageId) => void;
+}
+
 export interface MemoryExtractionScheduler<
   TSnapshot extends MemoryExtractionSnapshot = MemoryExtractionSnapshot,
 > {
@@ -88,19 +102,32 @@ export function createMemoryExtractionScheduler<
   execute: (
     input: Omit<MemoryExtractionExecutionInput, "snapshot"> & { snapshot: TSnapshot },
   ) => Promise<MemoryExtractionExecutionStatus>,
+  options?: MemoryExtractionSchedulerOptions,
 ): MemoryExtractionScheduler<TSnapshot> {
   let cursor: MessageId | undefined;
   let latestPending: Promise<SnapshotAcquisition<TSnapshot>> | undefined;
   let running: Promise<void> | undefined;
   let shuttingDown = false;
   const shutdownController = new AbortController();
+  // 0B-4：恢复只做一次——首个快照处理前 await；失败按全量（undefined）处理，不阻塞抽取。
+  const restoreCursor = options?.loadCursor?.().then(
+    (restored) => {
+      if (cursor === undefined && restored !== undefined) cursor = restored;
+    },
+    () => undefined,
+  );
+  const advanceCursor = (next: MessageId): void => {
+    cursor = next;
+    options?.onCursorAdvance?.(next);
+  };
 
   const processSnapshot = async (snapshot: TSnapshot): Promise<void> => {
+    await restoreCursor;
     const decision = evaluateMemoryExtraction(snapshot, cursor);
     const snapshotEnd = snapshot.boundaryMessageId;
 
     if (decision.decision === "skip") {
-      if (snapshotEnd) cursor = snapshotEnd;
+      if (snapshotEnd) advanceCursor(snapshotEnd);
       return;
     }
 
@@ -116,7 +143,7 @@ export function createMemoryExtractionScheduler<
     }
 
     if (!shuttingDown && (status === "success" || status === "no-op") && snapshotEnd) {
-      cursor = snapshotEnd;
+      advanceCursor(snapshotEnd);
     }
   };
 

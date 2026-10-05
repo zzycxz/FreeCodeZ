@@ -4821,6 +4821,8 @@ const zhCN: Record<string, string> = {
     "保存的脚本已无法在当前版本的工作流接口上编译。请让代理调整这个工作流。",
   "chat.toolCall.workflow.run.settings.rejection.missing_boundaries":
     "这个运行的记录太旧，无法把已完成的工作带过去。",
+  "chat.toolCall.workflow.run.settings.rejection.amend_in_flight":
+    "这个运行已有一次修订正在处理中，请等它完成后再修订新的后继运行。",
   "chat.toolCall.workflow.run.settings.rejection.start_failed": "新运行没能启动（{message}）。",
   "chat.toolCall.workflow.run.settings.rejection.unsupported":
     "当前 agent 不支持从这里调整工作流设置。",

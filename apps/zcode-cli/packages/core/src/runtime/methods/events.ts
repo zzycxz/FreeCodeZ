@@ -605,7 +605,10 @@ export async function ensureSessionPersisted(
     // 后续显式切模仍复用同一个稳定 entry 覆盖。
     phase = "session_model_selection";
     const initialSelection = this.getSessionModelSelection();
-    if (initialSelection) await persistRuntimeModelSelection(this, initialSelection);
+    // 0B-1：createSession 已返回（行已在），rowExists 自证跳过懒落库窗口守卫。
+    if (initialSelection) {
+      await persistRuntimeModelSelection(this, initialSelection, { rowExists: true });
+    }
     phase = "session_shell_snapshot";
     await persistSessionShellEnvironmentSnapshot(this, traceContext);
     phase = "session_execution_state";
