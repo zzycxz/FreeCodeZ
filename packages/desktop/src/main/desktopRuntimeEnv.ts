@@ -552,7 +552,11 @@ export function buildHostProcessEnv(hostProcessLocalEnv: Record<string, string>)
     // 模型请求默认 header 由 agent 进程构造，过去只继承 shell env 导致桌面启动时拿不到 app 版本。
     // 这里从 main 进程显式下发，agent 子进程继承 host env 后即可稳定写入请求 header。
     [ZCODE_APP_VERSION_ENV]: ZCODE_VERSION,
-    ...(dataBaseDir !== homedir() ? { ZCODE_DATA_BASE_DIR: dataBaseDir } : {}),
+    // 条目1（L04 双读配套写侧）：新键为主；桥接期同时写旧键 ZCODE_DATA_BASE_DIR——
+    // 仓外插件（node-repl-host 等）仍按旧名读，双写保证桥不坏；迁移完成后摘旧键。
+    ...(dataBaseDir !== homedir()
+      ? { FREECODEZ_DATA_BASE_DIR: dataBaseDir, ZCODE_DATA_BASE_DIR: dataBaseDir }
+      : {}),
     ...(windowsAppInstallDir ? { [ZCODE_WINDOWS_APP_INSTALL_DIR_ENV]: windowsAppInstallDir } : {}),
     ...(bundledCuaHelperAppPath
       ? { [ZCODE_CUA_BUNDLED_HELPER_APP_PATH_ENV]: bundledCuaHelperAppPath }

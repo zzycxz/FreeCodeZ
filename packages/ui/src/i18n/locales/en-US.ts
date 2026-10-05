@@ -380,16 +380,6 @@ const enUS: Record<string, string> = {
   "conversationShare.progress.collectingFailed": "Collecting conversation and artifacts failed",
   "conversationShare.progress.uploadingFailed": "Uploading artifacts failed",
   "conversationShare.progress.checkingFailed": "Safety checks failed",
-  "conversationShare.phase.collecting": "Prepare content",
-  "conversationShare.phase.uploading": "Upload artifacts",
-  "conversationShare.phase.checking": "Safety checks",
-  "conversationShare.phase.collectingComplete": "Conversation and artifacts ready",
-  "conversationShare.phase.uploadingComplete": "Artifacts uploaded",
-  "conversationShare.phase.uploadingActive": "Uploading {completed} / {total}",
-  "conversationShare.phase.collectingPending": "Waiting to start",
-  "conversationShare.phase.uploadingPending": "Waiting for preparation",
-  "conversationShare.phase.checkingPending": "Waiting for upload",
-  "conversationShare.phase.failed": "Failed",
   "conversationShare.publicWarning":
     "Check conversations, tool inputs and outputs, and artifacts for sensitive information.",
   "conversationShare.disclosure.description":
@@ -1792,7 +1782,6 @@ const enUS: Record<string, string> = {
   "settings.memory.workspaceMemory": "Workspace Memory",
   "settings.memoryDescription":
     "Save and reuse long-term context in workspaces. Applies to new sessions and may increase model requests and token costs.",
-  "settings.memory.viewer.disabled": "Enable Workspace Memory to view saved memories.",
   "settings.memory.viewer.localOnly":
     "Memory details are available only in the local desktop app. Open Memory settings there to view them.",
   "settings.memory.viewer.title": "Saved workspace memories",
@@ -2802,93 +2791,6 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.codingPlan.enterprise.pendingOrderContinue": "Continue payment",
   "settings.modelProvider.codingPlan.enterprise.pendingOrderProductMissing":
     "The plan for this unpaid order was not found. Refresh plans and try again.",
-  "settings.modelProvider.codingPlan.overseasPayment.title": "{product} overseas payment",
-  "settings.modelProvider.codingPlan.overseasPayment.description":
-    "Amount due: {price}. Choose PayPal or continue on the official Z.ai payment page.",
-  "settings.modelProvider.codingPlan.overseasPayment.paypal": "PayPal",
-  "settings.modelProvider.codingPlan.overseasPayment.paypalDescription":
-    "Open PayPal authorization, then return here to continue.",
-  "settings.modelProvider.codingPlan.overseasPayment.paypalAuthorize": "Continue to PayPal",
-  "settings.modelProvider.codingPlan.overseasPayment.paypalContinue":
-    "I authorized PayPal, continue payment",
-  "settings.modelProvider.codingPlan.overseasPayment.selectPaymentMethod": "Payment method",
-  "settings.modelProvider.codingPlan.overseasPayment.cardPayment": "Credit card / debit card",
-  "settings.modelProvider.codingPlan.overseasPayment.savedCards": "Saved cards",
-  "settings.modelProvider.codingPlan.overseasPayment.refreshCards": "Refresh cards",
-  "settings.modelProvider.codingPlan.overseasPayment.deleteCard": "Delete card",
-  "settings.modelProvider.codingPlan.overseasPayment.cardsLoading": "Loading saved cards...",
-  "settings.modelProvider.codingPlan.overseasPayment.noSavedCards": "No saved cards yet.",
-  "settings.modelProvider.codingPlan.overseasPayment.addCard": "Add card",
-  "settings.modelProvider.codingPlan.overseasPayment.changeCard": "Change card",
-  "settings.modelProvider.codingPlan.overseasPayment.cardExpires": "Expires {month}/{year}",
-  "settings.modelProvider.codingPlan.overseasPayment.cardInformation": "Card information",
-  "settings.modelProvider.codingPlan.overseasPayment.nameOnCard": "Name on card",
-  "settings.modelProvider.codingPlan.overseasPayment.billingAddress": "Billing address",
-  "settings.modelProvider.codingPlan.overseasPayment.country": "Country",
-  "settings.modelProvider.codingPlan.overseasPayment.countryRequired":
-    "Select a billing country or region.",
-  "settings.modelProvider.codingPlan.overseasPayment.addressLine1": "Address line 1",
-  "settings.modelProvider.codingPlan.overseasPayment.city": "City",
-  "settings.modelProvider.codingPlan.overseasPayment.postalCode": "Postal code",
-  "settings.modelProvider.codingPlan.overseasPayment.payWithCard": "Pay with card",
-  "settings.modelProvider.codingPlan.overseasPayment.saveCard": "Save card",
-  "settings.modelProvider.codingPlan.overseasPayment.confirm": "Confirm",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.originalAmount": "Original price",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.discountActivity": "Discount",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.currentPlanCredit":
-    "Current plan credit",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.payAmount": "Amount due",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.deductions": "Deductions",
-  "settings.modelProvider.codingPlan.overseasPayment.addCardBeforeConfirm":
-    "Add a card before confirming.",
-  "settings.modelProvider.codingPlan.overseasPayment.stripeNotReady":
-    "Stripe is still loading. Try again in a moment.",
-  "settings.modelProvider.codingPlan.overseasPayment.cardElementMissing":
-    "Card input is not ready. Refresh and try again.",
-  "settings.modelProvider.codingPlan.overseasPayment.stripe3dsFailed":
-    "Stripe 3DS verification failed.",
-  "settings.modelProvider.codingPlan.overseasPayment.stripePaymentMethodFailed":
-    "Stripe payment method failed.",
-  "settings.modelProvider.codingPlan.overseasPayment.stripePublishableKeyMissing":
-    "Stripe card entry is not configured in this build.",
-  "settings.modelProvider.codingPlan.overseasPayment.close": "Maybe later",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalPolicyTitle": "Renewal Policy",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicyTitle": "Account Usage Policy",
-  "settings.modelProvider.codingPlan.overseasPayment.period.month": "month",
-  "settings.modelProvider.codingPlan.overseasPayment.period.quarter": "quarter",
-  "settings.modelProvider.codingPlan.overseasPayment.period.year": "year",
-  "settings.modelProvider.codingPlan.overseasPayment.recurringPeriod.month": "Monthly",
-  "settings.modelProvider.codingPlan.overseasPayment.recurringPeriod.quarter": "Quarterly",
-  "settings.modelProvider.codingPlan.overseasPayment.recurringPeriod.year": "Yearly",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalCharge":
-    "{price} will be charged automatically per {period}.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalChargeFallback":
-    "Future renewals will follow your selected subscription cycle. The actual renewal amount is subject to your renewal invoice.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalDeduction":
-    "Payments will be deducted first from bonus credits, then from your account balance, and finally via credit card.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalMinimum":
-    "Please note that a small minimum applies when charging your credit card. If the remaining amount is less, we will round up the deduction to meet this minimum.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalRecurring":
-    "{period} charges will continue on a recurring basis until you cancel in accordance with our Terms of Service.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalCancelPrefix":
-    "You may disable auto-renewal at least 1 day before the renewal date in your ",
-  "settings.modelProvider.codingPlan.overseasPayment.subscriptionSettingLink":
-    "subscription setting",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalCancelSuffix": ".",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicyPrefix":
-    "The GLM Coding Plan is strictly limited to use by the subscriber within ",
-  "settings.modelProvider.codingPlan.overseasPayment.supportedProductsLink":
-    "officially supported products",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicyAfterSupportedProducts":
-    ". Any sharing, resale, transfer, or third-party access is strictly prohibited. Any improper, unauthorized, or policy-violating use may result in immediate account restriction or suspension with no refunds. Please comply with our ",
-  "settings.modelProvider.codingPlan.overseasPayment.termsLink": "Terms",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicyBetween": " and ",
-  "settings.modelProvider.codingPlan.overseasPayment.policyLink": "Policy",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicySuffix": ".",
-  "settings.modelProvider.codingPlan.overseasPayment.authorizationPrefix":
-    "You agree that Z.ai will charge your card the above amount now and on a recurring basis according to your subscription plan until you cancel in accordance with our ",
-  "settings.modelProvider.codingPlan.overseasPayment.authorizationTermsLink": "terms",
-  "settings.modelProvider.codingPlan.overseasPayment.authorizationSuffix": ".",
   "settings.modelProvider.codingPlan.paymentDialog.agreementPrefix":
     "Payment means you agree to the ",
   "settings.modelProvider.codingPlan.paymentDialog.serviceAgreementLink": "Service agreement",
@@ -5390,6 +5292,7 @@ const enUS: Record<string, string> = {
   "chat.quota.action.switchModel": "Switch model",
   "chat.quota.action.switchProvider": "Switch provider",
   "chat.quota.action.refresh": "Refresh quota",
+  "chat.quota.providerLimited": "Your current plan or quota limit has been reached. Upgrade or adjust your plan to continue.",
 
   // Permissions
   "chat.permission.title": "Permission required",
@@ -5675,15 +5578,6 @@ const enUS: Record<string, string> = {
   "feedback.process.backToDetail": "Back to details",
   "feedback.process.title": "Process",
   "feedback.process.currentLatest": "Latest:",
-  "feedback.progress.title": "Progress",
-  "feedback.progress.currentHandler": "Current handler:",
-  "feedback.progress.assignee.dev": "Developer",
-  "feedback.progress.assignee.unassigned": "Unassigned",
-  "feedback.progress.stage.submitted": "Submitted",
-  "feedback.progress.stage.reviewing": "Reviewing",
-  "feedback.progress.stage.inProgress": "In progress",
-  "feedback.progress.stage.done": "Done",
-  "feedback.progress.stage.closed": "Closed",
   "feedback.timeline.stepCount": "{count} step(s)",
   "feedback.timeline.latestUpdate": "Updated {time}",
   "feedback.timeline.syncWhenUpdated": "Updates will sync here",
@@ -5744,10 +5638,6 @@ const enUS: Record<string, string> = {
   "feedback.submit.bug.descriptionLabel": "Details",
   "feedback.submit.bug.descriptionPlaceholder":
     "Describe what you ran into: where you clicked, what happened, what you expected, and whether there was an error. We keep your original description and analyze it after submission.",
-  "feedback.submit.bug.helper.1": "Location",
-  "feedback.submit.bug.helper.2": "Steps to reproduce",
-  "feedback.submit.bug.helper.3": "Expected result",
-  "feedback.submit.bug.helper.4": "Actual result / error",
   "feedback.submit.bug.supplementalDescription": "",
   "feedback.submit.bug.screenshotHint":
     "Paste a screenshot, or add a local screenshot as an attachment.",
@@ -5775,10 +5665,6 @@ const enUS: Record<string, string> = {
   "feedback.submit.feature.descriptionLabel": "Suggestion",
   "feedback.submit.feature.descriptionPlaceholder":
     "Describe what you want added or improved: the scenario, what is inconvenient now, the ideal behavior, and what it would save you.",
-  "feedback.submit.feature.helper.1": "Scenario",
-  "feedback.submit.feature.helper.2": "Current friction",
-  "feedback.submit.feature.helper.3": "Expected capability / interaction",
-  "feedback.submit.feature.helper.4": "Value",
   "feedback.submit.feature.supplementalDescription":
     "Choose a module so we can assess priority and impact.",
   "feedback.submit.feature.screenshotHint":
@@ -5791,10 +5677,6 @@ const enUS: Record<string, string> = {
   "feedback.submit.performance.descriptionLabel": "Where it is slow",
   "feedback.submit.performance.descriptionPlaceholder":
     "Describe which operation is slow, how slow it feels, whether it happens every time, and the approximate data or task size.",
-  "feedback.submit.performance.helper.1": "Operation",
-  "feedback.submit.performance.helper.2": "Delay felt",
-  "feedback.submit.performance.helper.3": "Stable reproduction",
-  "feedback.submit.performance.helper.4": "Task scale / data size",
   "feedback.submit.performance.supplementalDescription":
     "Performance reports attach logs by default. Module and model help locate the slow path.",
   "feedback.submit.performance.screenshotHint":
@@ -6178,7 +6060,7 @@ const enUS: Record<string, string> = {
   "automations.form.schedule.monthDayValue": "{month}/{day}",
   "automations.form.schedule.yearDateLabel": "Select month and day",
   "automations.form.schedule.minutePrefix": "at minute",
-  "automations.form.schedule.minuteSuffix": "",
+  "automations.form.schedule.minuteSuffix": "min",
   "automations.form.schedule.weekdaysLabel": "Choose weekdays",
   "automations.customRepeat.title": "Custom Repeat",
   "automations.customRepeat.frequency": "Repetition frequency",

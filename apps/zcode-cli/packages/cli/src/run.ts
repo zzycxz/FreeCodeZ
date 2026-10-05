@@ -1,6 +1,7 @@
 import { extractDisallowedToolsArgs, parseGlobalArgs } from "./arguments.js";
 import { createNodeLoggerFactory } from "@zcode/adapters";
 import { getRuntimeInfo, type PresentationSurface } from "@zcode/core";
+import { collectEnvironmentProbes, type DoctorProbe, type DoctorReport } from "./doctor-probes.js";
 import { color, formatJson, supportsColor } from "@zcode/core";
 import { getZCodeCopy, isUiLocale, type UiLocale } from "@zcode/i18n";
 import type { RunContext, GlobalOptions, GlobalOutputFormat } from "@zcode/shared-types";
@@ -186,7 +187,24 @@ const writeHelp = (
   stdout.write(formatCliHelp(version, locale, detectedLocale));
 };
 
-const runDoctor = (ctx: RunContext, options: GlobalOptions, workingDirectory: string): number => {
+const runDoctor = async (
+  ctx: RunContext,
+  options: GlobalOptions,
+  workingDirectory: string,
+): Promise<number> => {
+  // 条目 6（升级实施手册）：探针异步集合需 await——进程会在探针完成前退出。
+  // 探针失败不改变退出码：doctor 是诊断不是门禁（探针内部已把异常折成结论）。
+  const probes = await collectEnvironmentProbes();
+  emitDoctorReport(ctx, options, workingDirectory, probes);
+  return 0;
+};
+
+function emitDoctorReport(
+  ctx: RunContext,
+  options: GlobalOptions,
+  workingDirectory: string,
+  probes: DoctorProbe[],
+): void {
   const runtime = getRuntimeInfo();
   const payload = {
     cli: {
@@ -207,11 +225,18 @@ const runDoctor = (ctx: RunContext, options: GlobalOptions, workingDirectory: st
       default: "node-bundle",
       sea: "optional",
     },
+    // JsonValue 投影：探针结构是纯 string 字面量联合，显式展开绕开 NodeJS 平台枚举进
+    // 递归 JsonValue 的推断摩擦。
+    probes: probes.map((probe) => ({
+      name: probe.name,
+      status: probe.status,
+      detail: probe.detail,
+    })),
   };
 
   if (options.json) {
     ctx.stdout.write(formatJson(payload));
-    return 0;
+    return;
   }
 
   const colors = supportsColor(ctx.stdout, options.noColor);
@@ -228,8 +253,16 @@ const runDoctor = (ctx: RunContext, options: GlobalOptions, workingDirectory: st
     ctx.stdout.write(`cwd: ${payload.runtime.cwd}\n`);
   }
 
-  return 0;
-};
+  // 条目 6：探针段——ok 静默可折叠（verbose 展开），warn/fail/unavailable 始终可见。
+  ctx.stdout.write("\nprobes:\n");
+  for (const probe of payload.probes) {
+    const mark =
+      probe.status === "ok" ? "✓" : probe.status === "warn" ? "!" : probe.status === "fail" ? "✗" : "-";
+    const show = probe.status !== "ok" || options.verbose;
+    if (show) ctx.stdout.write(`  ${mark} ${probe.name}: ${probe.detail}\n`);
+  }
+}
+
 
 const runZCodeProtocolCommand = async (
   ctx: RunContext,
@@ -533,7 +566,7 @@ export const run = async (ctx: RunContext, deps: RunDependencies = {}): Promise<
         parsed.values["prepare-storage"] === true,
       );
     case "doctor":
-      return runDoctor(ctx, options, workingDirectory);
+      return await runDoctor(ctx, options, workingDirectory);
     case "login":
       return await runLoginCommand(
         ctx,

@@ -113,9 +113,12 @@ function shouldApplyLocaleBroadcastMessage(
 function createIntl(locale: Locale): IntlInstance {
   // noUncheckedIndexedAccess：用 ?? 回退到默认语言的翻译
   const messages = MESSAGES[locale] ?? MESSAGES[DEFAULT_LOCALE]!;
+  // 条目2②（升级实施手册）：回退链 当前语言→en→键名。DEFAULT_LOCALE 是 zh-CN，
+  // 单级回退会让 en 缺键时露出中文；en 是兜底通用语，缺键再露键名（可 grep 排查）。
+  const enMessages = MESSAGES["en-US"]!;
   return {
     formatMessage({ id }, values) {
-      let msg = messages[id] ?? id;
+      let msg = messages[id] ?? enMessages[id] ?? id;
       if (values) {
         for (const [key, val] of Object.entries(values)) {
           msg = msg.replaceAll(`{${key}}`, String(val));

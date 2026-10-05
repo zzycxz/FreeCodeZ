@@ -223,11 +223,49 @@ export function resetCapturedZCodeAgentTelemetryEnvForTest(): void {
   }
 }
 
+// 条目1（升级实施手册）：ZCODE_*→FREECODEZ_* 命名空间迁移期。
+// 这些旧键属于「仓外桥」：node-repl-host / CUA helper / hexin 插件按旧名读，FC 注入链
+// 双写桥接——见到的 ZCODE_* 是我们自己桥进去的，不算外来配置，不告警。
+export const MIGRATION_BRIDGED_ZCODE_KEYS = new Set([
+  "ZCODE_DATA_BASE_DIR",
+  "ZCODE_CUA_PERMISSION_BROKER_SOCKET",
+  "ZCODE_CUA_PLUGIN_ROOT",
+  "ZCODE_PLUGIN_ROOT",
+  "ZCODE_PLUGIN_DATA",
+  "ZCODE_CUA_HELPER_INSTALL_VARIANT",
+  "ZCODE_CUA_BUNDLED_HELPER_APP_PATH",
+  "ZCODE_BASE_URL",
+  "ZCODE_ENDPOINT_ORIGIN",
+]);
+
+/** 迁移告警去重（进程级一次：同一键反复出现只会打一行，不刷屏）。 */
+const migrationWarnedKeys = new Set<string>();
+
+/**
+ * 迁移期探测：启动后见到的外来 ZCODE_* env（不在桥接白名单）提示改名。
+ * 每键至多一条；找不到 logger 就静默（warn 是提示不是门禁）。
+ */
+export function warnLegacyZCodeEnvKeys(env: Record<string, string | undefined>): void {
+  if (process.env.FREECODEZ_DISABLE_MIGRATION_WARN === "1") return;
+  for (const key of Object.keys(env)) {
+    if (!key.startsWith("ZCODE_") || MIGRATION_BRIDGED_ZCODE_KEYS.has(key)) continue;
+    if (migrationWarnedKeys.has(key)) continue;
+    migrationWarnedKeys.add(key);
+    // shared 层刻意不依赖 services logger（循环依赖）；console.warn 一次即可——
+    // 迁移期提示是给人看的排障信息，不需要进结构化日志管道。
+    console.warn(
+      `[env.migration] Legacy env "${key}" detected. FreeCodeZ reads FREECODEZ_* keys; ` +
+        `"${key}" is ignored unless it is bridged for out-of-repo plugins.`,
+    );
+  }
+}
+
 export function sanitizeZCodeRuntimeEnv<T extends Record<string, string | undefined>>(
   env: T,
 ): Record<string, string> {
   captureZCodeCuaBrokerCredentials(env);
   captureZCodeAgentTelemetryEnv(env);
+  warnLegacyZCodeEnvKeys(env);
   const sanitized: Record<string, string> = {};
   for (const [key, value] of Object.entries(env)) {
     if (value === undefined || shouldSanitizeZCodeRuntimeEnvKey(key)) {

@@ -343,16 +343,6 @@ const zhCN: Record<string, string> = {
   "conversationShare.progress.collectingFailed": "整理会话和产物失败",
   "conversationShare.progress.uploadingFailed": "上传产物失败",
   "conversationShare.progress.checkingFailed": "安全检查失败",
-  "conversationShare.phase.collecting": "整理内容",
-  "conversationShare.phase.uploading": "上传产物",
-  "conversationShare.phase.checking": "安全检查",
-  "conversationShare.phase.collectingComplete": "会话和产物已准备",
-  "conversationShare.phase.uploadingComplete": "产物上传完成",
-  "conversationShare.phase.uploadingActive": "正在上传 {completed} / {total}",
-  "conversationShare.phase.collectingPending": "等待开始",
-  "conversationShare.phase.uploadingPending": "等待整理完成",
-  "conversationShare.phase.checkingPending": "等待上传完成",
-  "conversationShare.phase.failed": "失败",
   "conversationShare.publicWarning": "公开前请检查对话、工具输入输出和产物中的敏感信息。",
   "conversationShare.disclosure.description": "系统不会自动检测敏感信息。",
   "conversationShare.disclosure.checkbox": "我已检查分享内容，确认不包含敏感信息。",
@@ -2627,93 +2617,6 @@ const zhCN: Record<string, string> = {
   "settings.modelProvider.codingPlan.enterprise.pendingOrderContinue": "继续支付",
   "settings.modelProvider.codingPlan.enterprise.pendingOrderProductMissing":
     "未找到待支付订单对应的套餐，请刷新套餐后重试。",
-  "settings.modelProvider.codingPlan.overseasPayment.title": "{product} overseas payment",
-  "settings.modelProvider.codingPlan.overseasPayment.description":
-    "Amount due: {price}. Choose PayPal or continue on the official Z.ai payment page.",
-  "settings.modelProvider.codingPlan.overseasPayment.paypal": "PayPal",
-  "settings.modelProvider.codingPlan.overseasPayment.paypalDescription":
-    "Open PayPal authorization, then return here to continue.",
-  "settings.modelProvider.codingPlan.overseasPayment.paypalAuthorize": "Continue to PayPal",
-  "settings.modelProvider.codingPlan.overseasPayment.paypalContinue":
-    "I authorized PayPal, continue payment",
-  "settings.modelProvider.codingPlan.overseasPayment.selectPaymentMethod": "Payment method",
-  "settings.modelProvider.codingPlan.overseasPayment.cardPayment": "Credit card / debit card",
-  "settings.modelProvider.codingPlan.overseasPayment.savedCards": "Saved cards",
-  "settings.modelProvider.codingPlan.overseasPayment.refreshCards": "Refresh cards",
-  "settings.modelProvider.codingPlan.overseasPayment.deleteCard": "Delete card",
-  "settings.modelProvider.codingPlan.overseasPayment.cardsLoading": "Loading saved cards...",
-  "settings.modelProvider.codingPlan.overseasPayment.noSavedCards": "No saved cards yet.",
-  "settings.modelProvider.codingPlan.overseasPayment.addCard": "Add card",
-  "settings.modelProvider.codingPlan.overseasPayment.changeCard": "Change card",
-  "settings.modelProvider.codingPlan.overseasPayment.cardExpires": "Expires {month}/{year}",
-  "settings.modelProvider.codingPlan.overseasPayment.cardInformation": "Card information",
-  "settings.modelProvider.codingPlan.overseasPayment.nameOnCard": "Name on card",
-  "settings.modelProvider.codingPlan.overseasPayment.billingAddress": "Billing address",
-  "settings.modelProvider.codingPlan.overseasPayment.country": "Country",
-  "settings.modelProvider.codingPlan.overseasPayment.countryRequired":
-    "Select a billing country or region.",
-  "settings.modelProvider.codingPlan.overseasPayment.addressLine1": "Address line 1",
-  "settings.modelProvider.codingPlan.overseasPayment.city": "City",
-  "settings.modelProvider.codingPlan.overseasPayment.postalCode": "Postal code",
-  "settings.modelProvider.codingPlan.overseasPayment.payWithCard": "Pay with card",
-  "settings.modelProvider.codingPlan.overseasPayment.saveCard": "Save card",
-  "settings.modelProvider.codingPlan.overseasPayment.confirm": "Confirm",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.originalAmount": "Original price",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.discountActivity": "Discount",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.currentPlanCredit":
-    "Current plan credit",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.payAmount": "Amount due",
-  "settings.modelProvider.codingPlan.overseasPayment.amount.deductions": "Deductions",
-  "settings.modelProvider.codingPlan.overseasPayment.addCardBeforeConfirm":
-    "Add a card before confirming.",
-  "settings.modelProvider.codingPlan.overseasPayment.stripeNotReady":
-    "Stripe is still loading. Try again in a moment.",
-  "settings.modelProvider.codingPlan.overseasPayment.cardElementMissing":
-    "Card input is not ready. Refresh and try again.",
-  "settings.modelProvider.codingPlan.overseasPayment.stripe3dsFailed":
-    "Stripe 3DS verification failed.",
-  "settings.modelProvider.codingPlan.overseasPayment.stripePaymentMethodFailed":
-    "Stripe payment method failed.",
-  "settings.modelProvider.codingPlan.overseasPayment.stripePublishableKeyMissing":
-    "Stripe card entry is not configured in this build.",
-  "settings.modelProvider.codingPlan.overseasPayment.close": "Maybe later",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalPolicyTitle": "Renewal Policy",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicyTitle": "Account Usage Policy",
-  "settings.modelProvider.codingPlan.overseasPayment.period.month": "month",
-  "settings.modelProvider.codingPlan.overseasPayment.period.quarter": "quarter",
-  "settings.modelProvider.codingPlan.overseasPayment.period.year": "year",
-  "settings.modelProvider.codingPlan.overseasPayment.recurringPeriod.month": "Monthly",
-  "settings.modelProvider.codingPlan.overseasPayment.recurringPeriod.quarter": "Quarterly",
-  "settings.modelProvider.codingPlan.overseasPayment.recurringPeriod.year": "Yearly",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalCharge":
-    "{price} will be charged automatically per {period}.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalChargeFallback":
-    "Future renewals will follow your selected subscription cycle. The actual renewal amount is subject to your renewal invoice.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalDeduction":
-    "Payments will be deducted first from bonus credits, then from your account balance, and finally via credit card.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalMinimum":
-    "Please note that a small minimum applies when charging your credit card. If the remaining amount is less, we will round up the deduction to meet this minimum.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalRecurring":
-    "{period} charges will continue on a recurring basis until you cancel in accordance with our Terms of Service.",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalCancelPrefix":
-    "You may disable auto-renewal at least 1 day before the renewal date in your ",
-  "settings.modelProvider.codingPlan.overseasPayment.subscriptionSettingLink":
-    "subscription setting",
-  "settings.modelProvider.codingPlan.overseasPayment.renewalCancelSuffix": ".",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicyPrefix":
-    "The GLM Coding Plan is strictly limited to use by the subscriber within ",
-  "settings.modelProvider.codingPlan.overseasPayment.supportedProductsLink":
-    "officially supported products",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicyAfterSupportedProducts":
-    ". Any sharing, resale, transfer, or third-party access is strictly prohibited. Any improper, unauthorized, or policy-violating use may result in immediate account restriction or suspension with no refunds. Please comply with our ",
-  "settings.modelProvider.codingPlan.overseasPayment.termsLink": "Terms",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicyBetween": " and ",
-  "settings.modelProvider.codingPlan.overseasPayment.policyLink": "Policy",
-  "settings.modelProvider.codingPlan.overseasPayment.accountPolicySuffix": ".",
-  "settings.modelProvider.codingPlan.overseasPayment.authorizationPrefix":
-    "You agree that Z.ai will charge your card the above amount now and on a recurring basis according to your subscription plan until you cancel in accordance with our ",
-  "settings.modelProvider.codingPlan.overseasPayment.authorizationTermsLink": "terms",
-  "settings.modelProvider.codingPlan.overseasPayment.authorizationSuffix": ".",
   "settings.modelProvider.codingPlan.paymentDialog.agreementPrefix": "同意",
   "settings.modelProvider.codingPlan.paymentDialog.serviceAgreementLink": "《服务协议》",
   "settings.modelProvider.codingPlan.paymentDialog.agreementBetween": "、",
@@ -5446,15 +5349,6 @@ const zhCN: Record<string, string> = {
   "feedback.process.backToDetail": "返回详情",
   "feedback.process.title": "处理流程",
   "feedback.process.currentLatest": "当前最新：",
-  "feedback.progress.title": "处理进度",
-  "feedback.progress.currentHandler": "当前处理：",
-  "feedback.progress.assignee.dev": "研发",
-  "feedback.progress.assignee.unassigned": "等待分配",
-  "feedback.progress.stage.submitted": "已提交",
-  "feedback.progress.stage.reviewing": "评估中",
-  "feedback.progress.stage.inProgress": "处理中",
-  "feedback.progress.stage.done": "已完结",
-  "feedback.progress.stage.closed": "已关闭",
   "feedback.timeline.stepCount": "共 {count} 步",
   "feedback.timeline.latestUpdate": "最近更新 {time}",
   "feedback.timeline.syncWhenUpdated": "有进展后会在这里同步",
@@ -5512,10 +5406,6 @@ const zhCN: Record<string, string> = {
   "feedback.submit.bug.descriptionLabel": "详细说明",
   "feedback.submit.bug.descriptionPlaceholder":
     "直接写你遇到的问题：点了哪里、发生了什么、期望是什么、有没有报错。我们会保留原始描述，提交后再由后端辅助分析。",
-  "feedback.submit.bug.helper.1": "发生位置",
-  "feedback.submit.bug.helper.2": "复现步骤",
-  "feedback.submit.bug.helper.3": "期望结果",
-  "feedback.submit.bug.helper.4": "实际结果 / 报错",
   "feedback.submit.bug.supplementalDescription": "",
   "feedback.submit.bug.screenshotHint": "粘贴截图，或添加本地截图作为附件。",
   "feedback.submit.bug.missingTitle": "请写一个标题",
@@ -5541,10 +5431,6 @@ const zhCN: Record<string, string> = {
   "feedback.submit.feature.descriptionLabel": "建议内容",
   "feedback.submit.feature.descriptionPlaceholder":
     "写你希望新增或优化什么：使用场景是什么、现在哪里不方便、理想效果是什么、这个建议能帮你节省什么。",
-  "feedback.submit.feature.helper.1": "使用场景",
-  "feedback.submit.feature.helper.2": "当前不方便之处",
-  "feedback.submit.feature.helper.3": "期望能力 / 交互",
-  "feedback.submit.feature.helper.4": "带来的价值",
   "feedback.submit.feature.supplementalDescription":
     "建议也需要选择模块，方便我们评估优先级和影响范围。",
   "feedback.submit.feature.screenshotHint": "可以贴参考截图、草图或当前不顺手的界面。",
@@ -5556,10 +5442,6 @@ const zhCN: Record<string, string> = {
   "feedback.submit.performance.descriptionLabel": "慢在哪里",
   "feedback.submit.performance.descriptionPlaceholder":
     "写清楚哪个操作慢、慢到什么程度、是否每次都发生、数据量或任务规模大概是多少。",
-  "feedback.submit.performance.helper.1": "具体操作",
-  "feedback.submit.performance.helper.2": "耗时体感",
-  "feedback.submit.performance.helper.3": "是否稳定复现",
-  "feedback.submit.performance.helper.4": "任务规模 / 数据量",
   "feedback.submit.performance.supplementalDescription":
     "性能问题默认附带日志，模块和模型能帮助我们定位耗时链路。",
   "feedback.submit.performance.screenshotHint": "可以贴加载中、卡住或资源占用相关截图。",

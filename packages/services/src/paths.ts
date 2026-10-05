@@ -8,7 +8,11 @@ import { DATA_BASE_DIR_FORBIDDEN_WINDOWS_INSTALL_DIR_ERROR_CODE } from "@zcode/s
 
 let _dataBaseDir: string | null = null;
 export const ZCODE_WINDOWS_APP_INSTALL_DIR_ENV = "ZCODE_WINDOWS_APP_INSTALL_DIR";
-const envDataBaseDir = process.env.ZCODE_DATA_BASE_DIR?.trim() || null;
+// 条目1（升级实施手册，L04/quartet 模板）：旧部署（ZCode/FreeCodeZ 旧盘真值）用
+// ZCODE_DATA_BASE_DIR 指定数据根。读取侧新键 FREECODEZ_DATA_BASE_DIR 未设置时回退读
+// 旧键，否则旧部署 env 被静默忽略、数据根漂回 homedir；写侧仍只写新键。
+const envDataBaseDir =
+  process.env.FREECODEZ_DATA_BASE_DIR?.trim() || process.env.ZCODE_DATA_BASE_DIR?.trim() || null;
 const defaultDataBaseDir = process.env.HOME?.trim() || homedir();
 
 interface DataBaseDirTargetValidationOptions {

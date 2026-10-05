@@ -21,7 +21,10 @@ export interface ServerLayout {
 }
 
 function getDefaultServerDataRoot(): string {
-  const configured = process.env.ZCODE_DATA_BASE_DIR?.trim();
+  // 条目1（L04/quartet 模板）：旧部署用 ZCODE_DATA_BASE_DIR 指定数据根；
+  // 读取侧新键未设置时回退读旧键（旧部署 env 不再被静默忽略）；写侧保持新名。
+  const configured =
+    process.env.FREECODEZ_DATA_BASE_DIR?.trim() || process.env.ZCODE_DATA_BASE_DIR?.trim();
   return join(configured || homedir(), ".freecodez", "server");
 }
 
