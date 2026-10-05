@@ -54,9 +54,9 @@ function buildCliZCodeSourceHeaders(
   const timezone = normalizePrintableHeaderValue(Intl.DateTimeFormat().resolvedOptions().timeZone);
   return {
     "HTTP-Referer": resolveRuntimeZCodeEndpointOrigin(env),
-    "User-Agent": `ZCode/${appVersion ?? "unknown"}`,
-    ...(appVersion ? { "X-ZCode-App-Version": appVersion } : {}),
-    "X-Title": `Z Code@${sourceTitle}`,
+    "User-Agent": `FreeCodeZ/${appVersion ?? "unknown"}`,
+    ...(appVersion ? { "X-FreeCodeZ-App-Version": appVersion } : {}),
+    "X-Title": `FreeCodeZ@${sourceTitle}`,
     "X-Release-Channel": resolveRuntimeZCodeEnv(env),
     "X-Client-Language": locale ?? "unknown",
     "X-Client-Timezone": timezone ?? "unknown",
