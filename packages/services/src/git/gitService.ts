@@ -1,6 +1,9 @@
+import * as fsp from "node:fs/promises";
 import { resolve } from "node:path";
 import type { GitBranchComparison, GitFileChange, GitChangeSectionId } from "@zcode/shared";
 import { isPathInWorkspaceScope, normalizeGitPath, toWorkspaceRelativeGitPath } from "./config.js";
+import { hashContent, rejectHunksInContent } from "@zcode/shared";
+import type { GitRejectHunksResult } from "@zcode/shared";
 import { filterCommitMessageFilesByCurrentSession } from "./commitMessageFileScope.js";
 import type { IGitService } from "./git.js";
 import type { GitCommitMessageGenerator } from "./gitCommitMessageGenerator.js";
@@ -249,6 +252,33 @@ export function createGitService(options?: {
 
     async discardPaths(params) {
       await repo.discard(params.workspacePath, params.paths, params.staged ?? false);
+    },
+
+    async rejectHunks(params): Promise<GitRejectHunksResult> {
+      // 条目 7：hunk 级拒绝 = 纯核心反打（shared/git-hunks）+ 漂移预检 + 原子写回。
+      const { workspacePath, path, patch, hunkIndexes, expectedContentHash } = params;
+      let current: string;
+      try {
+        current = await fsp.readFile(path, "utf8");
+      } catch (error) {
+        return { ok: false, code: "read_failed", message: `cannot read ${path}: ${String(error)}` };
+      }
+      if (expectedContentHash && hashContent(current) !== expectedContentHash) {
+        return {
+          ok: false,
+          code: "stale_content",
+          message: "file changed since the diff was observed; re-observe and retry",
+        };
+      }
+      const result = rejectHunksInContent({ content: current, patch, hunkIndexes });
+      if (!result.ok) return result;
+      try {
+        await fsp.writeFile(path, result.content, "utf8");
+      } catch (error) {
+        return { ok: false, code: "write_failed", message: String(error) };
+      }
+      // 状态刷新走既有 invalidate 通道（discard 同款不显式刷）。
+      return { ok: true, rejectedCount: result.rejectedCount, keptCount: result.keptCount };
     },
 
     async generateCommitMessage(params) {

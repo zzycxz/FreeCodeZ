@@ -718,6 +718,7 @@ const zhCN: Record<string, string> = {
   "diff.placeholder.badge": "UI 占位",
   "diff.placeholder.description":
     "当前先完成右侧 Diff 面板的前端壳层，真实 Git service 与命令执行后续再接入。",
+  "diff.action.failed.toast": "Git 操作失败，请重试或查看日志。",
   "diff.placeholder.toast": "由于 Git service 还未完全接好，当前 Diff 面板先保留前端占位交互。",
   "git.readonly": "只读",
   "git.head.detached": "游离 HEAD",

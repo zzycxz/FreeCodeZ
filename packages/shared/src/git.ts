@@ -76,6 +76,22 @@ export interface GitDiffRequest {
   sourceId?: GitChangeSourceId;
 }
 
+export interface GitRejectHunksRequest {
+  workspacePath: string;
+  /** 仓库相对或绝对路径（同 discardPaths 口径）。 */
+  path: string;
+  /** 观察时的统一 diff 文本（GitDiffResult.patch）。 */
+  patch: string;
+  /** 要拒绝的 hunk 下标（parse 后的序）。 */
+  hunkIndexes: number[];
+  /** 漂移预检：观察时 after 内容的 sha256（hashContent）。缺席则跳过预检（不推荐）。 */
+  expectedContentHash?: string;
+}
+
+export type GitRejectHunksResult =
+  | { ok: true; rejectedCount: number; keptCount: number }
+  | { ok: false; code: "stale_content" | "hunk_drift" | "bad_patch" | "bad_selection" | "read_failed" | "write_failed"; message: string };
+
 export interface GitDiffResult {
   path: string;
   availability: GitDiffAvailability;

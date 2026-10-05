@@ -10,6 +10,8 @@ import type {
   GitDiffQuery,
   GitDiffResult,
   GitDiscardPathsRequest,
+  GitRejectHunksRequest,
+  GitRejectHunksResult,
   GitGenerateCommitMessageRequest,
   GitGenerateCommitMessageResult,
   GitIdentity,
@@ -43,6 +45,7 @@ export interface IGitService {
   stagePaths(params: GitPathMutationRequest): Promise<void>;
   unstagePaths(params: GitPathMutationRequest): Promise<void>;
   discardPaths(params: GitDiscardPathsRequest): Promise<void>;
+  rejectHunks(params: GitRejectHunksRequest): Promise<GitRejectHunksResult>;
   generateCommitMessage(
     params: GitGenerateCommitMessageRequest,
   ): Promise<GitGenerateCommitMessageResult>;

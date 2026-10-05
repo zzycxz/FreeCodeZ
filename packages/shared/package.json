@@ -33,7 +33,8 @@
   },
   "dependencies": {
     "@zcode/model-option-map": "workspace:*",
-    "zod": "4.6.5"
+    "zod": "4.6.5",
+    "diff": "^9.0.0"
   },
   "devDependencies": {
     "typescript": "^6.0.2"
