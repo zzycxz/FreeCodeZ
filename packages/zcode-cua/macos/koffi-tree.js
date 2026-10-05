@@ -249,3 +249,30 @@ export function flattenTree(bindings, handles, pid, element, depth, budget) {
   }
 }
 
+
+/**
+ * 从 element 起向下找第一个 AXValue 可设的元素（深度优先，depth 上限）。
+ * 聚焦元素常是容器（window/scroll area），真正可写的文本区在其子树。
+ * 返回 undefined = 子树内无可设元素。
+ */
+export function findSettableValueElement(bindings, element, depth = 0) {
+  if (!element || depth > 6) return undefined;
+  const settable = withCFString(bindings, "AXValue", (valueName) => {
+    const out = new ArrayBuffer(4);
+    const err = bindings.AXUIElementIsAttributeSettable(element, valueName, out);
+    if (err !== 0) return false;
+    return new DataView(out).getUint8(0) !== 0;
+  });
+  if (settable) return element;
+  for (const child of copyChildren(bindings, element)) {
+    if (!child) continue;
+    const found = findSettableValueElement(bindings, child, depth + 1);
+    if (found && found !== child) {
+      // 找到的子元素归数组所有——持有前 retain（Get 惯例）。
+      bindings.CFRetain(found);
+      return found;
+    }
+    if (found === child) return child;
+  }
+  return undefined;
+}

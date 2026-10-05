@@ -149,6 +149,11 @@ export function loadKoffiBindings() {
       "uint32",
       koffi.out("void*"),
     ]);
+    const AXUIElementIsAttributeSettable = HIServices.func(
+      "AXUIElementIsAttributeSettable",
+      "int32",
+      ["void*", "void*", koffi.out("bool*")],
+    );
 
     // ── CoreGraphics：事件合成与截屏预检 ──
     const CGEventCreateMouseEvent = CG.func(
@@ -218,6 +223,7 @@ export function loadKoffiBindings() {
       AXUIElementPerformAction,
       AXUIElementGetPid,
       AXValueGetValue,
+      AXUIElementIsAttributeSettable,
       CGEventCreateMouseEvent,
       CGEventCreateKeyboardEvent,
       CGEventCreateScrollWheelEvent2,

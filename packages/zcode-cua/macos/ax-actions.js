@@ -273,9 +273,13 @@ export function typeAsciiText({ text, delayMs = 0 }) {
   }
   try {
     for (const char of value) {
-      const chars = char === "\r" || char === "\n" ? "return" : char;
+      // 可打印 ASCII 的字符级映射：空格/制表/回车先归一到键名（2026-10-05 实测：
+      // 空格漏映射导致 " TYPED-OK" 首字符即拒）。
+      const charKey =
+        char === " " ? "space" : char === "\t" ? "tab" : char === "\r" || char === "\n" ? "return" : null;
+      const chars = charKey ?? char;
       const lower = chars.toLowerCase();
-      const needsShift = chars !== lower && chars.toUpperCase() === chars && /[A-Z]/u.test(chars);
+      const needsShift = !charKey && chars !== lower && chars.toUpperCase() === chars && /[A-Z]/u.test(chars);
       const keycode = KEYCODES[lower];
       if (keycode === undefined) {
         return {

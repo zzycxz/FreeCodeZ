@@ -27,6 +27,7 @@ import {
 } from "./ax-observation.js";
 import {
   ElementHandleTable,
+  findSettableValueElement,
   resolveAppRefToPid,
   copyString,
   copyStruct,
@@ -322,11 +323,26 @@ export function createKoffiBrokerMethods(options = {}) {
             error: { code: "ax_error", message: "no focused element in target app (AXError CannotComplete)" },
           };
         }
-        const result = elementSetValue({ elementRef: focused, value: params?.text });
         try {
-          bindings.CFRelease(focused);
-        } catch {
-          // 结果已定，释放尽力。
+          // 聚焦元素常是容器（TextEdit=scroll area）：下降找第一个 AXValue 可设元素。
+          const target = findSettableValueElement(bindings, focused) ?? focused;
+          const result = elementSetValue({ elementRef: target, value: params?.text });
+          if (target !== focused) {
+            try {
+              bindings.CFRelease(target);
+            } catch {
+              // 释放尽力。
+            }
+          }
+          return result.ok
+            ? { ok: true, action_sent: true, dispatch_status: "delivered", strategy: "a11y_set_value" }
+            : result;
+        } finally {
+          try {
+            bindings.CFRelease(focused);
+          } catch {
+            // 同上。
+          }
         }
         return result.ok
           ? { ok: true, action_sent: true, dispatch_status: "delivered", strategy: "a11y_set_value" }

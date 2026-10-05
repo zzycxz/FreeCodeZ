@@ -50,6 +50,8 @@ export interface CuaCursorHudDeps {
   BrowserWindow: typeof BrowserWindow;
   screen: {
     getPrimaryDisplay(): { workArea: { x: number; y: number; width: number; height: number } };
+    /** CGEvent 坐标（屏幕点）→ Electron DIP；缩放非 1 的显示器必须换算（实测发现）。 */
+    screenToDipPoint?(point: { x: number; y: number }): { x: number; y: number };
   };
   createUdpListener?: (port: number, onFrame: (frame: CuaCursorEventFrame) => void) => { close(): void };
 }
@@ -230,7 +232,12 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
     const cursor = ensureCursorWindow();
     ensureBannerWindow();
     const position = cursorWindowPositionFor(frame);
-    if (position) cursor.setPosition(position.x, position.y);
+    if (position) {
+      // CGEvent 发的是屏幕点；setPosition 吃 DIP。缩放非 1 的显示器上不换算会偏移
+      // （2026-10-05 Electron 实测：109px 窗/期望 120DIP——比例即 scaleFactor）。
+      const dip = deps.screen.screenToDipPoint?.(position) ?? position;
+      cursor.setPosition(Math.round(dip.x), Math.round(dip.y));
+    }
     // 特效（data:URL 无 ipc）：main 侧调用页面全局函数；失败静默（窗口未就绪竞态）。
     const effect =
       frame.kind === "down" || frame.kind === "drag_start"

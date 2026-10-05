@@ -586,7 +586,10 @@ const cuaCursorHud: CuaCursorHud | undefined =
   process.platform === "darwin" && process.env.ZCODE_CUA_CURSOR_HUD !== "0"
     ? createCuaCursorHud({
         BrowserWindow: HudBrowserWindow,
-        screen: HudScreen,
+        screen: {
+          getPrimaryDisplay: () => HudScreen.getPrimaryDisplay(),
+          screenToDipPoint: (point) => HudScreen.screenToDipPoint(point),
+        },
       })
     : undefined;
 
