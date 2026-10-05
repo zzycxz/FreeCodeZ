@@ -36,6 +36,7 @@ export const ConfigKey = {
   FeatureMemory: "features.memory",
   FeatureSkill: "features.skill",
   FeatureMcp: "features.mcp",
+  FeatureMcpDeferredTools: "features.mcpDeferredTools",
 
   // Memory
   MemoryUse: "memory.use",
@@ -109,6 +110,7 @@ export type ConfigValue<K extends ConfigKey> = K extends "modelStream.idleTimeou
                   | "features.memory"
                   | "features.skill"
                   | "features.mcp"
+                  | "features.mcpDeferredTools"
                   | "skills.enabled"
                   | "skills.includeInstructions"
               ? boolean
@@ -225,6 +227,8 @@ export interface RuntimeConfig {
     memory: boolean;
     skill: boolean;
     mcp: boolean;
+    /** 条目 8（spec §12）：MCP 目录态全局门（默认关——A/B 对照通过前不开）。 */
+    mcpDeferredTools: boolean;
   };
   memory: {
     use: boolean;
@@ -312,6 +316,8 @@ export const DefaultRuntimeConfig: RuntimeConfig = {
     memory: true,
     skill: true,
     mcp: true,
+    // 条目 8（spec §12）：目录态默认关——A/B 对照通过前不开（双门之一）。
+    mcpDeferredTools: false,
   },
   memory: {
     use: true,

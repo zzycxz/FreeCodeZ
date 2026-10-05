@@ -287,6 +287,7 @@ export class ConfigPortImpl implements ConfigPort {
         memory: this.store.get(ConfigKey.FeatureMemory) ?? true,
         skill: this.store.get(ConfigKey.FeatureSkill) ?? true,
         mcp: this.store.get(ConfigKey.FeatureMcp) ?? true,
+        mcpDeferredTools: this.store.get(ConfigKey.FeatureMcpDeferredTools) ?? false,
       },
       memory: {
         use: this.store.get(ConfigKey.MemoryUse) ?? DefaultConfig.memory.use,

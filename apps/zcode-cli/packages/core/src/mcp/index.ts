@@ -25,6 +25,11 @@ import {
   normalizeMcpToolResultForModel,
 } from "./image-normalization.js";
 import { toMcpToolName, toModelVisibleMcpNamePart } from "./name.js";
+import {
+  buildMcpDirectoryLines,
+  formatMcpDirectorySection,
+  splitMcpToolsByExposure,
+} from "@zcode/shared";
 
 export { toMcpToolName } from "./name.js";
 
@@ -81,6 +86,67 @@ export function registerMcpTools(
   }
 
   return registered;
+}
+
+/**
+ * 条目 8（spec §12）目录态：deferred server 的工具不逐个注册（schema 不注入），
+ * 改注册一个「目录+按需展开」入口工具；模型引用目录中工具名时由该入口在
+ * resolveInput 阶段展开真实工具（首调用注入 schema——428 门控同 seam）。
+ * 返回注册的工具名列表（full 部分照常走 registerMcpTools）。
+ */
+export function registerMcpToolsWithDirectory(
+  registry: ToolRegistry,
+  mcpPort: McpPort,
+  descriptors: readonly McpToolDescriptor[],
+  options: RegisterMcpToolsOptions & {
+    serverExposure?: Record<string, "full" | "deferred" | undefined>;
+    globalDeferredEnabled?: boolean;
+    registerDirectoryTool?: (
+      serverName: string,
+      directoryText: string,
+      invoke: (toolName: string, input: unknown) => Promise<unknown>,
+    ) => void;
+  },
+): { registered: string[]; directoryServers: string[] } {
+  const { serverExposure, globalDeferredEnabled, registerDirectoryTool, ...rest } = options;
+  if (!globalDeferredEnabled || !registerDirectoryTool) {
+    // 全局门关：与现状逐字节一致。
+    return { registered: registerMcpTools(registry, mcpPort, descriptors, rest), directoryServers: [] };
+  }
+  const byServer = new Map<string, McpToolDescriptor[]>();
+  for (const descriptor of descriptors) {
+    const list = byServer.get(descriptor.serverName) ?? [];
+    list.push(descriptor);
+    byServer.set(descriptor.serverName, list);
+  }
+  const registered: string[] = [];
+  const directoryServers: string[] = [];
+  for (const [serverName, serverDescriptors] of byServer) {
+    const { full, deferred } = splitMcpToolsByExposure<McpToolDescriptor>({
+      serverName,
+      toolExposure: serverExposure?.[serverName],
+      globalDeferredEnabled,
+      descriptors: serverDescriptors,
+    });
+    if (full.length > 0) {
+      registered.push(...registerMcpTools(registry, mcpPort, full, { ...rest, allowedTools: undefined }));
+    }
+    if (deferred.length > 0) {
+      const { lines, truncated } = buildMcpDirectoryLines(deferred);
+      const text = formatMcpDirectorySection({ serverName, lines, truncated });
+      if (text) {
+        registerDirectoryTool(serverName, text, (toolName, input) =>
+          mcpPort.callTool({
+            serverName,
+            toolName,
+            arguments: (input ?? {}) as Record<string, unknown>,
+          }),
+        );
+        directoryServers.push(serverName);
+      }
+    }
+  }
+  return { registered, directoryServers };
 }
 
 function toRegisteredMcpToolName(

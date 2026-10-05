@@ -319,4 +319,4 @@ export {
   createExploreSubagentPort,
 } from "../subagent/index.js";
 export type { AgentProfile, ExploreSubagentRuntimeRequest } from "../subagent/index.js";
-export { registerMcpTools } from "../mcp/index.js";
+export { registerMcpTools, registerMcpToolsWithDirectory } from "../mcp/index.js";

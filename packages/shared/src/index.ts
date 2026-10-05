@@ -264,6 +264,7 @@ export * from "./mcp.js";
 export * from "./runtime-tool-runtime.js";
 export * from "./git.js";
 export * from "./git-hunks.js";
+export * from "./mcp-directory.js";
 export * from "./assistant-message-parts.js";
 export * from "./zcodePersistedMessageMerge.js";
 export * from "./assistant-presentation.js";

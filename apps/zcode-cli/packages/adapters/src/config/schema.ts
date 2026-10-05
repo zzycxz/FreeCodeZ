@@ -37,6 +37,8 @@ const featuresSchema = z.object({
   memory: z.boolean().optional(),
   skill: z.boolean().optional(),
   mcp: z.boolean().optional(),
+  // 条目 8（spec §12）：目录态全局门（默认关）。
+  mcpDeferredTools: z.boolean().optional(),
 });
 
 const memorySchema = z.object({

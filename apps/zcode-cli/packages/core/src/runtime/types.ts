@@ -132,6 +132,8 @@ export interface AgentRuntimeConfig {
   permissionTimeoutMs?: number;
   /** E-S3：会话内 Bash 以 workspace-write 沙箱执行（macOS）；缺省 off。 */
   sandboxEnabled?: boolean;
+  /** 条目 8（spec §12）：全局 feature 门切片（目录态默认关——A/B 通过前不开）。 */
+  features?: { mcpDeferredTools?: boolean };
   compact?: AutoCompactPolicyConfig;
   targetCompletionVerification?: { enabled?: boolean };
   midConversationSystem?: {

@@ -4,7 +4,8 @@ import {
   ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
   ZCODE_PLUGIN_ID_ENV_KEY,
 } from "@zcode/shared";
-import { registerMcpTools, traceContextToLogContext } from "../deps.js";
+import { registerMcpTools,
+  registerMcpToolsWithDirectory, traceContextToLogContext } from "../deps.js";
 import type { McpConnectionSnapshot, McpServerConfig, TraceContext } from "../deps.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 
@@ -135,15 +136,42 @@ export async function initializeMcp(
 
   try {
     const snapshot = await startup;
-    const registered = registerMcpTools(this.registry, mcpPort, snapshot.tools, {
-      allowedTools: this.config.toolAllowlist,
-      disallowedTools: this.config.toolDisallowlist,
-      officialCuaServerNames: computeOfficialCuaServerNames(
-        this.config.mcp?.servers ?? {},
-        new Set(this.config.mcp?.trustedOfficialCuaServerNames ?? []),
-      ),
-    });
-    if (registered.length > 0) {
+    // 条目 8（spec §12）：目录态双门——features.mcpDeferredTools（默认关）×
+    // per-server mcpServers[x].toolExposure:"deferred"。门关时与现状逐字节一致。
+    const globalDeferredEnabled = this.config.features?.mcpDeferredTools === true;
+    const serverExposure: Record<string, "full" | "deferred" | undefined> = {};
+    for (const [serverName, serverConfig] of Object.entries(this.config.mcp?.servers ?? {})) {
+      if (serverConfig && typeof serverConfig === "object" && "toolExposure" in serverConfig) {
+        serverExposure[serverName] = (serverConfig as { toolExposure?: "full" | "deferred" }).toolExposure;
+      }
+    }
+    const { registered, directoryServers } = registerMcpToolsWithDirectory(
+      this.registry,
+      mcpPort,
+      snapshot.tools,
+      {
+        allowedTools: this.config.toolAllowlist,
+        disallowedTools: this.config.toolDisallowlist,
+        officialCuaServerNames: computeOfficialCuaServerNames(
+          this.config.mcp?.servers ?? {},
+          new Set(this.config.mcp?.trustedOfficialCuaServerNames ?? []),
+        ),
+        globalDeferredEnabled,
+        serverExposure,
+        registerDirectoryTool: (serverName: string, directoryText: string, invoke: (toolName: string, input: unknown) => Promise<unknown>) => {
+          this.logger?.info("MCP directory tool registered (deferred exposure)", {
+            event: "mcp.tools.directory_registered",
+            module: "core.runtime",
+            serverName,
+          });
+          void directoryText;
+          void invoke;
+          // 目录入口工具的完整注册（schema 展开/首调注入）挂 A/B 对照通过后的启用批——
+          // 本批只落双门与装配分流骨架（flag 默认关，永不触达本分支的行为变化）。
+        },
+      },
+    );
+    if (registered.length > 0 || directoryServers.length > 0) {
       this.invalidateToolCache();
     }
     this.logger?.info("MCP tools registered", {
@@ -151,6 +179,7 @@ export async function initializeMcp(
       event: "mcp.tools.registered",
       module: "core.runtime",
       registeredToolCount: registered.length,
+      ...(directoryServers.length > 0 ? { directoryServerCount: directoryServers.length } : {}),
       serverCount,
       status: "completed",
     });
