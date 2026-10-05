@@ -1361,7 +1361,9 @@ class NodeMcpAdapter implements McpPort {
             : (workingDirectory ?? this.workingDirectory),
           env: {
             ...buildMcpStdioEnv({ env: this.env, network: this.network }),
-            ...config.env,
+            // 条目 8（spec §12 env 白名单）：在场时仅放行名单内键（缺省全放行，R1 不变）。
+            // 名单外键丢弃时留 warn——静默丢 env 是排障黑洞（fail-visible）。
+            ...filterConfigEnvForServer(config),
           },
           stderr: "pipe",
         }),
@@ -1844,4 +1846,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isPeerAnsweredError(error: unknown): boolean {
   if (error instanceof ProtocolError) return true;
   return isRecord(error) && typeof error.code === "number";
+}
+
+
+function filterConfigEnvForServer(config: McpServerConfig): Record<string, string> {
+  // env/envAllowlist 只在 stdio 形态存在（契约面）；其他形态直接空对象。
+  if (config.type !== "stdio") return {};
+  const userEnv = config.env ?? {};
+  const allowlist = config.envAllowlist;
+  if (!Array.isArray(allowlist) || allowlist.length === 0) return userEnv;
+  const allowed = new Set(
+    allowlist.filter((name): name is string => typeof name === "string" && name.length > 0),
+  );
+  const filtered: Record<string, string> = {};
+  const dropped: string[] = [];
+  for (const [key, value] of Object.entries(userEnv)) {
+    if (allowed.has(key)) filtered[key] = value;
+    else dropped.push(key);
+  }
+  if (dropped.length > 0) {
+    // 白名单拼写错误导致变量被丢——必须可见（spec §12 fail-visible 裁决）。
+    console.warn(
+      `[mcp] envAllowlist dropped ${dropped.length} env key(s) for server "${config.command}": ${dropped.join(", ")}`,
+    );
+  }
+  return filtered;
 }

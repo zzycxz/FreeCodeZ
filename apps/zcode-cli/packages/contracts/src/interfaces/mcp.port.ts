@@ -26,6 +26,11 @@ export interface McpServerConfigBase {
    * 拨开关不得触发 closeRecord/重连），仅影响 listTools() 装配输出。
    */
   disabledTools?: string[];
+  /**
+   * 条目 8（spec §12）：per-server 工具曝光档。缺省 "full"；"deferred"=目录态，
+   * 仅全局 features.mcpDeferredTools 开启时生效（双门；A/B 对照通过前默认关）。
+   */
+  toolExposure?: "full" | "deferred";
 }
 
 export interface McpClientCredentialsOAuthConfig {
@@ -54,6 +59,11 @@ export interface McpStdioServerConfig extends McpServerConfigBase {
   args?: string[];
   cwd?: string;
   env?: Record<string, string>;
+  /**
+   * 条目 8（spec §12）：env 白名单——在场时仅名单内 env 键下发子进程（缺省全放行）。
+   * 名单外键丢弃时留连接警告（fail-visible）。
+   */
+  envAllowlist?: string[];
 }
 
 export interface McpHttpServerConfig extends McpServerConfigBase {

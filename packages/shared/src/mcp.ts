@@ -35,6 +35,18 @@ export interface McpServerConfig {
   // 缺省/空 = 全放行；命中名单的工具不进模型 tools 装配。server 后续新增工具一律默认放行。
   // 该字段不参与连接收敛的相等性比较（拨开关不得触发断连重连）。
   disabledTools?: string[];
+  /**
+   * 条目 8（spec §12）：per-server 工具曝光档。缺省 "full"（R1 默认全量）。
+   * "deferred" = 目录态（名称+描述进目录、schema 按需展开）；仅当全局
+   * features.mcpDeferredTools 开启时生效（双门，A/B 对照通过前默认关）。
+   */
+  toolExposure?: "full" | "deferred";
+  /**
+   * 条目 8（spec §12）：env 白名单——在场时仅名单内的 env 键下发给 stdio server
+   * 子进程；缺省全部下发（R1 默认不变）。用户显式设置才收窄；拼写错误的名字
+   * 会被连接警告提示（fail-visible，不静默丢变量）。
+   */
+  envAllowlist?: string[];
   // Linear specific fields
   apiKey?: string;
   projectId?: string;
@@ -398,6 +410,21 @@ export function mcpToolModelVisible(meta: unknown): boolean {
   const visibility = ui.visibility;
   if (!Array.isArray(visibility)) return true;
   return visibility.some((target) => target === "model");
+}
+
+/**
+ * 条目 8（升级实施手册，spec §12）：工具曝光三态。
+ *   "full"     schema 完整注入（R1 默认）；
+ *   "deferred" 目录态——名称+描述进目录、schema 按需展开（spec §12 例外通道；
+ *              仅用户显式 toolExposure:"deferred" + features.mcpDeferredTools 双门开时由装配层采用）；
+ *   "hidden"   不可见（用户关闭 / 协议 visibility 显式排除——R4 前两类）。
+ * 本函数只做**协议侧事实判定**（visibility），用户配置与全局门在装配层合成——
+ * 单一事实源不混层。
+ */
+export type McpToolExposure = "full" | "deferred" | "hidden";
+
+export function mcpToolExposure(meta: unknown): McpToolExposure {
+  return mcpToolModelVisible(meta) ? "full" : "hidden";
 }
 
 export interface McpToolTokenEstimateInput {
