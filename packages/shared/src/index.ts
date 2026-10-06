@@ -266,6 +266,7 @@ export * from "./git.js";
 export * from "./git-hunks.js";
 export * from "./mcp-directory.js";
 export * from "./pr-ops.js";
+export * from "./permission-denials.js";
 export * from "./assistant-message-parts.js";
 export * from "./zcodePersistedMessageMerge.js";
 export * from "./assistant-presentation.js";

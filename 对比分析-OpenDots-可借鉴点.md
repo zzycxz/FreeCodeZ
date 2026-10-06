@@ -1,8 +1,44 @@
 # 对比分析：OpenDots × FreeCodeZ 数智员工（v2 逐行精读版，2026-10-06）
 
-> v2 说明：应用户要求由"导读级"升级为**逐行精读**——机制层代码 100% 逐行（dot-agent/platform/app/runner/store/workspace/computer 全家/pages/page-tools/slack-channel/voice/headless/runtime-scope/learning/index + 前端 App/Chat/ComputerToolCard/PageReviewCard/useVoice/ComputerPanel，约 7900 行）；其余 ~3400 行展示组件（表单/列表/编辑器/头像等）逐文件扫描确认无机制性代码后略读。v1 的七借鉴点全部保留并补充 file:line 级细节，另新增 **v2 逐行才能发现的 8 个机制级借鉴点**（§三·B）。
-> 对象：/Users/homebaby/Desktop/swarm-os/OpenDots（CopilotKit 开源 AI 同事模板，Trendshift 当日 TS #2）。
-> 总判不变：**同构反路线竞品**（它=每 AI 一台干净 Docker 电脑；我们=AI 用真实系统）。我们赢在员工模型与治理深度，它赢在信任界面与"安全工程细节密度"——逐行读后这后半句更加成立：它的安全细节不是点缀而是**贯穿每一层的纪律**。
+> v2.1 修订（用户批评"不要自大，正视真实差距"后重写）：v2 的"我们赢在 X 它赢在 Y"对称叙事犯了**拿纸面规格打可运行产品**的错误——六席/中枢/UI 批/连接器全部是规格书（0 行实现），OpenDots 是 11358 行可运行产品（含测试/CI/部署/telemetry/演示录像，关键路径做过 live 验证）。本版新增 **§零 真实差距总账**（含细节差距），借鉴清单保留但定位改为"向已实现者学习"。
+
+---
+
+## 〇、真实差距总账（它已实现 vs 我们的真实状态）
+
+**根本差距：实现状态。** 它 `git clone && npm run dev` 即得起全栈（Web+移动自适应+容器编排+CI+测试+安全披露流程+贡献指南+演示录像，关键链路 2026-09-29/30 live 验证）；**我们的六席（W 批）、中枢 UI（UI 批）、连接器（C 批）全部 0 行实现**——移动办公连接器只有当天验证过的散装脚本。一切"我们的设计更深"在写完代码并跑通之前都只是纸面优势。
+
+**能力差距（它有成品，我们空白或仅有规格）**：
+
+| # | 差距项 | 它的状态 | 我们的真实状态 |
+|---|---|---|---|
+| 1 | **语音通话** | 完整可用：WebRTC+realtime+旁路计算+双端字幕+静音+通话回执入时间线+挂断三重保障 | **零**（语音扩展昨天才列为想法） |
+| 2 | **实时过程可视化** | 聊天流内嵌 3s 截图流浏览器视图（仅最新调用显屏）+Browser/Files/Terminal/Activity 四 tab 面板+接管协商 | **零**（无实现亦无 UI 设计；R17 只有 typing 态） |
+| 3 | **草稿审阅卡（human-in-the-loop）** | 完整：Markdown 草稿卡+幂等回执+刷新恢复+冲突 409+文案纪律，实测过 | **规格**（R22 审批三档在纸面；现有 build 审批是命令确认，不是草稿审阅卡形态） |
+| 4 | **每员工独立执行环境** | Docker 容器 per Dot：独立浏览器 profile 持久化+工作区文件持久化+shell，stop/start 保留 | workspace 目录隔离+沙箱已实现，但**无 per-员工持久浏览器身份**（agent-browser session 是临时命名，未到持久 profile 完成度）、无容器隔离选项 |
+| 5 | **文档工作区（产出形态）** | Spaces：TipTap 富文本+子页+乐观并发修订+自动保存带进度+失败保留草稿+版本 409+可搜索库 | outbox=markdown 文件+INDEX.md（工程向，无编辑器/版本/库形态） |
+| 6 | **通道统一会话** | Web/Slack/定时/语音四通道全部收敛到同一 DotAgent 同一会话同权限（靠云线程） | 通道各持会话语义（desktop-continuous vs web-remote-replayable），跨通道同一员工同一会话的收敛度不及（架构取舍亦是差距） |
+| 7 | **工程成熟度配套** | 测试（setup/persistence/permissions/SDK 失败处理/浏览器隔离）、CI、Docker compose 三套、部署文档、SECURITY.md、telemetry 可退出、演示录像 | 中枢相关全无（仅移动办公四条回归基线记录在 spec） |
+
+**细节差距（单点小但真实，抄作业成本低）**：
+
+| # | 细节 | 它的做法 | 我们现状 |
+|---|---|---|---|
+| 8 | 员工人格化视觉 | Mascot 组件：按 Dot 身份生成形象，状态感知（idle/working/paused） | 六席有昵称人设，无视觉人格件 |
+| 9 | 预算落到每个数字 | 每环节硬上限：单轮 2200 token+5/10 迭代、90s、单通 15min、6 次 compute、内存 2000 字、prompt 4000 字、命令 8000 字、30-60s | 预算地板只有周 token+run 数两级（粒度粗，无逐环节上限） |
+| 10 | 微文案纪律 | "Nothing is saved until you approve" / 409 文案"do not bypass takeover" / "Text and voice, one conversation" | 未成体系 |
+| 11 | 研究过程可回溯 | 每次搜索/读页 capture 落库（threadId 关联快照） | 无对应（outbox 只有结果没有过程） |
+| 12 | 会话↔文档互链 | 聊天顶部"Working on X"页链+对话一键存为页面+页面上下文注入 | 无 |
+| 13 | 发消息带源 | composer 可附源 URL（"From {url}:"前缀） | 无 |
+| 14 | Slack 通道语义 | mention 一次→订阅→跟进整线程（mention/subscribe 双 handler 分工） | bots 是逐消息触发，无线程订阅语义 |
+| 15 | 引导态 | 未配置时清晰 setup 卡+每步 telemetry 可退出+测试夹具与真实集成可见分离 | 未设计 |
+| 16 | 挂断收尾 | 先哑后断（静音保 peer 等服务端确认）+页面关闭 keepalive 也送达+provider 挂断失败留痕不假成功 | 无语音故无对应，但该纪律适用于连接器收尾 |
+| 17 | 关停优雅性 | SIGTERM/SIGINT→runner 把 active 标 interrupted（附"Review completed effects before retrying"）→platform→server 顺序关停 | 中枢未实现；automation 中断语义未按此设计 |
+
+**我们真实领先的部分（不多，且必须标注状态）**：员工模型深度（六层记忆/安全档位/预算治理——纸面）；连接真实系统能力（移动办公全链路实测——散装脚本非产品）；治理体系完整性（审批三档/外发治理/凭据保险箱——纸面+部分底层件已上线：沙箱/灾难地板/审批超时）；多宿主形态（桌面/Web/手机/微信四端——已实现的存量能力）。
+
+---
+
 
 ---
 
