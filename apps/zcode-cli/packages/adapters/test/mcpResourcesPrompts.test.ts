@@ -38,3 +38,44 @@ test("契约类型面：shared 投影同构", async () => {
   const message: shared.McpPromptMessage = { role: "user", content: { type: "text", text: "hi" } };
   assert.equal(message.content.type, "text");
 });
+
+test("e2e：真实 stdio server 全链走通（resources list/read + prompts list/get）", async () => {
+  const FIXTURE = new URL("./fixtures/resources-prompts-server.mjs", import.meta.url).pathname;
+  const { createMcpAdapter } = await import("../src/mcp/index.js");
+  const adapter = createMcpAdapter({});
+  try {
+    await adapter.connectConfiguredServers({
+      "rp-fixture": {
+        type: "stdio" as const,
+        command: process.execPath,
+        args: [FIXTURE],
+      },
+    });
+    // 等连接就绪
+    for (let i = 0; i < 20; i++) {
+      const status = await adapter.status();
+      if (status["rp-fixture"]?.status === "connected") break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    const resources = await adapter.listResources!("rp-fixture");
+    assert.equal(resources.length, 2);
+    assert.equal(resources[0]?.uri, "config://app");
+    assert.equal(resources[0]?.name, "App Config");
+
+    const contents = await adapter.readResource!("rp-fixture", "config://app");
+    assert.equal(contents.length, 1);
+    assert.equal(contents[0]?.text, "content of config://app");
+
+    const prompts = await adapter.listPrompts!("rp-fixture");
+    assert.equal(prompts.length, 2);
+    assert.equal(prompts[0]?.name, "review");
+    assert.equal(prompts[0]?.arguments?.[0]?.required, true);
+
+    const messages = await adapter.getPrompt!("rp-fixture", "review", { lang: "zh" });
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0]?.content.text, "prompt review in zh");
+    assert.equal(messages[0]?.role, "user");
+  } finally {
+    await adapter.close();
+  }
+}, 15_000);
