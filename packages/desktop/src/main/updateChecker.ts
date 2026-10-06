@@ -84,6 +84,18 @@ export interface UpdateCheckerDeps {
   log?: (message: string, context?: Record<string, unknown>) => void;
 }
 
+/** 条目 3（升级实施手册）：默认更新源=FreeCodeZ 自有端点的 releases/latest（与 zcodeEndpoint 默认 origin 同源）。 */
+export const DEFAULT_UPDATE_MANIFEST_PATH = "/releases/latest";
+
+/** 设置键为空时回落默认源（用户显式 URL 可覆盖）。 */
+export function resolveManifestUrl(explicit: string | undefined, endpointOrigin: string): string | undefined {
+  const trimmed = explicit?.trim();
+  if (trimmed) return trimmed;
+  const origin = endpointOrigin.trim();
+  if (!origin) return undefined;
+  return `${origin.replace(/\/+$/, "")}${DEFAULT_UPDATE_MANIFEST_PATH}`;
+}
+
 /**
  * 更新检查器：manifestUrl 为空 → no-op（功能关闭语义）。
  * checkOnce 供菜单手动触发与定时共用；周期模式只在显式 startPeriodic 后运行。

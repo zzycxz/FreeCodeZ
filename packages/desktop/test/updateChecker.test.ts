@@ -119,3 +119,22 @@ test("检查器：受管周期可停（二次 start 不叠 timer）", () => {
   checker.stopPeriodic();
   checker.stopPeriodic();
 });
+
+test("默认源：设置为空→回落 FreeCodeZ 端点 releases/latest；显式 URL 覆盖", async () => {
+  const { resolveManifestUrl, DEFAULT_UPDATE_MANIFEST_PATH } = await import("../src/main/updateChecker.js");
+  assert.equal(DEFAULT_UPDATE_MANIFEST_PATH, "/releases/latest");
+  assert.equal(
+    resolveManifestUrl(undefined, "https://freecodez.local"),
+    "https://freecodez.local/releases/latest",
+  );
+  assert.equal(
+    resolveManifestUrl(undefined, "https://freecodez.local/"),
+    "https://freecodez.local/releases/latest",
+  );
+  assert.equal(
+    resolveManifestUrl("https://api.github.com/repos/o/r/releases/latest", "https://freecodez.local"),
+    "https://api.github.com/repos/o/r/releases/latest",
+  );
+  assert.equal(resolveManifestUrl(undefined, ""), undefined);
+  assert.equal(resolveManifestUrl("  ", "https://x"), "https://x/releases/latest");
+});

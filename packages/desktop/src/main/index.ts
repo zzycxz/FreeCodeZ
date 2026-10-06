@@ -78,7 +78,7 @@ import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
 import { createCuaCursorHud, type CuaCursorHud } from "./cuaCursorHud.js";
 import { startCuaAppshot } from "./cuaAppshot.js";
-import { createUpdateChecker } from "./updateChecker.js";
+import { createUpdateChecker, resolveManifestUrl } from "./updateChecker.js";
 import { BrowserWindow as HudBrowserWindow, globalShortcut, screen as HudScreen } from "electron";
 import { BroadcastHub } from "./broadcastHub.js";
 
@@ -629,10 +629,16 @@ const updateCheckerDeps = {
   },
   log: (message: string, context?: Record<string, unknown>) => logger.info(message, context),
 };
-// manifestUrl 运行时读（设置是 async；空=关）。菜单手动触发与周期共用同一检查器实例。
+// manifestUrl 运行时读：设置键为空→回落 FreeCodeZ 默认源（<origin>/releases/latest）；
+// 用户显式 URL 可覆盖。菜单手动触发与周期共用同一检查器实例。
+const resolveEndpointOrigin = (): string =>
+  resolveZCodeEndpointOrigin({
+    env: hostProcessLocalEnv,
+    overrideOrigin: undefined,
+  });
 let updateChecker = createUpdateChecker({
   currentVersion: app.getVersion(),
-  manifestUrl: undefined,
+  manifestUrl: resolveManifestUrl(undefined, resolveEndpointOrigin()),
   deps: updateCheckerDeps,
 });
 if (app.isPackaged) {
@@ -640,7 +646,7 @@ if (app.isPackaged) {
   void mainSettingService.get().then((settings) => {
     updateChecker = createUpdateChecker({
       currentVersion: app.getVersion(),
-      manifestUrl: settings.updateManifestUrl,
+      manifestUrl: resolveManifestUrl(settings.updateManifestUrl, resolveEndpointOrigin()),
       deps: updateCheckerDeps,
     });
     updateChecker.startPeriodic();
