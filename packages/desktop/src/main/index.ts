@@ -76,6 +76,7 @@ import { logger } from "./logger.js";
 import { createBotRemoteWorkspaceReconnectExecutor } from "./botRemoteWorkspaceReconnect.js";
 import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
+import { resolveCuaControlHostEnv } from "./cuaControlSettings.js";
 import { createCuaCursorHud, type CuaCursorHud } from "./cuaCursorHud.js";
 import { startCuaAppshot } from "./cuaAppshot.js";
 import { createUpdateChecker, resolveManifestUrl } from "./updateChecker.js";
@@ -518,6 +519,29 @@ interface RuntimeProcessEnvPreparation {
 }
 
 let runtimeProcessEnvPrewarmSequence = 0;
+/**
+ * 电脑控制设置桥：合入 runtime env 补丁。InitLocal 把补丁 assign 进 host
+ * process.env，host 的 agent/node-repl-host 子进程继承——设置变更对新窗口的
+ * 会话生效（本桥在每次窗口的 env 准备期异步刷新）。mainSettingService 在本
+ * 模块后段初始化，这里只在 promise 回调里引用（模块加载完成后的运行时）。
+ */
+async function withCuaControlEnv(patch: Record<string, string>): Promise<Record<string, string>> {
+  try {
+    const settings = await mainSettingService.get();
+    return {
+      ...patch,
+      ...resolveCuaControlHostEnv({
+        settings,
+        env: { ...hostProcessLocalEnv, ...process.env },
+        darwin: process.platform === "darwin",
+        cursorHudActive: process.env.ZCODE_CUA_CURSOR_HUD !== "0",
+      }),
+    };
+  } catch (error) {
+    logger.warn("[startup] cua control settings bridge failed; inherited env gates apply", error);
+    return patch;
+  }
+}
 function createRuntimeProcessEnvPreparation(): RuntimeProcessEnvPreparation {
   const prewarmId = ++runtimeProcessEnvPrewarmSequence;
   const startedAt = Date.now();
@@ -537,7 +561,7 @@ function createRuntimeProcessEnvPreparation(): RuntimeProcessEnvPreparation {
     baseEnv,
     platform: process.platform,
   }).then(
-    (snapshot) => {
+    async (snapshot) => {
       const patch = buildRuntimeProcessEnvPatch(baseEnv, snapshot, {
         platform: process.platform,
       });
@@ -545,12 +569,12 @@ function createRuntimeProcessEnvPreparation(): RuntimeProcessEnvPreparation {
         logger.warn(
           `[startup] login shell env unavailable id=${prewarmId}; using shell-free fallback after ${Date.now() - startedAt}ms`,
         );
-        return patch;
+        return await withCuaControlEnv(patch);
       }
       logger.info(
         `[startup] runtime process env prepared asynchronously id=${prewarmId} in ${Date.now() - startedAt}ms`,
       );
-      return patch;
+      return await withCuaControlEnv(patch);
     },
     (error) => {
       logger.warn(

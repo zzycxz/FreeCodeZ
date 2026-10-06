@@ -751,6 +751,8 @@ export function ComputerUseSection({
       {/* CUA 未启用时隐藏下方权限配置，只留总开关，避免一堆禁用项。 */}
       {cuaEnabled && supportsLocalMacWorkspace ? (
         <>
+          {/* 电脑控制双门（观测/操作）：koffi 执行层的产品面开关（cuaControlSettings.ts 桥）。 */}
+          <CuaControlSettingsBlock />
           {/* macOS 版本低于 CUA Helper 承诺地板时，授权在低版本系统上无法完成
               （Helper 被 LaunchServices -10825 拒启），整卡替换为升级提示。 */}
           {macOsBelowCuaFloor ? (
@@ -825,6 +827,70 @@ export function ComputerUseSection({
 // ============================================================
 // Phase 3a Appshot 设置块（升级实施手册）：热键三选一+音效+路由。
 // ============================================================
+// 电脑控制双门的产品面（CUA koffi 设置桥）：功能开关=观测层、允许操作=动作层。
+// 设置键优先于 env（cuaControlSettings.ts 桥接 runtime env 补丁，新窗口会话生效）；
+// 关功能开关时联动关动作开关（不留 enabled 残留在下次开启时直接放行）。
+function CuaControlSettingsBlock() {
+  const { intl } = useZCodeIntl();
+  const { settings, update } = useSettings();
+  const [saving, setSaving] = useState(false);
+
+  const control = settings?.cuaControlEnabled === true;
+  const actions = settings?.cuaActionsEnabled === true;
+
+  const setControl = async (on: boolean) => {
+    setSaving(true);
+    try {
+      await update(
+        on
+          ? { cuaControlEnabled: true }
+          : { cuaControlEnabled: false, cuaActionsEnabled: false },
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+  const setActions = async (on: boolean) => {
+    setSaving(true);
+    try {
+      await update({ cuaActionsEnabled: on });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SettingsGroupCard>
+      <SettingsRow
+        label={intl.formatMessage({ id: "settings.cuaControl.controlLabel" })}
+        description={intl.formatMessage({ id: "settings.cuaControl.description" })}
+        control={
+          <Switch
+            aria-label={intl.formatMessage({ id: "settings.cuaControl.controlLabel" })}
+            checked={control}
+            disabled={saving}
+            data-cua-control-toggle
+            onCheckedChange={(checked) => void setControl(checked)}
+          />
+        }
+      />
+      <SettingsRow
+        label={intl.formatMessage({ id: "settings.cuaControl.actionsLabel" })}
+        description={intl.formatMessage({ id: "settings.cuaControl.actionsDescription" })}
+        control={
+          <Switch
+            aria-label={intl.formatMessage({ id: "settings.cuaControl.actionsLabel" })}
+            checked={actions}
+            disabled={saving || !control}
+            data-cua-actions-toggle
+            onCheckedChange={(checked) => void setActions(checked)}
+          />
+        }
+      />
+    </SettingsGroupCard>
+  );
+}
+
 function AppshotSettingsBlock() {
   const { intl } = useZCodeIntl();
   const { settings, update } = useSettings();

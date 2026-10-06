@@ -385,6 +385,17 @@ export interface AppSettings {
   appshotSound?: boolean;
   /** Phase 3a：路由（当前会话/新会话；缺省当前）。 */
   appshotRoute?: "current" | "new";
+  /**
+   * 电脑控制·功能开关（macOS 观测层：读窗口/控件树/截图）。设置键优先于 env
+   * （ZCODE_CUA_KOFFI_EXECUTION 为部署/开发覆盖）；缺省关。经主进程桥接进
+   * host/agent 子进程 env，对新窗口的会话生效。
+   */
+  cuaControlEnabled?: boolean;
+  /**
+   * 电脑控制·允许操作（动作层：点/打字/拖拽）。仅在 cuaControlEnabled 时生效；
+   * 缺省关。env 覆盖同名语义（ZCODE_CUA_KOFFI_ACTIONS）。
+   */
+  cuaActionsEnabled?: boolean;
   /** 移动端远控的外部 relay 设备身份；deviceSid 由 relay 注册分配，刷新配对（rotate）时清空换新。 */
   webRemoteControlExternalRelayDevice?: { deviceSid: string };
   /** 上次开启移动端远控的窗口上下文；桌面重启后由首个匹配窗口独占恢复（全局一次性，恢复后保留记录）。 */
