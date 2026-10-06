@@ -6,6 +6,10 @@ import {
 } from "@zcode/shared";
 
 // Coding Plan 官网页 preload：
+// ⚠ 对外协议契约（2026-10-06 审计）：以下 zcodeBridge/__zcodeLang__/
+// zcode-coding-plan-lang-change 是与**官网网页**的双向协议（网页侧写 zcodeBridge、
+// 监听 lang-change、读 __zcodeLang__）——改名=断桥事故。品牌字样保留是协议需要，
+// 非品牌残留；同理 NATIVE_BRIDGE_KEY 是 preload↔网页内部桥（网页脚本访问）。
 // - 在官网页主世界挂 window.zcodeBridge，暴露三个能力：
 //   1) notifyPurchaseComplete：购买完成后通过 sendToHost 通知 host renderer；
 //   2) getLang / onLangChange：读取 App 当前 locale 并订阅运行时切换；
