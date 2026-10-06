@@ -19,6 +19,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import os
 import platform
@@ -170,11 +171,28 @@ def _find_soffice() -> Optional[str]:
     return None
 
 
+_ISOLATED_PROFILE_CACHE: Optional[str] = None
+
+
+def _cleanup_isolated_profile(root: str) -> None:
+    """进程退出时清理隔离区（尽力而为；异常退出残留 tmp 与既有行为一致）。"""
+    shutil.rmtree(root, ignore_errors=True)
+
+
 def _isolated_profile_root() -> str:
     """隔离 LibreOffice profile（条目 12 子项：宏写真实 profile 是 bug——
-    宏写用户真实 profile 污染其 LibreOffice 配置且多任务互踩）。每进程独立
-    tmp 目录，soffice 经 -env:UserInstallation 指向它；宏只落隔离区。"""
-    return tempfile.mkdtemp(prefix="freecodez-lo-profile-")
+    宏写用户真实 profile 污染其 LibreOffice 配置且多任务互踩）。
+    soffice 经 -env:UserInstallation 指向隔离 tmp 目录；宏只落隔离区。
+    进程级缓存复用同一隔离区（2026-10-06 性能挂账收口）：每次 recalc 都新建
+    profile 会把首启 soffice 冷初始化（--terminate_after_init，最长 20s）付在
+    每一笔上；复用后 _setup_libreoffice_macro 命中既有 Module1.xba 直接放行。
+    正确性：仍是 tmp 隔离区、绝不碰真实 profile；并发安全=缓存按进程隔离
+    （CLI 逐命令一进程，进程内调用串行，profile 锁无冲突）。"""
+    global _ISOLATED_PROFILE_CACHE
+    if _ISOLATED_PROFILE_CACHE is None:
+        _ISOLATED_PROFILE_CACHE = tempfile.mkdtemp(prefix="freecodez-lo-profile-")
+        atexit.register(_cleanup_isolated_profile, _ISOLATED_PROFILE_CACHE)
+    return _ISOLATED_PROFILE_CACHE
 
 
 def _setup_libreoffice_macro(profile_root: str) -> bool:

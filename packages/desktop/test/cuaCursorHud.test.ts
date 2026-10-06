@@ -20,6 +20,7 @@ import {
   parseCursorEventFrame,
   cursorWindowPositionFor,
   CUA_CURSOR_HUD_UDP_PORT,
+  CUA_LENS_AUTO_OFF_MS,
   type CuaCursorEventFrame,
   type CuaCursorHudWindowLike,
 } from "../src/main/cuaCursorHud.js";
@@ -89,6 +90,7 @@ class FakeHudWindow {
   destroyed = false;
   position = { x: -1000, y: -1000 };
   executed: string[] = [];
+  loadedUrls: string[] = [];
   onClosed: () => void = () => undefined;
   setPosition(x: number, y: number) {
     this.position = { x, y };
@@ -120,7 +122,8 @@ class FakeHudWindow {
   setAlwaysOnTop() {
     undefined;
   }
-  loadURL() {
+  loadURL(url: string) {
+    this.loadedUrls.push(url);
     return Promise.resolve();
   }
   webContents = {
@@ -148,8 +151,7 @@ function makeFakeBrowserWindowClass(created: FakeHudWindow[]) {
   };
 }
 
-test("HUD 控制器：惰性建窗/移位/特效/空闲隐藏/dispose（注入式）", () => {
-  const created: FakeHudWindow[] = [];
+test("HUD 控制器：惰性建窗/移位/特效/空闲隐藏/dispose（注入式）", () => {  const created: FakeHudWindow[] = [];
   const hud = createCuaCursorHud({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     BrowserWindow: makeFakeBrowserWindowClass(created) as any,
@@ -175,6 +177,45 @@ test("HUD 控制器：惰性建窗/移位/特效/空闲隐藏/dispose（注入�
   // dispose 后帧不再驱动。
   hud.handleFrame({ v: 1, kind: "point", x: 1, y: 1 });
   assert.equal(created.length, 2);
+});
+
+test("Phase 2 loading 透镜：45 步进样式锚定/text 帧点亮/移动帧熄灭/静默自熄", async () => {
+  const created: FakeHudWindow[] = [];
+  const hud = createCuaCursorHud({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    BrowserWindow: makeFakeBrowserWindowClass(created) as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    screen: {
+      getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
+    createUdpListener: () => ({ close() { undefined; } }),
+  });
+  hud.handleFrame({ v: 1, kind: "point", x: 100, y: 100 });
+  const cursorWindow = created[0];
+  assert.ok(cursorWindow, "光标窗已建");
+  // 45 帧步进语义 + 页面透镜开关函数在窗页 HTML 内（data:URL 字面量断言——
+  // encodeURIComponent 不编码括号/字母数字，steps(45)/__cuaLoading 保持字面）。
+  assert.ok(
+    cursorWindow.loadedUrls.some((url) => url.includes("steps(45)")),
+    "透镜动画为 45 离散步进（对齐 Codex 光标规格帧数）",
+  );
+  assert.ok(cursorWindow.loadedUrls.some((url) => url.includes("__cuaLoading")), "页面有透镜开关全局函数");
+  // 熄灭态首发帧不产生多余调用（lensOn 幂等）。
+  assert.ok(!cursorWindow.executed.some((code) => code.startsWith("__cuaLoading")));
+  // text 帧（打字中）→ 点亮。
+  hud.handleFrame({ v: 1, kind: "text", detail: "hello" });
+  assert.ok(cursorWindow.executed.includes("__cuaLoading(true)"), "text 帧点亮透镜");
+  // 点击帧 → 熄灭。
+  hud.handleFrame({ v: 1, kind: "down", x: 100, y: 100 });
+  assert.ok(cursorWindow.executed.includes("__cuaLoading(false)"), "点击帧熄灭透镜");
+  // 自熄：text 后无后续帧，超过 CUA_LENS_AUTO_OFF_MS 自动熄灭。
+  hud.handleFrame({ v: 1, kind: "text", detail: "again" });
+  const offCalls = () => cursorWindow.executed.filter((code) => code === "__cuaLoading(false)").length;
+  const before = offCalls();
+  await new Promise((resolve) => setTimeout(resolve, CUA_LENS_AUTO_OFF_MS + 150));
+  assert.equal(offCalls(), before + 1, "静默超时后透镜自熄");
+  hud.dispose();
 });
 
 test("UDP 端到端：真 dgram 广播→监听→帧解析", async () => {

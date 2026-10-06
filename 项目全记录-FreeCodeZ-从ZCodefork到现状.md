@@ -146,7 +146,8 @@ Edit 新增 `line_normalized` 级（27 码点归一）+ 修复 replaceAll 连尾
 - **第三/四批**：13-19 信号评估收口+请求头清扫（8b0bf42，评估文档 docs/evaluations/）/22 三 UX 全落（被拒计数/关窗五场景覆盖定案/终端 cwd 联动）/24 尸壳审计定案（19cb019：协议契约保留）+FreeCodeZ Protocol 双名兼容+心跳降 debug（f8d2e8c）。
 - **复查轮（2026-10-06）**：X-Title shared 侧漏改补改（8b0bf42 提交信息"双处"虚报——只改了 bootstrap 侧）+退出确认弹窗"Z Code"残留补改+adapters 间歇失败根治（4cfcd25）+手册 v4.2 状态对账。
 - **收尾轮（2026-10-06 晚）**：①Phase 2 干预闭环落地（user-activity-gate.js：动作面 12 方法用户活动闸，静默 800ms 放行/持续活跃 30s 结构化 user_active 可重试/检测器缺席放行；HUD 视觉面+执行面双齐）②条目 1 残余清零（类型接口键名联动 IntranetEnv/E2ETestBridgeEnvironment/VITE_E2E_STORE_BRIDGE define 双定义+FREECODEZ_DEPS_BASE_URL；契约新键 CUA 四键主键化 FREECODEZ_*+旧键回退，设置桥写主键+node-repl-host 双读）③husky 门禁完整性修复（.husky/_ shim 丢执行位致 pre-push 门禁静默失效——chmod+prepare 链挂 fix-hook-perms.mjs 治本）。
+- **干完轮（2026-10-06 深夜）**：①45 帧透镜 loading 动画落地（HUD steps(45) 圆环；HUD 拆 cuaCursorHudFrame/Html 两模块过 400 门）——Phase 2 视觉件全齐②xlsx recalc 性能收口（隔离 profile 进程级缓存复用，免每笔 ≤20s soffice 冷初始化）③**relay parseRelayInbound 断链修复**：3a271d3 下沉误删未留别名致主包 esbuild 断链（desktop src/main 无 root typecheck 覆盖、打包是唯一拦截面——门禁盲区清单+1），按原实现补回垫片④validation.ts 死导入摘除（lint error 首报）⑤打包冒烟重验（清宿主 ZCODE_BUILTIN_PROVIDER_CONFIG_FILE 泄漏后 mac-arm64）。
 
-**挂账（等条件触发）**：0B-2 真实 key 前置/0C-3② 千帆带 key 实测/Phase 3b 活控验收（Excel/WPS 真机；Numbers 画布不暴露单元格级 AX 已实测）/45 帧透镜 loading 动画/条目 7 e2e 与 Appshot 打包态 TCC 终验/xlsx recalc 性能/测试债三项（桌面 UI E2E、四宿主互通、Windows+Linux 真机，0C 批后排期）。
+**挂账（等条件触发）**：0B-2 真实 key 前置/0C-3② 千帆带 key 实测/Phase 3b 活控验收（Excel/WPS 真机；Numbers 画布不暴露单元格级 AX 已实测）/条目 7 e2e 与 Appshot 打包态 TCC 终验（打包冒烟已恢复可用）/测试债三项（桌面 UI E2E、四宿主互通、Windows+Linux 真机，0C 批后排期）。
 
 **配套工作文档**（工作区，规格书系列按 .gitignore 惯例不入库）：总实施版（执行入口+附录 F 复测数据）、实证适配版 v5（五轮排查与三道闸）、沙箱/确定项两附录、过错复盘、工作总结、Orca 轴差距分析。

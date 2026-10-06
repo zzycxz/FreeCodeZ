@@ -27,20 +27,29 @@ import {
 } from "@zcode/zcode-cua/macos/cursor-animation";
 import type { BrowserWindow } from "electron";
 
-/** UDP 端口：与 desktop 主进程注入的 FREECODEZ_CUA_CURSOR_BROADCAST_PORT 对齐（node-repl-host 读侧双读旧键）。 */
-export const CUA_CURSOR_HUD_UDP_PORT = 53717;
-/** 会话静默自动隐藏（ms）。 */
-export const CUA_CURSOR_HUD_IDLE_HIDE_MS = 6_000;
-/** 光标窗尺寸（DIP）：光标图 48×48 + 变换余量。 */
-export const CUA_CURSOR_WINDOW_SIZE = { width: 120, height: 120 };
+// 拆分（max-lines 400 门，拆分先例同 koffi-diagnostics）：帧 wire 契约与常量在
+// cuaCursorHudFrame.ts，页面模板在 cuaCursorHudHtml.ts——此处保留控制器并
+// re-export 原公共面（消费方 cuaControlSettings/index/测试零改动）。
+import {
+  CUA_CURSOR_HUD_IDLE_HIDE_MS,
+  CUA_CURSOR_HUD_UDP_PORT,
+  CUA_CURSOR_WINDOW_SIZE,
+  CUA_LENS_AUTO_OFF_MS,
+  cursorWindowPositionFor,
+  parseCursorEventFrame,
+  type CuaCursorEventFrame,
+} from "./cuaCursorHudFrame.js";
+import { bannerWindowHtml, cursorWindowHtml } from "./cuaCursorHudHtml.js";
 
-export interface CuaCursorEventFrame {
-  v: number;
-  kind: "point" | "down" | "up" | "drag_start" | "drag_end" | "key" | "text";
-  x?: number;
-  y?: number;
-  detail?: string;
-}
+export {
+  CUA_CURSOR_HUD_IDLE_HIDE_MS,
+  CUA_CURSOR_HUD_UDP_PORT,
+  CUA_LENS_AUTO_OFF_MS,
+  CUA_CURSOR_WINDOW_SIZE,
+  cursorWindowPositionFor,
+  parseCursorEventFrame,
+} from "./cuaCursorHudFrame.js";
+export type { CuaCursorEventFrame } from "./cuaCursorHudFrame.js";
 
 export interface CuaCursorHudWindowLike {
   setPosition(x: number, y: number): void;
@@ -76,90 +85,6 @@ export interface CuaCursorHudDeps {
   createUdpListener?: (port: number, onFrame: (frame: CuaCursorEventFrame) => void) => { close(): void };
 }
 
-/** 帧解析：坏帧（非对象/版本不符/未知 kind）→ undefined。 */
-export function parseCursorEventFrame(raw: string): CuaCursorEventFrame | undefined {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return undefined;
-  }
-  if (!parsed || typeof parsed !== "object") return undefined;
-  const frame = parsed as Record<string, unknown>;
-  if (frame.v !== 1) return undefined;
-  const kind = frame.kind;
-  if (
-    kind !== "point" &&
-    kind !== "down" &&
-    kind !== "up" &&
-    kind !== "drag_start" &&
-    kind !== "drag_end" &&
-    kind !== "key" &&
-    kind !== "text"
-  ) {
-    return undefined;
-  }
-  const result: CuaCursorEventFrame = { v: 1, kind };
-  if (typeof frame.x === "number" && Number.isFinite(frame.x)) result.x = frame.x;
-  if (typeof frame.y === "number" && Number.isFinite(frame.y)) result.y = frame.y;
-  if (typeof frame.detail === "string") result.detail = frame.detail;
-  return result;
-}
-
-/** 事件 → 光标窗左上角坐标（热点偏移 4,4）。无坐标事件返回 undefined。 */
-export function cursorWindowPositionFor(frame: CuaCursorEventFrame): { x: number; y: number } | undefined {
-  if (frame.x === undefined || frame.y === undefined) return undefined;
-  return { x: Math.round(frame.x) - 4, y: Math.round(frame.y) - 4 };
-}
-
-function cursorWindowHtml(): string {
-  // 纯静态页（data:URL 无 nodeIntegration）：特效由 main 侧 executeJavaScript 调
-  // 全局函数驱动（__cuaDown/__cuaUp）——第一步无动画，位移由 setPosition 完成。
-  const svg = `<svg width="48" height="48" viewBox="0 0 48 48" style="position:absolute;left:36px;top:36px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))"><path d="M6 2 L6 40 L15 31 L21 45 L27 42 L21 29 L34 28 Z" fill="#1f2937" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
-  return `<!doctype html><html><head><meta charset="utf-8"><style>
-    html,body{margin:0;padding:0;background:transparent;overflow:hidden;user-select:none}
-    #cursor{position:relative;width:120px;height:120px;will-change:transform;transition:transform .09s cubic-bezier(.2,.9,.3,1.2)}
-    #cursor.down{transform:scale(.84)}
-    #pulse{position:absolute;left:28px;top:28px;width:20px;height:20px;border-radius:50%;
-      background:rgba(51,156,255,.55);opacity:0;transform:scale(.4)}
-    #pulse.fire{animation:pulse .45s ease-out}
-    @keyframes pulse{0%{opacity:.9;transform:scale(.4)}100%{opacity:0;transform:scale(2.6)}}
-  </style></head><body><div id="cursor">${svg}<div id="pulse"></div></div>
-  <script>
-    window.__cuaDown = function () { document.getElementById("cursor").classList.add("down"); };
-    window.__cuaUp = function () {
-      var cursor = document.getElementById("cursor");
-      cursor.classList.remove("down");
-      var pulse = document.getElementById("pulse");
-      pulse.classList.remove("fire"); void pulse.offsetWidth; pulse.classList.add("fire");
-    };
-    // Phase 2 第二步：scoot 变形（拉伸/旋转）+ 点击角度（-44°）——数值由 main 侧
-    // scootTransform/clickTransform 算好传入，页面只做 CSS 应用。
-    window.__cuaTransform = function (sx, sy, rotDeg) {
-      var cursor = document.getElementById("cursor");
-      cursor.style.transform = "scale(" + sx + "," + sy + ") rotate(" + rotDeg + "deg)";
-    };
-    window.__cuaReset = function () {
-      var cursor = document.getElementById("cursor");
-      cursor.style.transform = "";
-    };
-  <\/script></body></html>`;
-}
-
-function bannerWindowHtml(workArea: { width: number }): string {
-  const width = Math.min(560, Math.max(360, Math.round(workArea * 0.5)));
-  return `<!doctype html><html><head><meta charset="utf-8"><style>
-    html,body{margin:0;padding:0;background:transparent;overflow:hidden}
-    #banner{margin:10px auto;width:${width - 20}px;height:36px;border-radius:18px;
-      background:linear-gradient(135deg,rgba(51,156,255,.95),rgba(28,120,220,.95));
-      color:#fff;font:500 13px -apple-system,"SF Pro Text",system-ui,sans-serif;
-      display:flex;align-items:center;justify-content:center;gap:8px;
-      box-shadow:0 4px 16px rgba(15,80,160,.35);-webkit-font-smoothing:antialiased}
-    .dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:blink 1.2s infinite}
-    @keyframes blink{0%,100%{opacity:.35}50%{opacity:1}}
-  </style></head><body><div id="banner"><span class="dot"></span>FreeCodeZ 正在使用你的电脑 · 停止任务可取消</div></body></html>`;
-}
-
 /**
  * HUD 控制器：惰性建窗、事件驱动、空闲隐藏。
  * 返回 dispose（关窗+关监听）。UDP listener 由 deps 注入（真实现绑 dgram）。
@@ -173,6 +98,7 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
   const hideAll = () => {
     if (cursorWindow && !cursorWindow.isDestroyed() && cursorWindow.isVisible()) cursorWindow.hide();
     if (bannerWindow && !bannerWindow.isDestroyed() && bannerWindow.isVisible()) bannerWindow.hide();
+    setLens(false);
     // 会话静默：Esc 快捷键释放（不占系统资源）。
     if (escRegistered) {
       try {
@@ -304,6 +230,30 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
     interventionTimer.unref?.();
   };
 
+  /** Phase 2 loading 透镜：text/key 帧（输入中）点亮，移动/点击帧熄灭；末次输入帧后自熄。 */
+  let lensOn = false;
+  let lensTimer: NodeJS.Timeout | undefined;
+  const setLens = (on: boolean) => {
+    if (lensTimer) {
+      clearTimeout(lensTimer);
+      lensTimer = undefined;
+    }
+    if (on) {
+      lensTimer = setTimeout(() => setLens(false), CUA_LENS_AUTO_OFF_MS);
+      lensTimer.unref?.();
+    }
+    if (lensOn === on) return;
+    lensOn = on;
+    const cursor = cursorWindow;
+    if (cursor && !cursor.isDestroyed()) {
+      void (cursor.webContents as unknown as {
+        executeJavaScript: (code: string) => Promise<unknown>;
+      })
+        .executeJavaScript(`__cuaLoading(${on})`)
+        .catch(() => undefined);
+    }
+  };
+
   const startMotionTo = (targetDip: Vec2, distanceHintPt: number) => {
     stopMotion();
     motion ??= { position: targetDip, velocity: { x: 0, y: 0 } };
@@ -393,6 +343,8 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
         .executeJavaScript(effect)
         .catch(() => undefined);
     }
+    // loading 透镜语义：text 帧（逐段打字中）→ 亮；移动/点击/按键帧 → 灭。
+    setLens(frame.kind === "text");
     if (!cursor.isVisible()) cursor.showInactive();
     if (bannerWindow && !bannerWindow.isDestroyed() && !bannerWindow.isVisible()) {
       bannerWindow.showInactive();
@@ -453,6 +405,7 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
       }
       if (interventionTimer) clearInterval(interventionTimer);
       stopMotion();
+      if (lensTimer) clearTimeout(lensTimer);
       if (idleTimer) clearTimeout(idleTimer);
       listener.close();
       for (const win of [cursorWindow, bannerWindow]) {
