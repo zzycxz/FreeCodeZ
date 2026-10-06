@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 import type { GitBranchComparison, GitFileChange, GitChangeSectionId } from "@zcode/shared";
 import { isPathInWorkspaceScope, normalizeGitPath, toWorkspaceRelativeGitPath } from "./config.js";
 import { hashContent, rejectHunksInContent } from "@zcode/shared";
+import { createWorktree, listWorktrees, removeWorktree } from "./worktrees.js";
+import { createGitCommandProvider } from "./providers/gitCommandProvider.js";
 import type { GitRejectHunksResult } from "@zcode/shared";
 import { filterCommitMessageFilesByCurrentSession } from "./commitMessageFileScope.js";
 import type { IGitService } from "./git.js";
@@ -175,6 +177,22 @@ export function createGitService(options?: {
   commitMessageGenerator?: GitCommitMessageGenerator;
 }): IGitService {
   const repo = options?.repo ?? createGitCliRepo();
+  // 条目 10：worktree 直走 git 命令（不经 repo 层接口——worktree 生命周期简单无收敛态）。
+  const cliCommands = {
+    run: async ({ cwd, args }: { cwd: string; args: readonly string[] }) => {
+      const provider = createGitCommandProvider();
+      const result = await provider.run({
+        cwd,
+        args: args as string[],
+        timeoutMs: 15_000,
+      });
+      return {
+        exitCode: result.exitCode ?? 1,
+        stdout: result.stdout,
+        stderr: result.stderr,
+      };
+    },
+  };
 
   return {
     async getRepositorySummary(params) {
@@ -252,6 +270,30 @@ export function createGitService(options?: {
 
     async discardPaths(params) {
       await repo.discard(params.workspacePath, params.paths, params.staged ?? false);
+    },
+
+    async createWorktree(params) {
+      return createWorktree({
+        commands: cliCommands,
+        resolution: { repoRoot: params.workspacePath },
+        name: params.name,
+      });
+    },
+
+    async listWorktrees(params) {
+      return listWorktrees({
+        commands: cliCommands,
+        resolution: { repoRoot: params.workspacePath },
+      });
+    },
+
+    async removeWorktree(params) {
+      return removeWorktree({
+        commands: cliCommands,
+        resolution: { repoRoot: params.workspacePath },
+        path: params.path,
+        force: params.force,
+      });
     },
 
     async rejectHunks(params): Promise<GitRejectHunksResult> {

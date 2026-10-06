@@ -20,6 +20,11 @@ export function resolveAppshotHotkeySetting(value: string | undefined): AppshotH
     : "off";
 }
 
+/** 设置键的协议形态（appshotHotkey）→ 热键档。 */
+export function hotkeyFromSettings(value: unknown): AppshotHotkeySetting {
+  return value === "cmd" || value === "alt" || value === "shift" ? value : "off";
+}
+
 export interface CuaAppshotWindowTarget {
   isDestroyed(): boolean;
   webContents: {
@@ -30,6 +35,10 @@ export interface CuaAppshotWindowTarget {
 
 export interface CuaAppshotDeps {
   getFocusedWindow(): CuaAppshotWindowTarget | undefined;
+  /** Phase 3a 设置面（注入式读取，缺省=无设置全走 env）。 */
+  getAppshotSettings?(): { appshotHotkey?: string; appshotSound?: boolean; appshotRoute?: string };
+  /** Phase 3a 音效（注入式；缺省无声）。 */
+  playSound?(): void;
   platform?: NodeJS.Platform;
   env?: Record<string, string | undefined>;
   runSnapshot?: typeof appshotSnapshot;
@@ -43,7 +52,12 @@ export interface CuaAppshotDeps {
 export function startCuaAppshot(deps: CuaAppshotDeps) {
   const env = deps.env ?? process.env;
   const platform = deps.platform ?? process.platform;
-  const setting = resolveAppshotHotkeySetting(env[APPSHOT_HOTKEY_ENV]);
+  // Phase 3a 设置面：设置键优先（UI 可控）；env 为部署覆盖兜底；缺省 off。
+  const settingsHotkey = hotkeyFromSettings(deps.getAppshotSettings?.().appshotHotkey);
+  const setting =
+    settingsHotkey !== "off"
+      ? settingsHotkey
+      : resolveAppshotHotkeySetting(env[APPSHOT_HOTKEY_ENV]);
   if (setting === "off" || platform !== "darwin") {
     return { stop: () => undefined, enabled: false };
   }
@@ -71,6 +85,7 @@ async function triggerAppshot(deps: CuaAppshotDeps) {
   if (!window || window.isDestroyed() || window.webContents.getURL().startsWith("devtools://")) {
     return;
   }
+  if (deps.getAppshotSettings?.().appshotSound !== false) deps.playSound?.();
   const snapshot = deps.runSnapshot
     ? await deps.runSnapshot()
     : await appshotSnapshot({ excludePids: [process.pid] });
@@ -81,6 +96,7 @@ async function triggerAppshot(deps: CuaAppshotDeps) {
     });
     return;
   }
+  const route = deps.getAppshotSettings?.().appshotRoute === "new" ? "new" : "current";
   const detail = {
     app: snapshot.app,
     windowId: snapshot.windowId,
@@ -88,6 +104,7 @@ async function triggerAppshot(deps: CuaAppshotDeps) {
     pngBytes: snapshot.capture?.bytes ?? 0,
     axElementCount: snapshot.axTree?.elementCount ?? 0,
     note: snapshot.note,
+    route,
     takenAt: Date.now(),
   };
   const dispatch = `window.dispatchEvent(new CustomEvent(${JSON.stringify(

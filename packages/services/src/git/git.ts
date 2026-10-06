@@ -46,6 +46,10 @@ export interface IGitService {
   unstagePaths(params: GitPathMutationRequest): Promise<void>;
   discardPaths(params: GitDiscardPathsRequest): Promise<void>;
   rejectHunks(params: GitRejectHunksRequest): Promise<GitRejectHunksResult>;
+  /** 条目 10：worktree 生命周期（可选——宿主渐进接线）。 */
+  createWorktree?(params: { workspacePath: string; name: string }): Promise<{ ok: boolean; path?: string; error?: { code: string; message: string } }>;
+  listWorktrees?(params: { workspacePath: string }): Promise<Array<{ path: string; head: string; detached: boolean; prunable: boolean }>>;
+  removeWorktree?(params: { workspacePath: string; path: string; force?: boolean }): Promise<{ ok: boolean; error?: string }>;
   generateCommitMessage(
     params: GitGenerateCommitMessageRequest,
   ): Promise<GitGenerateCommitMessageResult>;

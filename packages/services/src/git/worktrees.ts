@@ -27,9 +27,10 @@ export interface GitWorktreeListEntry {
   prunable: boolean;
 }
 
-export interface GitCommandProvider {
+// GitCommandProvider 复用 providers/gitCommandProvider 的正式类型（避免同名双实现）。
+export type GitCommandProvider = {
   run(input: { cwd: string; args: readonly string[] }): Promise<{ exitCode: number; stdout: string; stderr: string }>;
-}
+};
 
 export interface WorktreeRepositoryResolution {
   repoRoot: string;

@@ -651,9 +651,25 @@ if (app.isPackaged) {
 // 显式开启才有全局轮询；触发后截图+AX 树注入聚焦会话 composer）。
 const cuaAppshotController = startCuaAppshot({
   getFocusedWindow: () => BrowserWindow.getFocusedWindow() ?? undefined,
+  // Phase 3a 设置面：设置键优先于 env（UI 改设置即改热键，无需重启）。
+  getAppshotSettings: () => {
+    const cached = appshotSettingsCache;
+    if (cached) return cached;
+    return {};
+  },
+  // Phase 3a 音效：系统截屏声（macOS 内建）。
+  playSound: () => {
+    if (appshotSettingsCache?.appshotSound === false) return;
+    void shell.beep();
+  },
   log: (message, context) => {
     logger.info(message, context);
   },
+});
+// 设置缓存（settings 变更时刷新——见 mainSettingService 观察面）。
+let appshotSettingsCache: { appshotHotkey?: string; appshotSound?: boolean; appshotRoute?: string } | undefined;
+void mainSettingService.get().then((settings) => {
+  appshotSettingsCache = settings;
 });
 
 const cuaPipFocusRouter = createCuaPipFocusRouter({

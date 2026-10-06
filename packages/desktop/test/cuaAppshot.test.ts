@@ -117,3 +117,74 @@ test("desktop 装配：热键触发 → 快照 → 聚焦窗口定向派发 Cust
   assert.ok(logs.some((message) => message.includes("delivered")));
   controller.stop();
 });
+
+test("设置面：设置键优先于 env；音效/路由透传", async () => {
+  let played = 0;
+  let settings: { appshotHotkey?: string; appshotSound?: boolean; appshotRoute?: string } = {
+    appshotHotkey: "cmd",
+  };
+  const executed: string[] = [];
+  const controller = startCuaAppshot({
+    getFocusedWindow: () => ({
+      isDestroyed: () => false,
+      webContents: {
+        getURL: () => "file:///app/index.html",
+        executeJavaScript: async (code: string) => {
+          executed.push(code);
+        },
+      },
+    }),
+    env: {}, // env 未设置
+    platform: "darwin",
+    getAppshotSettings: () => settings,
+    playSound: () => {
+      played += 1;
+    },
+    runSnapshot: async () => ({
+      ok: true as const,
+      app: { pid: 1, name: "Test" },
+      windowId: 3,
+      capture: { path: "/tmp/t.png", bytes: 5 },
+      axTree: { elementCount: 2 },
+    }),
+    log: () => {},
+  });
+  controller.trigger();
+  for (let i = 0; i < 20 && executed.length === 0; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  assert.equal(executed.length, 1, "设置键 cmd 激活（env 空时）");
+  assert.ok(executed[0]?.includes("freecodez:appshot-add-to-chat"));
+  assert.ok(executed[0]?.includes('"route":"current"'), "缺省路由=current");
+  assert.equal(played, 1, "音效触发");
+
+  // 路由 new + 音效关
+  executed.length = 0;
+  played = 0;
+  settings = { appshotHotkey: "cmd", appshotRoute: "new", appshotSound: false };
+  controller.trigger();
+  for (let i = 0; i < 20 && executed.length === 0; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  assert.ok(executed[0]?.includes('"route":"new"'), "路由 new 透传");
+  assert.equal(played, 0, "音效关不响");
+
+  // 设置 off → 不触发（env 有值也不行）
+  executed.length = 0;
+  controller.stop();
+  const off = startCuaAppshot({
+    getFocusedWindow: () => ({
+      isDestroyed: () => false,
+      webContents: { getURL: () => "file:///x", executeJavaScript: async () => undefined },
+    }),
+    env: { FREECODEZ_APPSHOT_HOTKEY: "cmd" },
+    platform: "darwin",
+    getAppshotSettings: () => ({ appshotHotkey: "off" }),
+    runSnapshot: async () => ({ ok: true, app: { pid: 1, name: "x" }, windowId: 1, axTree: {} }),
+    log: () => {},
+  });
+  off.trigger();
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  assert.equal(executed.length, 0, "设置 off 覆盖 env cmd");
+  off.stop();
+});

@@ -376,6 +376,15 @@ export interface AppSettings {
    * 空 = 功能关闭（零网络零定时器）；设置后 production 形态按日检查并系统通知。
    */
   updateManifestUrl?: string;
+  /**
+   * Phase 3a（升级实施手册 Appshot）：双击热键（cmd/alt/shift/off，缺省 off）。
+   * 设置 UI 三选一+关；env FREECODEZ_APPSHOT_HOTKEY 为部署覆盖（设置优先）。
+   */
+  appshotHotkey?: "cmd" | "alt" | "shift" | "off";
+  /** Phase 3a：截屏后音效（缺省开）。 */
+  appshotSound?: boolean;
+  /** Phase 3a：路由（当前会话/新会话；缺省当前）。 */
+  appshotRoute?: "current" | "new";
   /** 移动端远控的外部 relay 设备身份；deviceSid 由 relay 注册分配，刷新配对（rotate）时清空换新。 */
   webRemoteControlExternalRelayDevice?: { deviceSid: string };
   /** 上次开启移动端远控的窗口上下文；桌面重启后由首个匹配窗口独占恢复（全局一次性，恢复后保留记录）。 */
