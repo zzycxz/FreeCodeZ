@@ -3,7 +3,9 @@ import { DEFAULT_ZCODE_ENDPOINT_ORIGIN } from "./zcodeEndpoint.js";
 export const ZCODE_SOURCE_HEADERS = {
   "User-Agent": "FreeCodeZ/unknown",
   "HTTP-Referer": DEFAULT_ZCODE_ENDPOINT_ORIGIN,
-  "X-Title": "Z Code@electron",
+  // P10 品牌残留补改：8b0bf42 只改了 bootstrap model-config 侧，此处漏改——
+  // 外发归属头（openrouter 式 attribution）不得再自报 Z Code。
+  "X-Title": "FreeCodeZ@electron",
 } as const;
 
 export interface BuildZCodeSourceHeadersFromContextOptions {
@@ -47,7 +49,7 @@ export function buildZCodeSourceHeadersFromContext(
     "HTTP-Referer": endpointOrigin,
     "User-Agent": `FreeCodeZ/${appVersion ?? "unknown"}`,
     ...(appVersion ? { "X-FreeCodeZ-App-Version": appVersion } : {}),
-    "X-Title": `Z Code@${sourceTitle}`,
+    "X-Title": `FreeCodeZ@${sourceTitle}`,
     ...(platform && arch ? { "X-Platform": `${platform}-${arch}` } : {}),
     ...(releaseChannel ? { "X-Release-Channel": releaseChannel } : {}),
     "X-Client-Language": clientLanguage,

@@ -109,6 +109,8 @@ Edit 新增 `line_normalized` 级（27 码点归一）+ 修复 replaceAll 连尾
 
 ## 八、当前产品能力现状
 
+> **2026-10-06 补记**：本节快照止于 10-02 门禁基建期。10-05~10-06 升级执行潮新增能力（明细见第十节）：macOS 电脑控制三件套（koffi FFI 执行层+光标 HUD 可视化+Appshot 一键喂屏，设置双开关默认关）、MCP resources+prompts 通道、diff hunk 级拒绝、worktree、PR 双层工具集、更新检查器、doctor 探针、安全堵漏 9 项与 0B/0C 缺陷批；测试面现为 **12 包 113 文件**。
+
 **身份与接入**：纯 APIKey 多厂商（智谱 GLM 全系/MoMA 等模板+11 厂商图标+接入向导），无登录无遥测无更新链；`~/.freecodez` 数据域。
 **四宿主形态**：桌面工作台（编程/办公双模式）/ CLI+headless（--output-format、失败退出码）/ 手机远控（LAN relay+replayable 恢复）/ bots 双渠道（Telegram/飞书，强制 yolo+灾难地板）。
 **代理与工具**：43 内置工具（固定成本 18.5K token）+ 动态工作流引擎（TS 编译器驱动，428 门控指针化）+ MCP 观测层（denylist/visibility/目录缓存/token 徽章）+ 子代理角色模板（frontmatter）+ 后台任务生命周期 + todo/plan/checkpoint/rewind 全链 + 五诊断技能族。
@@ -125,9 +127,25 @@ Edit 新增 `line_normalized` 级（27 码点归一）+ 修复 replaceAll 连尾
 |---|---|---|---|
 | 1 | Windows 沙箱真机验证 | 代码即绪、UI 锁定 | 任意 Windows 机 `pnpm install && pnpm test`，全绿后一行放开 |
 | 2 | writableRoots 配置面 | 未做（体验增项） | 沙箱真实使用后按需 |
-| 3 | X-Title 仍自报 Z Code（P10 遗留热修） | 待修 | 品牌热修清单 |
+| 3 | X-Title 仍自报 Z Code（P10 遗留热修） | **已修（2026-10-06 复查轮）** | 8b0bf42 只改了 bootstrap 侧、shared zcode-source-headers.ts 两行漏改——本轮补改并重建 dist；另修退出确认弹窗"Z Code"文案残留 |
 | 4 | 安装包未签名 | 待办 | 先 ad-hoc 签名+引导文档 |
-| 5 | 桌面全局沙箱开关 / bots 接沙箱 / landlock 双保险 | 观察项 | 真实需求驱动 |
-| 6 | 决策点 4（MCP 懒加载）/5（code-mode GLM 复跑） | 开放 | 等拍板（懒加载等 ~T tk 观测数据） |
+| 5 | 桌面全局沙箱开关 / landlock 双保险 | 观察项 | 真实需求驱动（bots 接沙箱已落 0-4：任务建/续双边界强制注入，e0b5089） |
+| 6 | 决策点 4（MCP 懒加载）/5（code-mode GLM 复跑） | 4 已过门：A/B 对照通过（flash -5.6pp/pro -2.8pp<10pp，判定数据入 mcp spec §12，目录态管线全通、flag 默认仍关按需开）；5 开放 | 5 等拍板 |
+
+---
+
+## 十、升级实施手册执行潮（2026-10-05~10-06，手册 v4.1→v4.2）
+
+手册 v4.1（cef32fe 入库）发布当日晚间起连续落地约 25 笔提交（e0b5089→f220da0）；手册已于 10-06 出 **v4.2 状态对账版**（全册 ✅/⏸ 落地标注+勘误 13 处+挂账固化）。
+
+- **第 0 批安全堵漏 9 项**（e0b5089）：sed 只读误判三路绕过/沙箱开关 alwaysAsk 审批门/子代理沙箱继承/bots 任务强制沙箱/灾难地板四类绕过（36 拦截样本）/daemon token 守卫/MessagePort dispose/anthropic 版本头/seatbelt 只 deny credentials.json（真机 sandbox-exec 实证，agent 调模型不受影响）。
+- **第 0B/0C 批缺陷修复**（dcc2cd9/6ad4c69/3a271d3）：FK 时序双写入者守卫/workflow 挂死主修+amend 同前驱互斥/memory 抽取 cursor 持久化/workflow+memory+供应商链补遗（actor 上限 128/白名单/强标识/SSE 中断重试/V10 docker inspect）/relay 帧协议下沉 shared 镜像归零。
+- **第一批**（6629bb7+更新检查器三笔 5ef78af/6aca461/bf7e041+env codemod 三批 1fd161c/c476bfd/fea9d64）：i18n 六子项（死键 193 删+pre-push 校验）/安全教材四级确认政策/doctor 五探针/env 剥离（数据根双读+迁移 warn+define 宏 19 名+字符串键值族；落定口径 330 名/1809 处/366 文件）/更新检查器（GitHub API+自有端点默认源+限流退避）。
+- **桌面控制三 Phase**：Phase 1 koffi FFI 执行层（4c6ce85：24 方法三道保险+koffi 三实测坑；1e 七 App 指南 f451498；1f 表面分类+生命周期快照差分 efa284f；设置双开关+光标广播端口 53717 f220da0；真机三波验证 50584a4）→ Phase 2 可视化（5beea93 基础光标 HUD→b8236db 30 参数动画引擎→e5e5c85 scoot 变形/用户干预/Esc）→ Phase 3a Appshot（0b6daf5+305be73+2a0e402）。
+- **第二批**：7 diff hunk 拒绝全链（545e8a5+f1a1a81）/8 MCP 治理闭环含 A/B 通过（04d0aca+09835fa+ed4a7f1）/9 resources+prompts 真实 server e2e（d983ae3+9ce0858）/10 worktree（c401f9c+82c1f6e）/11 PR 工具集（79fa3e2）/12 子项 docx 批注四能力+soffice 隔离（a77c904）。
+- **第三/四批**：13-19 信号评估收口+请求头清扫（8b0bf42，评估文档 docs/evaluations/）/22 三 UX 全落（被拒计数/关窗五场景覆盖定案/终端 cwd 联动）/24 尸壳审计定案（19cb019：协议契约保留）+FreeCodeZ Protocol 双名兼容+心跳降 debug（f8d2e8c）。
+- **复查轮（2026-10-06）**：X-Title shared 侧漏改补改（8b0bf42 提交信息"双处"虚报——只改了 bootstrap 侧）+退出确认弹窗"Z Code"残留补改+adapters 间歇失败根治（4cfcd25）+手册 v4.2 状态对账。
+
+**挂账（等条件触发）**：0B-2 真实 key 前置/0C-3② 千帆带 key 实测/Phase 3b 活控验收（Excel/WPS 真机；Numbers 画布不暴露单元格级 AX 已实测）/Phase 2 干预闭环（重查 AX 后续跑+动作流暂停）与 45 帧透镜/条目 7 e2e 与 Appshot 打包态 TCC 终验/条目 1 残余（类型接口键名联动+契约新键改名）/xlsx recalc 性能/测试债三项（桌面 UI E2E、四宿主互通、Windows+Linux 真机，0C 批后排期）。
 
 **配套工作文档**（工作区，规格书系列按 .gitignore 惯例不入库）：总实施版（执行入口+附录 F 复测数据）、实证适配版 v5（五轮排查与三道闸）、沙箱/确定项两附录、过错复盘、工作总结、Orca 轴差距分析。
