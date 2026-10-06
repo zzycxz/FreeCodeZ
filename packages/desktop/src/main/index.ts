@@ -669,6 +669,12 @@ const updateCheckerDeps = {
 };
 // manifestUrl 运行时读：设置键为空→回落 FreeCodeZ 默认源（<origin>/releases/latest）；
 // 用户显式 URL 可覆盖。菜单手动触发与周期共用同一检查器实例。
+// ⚠ 顺序约束：mainSettingService 的定义必须先于下方所有**顶层** .get() 引导
+//（updateChecker 设置读取 + appshotSettingsCache 预热）。同模块 use-before-define
+// 在 dev（isPackaged=false 短路/延迟调用）不炸，但打包 esbuild 扁平化后绑定为
+// undefined——2026-10-06 打包态启动即崩（Cannot read properties of undefined
+// (reading 'get')）实证；createSettingService() 是纯工厂，上移零语义变化。
+const mainSettingService = createSettingService();
 const resolveEndpointOrigin = (): string =>
   resolveZCodeEndpointOrigin({
     env: hostProcessLocalEnv,
@@ -766,7 +772,7 @@ const UPDATE_STATUS_WINDOW_COMPACT_HEIGHT = 205;
 const UPDATE_STATUS_WINDOW_PROGRESS_HEIGHT = 224;
 const UPDATE_STATUS_WINDOW_READY_HEIGHT = UPDATE_STATUS_WINDOW_PROGRESS_HEIGHT - 54;
 const UPDATE_STATUS_WINDOW_TRAFFIC_LIGHT_POSITION = { x: 10, y: 10 } as const;
-const mainSettingService = createSettingService();
+// mainSettingService 定义已上移至 updateChecker 引导块之前（同文件顶部顺序约束注释）。
 const appLaunchGate = createAppLaunchGate();
 const appLaunchCoordinator = createAppLaunchCoordinator(appLaunchGate);
 async function resolveCurrentZCodeEndpointOrigin() {
