@@ -1763,6 +1763,7 @@ function createWindowInstance(startupBootstrap: StartupWindowBootstrap = {}) {
           ...initMessage,
           zcodeBuiltinProviderConfigFilePath: resolveZCodeBuiltinProviderConfigFilePath({
             env: { ...hostProcessLocalEnv, ...process.env },
+            logger,
           }),
         },
         {
