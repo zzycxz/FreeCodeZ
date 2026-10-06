@@ -768,6 +768,13 @@ const enUS: Record<string, string> = {
   "diff.placeholder.badge": "UI placeholder",
   "diff.placeholder.description":
     "This phase focuses on the right-side Diff panel shell first. Real Git services and command execution will be connected later.",
+  "settings.appshot.title": "Appshot",
+  "settings.appshot.description": "Double-tap a modifier key to capture the frontmost window into the chat (Screen Recording permission required).",
+  "settings.appshot.hotkey.off": "Off",
+  "settings.appshot.sound": "Play sound after capture",
+  "settings.appshot.route": "Route to",
+  "settings.appshot.route.current": "Current chat",
+  "settings.appshot.route.new": "New chat",
   "git.discardConfirm.title": "Discard all changes in this file?",
   "git.discardConfirm.description": "{path} will be restored via git restore. This cannot be undone.",
   "git.discardConfirm.confirm": "Discard changes",

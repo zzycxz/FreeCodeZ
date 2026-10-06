@@ -20,6 +20,7 @@ import { toast } from "@/components/ui/toast.js";
 import { Switch } from "@/components/ui/switch.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { useServices } from "@/hooks/useServices.js";
+import { cn } from "@/components/lib/utils.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { useCuaPermissionStatus } from "@/hooks/useCuaPermissionStatus.js";
 import {
@@ -703,6 +704,8 @@ export function ComputerUseSection({
 
   return (
     <div className="space-y-4">
+      {/* Phase 3a Appshot：热键三选一+音效+路由（服务面 cuaAppshot.ts 消费）。 */}
+      <AppshotSettingsBlock />
       {/* 总开关：开/关 zcode-cua 插件（同步其 MCP + skill） */}
       <SettingsGroupCard>
         <SettingsRow
@@ -814,6 +817,118 @@ export function ComputerUseSection({
           ) : null}
         </>
       ) : null}
+    </div>
+  );
+}
+
+
+// ============================================================
+// Phase 3a Appshot 设置块（升级实施手册）：热键三选一+音效+路由。
+// ============================================================
+function AppshotSettingsBlock() {
+  const { intl } = useZCodeIntl();
+  const { settings, update } = useSettings();
+  const [saving, setSaving] = useState(false);
+
+  const hotkey = settings?.appshotHotkey ?? "off";
+  const sound = settings?.appshotSound !== false;
+  const route = settings?.appshotRoute ?? "current";
+
+  const setHotkey = async (next: "cmd" | "alt" | "shift" | "off") => {
+    setSaving(true);
+    try {
+      await update({ appshotHotkey: next });
+    } finally {
+      setSaving(false);
+    }
+  };
+  const setSound = async (on: boolean) => {
+    setSaving(true);
+    try {
+      await update({ appshotSound: on });
+    } finally {
+      setSaving(false);
+    }
+  };
+  const setRoute = async (r: "current" | "new") => {
+    setSaving(true);
+    try {
+      await update({ appshotRoute: r });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const hotkeyOptions: Array<{ value: "cmd" | "alt" | "shift" | "off"; label: string }> = [
+    { value: "cmd", label: "⌘ ⌘" },
+    { value: "alt", label: "⌥ ⌥" },
+    { value: "shift", label: "⇧ ⇧" },
+    { value: "off", label: intl.formatMessage({ id: "settings.appshot.hotkey.off" }) },
+  ];
+
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-surface p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-ui-lg font-medium text-foreground">
+          {intl.formatMessage({ id: "settings.appshot.title" })}
+        </span>
+      </div>
+      <p className="text-ui-sm text-foreground-subtle">
+        {intl.formatMessage({ id: "settings.appshot.description" })}
+      </p>
+      <div className="flex items-center gap-2" data-appshot-hotkey>
+        {hotkeyOptions.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            disabled={saving}
+            data-appshot-hotkey-option={option.value}
+            className={cn(
+              "rounded-md border px-3 py-1.5 text-ui-sm transition-colors",
+              hotkey === option.value
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-foreground-subtle hover:border-foreground-subtle",
+              saving && "opacity-50",
+            )}
+            onClick={() => void setHotkey(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <label className="flex items-center gap-2 text-ui-sm text-foreground">
+        <input
+          type="checkbox"
+          checked={sound}
+          disabled={saving}
+          onChange={(event) => void setSound(event.target.checked)}
+          data-appshot-sound
+        />
+        {intl.formatMessage({ id: "settings.appshot.sound" })}
+      </label>
+      <div className="flex items-center gap-2 text-ui-sm">
+        <span className="text-foreground-subtle">
+          {intl.formatMessage({ id: "settings.appshot.route" })}
+        </span>
+        {(["current", "new"] as const).map((r) => (
+          <button
+            key={r}
+            type="button"
+            disabled={saving}
+            data-appshot-route-option={r}
+            className={cn(
+              "rounded-md border px-2.5 py-1 text-ui-sm transition-colors",
+              route === r
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-foreground-subtle hover:border-foreground-subtle",
+              saving && "opacity-50",
+            )}
+            onClick={() => void setRoute(r)}
+          >
+            {intl.formatMessage({ id: `settings.appshot.route.${r}` })}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -718,6 +718,13 @@ const zhCN: Record<string, string> = {
   "diff.placeholder.badge": "UI 占位",
   "diff.placeholder.description":
     "当前先完成右侧 Diff 面板的前端壳层，真实 Git service 与命令执行后续再接入。",
+  "settings.appshot.title": "一键喂屏（Appshot）",
+  "settings.appshot.description": "双击修饰键截取前台窗口并喂入对话（截屏需在系统设置中授予屏幕录制权限）。",
+  "settings.appshot.hotkey.off": "关闭",
+  "settings.appshot.sound": "截屏后播放音效",
+  "settings.appshot.route": "路由到",
+  "settings.appshot.route.current": "当前会话",
+  "settings.appshot.route.new": "新会话",
   "git.discardConfirm.title": "丢弃此文件的全部修改？",
   "git.discardConfirm.description": "将用 git restore 还原 {path}。此操作不可撤销。",
   "git.discardConfirm.confirm": "丢弃修改",
