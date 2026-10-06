@@ -13,11 +13,11 @@
 // 元素类动作的"重查 AX"由既有 stale_element/ax_error 路径承担（元素失效时 AX 调用自然
 // 失败，agent 重捕获）；点类动作的时效性由闸门（等待静默）+agent 下一步重捕获共同保证。
 
-import { readUserMouseActivity } from "./cursor-animation.js";
+import { readUserMouseActivity, USER_MOUSE_ACTIVITY_THRESHOLD_MS } from "./cursor-animation.js";
 
-/** 闸门缺省参数：thresholdMs 与 HUD USER_MOUSE_ACTIVITY_THRESHOLD_MS 同值（静默定义一致）。 */
+/** 闸门缺省参数：静默阈值直接复用 HUD 同源常量（防两处漂移——HUD 与动作闸的"用户活跃"必须同义）。 */
 export const USER_ACTIVITY_GATE_DEFAULTS = {
-  thresholdMs: 800,
+  thresholdMs: USER_MOUSE_ACTIVITY_THRESHOLD_MS,
   pollMs: 100,
   maxWaitMs: 30_000,
 };

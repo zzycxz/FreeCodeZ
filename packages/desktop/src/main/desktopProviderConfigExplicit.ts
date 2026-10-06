@@ -16,6 +16,7 @@ const explicitCompatibilityCache = new Map<string, boolean>();
 /**
  * 显式配置文件能否被 FreeCodeZ 的 builtin release schema 解码（结果按路径缓存）。
  * 文件不存在/JSON 坏/schema 不兼容（官方 ZCode 配置即此形态）→ false。
+ * 缓存生命周期=进程：文件被修好后需重启应用生效（桌面场景可接受；避免每次 spawn 重读）。
  */
 export function isExplicitBuiltinProviderConfigCompatible(explicitPath: string): boolean {
   const cached = explicitCompatibilityCache.get(explicitPath);
