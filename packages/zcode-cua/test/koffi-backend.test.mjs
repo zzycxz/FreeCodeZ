@@ -10,6 +10,7 @@ import { parseKeyChord } from "../macos/ax-actions.js";
 // P1-f 表面分类/生命周期纯件（真机证据：TextEdit ⌘S 保存面板=AXSheet 且 subrole 空，
 // 子树按钮 保存/取消 + 文本框「保存为：」——区分只能靠内容特征）。
 import { sheetPanelKindFromButtons, surfaceLifecycleFromDiff } from "../macos/koffi-tree.js";
+import { loadAppInstruction } from "../macos/koffi-tree.js";
 
 const IS_DARWIN = process.platform === "darwin";
 
@@ -171,4 +172,25 @@ test("表面生命周期差分：首测 stable；一致 stable；增减 replaced
   );
   assert.equal(surfaceLifecycleFromDiff(prev, new Set(), { hasWindow: false }), "closed");
   assert.equal(surfaceLifecycleFromDiff(undefined, new Set(), { hasWindow: false }), "stable", "首测无窗仍 stable");
+});
+
+test("P1-e App 指南：7 个基线指南按 bundle_id 键全可载；显示名通道兜底", () => {
+  const cases = [
+    ["notion.id", "Notion Computer Use"],
+    ["com.tinyspeck.slackmacgap", "Slack Computer Use"],
+    ["com.spotify.client", "Spotify Computer Use"],
+    ["com.apple.iWork.Numbers", "Numbers Computer Use"],
+    ["com.apple.Music", "Music Computer Use"],
+    ["com.apple.clock", "Clock Computer Use"],
+    ["com.apple.ScreenContinuity", "iPhone Mirroring Instructions"],
+  ];
+  for (const [key, marker] of cases) {
+    const content = loadAppInstruction(key);
+    assert.ok(content, key);
+    assert.ok(content.includes(marker), `${key} → ${marker}`);
+  }
+  // 显示名通道（capture_app 的 app_ref 传名场景）：本仓自写的 3 个指南无名称键文件，
+  // 名称通道对它们缺席（返回 undefined）——双通道语义即 bundle_id 优先、名称兜底。
+  assert.equal(loadAppInstruction("com.unknown.app"), undefined);
+  assert.equal(loadAppInstruction(""), undefined);
 });

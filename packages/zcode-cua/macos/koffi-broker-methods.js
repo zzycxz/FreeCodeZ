@@ -192,7 +192,9 @@ export function createKoffiBrokerMethods(options = {}) {
         params?.app_ref && typeof params.app_ref === "string"
           ? params.app_ref
           : (params?.app_ref?.bundle_id ?? "");
-      const instruction = loadAppInstruction(bundleId);
+      // P1-e 双通道：bundle_id 键优先，app_ref 为显示名时（resolveAppRefToPid 也接受名）
+      // 用 AXTitle 名称通道兜底（例：app_ref="Numbers" → numbers.md）。
+      const instruction = loadAppInstruction(bundleId) ?? loadAppInstruction(appName);
       // P1-f 生命周期：窗口标题入指纹（换主窗=换表面），附加表面（sheet/popover）按
       // kind+title 入指纹；与上次快照差分出 stable/replaced/closed。
       const surfaceFingerprints = new Set(budget.elements
