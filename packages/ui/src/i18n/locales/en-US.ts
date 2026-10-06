@@ -768,6 +768,11 @@ const enUS: Record<string, string> = {
   "diff.placeholder.badge": "UI placeholder",
   "diff.placeholder.description":
     "This phase focuses on the right-side Diff panel shell first. Real Git services and command execution will be connected later.",
+  "git.worktree.title": "Worktree",
+  "git.worktree.namePlaceholder": "New worktree name…",
+  "git.worktree.create": "Create",
+  "git.worktree.created": "Created worktree: {path}",
+  "git.worktree.failed": "Creation failed",
   "settings.appshot.title": "Appshot",
   "settings.appshot.description": "Double-tap a modifier key to capture the frontmost window into the chat (Screen Recording permission required).",
   "settings.appshot.hotkey.off": "Off",

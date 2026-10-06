@@ -718,6 +718,11 @@ const zhCN: Record<string, string> = {
   "diff.placeholder.badge": "UI 占位",
   "diff.placeholder.description":
     "当前先完成右侧 Diff 面板的前端壳层，真实 Git service 与命令执行后续再接入。",
+  "git.worktree.title": "Worktree",
+  "git.worktree.namePlaceholder": "新 worktree 名称…",
+  "git.worktree.create": "创建",
+  "git.worktree.created": "已创建 worktree：{path}",
+  "git.worktree.failed": "创建失败",
   "settings.appshot.title": "一键喂屏（Appshot）",
   "settings.appshot.description": "双击修饰键截取前台窗口并喂入对话（截屏需在系统设置中授予屏幕录制权限）。",
   "settings.appshot.hotkey.off": "关闭",

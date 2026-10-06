@@ -5,7 +5,7 @@ import type { GitChangeSourceId, GitDiffResult } from "@zcode/shared";
 import { TID_GIT_PANE } from "@zcode/shared";
 import { cn } from "@/components/lib/utils.js";
 import { Button } from "@/components/ui/button.js";
-import { FileTextIcon, RefreshCw } from "lucide-react";
+import {FileTextIcon, RefreshCw, GitBranch} from "lucide-react";;
 import {
   Select,
   SelectContent,
@@ -17,6 +17,7 @@ import { type GitPaneFileChange, type GitPaneRepositoryState } from "@/hooks/use
 import { useServices } from "@/hooks/useServices.js";
 import { useFileContextActions } from "@/hooks/useFileContextActions.js";
 import { useWorkspaceOpenInEditorTarget } from "@/hooks/useWorkspaceOpenInEditorTarget.js";
+import { toast } from "@/components/ui/toast.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { joinFilePath, isAbsoluteFilePath } from "@/lib/path.js";
 import {
@@ -106,6 +107,8 @@ export function GitPane({
   });
   const resolvedTheme = resolveTheme(theme);
   const [expandedPath, setExpandedPath] = useState<string | null>(null);
+  // 条目 10：worktree 菜单开合（服务面 gitService.createWorktree/listWorktrees/removeWorktree）。
+  const [worktreeMenuOpen, setWorktreeMenuOpen] = useState(false);
   const [diffStateByKey, setDiffStateByKey] = useState<Record<string, GitDiffLoadState>>({});
   const diffGenerationRef = useRef(0);
   const pendingDiffKeysRef = useRef(new Set<string>());
@@ -506,6 +509,16 @@ export function GitPane({
             type="button"
             variant="ghost"
             size="lg"
+            data-git-worktree-button
+            onClick={() => setWorktreeMenuOpen((open) => !open)}
+          >
+            <GitBranch className="size-3.5" />
+            {intl.formatMessage({ id: "git.worktree.title" })}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
             disabled={gitState.loading}
             onClick={onRefresh}
           >
@@ -515,6 +528,17 @@ export function GitPane({
         </div>
       </div>
 
+      {worktreeMenuOpen ? (
+        <GitWorktreeMenu
+          gitService={gitService}
+          workspacePath={workspacePath}
+          onClose={() => setWorktreeMenuOpen(false)}
+          onWorktreeCreated={(path) => {
+            setWorktreeMenuOpen(false);
+            toast(intl.formatMessage({ id: "git.worktree.created" }, { path }));
+          }}
+        />
+      ) : null}
       <div className="min-h-0 flex-1">
         {currentChanges.length > 0 ? (
           <div ref={changeListScrollRef} className="h-full min-h-0 w-full overflow-auto">
@@ -618,5 +642,77 @@ export function GitPane({
       </AlertDialog>
       </div>
     </section>
+  );
+}
+
+
+// ============================================================
+// 条目 10（升级实施手册）：GitPane worktree 入口菜单。
+// ============================================================
+function GitWorktreeMenu({
+  gitService,
+  workspacePath,
+  onClose,
+  onWorktreeCreated,
+}: {
+  gitService: { createWorktree?: (p: { workspacePath: string; name: string }) => Promise<{ ok: boolean; path?: string; error?: { message: string } }> };
+  workspacePath: string;
+  onClose: () => void;
+  onWorktreeCreated: (path: string) => void;
+}): React.JSX.Element {
+  const { intl } = useZCodeIntl();
+  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCreate = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || creating) return;
+    setCreating(true);
+    setError(null);
+    try {
+      const result = await gitService.createWorktree?.({ workspacePath, name: trimmed });
+      if (result?.ok && result.path) {
+        onWorktreeCreated(result.path);
+      } else {
+        setError(result?.error?.message ?? intl.formatMessage({ id: "git.worktree.failed" }));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 border-b border-border bg-surface px-3 py-2" data-git-worktree-menu>
+      <input
+        type="text"
+        value={name}
+        disabled={creating}
+        placeholder={intl.formatMessage({ id: "git.worktree.namePlaceholder" })}
+        className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1 text-ui-sm"
+        onChange={(event) => setName(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") void handleCreate();
+          if (event.key === "Escape") onClose();
+        }}
+        data-git-worktree-name-input
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        disabled={!name.trim() || creating}
+        onClick={() => void handleCreate()}
+        data-git-worktree-create
+      >
+        {intl.formatMessage({ id: "git.worktree.create" })}
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+        {intl.formatMessage({ id: "common.cancel" })}
+      </Button>
+      {error ? <span className="text-ui-xs text-destructive">{error}</span> : null}
+    </div>
   );
 }
