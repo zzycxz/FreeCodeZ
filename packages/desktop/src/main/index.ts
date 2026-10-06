@@ -79,7 +79,7 @@ import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRo
 import { createCuaCursorHud, type CuaCursorHud } from "./cuaCursorHud.js";
 import { startCuaAppshot } from "./cuaAppshot.js";
 import { createUpdateChecker } from "./updateChecker.js";
-import { BrowserWindow as HudBrowserWindow, screen as HudScreen } from "electron";
+import { BrowserWindow as HudBrowserWindow, globalShortcut, screen as HudScreen } from "electron";
 import { BroadcastHub } from "./broadcastHub.js";
 
 // ---- FreeCodeZ fork 更新链空壳(P3 §3.6):autoUpdater 已删,以下符号改为本地 no-op ----
@@ -593,6 +593,16 @@ const cuaCursorHud: CuaCursorHud | undefined =
         screen: {
           getPrimaryDisplay: () => HudScreen.getPrimaryDisplay(),
           screenToDipPoint: (point) => HudScreen.screenToDipPoint(point),
+        },
+        globalShortcut: {
+          register: (accelerator, callback) => globalShortcut.register(accelerator, callback),
+          unregister: (accelerator) => globalShortcut.unregister(accelerator),
+        },
+        // Phase 2：Esc 取消 = 光标活跃期间用户按 Esc，向聚焦窗发停止信号
+        // （与 UI 停止按钮同一路径——聚焦窗的 task 停止链处理实际中断）。
+        onUserCancel: () => {
+          const focused = BrowserWindow.getFocusedWindow();
+          focused?.webContents.send("cua-user-cancel");
         },
       })
     : undefined;

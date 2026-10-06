@@ -14,10 +14,14 @@
 // 坐标系：macOS 全局点（CGEvent）与 Electron DIP 在 macOS 上 1:1。
 
 import { createSocket, type Socket } from "node:dgram";
+
 import {
   cursorMotionStep,
   isCloseEnough,
   scootTransform,
+  clickTransform,
+  readUserMouseActivity,
+  nextInterventionState,
   type CursorMotionState,
   type Vec2,
 } from "@zcode/zcode-cua/macos/cursor-animation";
@@ -55,10 +59,19 @@ export interface CuaCursorHudWindowLike {
 
 export interface CuaCursorHudDeps {
   BrowserWindow: typeof BrowserWindow;
+  /** koffi 绑定加载器（用户干预轮询用；缺省不装干预面）。 */
+  loadBindings?: () => unknown;
   screen: {
     getPrimaryDisplay(): { workArea: { x: number; y: number; width: number; height: number } };
     /** CGEvent 坐标（屏幕点）→ Electron DIP；缩放非 1 的显示器必须换算（实测发现）。 */
     screenToDipPoint?(point: { x: number; y: number }): { x: number; y: number };
+  };
+  /** Phase 2：用户按 Esc 取消——由调用方接任务停止链（手册"Esc 退出由宿主 HUD 处理"）。 */
+  onUserCancel?: () => void;
+  /** 全局快捷键面（注入式——测试环境无 electron）。 */
+  globalShortcut?: {
+    register(accelerator: string, callback: () => void): void;
+    unregister(accelerator: string): void;
   };
   createUdpListener?: (port: number, onFrame: (frame: CuaCursorEventFrame) => void) => { close(): void };
 }
@@ -120,6 +133,16 @@ function cursorWindowHtml(): string {
       var pulse = document.getElementById("pulse");
       pulse.classList.remove("fire"); void pulse.offsetWidth; pulse.classList.add("fire");
     };
+    // Phase 2 第二步：scoot 变形（拉伸/旋转）+ 点击角度（-44°）——数值由 main 侧
+    // scootTransform/clickTransform 算好传入，页面只做 CSS 应用。
+    window.__cuaTransform = function (sx, sy, rotDeg) {
+      var cursor = document.getElementById("cursor");
+      cursor.style.transform = "scale(" + sx + "," + sy + ") rotate(" + rotDeg + "deg)";
+    };
+    window.__cuaReset = function () {
+      var cursor = document.getElementById("cursor");
+      cursor.style.transform = "";
+    };
   <\/script></body></html>`;
 }
 
@@ -150,6 +173,15 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
   const hideAll = () => {
     if (cursorWindow && !cursorWindow.isDestroyed() && cursorWindow.isVisible()) cursorWindow.hide();
     if (bannerWindow && !bannerWindow.isDestroyed() && bannerWindow.isVisible()) bannerWindow.hide();
+    // 会话静默：Esc 快捷键释放（不占系统资源）。
+    if (escRegistered) {
+      try {
+        deps.globalShortcut?.unregister("Escape");
+      } catch {
+        // 忽略注销失败。
+      }
+      escRegistered = false;
+    }
   };
 
   const scheduleIdleHide = () => {
@@ -235,6 +267,7 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
   };
 
   // Phase 2 第二步：弹簧插值动画状态（30 参数规格见 cursor-animation.js）。
+  let lastPointerDip: Vec2 | undefined;
   let motion: CursorMotionState | undefined;
   let motionTarget: Vec2 | undefined;
   let motionTimer: NodeJS.Timeout | undefined;
@@ -247,6 +280,30 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
   };
 
   /** 弹簧插值循环（~60fps；每帧 setPosition 近似 rAF——main 侧无渲染帧时钟）。 */
+  // Phase 2 用户干预：真鼠标移动→光标 paused（动画冻结+HUD 横幅变提示）。
+  // 60ms 轮询 CGEventSourceSecondsSinceMouseMoved（零 TCC/零 Event Tap 崩溃面）。
+  let interventionState: "idle" | "paused" = "idle";
+  let interventionTimer: NodeJS.Timeout | undefined;
+  const loadMouseBindings = deps.loadBindings as (() => unknown) | undefined;
+  let mouseBindings: unknown;
+  const startInterventionPolling = () => {
+    if (interventionTimer || !loadMouseBindings) return;
+    interventionTimer = setInterval(() => {
+      if (disposed) return;
+      mouseBindings ??= loadMouseBindings();
+      const { userActive } = readUserMouseActivity(mouseBindings);
+      const next = nextInterventionState(interventionState, userActive, !userActive);
+      if (next !== interventionState) {
+        interventionState = next;
+        // paused：冻结动画（停 motion）；idle：恢复（下一帧自然重启）。
+        if (next === "paused") {
+          stopMotion();
+        }
+      }
+    }, 60);
+    interventionTimer.unref?.();
+  };
+
   const startMotionTo = (targetDip: Vec2, distanceHintPt: number) => {
     stopMotion();
     motion ??= { position: targetDip, velocity: { x: 0, y: 0 } };
@@ -269,6 +326,12 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
         // closeEnough 提前放行：到位后停循环（连续操作的下一帧会重启）。
         if (isCloseEnough(motion.position, motionTarget) || Date.now() - startedAt > 3_000) {
           stopMotion();
+          // 到位后复位 scoot 变形（拉伸回 1:1）。
+          void (cursor.webContents as unknown as {
+            executeJavaScript: (code: string) => Promise<unknown>;
+          })
+            .executeJavaScript("__cuaReset()")
+            .catch(() => undefined);
         }
       }
     }, 16);
@@ -277,6 +340,10 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
 
   const handleFrame = (frame: CuaCursorEventFrame) => {
     if (disposed) return;
+    startInterventionPolling();
+    // 用户正在操作：光标冻结在当前位置（帧不驱动动画/特效——动作层也有独立暂停面）。
+    if (interventionState === "paused") return;
+    let pointEffect: string | undefined;
     const cursor = ensureCursorWindow();
     ensureBannerWindow();
     const position = cursorWindowPositionFor(frame);
@@ -287,6 +354,8 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
         x: position.x + 4,
         y: position.y + 4,
       };
+      const previousPointerDip = lastPointerDip;
+      lastPointerDip = dip;
       if (motion && (frame.kind === "point" || frame.kind === "down" || frame.kind === "up")) {
         // 第二步：已有动画态的目标点走弹簧弧线（frame 携带的点=目标）。
         const distanceHint = Math.hypot(dip.x - motion.position.x, dip.y - motion.position.y);
@@ -296,14 +365,27 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
         motion = { position: dip, velocity: { x: 0, y: 0 } };
         cursor.setPosition(position.x, position.y);
       }
+      // Phase 2 第二步：point 帧的 scoot 变形（>196pt 拉伸+旋转）——在 position 块内
+      // 计算（dip 作用域在此），存入 effect 供后续统一驱动。
+      if (frame.kind === "point" && previousPointerDip) {
+        const scoot = scootTransform(previousPointerDip, dip);
+        pointEffect =
+          scoot.scaleX === 1 && scoot.scaleY === 1
+            ? "__cuaReset()"
+            : `__cuaTransform(${scoot.scaleX.toFixed(3)},${scoot.scaleY.toFixed(3)},${scoot.rotationDeg.toFixed(1)})`;
+      }
     }
     // 特效（data:URL 无 ipc）：main 侧调用页面全局函数；失败静默（窗口未就绪竞态）。
-    const effect =
-      frame.kind === "down" || frame.kind === "drag_start"
-        ? "__cuaDown()"
-        : frame.kind === "up" || frame.kind === "drag_end"
-          ? "__cuaUp()"
-          : undefined;
+    // Phase 2 第二步：down 带点击角 -44°，up 复位+脉冲。
+    let effect: string | undefined;
+    if (frame.kind === "down" || frame.kind === "drag_start") {
+      const click = clickTransform();
+      effect = `__cuaDown();__cuaTransform(1,1,${click.rotationDeg})`;
+    } else if (frame.kind === "up" || frame.kind === "drag_end") {
+      effect = "__cuaUp();__cuaReset()";
+    } else {
+      effect = pointEffect;
+    }
     if (effect) {
       void (cursor.webContents as unknown as {
         executeJavaScript: (code: string) => Promise<unknown>;
@@ -315,8 +397,19 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
     if (bannerWindow && !bannerWindow.isDestroyed() && !bannerWindow.isVisible()) {
       bannerWindow.showInactive();
     }
+    // Phase 2：Esc 取消——光标活跃期间注册全局 Esc（用户任何上下文按 Esc 即停）。
+    // idle 隐藏时注销（不永久占用系统快捷键）。
+    if (deps.onUserCancel) {
+      try {
+        deps.globalShortcut?.register("Escape", deps.onUserCancel);
+        escRegistered = true;
+      } catch {
+        // 注册失败（其他 app 占用）不崩——退化为无 Esc（UI 停止按钮仍可用）。
+      }
+    }
     scheduleIdleHide();
   };
+  let escRegistered = false;
 
   const createUdpListener =
     deps.createUdpListener ??
@@ -350,6 +443,15 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
     dispose() {
       if (disposed) return;
       disposed = true;
+      if (escRegistered) {
+        try {
+          deps.globalShortcut?.unregister("Escape");
+        } catch {
+          // 忽略。
+        }
+        escRegistered = false;
+      }
+      if (interventionTimer) clearInterval(interventionTimer);
       stopMotion();
       if (idleTimer) clearTimeout(idleTimer);
       listener.close();

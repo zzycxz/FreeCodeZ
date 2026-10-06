@@ -136,3 +136,48 @@ export function scootTransform(from, to) {
 export function clickTransform() {
   return { rotationDeg: CLICK_ANGLE_DEG };
 }
+
+// ============================================================
+// Phase 2 用户干预：真鼠标移动→光标 paused→重查 AX 后续跑
+// ============================================================
+// 实现：轮询 CGEventSourceSecondsSinceMouseMoved（鼠标静止秒数）——零 TCC 权限、
+// 零 Event Tap 回调崩溃面（手册的 CGEventTap 方案有回调签名错误=进程崩风险，
+// 轮询 60ms 一拍在 HUD 层已有同款先例）。
+// "重查 AX 后续跑"的执行侧在动作面（koffi broker），此处只发 paused 状态转换。
+
+/** 用户鼠标活跃阈值：鼠标在最近 N ms 内动过 = 用户正在操作。 */
+export const USER_MOUSE_ACTIVITY_THRESHOLD_MS = 800;
+
+/**
+ * 用户干预检测器：轮询 CGEventSourceSecondsSinceMouseMoved（kCGEventSourceStateCombinedSessionState=0）。
+ * 返回 { userActive, lastMoveMs }。koffi 不可用 → 恒不活跃（干预面缺席不崩）。
+ */
+export function readUserMouseActivity(bindings) {
+  if (!bindings) return { userActive: false, lastMoveMs: undefined };
+  try {
+    const CG = bindings.koffi.load(
+      "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics",
+    );
+    const since = CG.func("CGEventSourceSecondsSinceMouseMoved", "double", ["uint32"]);
+    const seconds = since(0);
+    const lastMoveMs = Math.round(seconds * 1000);
+    return {
+      userActive: lastMoveMs < USER_MOUSE_ACTIVITY_THRESHOLD_MS,
+      lastMoveMs,
+    };
+  } catch {
+    return { userActive: false, lastMoveMs: undefined };
+  }
+}
+
+/**
+ * 干预状态机（纯）：idle↔paused。
+ *   用户动（active=true）→ paused（光标冻结+动作层停）
+ *   静默超阈值+收到 resumeIntent（重查 AX 完成信号）→ idle
+ */
+export function nextInterventionState(state, userActive, resumeIntent) {
+  const current = state ?? "idle";
+  if (userActive) return "paused";
+  if (current === "paused" && resumeIntent) return "idle";
+  return current;
+}

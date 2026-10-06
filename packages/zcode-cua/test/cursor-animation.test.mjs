@@ -96,3 +96,17 @@ test("clamp 契约", () => {
   assert.equal(clamp(-1, 0, 10), 0);
   assert.equal(clamp(11, 0, 10), 10);
 });
+
+test("用户干预：鼠标活跃判定+状态机 idle↔paused", async () => {
+  const { readUserMouseActivity, nextInterventionState, USER_MOUSE_ACTIVITY_THRESHOLD_MS } = await import("../macos/cursor-animation.js");
+  assert.equal(USER_MOUSE_ACTIVITY_THRESHOLD_MS, 800);
+  // 状态机：用户动→paused；静默+resume→idle；静默无 resume→保持 paused
+  assert.equal(nextInterventionState("idle", true, false), "paused");
+  assert.equal(nextInterventionState("paused", true, false), "paused");
+  assert.equal(nextInterventionState("paused", false, true), "idle");
+  assert.equal(nextInterventionState("paused", false, false), "paused");
+  assert.equal(nextInterventionState("idle", false, false), "idle");
+  // 真机检测（不崩、返回结构化）
+  const activity = readUserMouseActivity(undefined);
+  assert.equal(activity.userActive, false, "无 bindings 恒不活跃");
+});

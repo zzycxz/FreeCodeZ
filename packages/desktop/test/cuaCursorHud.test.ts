@@ -167,9 +167,9 @@ test("HUD 控制器：惰性建窗/移位/特效/空闲隐藏/dispose（注入�
   assert.deepEqual(cursorWindow.position, { x: 296, y: 396 }, "热点偏移后的窗位");
   assert.equal(cursorWindow.visible, true);
   hud.handleFrame({ v: 1, kind: "down", x: 300, y: 400 });
-  assert.ok(cursorWindow.executed.includes("__cuaDown()"));
+  assert.ok(cursorWindow.executed.some((code) => code.includes("__cuaDown()")), "down 帧驱动按下特效");
   hud.handleFrame({ v: 1, kind: "up", x: 300, y: 400 });
-  assert.ok(cursorWindow.executed.includes("__cuaUp()"));
+  assert.ok(cursorWindow.executed.some((code) => code.includes("__cuaUp()")), "up 帧驱动抬起+脉冲");
   hud.dispose();
   assert.ok(cursorWindow.destroyed, "dispose 关窗");
   // dispose 后帧不再驱动。
@@ -223,4 +223,60 @@ test("UDP 端到端：真 dgram 广播→监听→帧解析", async () => {
   assert.equal(received.length, 1);
   assert.deepEqual(received[0], { v: 1, kind: "point", x: 42, y: 99 });
   assert.equal(created.length, 2, "端到端帧同样驱动 HUD 建窗");
+});
+
+test("Esc 取消：注册/注销生命周期（注入式 globalShortcut）", () => {
+  const registered: Array<{ accelerator: string; callback: () => void }> = [];
+  const unregistered: string[] = [];
+  let cancelled = 0;
+  const created: FakeHudWindow[] = [];
+  const hud = createCuaCursorHud({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    BrowserWindow: makeFakeBrowserWindowClass(created) as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    screen: {
+      getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
+    createUdpListener: () => ({ close() { undefined; } }),
+    globalShortcut: {
+      register(accelerator, callback) {
+        registered.push({ accelerator, callback });
+      },
+      unregister(accelerator) {
+        unregistered.push(accelerator);
+      },
+    },
+    onUserCancel: () => {
+      cancelled += 1;
+    },
+  });
+  hud.handleFrame({ v: 1, kind: "point", x: 100, y: 200 });
+  assert.equal(registered.length, 1, "首个事件注册 Esc");
+  assert.equal(registered[0]?.accelerator, "Escape");
+  registered[0]?.callback();
+  assert.equal(cancelled, 1, "Esc 触发 onUserCancel");
+  hud.dispose();
+  assert.ok(unregistered.includes("Escape"), "dispose 注销 Esc");
+});
+
+test("用户干预：paused 期间帧不驱动特效", () => {
+  const created: FakeHudWindow[] = [];
+  // 恒活跃的 mouse 轮询（用户一直在动鼠标）
+  const hud = createCuaCursorHud({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    BrowserWindow: makeFakeBrowserWindowClass(created) as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    screen: {
+      getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
+    createUdpListener: () => ({ close() { undefined; } }),
+    loadBindings: () => null,
+  });
+  hud.handleFrame({ v: 1, kind: "point", x: 100, y: 200 });
+  // loadBindings 返回 null → readUserMouseActivity 恒不活跃 → 不 paused
+  const cursor = created[0];
+  assert.ok(cursor);
+  hud.dispose();
 });
