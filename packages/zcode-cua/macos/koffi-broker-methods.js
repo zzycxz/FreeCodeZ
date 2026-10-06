@@ -34,6 +34,7 @@ import {
   copyActionNames,
   flattenTree,
   loadAppInstruction,
+  surfaceLifecycleFromDiff,
 } from "./koffi-tree.js";
 import {
   clickAtPoint,
@@ -65,6 +66,9 @@ export function createKoffiBrokerMethods(options = {}) {
   const onInputEvent = typeof options.onInputEvent === "function" ? options.onInputEvent : null;
   const emit = (events) => emitCursorEvents(onInputEvent, events);
   const handles = new ElementHandleTable();
+  // P1-f 表面生命周期差分状态：pid → 上次 capture_app 的表面指纹集。
+  // 无会话语义（broker 生命周期=进程内链路开启期），重启回落 stable（首次观测语义）。
+  const lastSurfaceSets = new Map();
   const methods = {};
 
   // ── 诊断面 ──
@@ -189,10 +193,21 @@ export function createKoffiBrokerMethods(options = {}) {
           ? params.app_ref
           : (params?.app_ref?.bundle_id ?? "");
       const instruction = loadAppInstruction(bundleId);
+      // P1-f 生命周期：窗口标题入指纹（换主窗=换表面），附加表面（sheet/popover）按
+      // kind+title 入指纹；与上次快照差分出 stable/replaced/closed。
+      const surfaceFingerprints = new Set(budget.elements
+        .filter((entry) => entry.surface_kind && entry.surface_kind !== "window")
+        .map((entry) => `${entry.surface_kind}:${entry.title ?? ""}`));
+      surfaceFingerprints.add(`window:${windowMeta.title}`);
+      const previousSet = lastSurfaceSets.get(pid);
+      lastSurfaceSets.set(pid, surfaceFingerprints);
+      const lifecycle = surfaceLifecycleFromDiff(previousSet, surfaceFingerprints, {
+        hasWindow: Boolean(windows[0]),
+      });
       return {
         ok: true,
         app: { bundle_id: bundleId || null, pid, name: appName ?? "" },
-        window: { ...windowMeta, surface_kind: "window", surface_lifecycle: "stable" },
+        window: { ...windowMeta, surface_kind: "window", surface_lifecycle: lifecycle },
         elements: budget.elements,
         ...(instruction ? { app_instructions: instruction } : {}),
         // 截图面：屏幕录制未授权时缺席（has_image=false 走纯 AX 观测）。

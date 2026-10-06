@@ -194,6 +194,61 @@ export function copyChildren(bindings, element) {
   });
 }
 
+// ── 表面分类与生命周期（P1-f，2026-10-06 真机实测驱动） ────────────────
+// 实测证据（TextEdit ⌘S 探证）：保存面板以 AXSheet 挂在窗口上且 AXSubrole 为空——
+// 区分 save_panel/open_panel 只能靠内容特征（子树主按钮：保存/取消 + 「保存为：」
+// 文本框）。标题集覆盖 zh/en（日文「保存」同形）；未覆盖语种回落 attached_dialog，
+// 行为不劣于现状。
+
+const PANEL_SAVE_BUTTON_TITLES = new Set(["save", "save as", "保存", "存储", "保存为"]);
+const PANEL_OPEN_BUTTON_TITLES = new Set(["open", "打开"]);
+
+/** 纯判定：save 优先于 open（保存面板也可能带打开类次级按钮）。 */
+export function sheetPanelKindFromButtons(hasSave, hasOpen) {
+  if (hasSave) return "save_panel";
+  if (hasOpen) return "open_panel";
+  return "attached_dialog";
+}
+
+/** 有界子树探测（depth≤4/节点≤60——sheet 少见，非 sheet 路径零成本）。 */
+function probePanelButtons(bindings, element, depth = 0, budget = { used: 0 }) {
+  const found = { save: false, open: false };
+  if (!element || depth > 4 || budget.used >= 60) return found;
+  budget.used += 1;
+  const role = copyString(bindings, element, "AXRole");
+  if (role === "AXButton") {
+    const title = (copyString(bindings, element, "AXTitle") ?? "").trim().toLowerCase();
+    if (PANEL_SAVE_BUTTON_TITLES.has(title)) found.save = true;
+    else if (PANEL_OPEN_BUTTON_TITLES.has(title)) found.open = true;
+  }
+  if (found.save && found.open) return found;
+  const children = copyChildren(bindings, element);
+  for (const child of children) {
+    if (!child) continue;
+    const sub = probePanelButtons(bindings, child, depth + 1, budget);
+    found.save = found.save || sub.save;
+    found.open = found.open || sub.open;
+    if (found.save && found.open) return found;
+  }
+  return found;
+}
+
+/**
+ * 窗口表面集快照差分（P1-f 生命周期）：stable=与上次一致；replaced=集合有增减但
+ * 仍有表面；closed=上次有表面本次全无（或本次已无窗口）。首次观测=stable。
+ * AXObserver 实时监听是手册终态形态；快照差分在无监听现状下给出等值判定。
+ * 指纹用 kind+title（sheet 常无标题；bounds 会被窗口移动污染故不参与）。
+ */
+export function surfaceLifecycleFromDiff(previous, current, options = {}) {
+  if (!previous) return "stable";
+  if (options.hasWindow === false) return "closed";
+  const anyGone = [...previous].some((fingerprint) => !current.has(fingerprint));
+  const anyNew = [...current].some((fingerprint) => !previous.has(fingerprint));
+  if (anyGone && current.size === 0) return "closed";
+  if (anyGone || anyNew) return "replaced";
+  return "stable";
+}
+
 /**
  * 树扁平化（capture_app 的 elements[] 是**扁平**列表，每项带 native 句柄 + depth；
  * 与 Windows Helper 一致——producer 侧按 depth 缩进渲染）。
@@ -217,7 +272,10 @@ export function flattenTree(bindings, handles, pid, element, depth, budget) {
   const native = handles.issue(element, pid);
   const surfaceKind =
     role === "AXSheet"
-      ? "attached_dialog"
+      ? (() => {
+          const panelButtons = probePanelButtons(bindings, element);
+          return sheetPanelKindFromButtons(panelButtons.save, panelButtons.open);
+        })()
       : role === "AXPopover" || role === "AXDrawer"
         ? "popover"
         : depth === 0 && role === "AXWindow"

@@ -7,6 +7,9 @@ import { createKoffiBrokerMethods } from "../macos/index.js";
 import { loadKoffiBindings, withCFString } from "../macos/koffi-ax.js";
 import { parseLsappinfoList } from "../macos/ax-observation.js";
 import { parseKeyChord } from "../macos/ax-actions.js";
+// P1-f 表面分类/生命周期纯件（真机证据：TextEdit ⌘S 保存面板=AXSheet 且 subrole 空，
+// 子树按钮 保存/取消 + 文本框「保存为：」——区分只能靠内容特征）。
+import { sheetPanelKindFromButtons, surfaceLifecycleFromDiff } from "../macos/koffi-tree.js";
 
 const IS_DARWIN = process.platform === "darwin";
 
@@ -136,4 +139,36 @@ test("withCFString：回调抛错仍走释放（不吞业务异常）", { skip: 
       }),
     /business error/,
   );
+});
+
+// ── P1-f：save_panel/open_panel 分类 + 表面生命周期差分 ──────────────
+
+test("面板分类：save 优先于 open；无面板特征回落 attached_dialog", () => {
+  assert.equal(sheetPanelKindFromButtons(true, false), "save_panel");
+  assert.equal(sheetPanelKindFromButtons(true, true), "save_panel", "保存面板可带打开类次级按钮");
+  assert.equal(sheetPanelKindFromButtons(false, true), "open_panel");
+  assert.equal(sheetPanelKindFromButtons(false, false), "attached_dialog");
+});
+
+test("表面生命周期差分：首测 stable；一致 stable；增减 replaced；全无 closed", () => {
+  const prev = new Set(["window:未命名", "save_panel:"]);
+  assert.equal(surfaceLifecycleFromDiff(undefined, prev), "stable", "首次观测");
+  assert.equal(surfaceLifecycleFromDiff(prev, new Set(prev)), "stable");
+  assert.equal(
+    surfaceLifecycleFromDiff(prev, new Set(["window:未命名", "attached_dialog:确认"])),
+    "replaced",
+    "表面集合变化",
+  );
+  assert.equal(
+    surfaceLifecycleFromDiff(prev, new Set(["window:未命名"])),
+    "replaced",
+    "表面消失但仍有窗口主体",
+  );
+  assert.equal(
+    surfaceLifecycleFromDiff(new Set(["save_panel:"]), new Set()),
+    "closed",
+    "上次有附加表面本次全无",
+  );
+  assert.equal(surfaceLifecycleFromDiff(prev, new Set(), { hasWindow: false }), "closed");
+  assert.equal(surfaceLifecycleFromDiff(undefined, new Set(), { hasWindow: false }), "stable", "首测无窗仍 stable");
 });
