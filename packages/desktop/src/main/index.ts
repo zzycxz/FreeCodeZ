@@ -534,7 +534,9 @@ async function withCuaControlEnv(patch: Record<string, string>): Promise<Record<
         settings,
         env: { ...hostProcessLocalEnv, ...process.env },
         darwin: process.platform === "darwin",
-        cursorHudActive: process.env.ZCODE_CUA_CURSOR_HUD !== "0",
+        cursorHudActive:
+          (process.env.FREECODEZ_CUA_CURSOR_HUD?.trim() || process.env.ZCODE_CUA_CURSOR_HUD?.trim()) !==
+          "0",
       }),
     };
   } catch (error) {
@@ -608,10 +610,12 @@ const windowUnreadCountMap = new Map<number, number>();
 const windowHostProcessMap = new Map<number, ElectronUtilityProcess>();
 // Phase 2-1c（升级实施手册 桌面控制 Phase 2 第一步）：CUA 光标 HUD。
 // darwin 常驻 UDP 监听（无事件零成本）；窗口在执行层首个输入事件时惰性创建，
-// 6 秒静默自动隐藏。HUD 只在 ZCODE_CUA_KOFFI_ACTIONS 链路广播端口时才有源——
-// 监听器自身无害，先装上（darwin only；其他平台光标层走各自宿主）。
+// 6 秒静默自动隐藏。HUD 只在 FREECODEZ_CUA_KOFFI_ACTIONS 链路广播端口时才有源——
+// 监听器自身无害，先装上（darwin only；其他平台光标层走各自宿主；HUD 总闸
+// FREECODEZ_CUA_CURSOR_HUD=0 可关，旧键 ZCODE_CUA_CURSOR_HUD 回退读）。
 const cuaCursorHud: CuaCursorHud | undefined =
-  process.platform === "darwin" && process.env.ZCODE_CUA_CURSOR_HUD !== "0"
+  process.platform === "darwin" &&
+  (process.env.FREECODEZ_CUA_CURSOR_HUD?.trim() || process.env.ZCODE_CUA_CURSOR_HUD?.trim()) !== "0"
     ? createCuaCursorHud({
         BrowserWindow: HudBrowserWindow,
         screen: {

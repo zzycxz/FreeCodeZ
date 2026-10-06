@@ -387,13 +387,13 @@ export interface AppSettings {
   appshotRoute?: "current" | "new";
   /**
    * 电脑控制·功能开关（macOS 观测层：读窗口/控件树/截图）。设置键优先于 env
-   * （ZCODE_CUA_KOFFI_EXECUTION 为部署/开发覆盖）；缺省关。经主进程桥接进
-   * host/agent 子进程 env，对新窗口的会话生效。
+   * （FREECODEZ_CUA_KOFFI_EXECUTION 为部署/开发覆盖，旧键 ZCODE_CUA_KOFFI_EXECUTION
+   * 回退读）；缺省关。经主进程桥接进 host/agent 子进程 env，对新窗口的会话生效。
    */
   cuaControlEnabled?: boolean;
   /**
    * 电脑控制·允许操作（动作层：点/打字/拖拽）。仅在 cuaControlEnabled 时生效；
-   * 缺省关。env 覆盖同名语义（ZCODE_CUA_KOFFI_ACTIONS）。
+   * 缺省关。env 覆盖同名语义（FREECODEZ_CUA_KOFFI_ACTIONS，旧键回退）。
    */
   cuaActionsEnabled?: boolean;
   /** 移动端远控的外部 relay 设备身份；deviceSid 由 relay 注册分配，刷新配对（rotate）时清空换新。 */

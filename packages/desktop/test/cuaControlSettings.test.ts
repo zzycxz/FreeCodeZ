@@ -4,8 +4,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   CUA_CONTROL_ACTIONS_ENV,
+  CUA_CONTROL_ACTIONS_ENV_LEGACY,
   CUA_CONTROL_CURSOR_PORT_ENV,
   CUA_CONTROL_EXECUTION_ENV,
+  CUA_CONTROL_EXECUTION_ENV_LEGACY,
   resolveCuaControlGates,
   resolveCuaControlHostEnv,
 } from "../src/main/cuaControlSettings.js";
@@ -47,6 +49,41 @@ test("双门判定：设置已定义胜出；未定义回落 env；动作蕴含�
   );
   // 全空 → 双关。
   assert.deepEqual(resolveCuaControlGates({}), { execution: false, actions: false });
+});
+
+test("双门判定：契约新键改名后的双读回退（旧键 ZCODE_* 仍生效；主键空值回落）", () => {
+  // 只给旧键（部署/开发覆盖通道）→ 仍然开门。
+  assert.deepEqual(
+    resolveCuaControlGates({
+      env: {
+        [CUA_CONTROL_EXECUTION_ENV_LEGACY]: "1",
+        [CUA_CONTROL_ACTIONS_ENV_LEGACY]: "1",
+      },
+    }),
+    { execution: true, actions: true },
+  );
+  // 新旧键同时给：新键优先（新键空串视同未设回落旧键；非 "1" 值则关门）。
+  assert.deepEqual(
+    resolveCuaControlGates({
+      env: {
+        [CUA_CONTROL_EXECUTION_ENV]: "1",
+        [CUA_CONTROL_ACTIONS_ENV]: "1",
+        [CUA_CONTROL_EXECUTION_ENV_LEGACY]: "0",
+        [CUA_CONTROL_ACTIONS_ENV_LEGACY]: "0",
+      },
+    }),
+    { execution: true, actions: true },
+  );
+  assert.deepEqual(
+    resolveCuaControlGates({
+      env: {
+        [CUA_CONTROL_EXECUTION_ENV]: "0",
+        [CUA_CONTROL_EXECUTION_ENV_LEGACY]: "1",
+      },
+    }),
+    { execution: false, actions: false },
+    "新键显式 0 压过旧键 1（与设置显式关同一意图胜出语义）",
+  );
 });
 
 test("host env 补丁：三键恒显式给值；darwin 门；动作开才注入 HUD 广播端口", () => {

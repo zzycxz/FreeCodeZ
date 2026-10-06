@@ -6,8 +6,9 @@
 //（producer/tool-handlers.js 的调用点为契约来源）。
 //
 // 三道保险（手册 §Phase1 ⚠）：
-//   1. 总开关 ZCODE_CUA_KOFFI_EXECUTION=1（node-repl-host 捕获函数判定），默认关；
-//   2. 动作面二次开关 ZCODE_CUA_KOFFI_ACTIONS=1——缺省只暴露观测/诊断面；
+//   1. 总开关 FREECODEZ_CUA_KOFFI_EXECUTION=1（node-repl-host 捕获函数判定，旧键
+//      ZCODE_CUA_KOFFI_EXECUTION 回退读），默认关；
+//   2. 动作面二次开关 FREECODEZ_CUA_KOFFI_ACTIONS=1——缺省只暴露观测/诊断面；
 //   3. 绑定不可用/TCC 未授 → 工厂返回 null，上层回 socket/不可用路径（fail-closed）。
 //
 // 未收录方法（pip_*/controller_*/prevent_activation 族）→ 表中无键 → 上层报
@@ -49,6 +50,26 @@ import {
   cursorEventsForText,
   emitCursorEvents,
 } from "./cursor-events.js";
+import {
+  createUserActivityReader,
+  wrapMethodsWithActivityGate,
+} from "./user-activity-gate.js";
+
+// Phase 2 干预闭环：套用户活动闸的动作方法名（观测/诊断面不拦——只读无交互冲突）。
+const GATED_ACTION_METHOD_NAMES = [
+  "click",
+  "scroll",
+  "press_key",
+  "type_text",
+  "type_text_to_app",
+  "paste",
+  "drag",
+  "element_press",
+  "element_show_menu",
+  "element_perform_action",
+  "element_focus",
+  "element_set_value",
+];
 
 // ── 方法表工厂 ─────────────────────────────────────────────
 
@@ -341,6 +362,22 @@ export function createKoffiBrokerMethods(options = {}) {
         }
       }
     };
+  }
+
+  // ── Phase 2 干预闭环：动作面用户活动闸（手册 v4.2 挂账收口）──
+  // 规格后半段"用户动真鼠标→暂停→等静默后才续跑"的执行侧：HUD 只冻结视觉，
+  // 这里保证动作本体不落在用户正在操作的鼠标下。持续活跃超时 fail-closed 返回
+  // user_active（可重试不熔断）；检测器缺席放行（干预面缺席不折断动作）。
+  // options.readUserActivity 可注入（测试用）；options.userActivityGateOptions 覆盖阈值。
+  if (allowActions) {
+    wrapMethodsWithActivityGate(
+      methods,
+      GATED_ACTION_METHOD_NAMES,
+      typeof options.readUserActivity === "function"
+        ? options.readUserActivity
+        : createUserActivityReader(bindings),
+      options.userActivityGateOptions,
+    );
   }
 
   return {

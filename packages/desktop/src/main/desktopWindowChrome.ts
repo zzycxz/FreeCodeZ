@@ -68,7 +68,9 @@ function isCodingPlanEmbeddedWebviewSrc(src: string | undefined): boolean {
     if (url.protocol !== "http:" && url.protocol !== "https:") return false;
     if (
       !isTrustedCodingPlanWebviewOrigin(url.origin, {
-        e2eStoreBridgeEnabled: process.env.VITE_ZCODE_E2E_STORE_BRIDGE === "1",
+        e2eStoreBridgeEnabled:
+          (process.env.VITE_FREECODEZ_E2E_STORE_BRIDGE ?? process.env.VITE_ZCODE_E2E_STORE_BRIDGE) ===
+          "1",
       })
     ) {
       return false;
@@ -95,7 +97,9 @@ function isCodingPlanWebviewUrl(src: string | undefined): boolean {
     if (url.protocol !== "http:" && url.protocol !== "https:") return false;
     if (
       !isTrustedCodingPlanWebviewOrigin(url.origin, {
-        e2eStoreBridgeEnabled: process.env.VITE_ZCODE_E2E_STORE_BRIDGE === "1",
+        e2eStoreBridgeEnabled:
+          (process.env.VITE_FREECODEZ_E2E_STORE_BRIDGE ?? process.env.VITE_ZCODE_E2E_STORE_BRIDGE) ===
+          "1",
       })
     ) {
       return false;
@@ -114,7 +118,9 @@ function isCodingPlanPaymentCallbackUrl(src: string | undefined): boolean {
     if (url.protocol !== "http:" && url.protocol !== "https:") return false;
     if (
       !isTrustedCodingPlanWebviewOrigin(url.origin, {
-        e2eStoreBridgeEnabled: process.env.VITE_ZCODE_E2E_STORE_BRIDGE === "1",
+        e2eStoreBridgeEnabled:
+          (process.env.VITE_FREECODEZ_E2E_STORE_BRIDGE ?? process.env.VITE_ZCODE_E2E_STORE_BRIDGE) ===
+          "1",
       })
     ) {
       return false;

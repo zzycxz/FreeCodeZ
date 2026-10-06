@@ -375,18 +375,26 @@ export function captureComputerUseRuntimeFromEnvironment(
   env: NodeJS.ProcessEnv = process.env,
 ): ComputerUseRuntime | undefined {
   // Phase 1-d（升级实施手册）：koffi 进程内执行层（三道保险之一——总开关默认关）。
-  // darwin + ZCODE_CUA_KOFFI_EXECUTION=1 + 绑定可用 → 旁路 socket 直调；
-  // 动作面由 ZCODE_CUA_KOFFI_ACTIONS=1 二次放行（缺省只读观测）。
-  if (env.ZCODE_CUA_KOFFI_EXECUTION?.trim() === "1" && process.platform === "darwin") {
+  // darwin + FREECODEZ_CUA_KOFFI_EXECUTION=1（旧键 ZCODE_* 回退）+ 绑定可用 → 旁路 socket 直调；
+  // 动作面由 FREECODEZ_CUA_KOFFI_ACTIONS=1 二次放行（缺省只读观测）。
+  if (
+    (env.FREECODEZ_CUA_KOFFI_EXECUTION?.trim() || env.ZCODE_CUA_KOFFI_EXECUTION?.trim()) === "1" &&
+    process.platform === "darwin"
+  ) {
     // Phase 2-1b：输入事件 UDP 广播（HUD 光标消费）。端口 env 显式给才开——
     // desktop main 侧 HUD 监听器在位时注入；无端口=无广播（零开销）。
-    const cursorPort = Number(env.ZCODE_CUA_CURSOR_BROADCAST_PORT?.trim() ?? 0);
+    const cursorPort = Number(
+      env.FREECODEZ_CUA_CURSOR_BROADCAST_PORT?.trim() ||
+        env.ZCODE_CUA_CURSOR_BROADCAST_PORT?.trim() ||
+        0,
+    );
     const cursorBroadcast =
       Number.isInteger(cursorPort) && cursorPort > 0 && cursorPort < 65536
         ? createCursorEventUdpBroadcaster(cursorPort)
         : undefined;
     const backend = createKoffiBrokerMethods({
-      allowActions: env.ZCODE_CUA_KOFFI_ACTIONS?.trim() === "1",
+      allowActions:
+        (env.FREECODEZ_CUA_KOFFI_ACTIONS?.trim() || env.ZCODE_CUA_KOFFI_ACTIONS?.trim()) === "1",
       ...(cursorBroadcast ? { onInputEvent: cursorBroadcast.send } : {}),
     });
     if (backend) {

@@ -2,17 +2,23 @@
 // 电脑控制设置桥（CUA koffi 双门的产品面收口）
 // ============================================================
 // 双门的分层思想保留（观察/操作两档信任，对应系统「屏幕录制/辅助功能」心智），
-// 但 env 不是用户入口：设置页两个键优先，env（ZCODE_CUA_KOFFI_EXECUTION/ACTIONS）
-// 降级为部署/开发覆盖——与 Appshot（设置优先 env 兜底）同一条先例。
+// 但 env 不是用户入口：设置页两个键优先，env（FREECODEZ_CUA_KOFFI_EXECUTION/ACTIONS，旧键
+// ZCODE_* 仍可作部署/开发覆盖）——与 Appshot（设置优先 env 兜底）同一条先例。
 // 桥接通道：runtimeProcessEnvPreparation 的异步 env 补丁（每窗口刷新、先于
 // host spawn 合入 host process.env，host 的 agent/node-repl-host 子进程继承），
 // 因此设置变更对新窗口的会话生效；env 键显式写 "1"/"0"（settings 显式关闭
 // 必须压过继承的 =1，Object.assign 无法删键，用 "0" 等效关闭——消费端只认 "1"）。
 import { CUA_CURSOR_HUD_UDP_PORT } from "./cuaCursorHud.js";
 
-export const CUA_CONTROL_EXECUTION_ENV = "ZCODE_CUA_KOFFI_EXECUTION";
-export const CUA_CONTROL_ACTIONS_ENV = "ZCODE_CUA_KOFFI_ACTIONS";
-export const CUA_CONTROL_CURSOR_PORT_ENV = "ZCODE_CUA_CURSOR_BROADCAST_PORT";
+// 条目 1 契约新键改名收口：主键 FREECODEZ_*，旧键 ZCODE_* 作为部署/开发覆盖的回退读名。
+// 写侧（resolveCuaControlHostEnv）只写主键——消费端（node-repl-host server.ts）主键优先读，
+// 桥写的 "0" 仍能压过继承的旧键 =1（显式关闭语义不变）。
+export const CUA_CONTROL_EXECUTION_ENV = "FREECODEZ_CUA_KOFFI_EXECUTION";
+export const CUA_CONTROL_ACTIONS_ENV = "FREECODEZ_CUA_KOFFI_ACTIONS";
+export const CUA_CONTROL_CURSOR_PORT_ENV = "FREECODEZ_CUA_CURSOR_BROADCAST_PORT";
+export const CUA_CONTROL_EXECUTION_ENV_LEGACY = "ZCODE_CUA_KOFFI_EXECUTION";
+export const CUA_CONTROL_ACTIONS_ENV_LEGACY = "ZCODE_CUA_KOFFI_ACTIONS";
+export const CUA_CONTROL_CURSOR_PORT_ENV_LEGACY = "ZCODE_CUA_CURSOR_BROADCAST_PORT";
 
 export interface CuaControlSettingsShape {
   cuaControlEnabled?: boolean;
@@ -29,15 +35,18 @@ export function resolveCuaControlGates(input: {
 }): { execution: boolean; actions: boolean } {
   const settings = input.settings ?? {};
   const env = input.env ?? {};
+  // 双读：主键空值视同未设，回落旧键（与 bundle.mjs FREECODEZ_DEPS_BASE_URL 同款模式）。
+  const executionEnv =
+    env[CUA_CONTROL_EXECUTION_ENV]?.trim() || env[CUA_CONTROL_EXECUTION_ENV_LEGACY]?.trim();
+  const actionsEnv =
+    env[CUA_CONTROL_ACTIONS_ENV]?.trim() || env[CUA_CONTROL_ACTIONS_ENV_LEGACY]?.trim();
   const execution =
     settings.cuaControlEnabled !== undefined
       ? settings.cuaControlEnabled === true
-      : env[CUA_CONTROL_EXECUTION_ENV]?.trim() === "1";
+      : executionEnv === "1";
   const actions =
     execution &&
-    (settings.cuaActionsEnabled !== undefined
-      ? settings.cuaActionsEnabled === true
-      : env[CUA_CONTROL_ACTIONS_ENV]?.trim() === "1");
+    (settings.cuaActionsEnabled !== undefined ? settings.cuaActionsEnabled === true : actionsEnv === "1");
   return { execution, actions };
 }
 

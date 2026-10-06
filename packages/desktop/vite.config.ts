@@ -154,7 +154,8 @@ export default defineConfig(({ mode }) => {
   const e2eCoverageEnabled =
     (env.FREECODEZ_E2E_COVERAGE ?? env.ZCODE_E2E_COVERAGE) === "1" || (process.env.FREECODEZ_E2E_COVERAGE ?? process.env.ZCODE_E2E_COVERAGE) === "1";
   const e2eStoreBridgeEnabled =
-    env.VITE_ZCODE_E2E_STORE_BRIDGE === "1" || process.env.VITE_ZCODE_E2E_STORE_BRIDGE === "1";
+    (env.VITE_FREECODEZ_E2E_STORE_BRIDGE ?? env.VITE_ZCODE_E2E_STORE_BRIDGE) === "1" ||
+    (process.env.VITE_FREECODEZ_E2E_STORE_BRIDGE ?? process.env.VITE_ZCODE_E2E_STORE_BRIDGE) === "1";
   const zcodeEndpointOrigin = resolveZCodeEndpointOrigin({
     env: zcodeEnv,
     envBaseOrigin: env.ZCODE_BASE_URL ?? env.ZCODE_ENDPOINT_ORIGIN,
@@ -203,6 +204,11 @@ export default defineConfig(({ mode }) => {
         env.VITE_REWARDS_WEBVIEW_ORIGIN ?? process.env.VITE_REWARDS_WEBVIEW_ORIGIN ?? "",
       ),
       // E2E store bridge 只能由 WDIO 专用变量打开，避免把 ZCODE_ENV=test 产品环境误当成测试运行态。
+      // 新旧两个读取名注入同一值（与 VITE_ZCODE_BASE_URL 双定义先例同款）：renderer 新代码读
+      // FREECODEZ 名（ui/src/lib/e2eStoreBridge.ts 双读），旧 dist/外部代码读 ZCODE 名不破。
+      "import.meta.env.VITE_FREECODEZ_E2E_STORE_BRIDGE": JSON.stringify(
+        e2eStoreBridgeEnabled ? "1" : "",
+      ),
       "import.meta.env.VITE_ZCODE_E2E_STORE_BRIDGE": JSON.stringify(
         e2eStoreBridgeEnabled ? "1" : "",
       ),

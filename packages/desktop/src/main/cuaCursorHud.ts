@@ -27,7 +27,7 @@ import {
 } from "@zcode/zcode-cua/macos/cursor-animation";
 import type { BrowserWindow } from "electron";
 
-/** UDP 端口：与 node-repl-host 注入的 ZCODE_CUA_CURSOR_BROADCAST_PORT 对齐。 */
+/** UDP 端口：与 desktop 主进程注入的 FREECODEZ_CUA_CURSOR_BROADCAST_PORT 对齐（node-repl-host 读侧双读旧键）。 */
 export const CUA_CURSOR_HUD_UDP_PORT = 53717;
 /** 会话静默自动隐藏（ms）。 */
 export const CUA_CURSOR_HUD_IDLE_HIDE_MS = 6_000;

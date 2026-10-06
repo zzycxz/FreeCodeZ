@@ -41,7 +41,9 @@ function isTrustedCodingPlanBridgeLocation(): boolean {
     if (url.protocol !== "http:" && url.protocol !== "https:") return false;
     if (
       !isTrustedCodingPlanWebviewOrigin(url.origin, {
-        e2eStoreBridgeEnabled: process.env.VITE_ZCODE_E2E_STORE_BRIDGE === "1",
+        e2eStoreBridgeEnabled:
+          (process.env.VITE_FREECODEZ_E2E_STORE_BRIDGE ?? process.env.VITE_ZCODE_E2E_STORE_BRIDGE) ===
+          "1",
       })
     ) {
       return false;
