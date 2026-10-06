@@ -14,16 +14,56 @@ const descriptors = Array.from({ length: 120 }, (_, index) => ({
   description: index % 2 === 0 ? `Does thing ${index}` : `Multi\nline description ${index}\nwith third line`,
 }));
 
-test("目录行：描述取首行+截预算；超上限丢弃并计数", () => {
+test("目录行：描述保首行+末行并截预算；超上限丢弃并计数", () => {
   const { lines, truncated } = buildMcpDirectoryLines(descriptors);
   assert.equal(lines.length, MCP_DIRECTORY_MAX_TOOLS_PER_SERVER);
   assert.equal(truncated, 20);
   for (const line of lines) {
-    assert.ok(!line.description.includes("\n"), "描述只取首行");
+    assert.ok(!line.description.includes("\n"), "描述合并后不含换行");
     assert.ok(line.description.length <= MCP_DIRECTORY_LINE_BUDGET_CHARS);
   }
-  // 多行描述取首行
-  assert.equal(lines[1]?.description, "Multi");
+  // 多行描述保「首行 … 末行」（修复批 A：排他/破坏性约束常在末行，不能被截掉）
+  assert.equal(lines[1]?.description, "Multi … with third line");
+});
+
+test("修复批 A：末行排他约束保留；单行不变；空段收敛", () => {
+  const { lines } = buildMcpDirectoryLines([
+    {
+      toolName: "archive_project",
+      description:
+        "Archive a project, making it read-only.\nDestructive and hard to reverse; only when the user explicitly wants to retire a project.",
+    },
+    { toolName: "single", description: "first line only" },
+    { toolName: "spaced", description: "  a  \n b \n\n  c  \n" },
+    { toolName: "blank", description: "\n\n" },
+  ]);
+  assert.equal(
+    lines[0]?.description,
+    "Archive a project, making it read-only. … Destructive and hard to reverse; only when the user explicitly wants to retire a project.",
+  );
+  assert.equal(lines[1]?.description, "first line only");
+  assert.equal(lines[2]?.description, "a … c");
+  assert.equal(lines[3]?.description, "");
+});
+
+test("修复批 A：合并串超预算走尾部截断；[destructive] 标注进目录行", () => {
+  const { lines } = buildMcpDirectoryLines([
+    { toolName: "long", description: `${"h".repeat(120)}\n${"t".repeat(120)}` },
+    { toolName: "boom", description: "Deletes stuff", annotations: { destructiveHint: true } },
+    { toolName: "fine", description: "Reads stuff", annotations: { destructiveHint: false } },
+    { toolName: "plain", description: "No annotations key" },
+  ]);
+  assert.ok((lines[0]?.description.length ?? 0) <= MCP_DIRECTORY_LINE_BUDGET_CHARS);
+  assert.ok(lines[0]?.description.endsWith("…"));
+  assert.equal(lines[0]?.description.includes("…"), true);
+  assert.equal(lines[1]?.destructive, true);
+  assert.equal(lines[2]?.destructive, undefined);
+  assert.equal(lines[3]?.destructive, undefined);
+  const text = formatMcpDirectorySection({ serverName: "s", lines, truncated: 0 });
+  assert.ok(text?.includes("- boom [destructive]: Deletes stuff"));
+  assert.ok(text?.includes("- fine: Reads stuff"));
+  assert.ok(text?.includes("- plain: No annotations key"));
+  assert.ok(text?.includes(`- long: ${"h".repeat(120)} … `));
 });
 
 test("空描述与超长截断", () => {

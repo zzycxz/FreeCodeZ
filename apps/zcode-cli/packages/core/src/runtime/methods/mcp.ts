@@ -4,9 +4,10 @@ import {
   ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
   ZCODE_PLUGIN_ID_ENV_KEY,
 } from "@zcode/shared";
-import { registerMcpTools,
+import {
   registerMcpToolsWithDirectory, traceContextToLogContext } from "../deps.js";
-import type { McpConnectionSnapshot, McpServerConfig, TraceContext } from "../deps.js";
+import { createMcpDirectoryEntry } from "../deps.js";
+import type { McpConnectionSnapshot, McpServerConfig, McpToolDescriptor, TraceContext } from "../deps.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 
 const MCP_SESSION_OAUTH_AUTHORIZATION_TIMEOUT_MS = 15_000;
@@ -158,16 +159,22 @@ export async function initializeMcp(
         ),
         globalDeferredEnabled,
         serverExposure,
-        registerDirectoryTool: (serverName: string, directoryText: string, invoke: (toolName: string, input: unknown) => Promise<unknown>) => {
+        registerDirectoryTool: (
+          serverName: string,
+          directoryText: string,
+          descriptors: readonly McpToolDescriptor[],
+          invoke: (toolName: string, input: unknown) => Promise<unknown>,
+        ) => {
+          // 修复批 B（spec §12）：A/B 门控已通过，补齐目录入口工具完整注册。
+          // 契约硬化（别名归一/空名与未知名 schema 形引导/按需展开）在工厂内部。
+          const entry = createMcpDirectoryEntry({ serverName, directoryText, descriptors, invoke });
+          this.registry.register(entry);
           this.logger?.info("MCP directory tool registered (deferred exposure)", {
             event: "mcp.tools.directory_registered",
             module: "core.runtime",
             serverName,
+            toolName: entry.metadata.name,
           });
-          void directoryText;
-          void invoke;
-          // 目录入口工具的完整注册（schema 展开/首调注入）挂 A/B 对照通过后的启用批——
-          // 本批只落双门与装配分流骨架（flag 默认关，永不触达本分支的行为变化）。
         },
       },
     );

@@ -16,6 +16,11 @@ export function toModelVisibleMcpNamePart(name: string): string {
   return sanitized.length > 0 ? sanitized : "unknown";
 }
 
+/** 目录入口工具的模型可见名（deferred server 的统一入口，见 spec §12 修复批）。 */
+export function directoryEntryToolName(serverName: string): string {
+  return `mcp__${toModelVisibleMcpNamePart(serverName)}__directory`;
+}
+
 export function matchesModelVisibleMcpServerName(
   requiredName: string,
   serverName: string,

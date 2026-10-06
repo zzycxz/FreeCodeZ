@@ -1,0 +1,1176 @@
+{
+  "experiment": "mcp-deferred-ab",
+  "spec": "docs/spec/mcp-availability-first-cost-management.md §12",
+  "gate": "deferred 选择准确率相对 full 下降 >10 个百分点则不得默认开启",
+  "temperature": 0,
+  "models": [
+    "mimo-v2.6-flash",
+    "mimo-v2.6-pro"
+  ],
+  "taskCount": 18,
+  "surfaces": [
+    {
+      "serverName": "issue-tracker",
+      "toolCount": 12
+    },
+    {
+      "serverName": "data-platform",
+      "toolCount": 6
+    }
+  ],
+  "summary": {
+    "mimo-v2.6-flash": {
+      "full": {
+        "tasks": 18,
+        "selectionHits": 13,
+        "selectionAccuracy": 0.7222222222222222,
+        "argsChecked": 18,
+        "argsHits": 18,
+        "argsValidity": 1,
+        "avgInputTokens": 357
+      },
+      "deferred": {
+        "tasks": 18,
+        "selectionHits": 14,
+        "selectionAccuracy": 0.7777777777777778,
+        "argsChecked": 17,
+        "argsHits": 17,
+        "argsValidity": 1,
+        "avgInputTokens": 214
+      },
+      "deltaSelectionAccuracy": -0.05555555555555558,
+      "deltaInputTokens": 143
+    },
+    "mimo-v2.6-pro": {
+      "full": {
+        "tasks": 18,
+        "selectionHits": 13,
+        "selectionAccuracy": 0.7222222222222222,
+        "argsChecked": 18,
+        "argsHits": 18,
+        "argsValidity": 1,
+        "avgInputTokens": 204
+      },
+      "deferred": {
+        "tasks": 18,
+        "selectionHits": 17,
+        "selectionAccuracy": 0.9444444444444444,
+        "argsChecked": 17,
+        "argsHits": 13,
+        "argsValidity": 0.7647058823529411,
+        "avgInputTokens": 157
+      },
+      "deltaSelectionAccuracy": -0.2222222222222222,
+      "deltaInputTokens": 47
+    }
+  },
+  "results": [
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "ISSUE-4421 这个问题单的正文和当前状态是什么？",
+      "expected": "get_issue",
+      "selected": "get_issue",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true,
+      "inputTokens": 3,
+      "outputTokens": 44
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "帮我全文搜一下跟“支付超时”相关的问题单。",
+      "expected": "search_issues",
+      "selected": "search_issues",
+      "selectionCorrect": true,
+      "args": {
+        "query": "支付超时"
+      },
+      "argsValid": true,
+      "inputTokens": 62,
+      "outputTokens": 47
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "把“结算中心”项目里分配给我、还没关的问题单列出来。",
+      "expected": "list_issues",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "args": {
+        "query": "结算中心"
+      },
+      "argsValid": true,
+      "inputTokens": 65,
+      "outputTokens": 100
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "建个新问题单：首页 LCP 超过 4 秒，放到“性能优化”项目下。",
+      "expected": "create_issue",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "args": {
+        "query": "性能优化"
+      },
+      "argsValid": true,
+      "inputTokens": 74,
+      "outputTokens": 109
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "把 ISSUE-4421 的状态改成已完成。",
+      "expected": "update_issue",
+      "selected": "update_issue",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421",
+        "state": "closed"
+      },
+      "argsValid": true,
+      "inputTokens": 1212,
+      "outputTokens": 81
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "在 ISSUE-4421 下面留言：修复已发到预发环境。",
+      "expected": "add_comment",
+      "selected": "add_comment",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421",
+        "body": "修复已发到预发环境。"
+      },
+      "argsValid": true,
+      "inputTokens": 67,
+      "outputTokens": 85
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "ISSUE-4421 里大家都讨论了什么？把评论给我看。",
+      "expected": "list_comments",
+      "selected": "list_comments",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true,
+      "inputTokens": 67,
+      "outputTokens": 45
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "ISSUE-4421 这单子之前都被谁改过哪些字段？我要看变更记录。",
+      "expected": "list_issue_events",
+      "selected": "list_issue_events",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true,
+      "inputTokens": 72,
+      "outputTokens": 52
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "找一下名字里带“电商”的项目。",
+      "expected": "search_projects",
+      "selected": "search_projects",
+      "selectionCorrect": true,
+      "args": {
+        "query": "电商"
+      },
+      "argsValid": true,
+      "inputTokens": 1210,
+      "outputTokens": 41
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "把组织下的项目都列出来。",
+      "expected": "list_projects",
+      "selected": "list_projects",
+      "selectionCorrect": true,
+      "args": {},
+      "argsValid": true,
+      "inputTokens": 56,
+      "outputTokens": 49
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "看下“结算中心”这个项目的基本信息。",
+      "expected": "get_project",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "args": {
+        "query": "结算中心"
+      },
+      "argsValid": true,
+      "inputTokens": 59,
+      "outputTokens": 49
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "旧的“营销站点”项目已经不用了，归档掉。",
+      "expected": "archive_project",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "args": {
+        "query": "营销站点"
+      },
+      "argsValid": true,
+      "inputTokens": 1215,
+      "outputTokens": 68
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "查一下 sales 数据集里昨天的订单数量。",
+      "expected": "query_data",
+      "selected": "query_data",
+      "selectionCorrect": true,
+      "args": {
+        "dataset": "sales",
+        "sql": "SELECT COUNT(*) AS order_count FROM orders WHERE DATE(order_date) = CURRENT_DATE - INTERVAL 1 DAY"
+      },
+      "argsValid": true,
+      "inputTokens": 546,
+      "outputTokens": 112
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "起一个后台查询任务，跑 sales 的月度聚合，优先级高。",
+      "expected": "run_query_job",
+      "selected": "run_query_job",
+      "selectionCorrect": true,
+      "args": {
+        "dataset": "sales",
+        "sql": "SELECT DATE_TRUNC('month', order_date) AS month, COUNT(*) AS order_count, SUM(amount) AS total_amount FROM sales GROUP BY 1 ORDER BY 1",
+        "priority": "high"
+      },
+      "argsValid": true,
+      "inputTokens": 552,
+      "outputTokens": 134
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "orders 这个数据集的结构是什么样的？",
+      "expected": "get_dataset",
+      "selected": "get_dataset",
+      "selectionCorrect": true,
+      "args": {
+        "dataset": "orders"
+      },
+      "argsValid": true,
+      "inputTokens": 34,
+      "outputTokens": 34
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "把工作区里能用的数据集都列给我。",
+      "expected": "list_datasets",
+      "selected": "list_datasets",
+      "selectionCorrect": true,
+      "args": {},
+      "argsValid": true,
+      "inputTokens": 35,
+      "outputTokens": 34
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "把 orders 表导出成 parquet 文件。",
+      "expected": "export_table",
+      "selected": "list_datasets",
+      "selectionCorrect": false,
+      "args": {},
+      "argsValid": true,
+      "inputTokens": 546,
+      "outputTokens": 82
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "把 /tmp/new-users.csv 导入 users 数据集。",
+      "expected": "import_file",
+      "selected": "import_file",
+      "selectionCorrect": true,
+      "args": {
+        "dataset": "users",
+        "file_url": "/tmp/new-users.csv",
+        "format": "csv"
+      },
+      "argsValid": true,
+      "inputTokens": 548,
+      "outputTokens": 77
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "ISSUE-4421 这个问题单的正文和当前状态是什么？",
+      "expected": "get_issue",
+      "selected": "get_issue",
+      "selectionCorrect": true,
+      "inputTokens": 372,
+      "outputTokens": 79,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "帮我全文搜一下跟“支付超时”相关的问题单。",
+      "expected": "search_issues",
+      "selected": "search_issues",
+      "selectionCorrect": true,
+      "inputTokens": 47,
+      "outputTokens": 68,
+      "args": {
+        "query": "支付超时"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "把“结算中心”项目里分配给我、还没关的问题单列出来。",
+      "expected": "list_issues",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "inputTokens": 50,
+      "outputTokens": 115,
+      "args": {
+        "query": "结算中心"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "建个新问题单：首页 LCP 超过 4 秒，放到“性能优化”项目下。",
+      "expected": "create_issue",
+      "selected": null,
+      "selectionCorrect": false,
+      "inputTokens": 59,
+      "outputTokens": 191,
+      "args": null,
+      "argsValid": null
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "把 ISSUE-4421 的状态改成已完成。",
+      "expected": "update_issue",
+      "selected": "update_issue",
+      "selectionCorrect": true,
+      "inputTokens": 365,
+      "outputTokens": 104,
+      "args": {
+        "issue_id": "4421",
+        "state": "closed"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "在 ISSUE-4421 下面留言：修复已发到预发环境。",
+      "expected": "add_comment",
+      "selected": "add_comment",
+      "selectionCorrect": true,
+      "inputTokens": 372,
+      "outputTokens": 121,
+      "args": {
+        "issue_id": "ISSUE-4421",
+        "body": "修复已发到预发环境。"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "ISSUE-4421 里大家都讨论了什么？把评论给我看。",
+      "expected": "list_comments",
+      "selected": "list_comments",
+      "selectionCorrect": true,
+      "inputTokens": 52,
+      "outputTokens": 74,
+      "args": {
+        "issue_id": "ISSUE-4421",
+        "limit": 100
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "ISSUE-4421 这单子之前都被谁改过哪些字段？我要看变更记录。",
+      "expected": "list_issue_events",
+      "selected": "list_issue_events",
+      "selectionCorrect": true,
+      "inputTokens": 57,
+      "outputTokens": 110,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "找一下名字里带“电商”的项目。",
+      "expected": "search_projects",
+      "selected": "search_projects",
+      "selectionCorrect": true,
+      "inputTokens": 363,
+      "outputTokens": 79,
+      "args": {
+        "query": "电商"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "把组织下的项目都列出来。",
+      "expected": "list_projects",
+      "selected": "list_projects",
+      "selectionCorrect": true,
+      "inputTokens": 361,
+      "outputTokens": 197,
+      "args": {},
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "看下“结算中心”这个项目的基本信息。",
+      "expected": "get_project",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "inputTokens": 364,
+      "outputTokens": 77,
+      "args": {
+        "query": "结算中心"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "旧的“营销站点”项目已经不用了，归档掉。",
+      "expected": "archive_project",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "inputTokens": 368,
+      "outputTokens": 74,
+      "args": {
+        "query": "营销站点"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "查一下 sales 数据集里昨天的订单数量。",
+      "expected": "query_data",
+      "selected": "query_data",
+      "selectionCorrect": true,
+      "inputTokens": 242,
+      "outputTokens": 118,
+      "args": {
+        "dataset": "sales",
+        "sql": "SELECT COUNT(*) AS order_count FROM orders WHERE order_date = CURRENT_DATE - 1",
+        "limit": 10
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "起一个后台查询任务，跑 sales 的月度聚合，优先级高。",
+      "expected": "run_query_job",
+      "selected": "run_query_job",
+      "selectionCorrect": true,
+      "inputTokens": 120,
+      "outputTokens": 110,
+      "args": {
+        "dataset": "sales",
+        "sql": "SELECT DATE_TRUNC(month, date) AS month, SUM(amount) AS total_amount, COUNT(*) AS order_count FROM sales GROUP BY month ORDER BY month",
+        "priority": "high"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "orders 这个数据集的结构是什么样的？",
+      "expected": "get_dataset",
+      "selected": "get_dataset",
+      "selectionCorrect": true,
+      "inputTokens": 242,
+      "outputTokens": 62,
+      "args": {
+        "dataset": "orders"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "把工作区里能用的数据集都列给我。",
+      "expected": "list_datasets",
+      "selected": "list_datasets",
+      "selectionCorrect": true,
+      "inputTokens": 243,
+      "outputTokens": 65,
+      "args": {
+        "workspace": ""
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "把 orders 表导出成 parquet 文件。",
+      "expected": "export_table",
+      "selected": "export_table",
+      "selectionCorrect": true,
+      "inputTokens": 50,
+      "outputTokens": 127,
+      "args": {
+        "dataset": "public",
+        "table": "orders",
+        "format": "parquet"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-flash",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "把 /tmp/new-users.csv 导入 users 数据集。",
+      "expected": "import_file",
+      "selected": "import_file",
+      "selectionCorrect": true,
+      "inputTokens": 116,
+      "outputTokens": 87,
+      "args": {
+        "dataset": "users",
+        "file_url": "/tmp/new-users.csv",
+        "format": "csv"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "ISSUE-4421 这个问题单的正文和当前状态是什么？",
+      "expected": "get_issue",
+      "selected": "get_issue",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true,
+      "inputTokens": 1219,
+      "outputTokens": 42
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "帮我全文搜一下跟“支付超时”相关的问题单。",
+      "expected": "search_issues",
+      "selected": "search_issues",
+      "selectionCorrect": true,
+      "args": {
+        "query": "支付超时"
+      },
+      "argsValid": true,
+      "inputTokens": 62,
+      "outputTokens": 30
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "把“结算中心”项目里分配给我、还没关的问题单列出来。",
+      "expected": "list_issues",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "args": {
+        "query": "结算中心"
+      },
+      "argsValid": true,
+      "inputTokens": 65,
+      "outputTokens": 151
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "建个新问题单：首页 LCP 超过 4 秒，放到“性能优化”项目下。",
+      "expected": "create_issue",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "args": {
+        "query": "性能优化"
+      },
+      "argsValid": true,
+      "inputTokens": 74,
+      "outputTokens": 34
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "把 ISSUE-4421 的状态改成已完成。",
+      "expected": "update_issue",
+      "selected": "update_issue",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421",
+        "state": "closed"
+      },
+      "argsValid": true,
+      "inputTokens": 60,
+      "outputTokens": 77
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "在 ISSUE-4421 下面留言：修复已发到预发环境。",
+      "expected": "add_comment",
+      "selected": "add_comment",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421",
+        "body": "修复已发到预发环境。"
+      },
+      "argsValid": true,
+      "inputTokens": 67,
+      "outputTokens": 61
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "ISSUE-4421 里大家都讨论了什么？把评论给我看。",
+      "expected": "list_comments",
+      "selected": "list_comments",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true,
+      "inputTokens": 67,
+      "outputTokens": 38
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "ISSUE-4421 这单子之前都被谁改过哪些字段？我要看变更记录。",
+      "expected": "list_issue_events",
+      "selected": "list_issue_events",
+      "selectionCorrect": true,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true,
+      "inputTokens": 72,
+      "outputTokens": 46
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "找一下名字里带“电商”的项目。",
+      "expected": "search_projects",
+      "selected": "search_projects",
+      "selectionCorrect": true,
+      "args": {
+        "query": "电商"
+      },
+      "argsValid": true,
+      "inputTokens": 58,
+      "outputTokens": 26
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "把组织下的项目都列出来。",
+      "expected": "list_projects",
+      "selected": "list_projects",
+      "selectionCorrect": true,
+      "args": {},
+      "argsValid": true,
+      "inputTokens": 56,
+      "outputTokens": 160
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "看下“结算中心”这个项目的基本信息。",
+      "expected": "get_project",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "args": {
+        "query": "结算中心"
+      },
+      "argsValid": true,
+      "inputTokens": 59,
+      "outputTokens": 32
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "full",
+      "prompt": "旧的“营销站点”项目已经不用了，归档掉。",
+      "expected": "archive_project",
+      "selected": "search_projects",
+      "selectionCorrect": false,
+      "args": {
+        "query": "营销站点"
+      },
+      "argsValid": true,
+      "inputTokens": 63,
+      "outputTokens": 244
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "查一下 sales 数据集里昨天的订单数量。",
+      "expected": "query_data",
+      "selected": "get_dataset",
+      "selectionCorrect": false,
+      "args": {
+        "dataset": "sales"
+      },
+      "argsValid": true,
+      "inputTokens": 546,
+      "outputTokens": 201
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "起一个后台查询任务，跑 sales 的月度聚合，优先级高。",
+      "expected": "run_query_job",
+      "selected": "run_query_job",
+      "selectionCorrect": true,
+      "args": {
+        "dataset": "sales",
+        "sql": "SELECT DATE_TRUNC('month', order_date) AS month, SUM(amount) AS total_amount, COUNT(*) AS order_count FROM sales GROUP BY 1 ORDER BY 1",
+        "priority": "high"
+      },
+      "argsValid": true,
+      "inputTokens": 552,
+      "outputTokens": 146
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "orders 这个数据集的结构是什么样的？",
+      "expected": "get_dataset",
+      "selected": "get_dataset",
+      "selectionCorrect": true,
+      "args": {
+        "dataset": "orders"
+      },
+      "argsValid": true,
+      "inputTokens": 34,
+      "outputTokens": 27
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "把工作区里能用的数据集都列给我。",
+      "expected": "list_datasets",
+      "selected": "list_datasets",
+      "selectionCorrect": true,
+      "args": {},
+      "argsValid": true,
+      "inputTokens": 35,
+      "outputTokens": 26
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "把 orders 表导出成 parquet 文件。",
+      "expected": "export_table",
+      "selected": "export_table",
+      "selectionCorrect": true,
+      "args": {
+        "dataset": "orders",
+        "table": "orders",
+        "format": "parquet"
+      },
+      "argsValid": true,
+      "inputTokens": 546,
+      "outputTokens": 943
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "full",
+      "prompt": "把 /tmp/new-users.csv 导入 users 数据集。",
+      "expected": "import_file",
+      "selected": "import_file",
+      "selectionCorrect": true,
+      "args": {
+        "dataset": "users",
+        "file_url": "/tmp/new-users.csv",
+        "format": "csv"
+      },
+      "argsValid": true,
+      "inputTokens": 36,
+      "outputTokens": 57
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "ISSUE-4421 这个问题单的正文和当前状态是什么？",
+      "expected": "get_issue",
+      "selected": "get_issue",
+      "selectionCorrect": true,
+      "inputTokens": 372,
+      "outputTokens": 61,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "帮我全文搜一下跟“支付超时”相关的问题单。",
+      "expected": "search_issues",
+      "selected": "search_issues",
+      "selectionCorrect": true,
+      "inputTokens": 367,
+      "outputTokens": 53,
+      "args": {
+        "query": "支付超时"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "把“结算中心”项目里分配给我、还没关的问题单列出来。",
+      "expected": "list_issues",
+      "selected": "list_issues",
+      "selectionCorrect": true,
+      "inputTokens": 114,
+      "outputTokens": 245,
+      "args": {
+        "name": "list_projects",
+        "arguments": {
+          "keyword": "结算中心"
+        }
+      },
+      "argsValid": false
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "建个新问题单：首页 LCP 超过 4 秒，放到“性能优化”项目下。",
+      "expected": "create_issue",
+      "selected": "create_issue",
+      "selectionCorrect": true,
+      "inputTokens": 123,
+      "outputTokens": 159,
+      "args": {
+        "project_id": "性能优化",
+        "title": "首页 LCP 超过 4 秒",
+        "body": "首页 LCP（Largest Contentful Paint）超过 4 秒，影响核心体验指标，需定位慢资源并优化加载性能。"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "把 ISSUE-4421 的状态改成已完成。",
+      "expected": "update_issue",
+      "selected": "update_issue",
+      "selectionCorrect": true,
+      "inputTokens": 109,
+      "outputTokens": 105,
+      "args": {
+        "issue_id": "ISSUE-4421",
+        "state": "closed"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "在 ISSUE-4421 下面留言：修复已发到预发环境。",
+      "expected": "add_comment",
+      "selected": "add_comment",
+      "selectionCorrect": true,
+      "inputTokens": 116,
+      "outputTokens": 108,
+      "args": {
+        "issue_id": "ISSUE-4421",
+        "body": "修复已发到预发环境。"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "ISSUE-4421 里大家都讨论了什么？把评论给我看。",
+      "expected": "list_comments",
+      "selected": "list_comments",
+      "selectionCorrect": true,
+      "inputTokens": 372,
+      "outputTokens": 72,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "ISSUE-4421 这单子之前都被谁改过哪些字段？我要看变更记录。",
+      "expected": "list_issue_events",
+      "selected": "list_issue_events",
+      "selectionCorrect": true,
+      "inputTokens": 121,
+      "outputTokens": 84,
+      "args": {
+        "issue_id": "ISSUE-4421"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "找一下名字里带“电商”的项目。",
+      "expected": "search_projects",
+      "selected": null,
+      "selectionCorrect": false,
+      "inputTokens": 107,
+      "outputTokens": 34,
+      "args": null,
+      "argsValid": null
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "把组织下的项目都列出来。",
+      "expected": "list_projects",
+      "selected": "list_projects",
+      "selectionCorrect": true,
+      "inputTokens": 105,
+      "outputTokens": 182,
+      "args": {
+        "org_id": "",
+        "limit": 50
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "看下“结算中心”这个项目的基本信息。",
+      "expected": "get_project",
+      "selected": "get_project",
+      "selectionCorrect": true,
+      "inputTokens": 108,
+      "outputTokens": 644,
+      "args": {
+        "error": "missing_required_parameter",
+        "tool": "get_project",
+        "missing": "project_id",
+        "message": "查询“结算中心”项目需要其 project_id（仅凭项目名称无法调用 get_project）。请提供 project_id，或提供按名称检索项目的工具（如 list_projects）以便先查找该项目。"
+      },
+      "argsValid": false
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "issue-tracker",
+      "arm": "deferred",
+      "prompt": "旧的“营销站点”项目已经不用了，归档掉。",
+      "expected": "archive_project",
+      "selected": "archive_project",
+      "selectionCorrect": true,
+      "inputTokens": 112,
+      "outputTokens": 986,
+      "args": {
+        "error": "missing_required_parameter",
+        "parameter": "project_id",
+        "message": "归档“营销站点”需要它的 project_id，我无法从名称推断出 ID，请提供该项目的 project_id 后再执行归档。"
+      },
+      "argsValid": false
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "查一下 sales 数据集里昨天的订单数量。",
+      "expected": "query_data",
+      "selected": "query_data",
+      "selectionCorrect": true,
+      "inputTokens": 114,
+      "outputTokens": 220,
+      "args": {
+        "dataset": "sales",
+        "sql": "SELECT COUNT(*) AS order_count FROM orders WHERE order_date = DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY)",
+        "limit": 1
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "起一个后台查询任务，跑 sales 的月度聚合，优先级高。",
+      "expected": "run_query_job",
+      "selected": "run_query_job",
+      "selectionCorrect": true,
+      "inputTokens": 120,
+      "outputTokens": 137,
+      "args": {
+        "dataset": "sales",
+        "sql": "SELECT DATE_TRUNC('month', order_date) AS month, SUM(amount) AS total_amount, COUNT(*) AS order_count FROM sales GROUP BY DATE_TRUNC('month', order_date) ORDER BY month",
+        "priority": "high"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "orders 这个数据集的结构是什么样的？",
+      "expected": "get_dataset",
+      "selected": "get_dataset",
+      "selectionCorrect": true,
+      "inputTokens": 114,
+      "outputTokens": 89,
+      "args": {
+        "dataset": "orders"
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "把工作区里能用的数据集都列给我。",
+      "expected": "list_datasets",
+      "selected": "list_datasets",
+      "selectionCorrect": true,
+      "inputTokens": 115,
+      "outputTokens": 43,
+      "args": {
+        "workspace": ""
+      },
+      "argsValid": true
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "把 orders 表导出成 parquet 文件。",
+      "expected": "export_table",
+      "selected": "export_table",
+      "selectionCorrect": true,
+      "inputTokens": 114,
+      "outputTokens": 489,
+      "args": null,
+      "argsValid": false
+    },
+    {
+      "model": "mimo-v2.6-pro",
+      "surface": "data-platform",
+      "arm": "deferred",
+      "prompt": "把 /tmp/new-users.csv 导入 users 数据集。",
+      "expected": "import_file",
+      "selected": "import_file",
+      "selectionCorrect": true,
+      "inputTokens": 116,
+      "outputTokens": 95,
+      "args": {
+        "dataset": "users",
+        "file_url": "/tmp/new-users.csv",
+        "format": "csv"
+      },
+      "argsValid": true
+    }
+  ]
+}

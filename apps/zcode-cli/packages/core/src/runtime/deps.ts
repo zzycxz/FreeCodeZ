@@ -320,3 +320,5 @@ export {
 } from "../subagent/index.js";
 export type { AgentProfile, ExploreSubagentRuntimeRequest } from "../subagent/index.js";
 export { registerMcpTools, registerMcpToolsWithDirectory } from "../mcp/index.js";
+export { createMcpDirectoryEntry } from "../mcp/directory-entry.js";
+export type { McpToolDescriptor } from "@zcode/contracts";
