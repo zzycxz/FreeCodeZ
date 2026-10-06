@@ -52,3 +52,4 @@ export { useGitActions } from "./useGitActions.js";
 export { useTaskNativeSessionLogFile } from "./useTaskNativeSessionLogFile.js";
 export { useTaskSessionFilePath } from "./useTaskSessionFilePath.js";
 export { useUsageStats } from "./useUsageStats.js";
+export { useTerminalCwdLink, terminalTabKeys } from "./useTerminalCwdLink.js";
