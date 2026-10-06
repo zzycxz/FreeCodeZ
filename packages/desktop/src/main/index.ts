@@ -619,7 +619,17 @@ const updateCheckerDeps = {
       response.status === 200
         ? ((await response.json().catch(() => undefined)) ?? undefined)
         : undefined;
-    return { status: response.status, body: body as Record<string, unknown> | undefined };
+    // 限流退避取证：Retry-After 头 + 非 200 的 body 文案（GitHub 限流文案在 body 里）。
+    const retryAfterHeader = response.headers.get("retry-after");
+    const retryAfterSeconds = /^\d+$/u.test(retryAfterHeader ?? "") ? Number(retryAfterHeader) : undefined;
+    const bodyText =
+      response.status === 200 ? undefined : ((await response.text().catch(() => "")) || "");
+    return {
+      status: response.status,
+      body: body as Record<string, unknown> | undefined,
+      ...(retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
+      ...(bodyText !== undefined && bodyText !== "" ? { bodyText } : {}),
+    };
   },
   notify: ({ title, body, openUrl }: { title: string; body: string; openUrl?: string }) => {
     if (!ElectronNotification.isSupported()) return;

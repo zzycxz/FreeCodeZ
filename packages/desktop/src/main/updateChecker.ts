@@ -7,9 +7,13 @@
 //     或任意返回 { tag_name, html_url, body } 形状的 JSON 端点。
 //   - main 受管定时（非裸 interval）：clearInterval + unref + dispose 全套（cuaPermissionDragPanel 先例）。
 //   - fetch → semver 比较（tag 去 v 前缀）→ new Notification()（任务通知通道是 task 域专用）。
-//   - 404 = 从未发过 Release → 按"无更新"处理（不报错）；断网/5xx 静默（下轮再试）；
+//   - 404 = 从未发过 Release → 按"无更新"处理（不报错）；断网/5xx 静默重试；
 //     production 形态才启用周期检查（dev 手动触发）。
-// 纯逻辑（parseReleaseManifest/isNewerVersion/isCheckDue）与 IO 壳分离钉测试。
+//   - 失败重试复用条目 11 限流三件套（pr-ops）：限流（Retry-After 头/文案）与 5xx/网络错
+//     按退避早重试（下限 30s——三件套 2s 指数起步是给 PR 翻页的，日检器不秒级回打），
+//     其余 4xx 等正常周期。周期器因此改为自适应自调度 setTimeout（受管形态不变）。
+// 纯逻辑（parseReleaseManifest/isNewerVersion/planUpdateRetry）与 IO 壳分离钉测试。
+import { computeBackoffMs, parseGhRateLimit, shouldRetryOnGhError, type GhRateLimitInfo } from "@zcode/shared";
 
 export interface UpdateManifestResult {
   hasUpdate: boolean;
@@ -18,6 +22,11 @@ export interface UpdateManifestResult {
   releaseUrl?: string;
   releaseNotes?: string;
   fetchedAt: number;
+}
+
+/** checkOnce 全量结果：失败时带重试计划（周期器据此自适应排程）。 */
+export interface UpdateCheckResult extends UpdateManifestResult {
+  failure?: UpdateRetryPlan;
 }
 
 export interface UpdateManifestRaw {
@@ -78,10 +87,66 @@ export const UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1_000;
 export const UPDATE_CHECK_STARTUP_DELAY_MS = 60_1_000;
 
 export interface UpdateCheckerDeps {
-  fetchJson: (url: string) => Promise<{ status: number; body?: UpdateManifestRaw }>;
+  fetchJson: (url: string) => Promise<UpdateFetchOutcome>;
   now?: () => number;
+  /** 退避抖动注入（测试确定性）。 */
+  random?: () => number;
   notify: (input: { title: string; body: string; openUrl?: string; openLabel?: string }) => void;
   log?: (message: string, context?: Record<string, unknown>) => void;
+}
+
+/** 失败重试的下限：桌面更新器不做秒级重试。 */
+export const UPDATE_RETRY_FLOOR_MS = 30_000;
+/** 连续失败拍数上限（配合 computeBackoffMs 的 60s cap，封顶后恒定 30-72s 节奏）。 */
+export const UPDATE_RETRY_MAX_ATTEMPT = 12;
+
+export interface UpdateFetchOutcome {
+  status: number;
+  body?: UpdateManifestRaw;
+  /** Retry-After 响应头（秒）——壳层提取，限流退避优先级最高。 */
+  retryAfterSeconds?: number;
+  /** 非 200 响应体文本（GitHub 限流文案 "retry after 60s" 在 body 里）。 */
+  bodyText?: string;
+}
+
+export interface UpdateRetryPlan {
+  retry: boolean;
+  reason: "rate_limit" | "server" | "network" | "client_error";
+  backoffMs: number;
+}
+
+/**
+ * 失败重试计划（复用条目 11 限流三件套）：限流（429/Retry-After 头/body 文案）与
+ * 5xx/网络错按退避早重试；其余 4xx 不早重试（等正常周期）。
+ */
+export function planUpdateRetry(input: {
+  status?: number;
+  retryAfterSeconds?: number;
+  bodyText?: string;
+  attempt: number;
+  nowMs?: number;
+  random?: () => number;
+}): UpdateRetryPlan {
+  const text = input.bodyText ?? "";
+  const verdict = shouldRetryOnGhError({ status: input.status, text });
+  if (!verdict.retry) return { retry: false, reason: verdict.reason, backoffMs: 0 };
+  const parsed = parseGhRateLimit(text);
+  const rateLimit: GhRateLimitInfo | undefined =
+    input.retryAfterSeconds !== undefined
+      ? { ...parsed, retryAfterMs: input.retryAfterSeconds * 1_000 }
+      : Object.keys(parsed).length > 0
+        ? parsed
+        : undefined;
+  const backoffMs = Math.max(
+    computeBackoffMs({
+      attempt: input.attempt,
+      ...(rateLimit ? { rateLimit } : {}),
+      ...(input.nowMs !== undefined ? { nowMs: input.nowMs } : {}),
+      ...(input.random ? { random: input.random } : {}),
+    }),
+    UPDATE_RETRY_FLOOR_MS,
+  );
+  return { retry: true, reason: verdict.reason, backoffMs };
 }
 
 /** 条目 3（升级实施手册）：默认更新源=FreeCodeZ 自有端点的 releases/latest（与 zcodeEndpoint 默认 origin 同源）。 */
@@ -107,56 +172,93 @@ export function createUpdateChecker(options: {
 }) {
   const { currentVersion, manifestUrl, deps } = options;
   const now = deps.now ?? Date.now;
+  let failureAttempts = 0;
 
-  const checkOnce = async (): Promise<UpdateManifestResult> => {
+  const failResult = (input: {
+    status?: number;
+    retryAfterSeconds?: number;
+    bodyText?: string;
+    error?: unknown;
+  }): UpdateCheckResult => {
+    failureAttempts = Math.min(failureAttempts + 1, UPDATE_RETRY_MAX_ATTEMPT);
+    const plan = planUpdateRetry({
+      attempt: failureAttempts,
+      ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.retryAfterSeconds !== undefined ? { retryAfterSeconds: input.retryAfterSeconds } : {}),
+      ...(input.bodyText !== undefined ? { bodyText: input.bodyText } : {}),
+      ...(deps.random ? { random: deps.random } : {}),
+    });
+    deps.log?.("Update check failed (retry scheduled per backoff)", {
+      event: "update.check.failed",
+      ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.error !== undefined
+        ? { error: input.error instanceof Error ? input.error.message : String(input.error) }
+        : {}),
+      retryIn: plan.retry ? plan.backoffMs : "next regular interval",
+      reason: plan.reason,
+    });
+    return { hasUpdate: false, currentVersion, fetchedAt: now(), failure: plan };
+  };
+
+  const checkOnce = async (): Promise<UpdateCheckResult> => {
     if (!manifestUrl?.trim()) {
       return { hasUpdate: false, currentVersion, fetchedAt: now() };
     }
+    let outcome: UpdateFetchOutcome;
     try {
-      const { status, body } = await deps.fetchJson(manifestUrl);
-      const result = parseReleaseManifest(status, body, currentVersion, now());
-      if (result.hasUpdate) {
-        deps.notify({
-          title: "FreeCodeZ 有新版本",
-          body: `当前 ${currentVersion} → 最新 ${result.latestVersion ?? "?"}。点击查看新版。`,
-          ...(result.releaseUrl ? { openUrl: result.releaseUrl, openLabel: "查看新版" } : {}),
-        });
-      }
-      deps.log?.("Update check completed", {
-        event: "update.check.completed",
-        hasUpdate: result.hasUpdate,
-        latestVersion: result.latestVersion,
-        status,
-      });
-      return result;
+      outcome = await deps.fetchJson(manifestUrl);
     } catch (error) {
-      // 断网/DNS/超时：静默（下轮再试）；手动路径由调用方读返回值区分。
-      deps.log?.("Update check failed (silent retry next round)", {
-        event: "update.check.failed",
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return { hasUpdate: false, currentVersion, fetchedAt: now() };
+      // 断网/DNS/超时：静默退避重试；手动路径由调用方读返回值区分。
+      return failResult({ error });
     }
+    if (outcome.status !== 200 && outcome.status !== 404) {
+      return failResult({
+        status: outcome.status,
+        retryAfterSeconds: outcome.retryAfterSeconds,
+        bodyText: outcome.bodyText,
+      });
+    }
+    failureAttempts = 0;
+    const result = parseReleaseManifest(outcome.status, outcome.body, currentVersion, now());
+    if (result.hasUpdate) {
+      deps.notify({
+        title: "FreeCodeZ 有新版本",
+        body: `当前 ${currentVersion} → 最新 ${result.latestVersion ?? "?"}。点击查看新版。`,
+        ...(result.releaseUrl ? { openUrl: result.releaseUrl, openLabel: "查看新版" } : {}),
+      });
+    }
+    deps.log?.("Update check completed", {
+      event: "update.check.completed",
+      hasUpdate: result.hasUpdate,
+      latestVersion: result.latestVersion,
+      status: outcome.status,
+    });
+    return result;
   };
 
   let timer: NodeJS.Timeout | undefined;
   return {
     checkOnce,
-    /** 受管周期（先例 cuaPermissionDragPanel：clear + unref + stop 全套）。 */
+    /**
+     * 受管周期（先例 cuaPermissionDragPanel：clear + unref + stop 全套）。
+     * 自适应自调度：失败且可重试 → 按退避计划早重试（Retry-After 优先，下限 30s）；
+     * 其余（成功/无更新/不可重试错）→ 正常间隔。
+     */
     startPeriodic(intervalMs = UPDATE_CHECK_INTERVAL_MS) {
       this.stopPeriodic();
-      const first = setTimeout(() => {
-        void checkOnce();
-        timer = setInterval(() => void checkOnce(), intervalMs);
+      const schedule = (delayMs: number) => {
+        timer = setTimeout(() => void run(), delayMs);
         timer.unref?.();
-      }, UPDATE_CHECK_STARTUP_DELAY_MS);
-      first.unref?.();
-      timer = first as unknown as NodeJS.Timeout;
+      };
+      const run = async () => {
+        const result = await checkOnce();
+        schedule(result.failure?.retry ? result.failure.backoffMs : intervalMs);
+      };
+      schedule(UPDATE_CHECK_STARTUP_DELAY_MS);
     },
     stopPeriodic() {
       if (timer) {
         clearTimeout(timer);
-        clearInterval(timer as unknown as NodeJS.Timeout);
         timer = undefined;
       }
     },

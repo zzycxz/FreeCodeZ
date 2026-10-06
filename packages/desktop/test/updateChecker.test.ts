@@ -138,3 +138,72 @@ test("默认源：设置为空→回落 FreeCodeZ 端点 releases/latest；显�
   assert.equal(resolveManifestUrl(undefined, ""), undefined);
   assert.equal(resolveManifestUrl("  ", "https://x"), "https://x/releases/latest");
 });
+
+test("退避计划：限流 Retry-After 头优先（90s）；指数退避有 30s 下限；4xx 不早重试", async () => {
+  const { planUpdateRetry, UPDATE_RETRY_FLOOR_MS } = await import("../src/main/updateChecker.js");
+  const fixed = () => 0;
+  const rateLimitHeader = planUpdateRetry({
+    status: 429,
+    retryAfterSeconds: 90,
+    attempt: 1,
+    nowMs: 0,
+    random: fixed,
+  });
+  assert.equal(rateLimitHeader.retry, true);
+  assert.equal(rateLimitHeader.reason, "rate_limit");
+  assert.equal(rateLimitHeader.backoffMs, 90_000);
+
+  const rateLimitBody = planUpdateRetry({
+    status: 403,
+    bodyText: "API rate limit exceeded ... retry after 60s. (reset at 2026-10-06T12:00:00Z, remaining 0)",
+    attempt: 2,
+    nowMs: 0,
+    random: fixed,
+  });
+  assert.equal(rateLimitBody.reason, "rate_limit");
+  assert.equal(rateLimitBody.backoffMs, 60_000);
+
+  const network = planUpdateRetry({ attempt: 1, nowMs: 0, random: fixed });
+  assert.equal(network.reason, "network");
+  assert.equal(network.backoffMs, UPDATE_RETRY_FLOOR_MS, "指数起步 2s 被下限抬到 30s");
+
+  const server = planUpdateRetry({ status: 503, attempt: 3, nowMs: 0, random: fixed });
+  assert.equal(server.reason, "server");
+  assert.equal(server.backoffMs, Math.max(2_000 * 2 ** 2, UPDATE_RETRY_FLOOR_MS));
+
+  const client = planUpdateRetry({ status: 400, attempt: 1, nowMs: 0, random: fixed });
+  assert.equal(client.retry, false);
+  assert.equal(client.reason, "client_error");
+});
+
+test("检查器：失败结果携带退避计划；成功重置拍数", async () => {
+  const { createUpdateChecker, UPDATE_RETRY_FLOOR_MS } = await import("../src/main/updateChecker.js");
+  let respond: () => { status: number; body?: unknown; retryAfterSeconds?: number } = () => ({
+    status: 429,
+    retryAfterSeconds: 90,
+  });
+  const checker = createUpdateChecker({
+    currentVersion: "1.0.0",
+    manifestUrl: "https://x/releases/latest",
+    deps: {
+      fetchJson: async () => respond(),
+      notify: () => undefined,
+      random: () => 0,
+    },
+  });
+  const failed = await checker.checkOnce();
+  assert.equal(failed.failure?.retry, true);
+  assert.equal(failed.failure?.backoffMs, 90_000);
+
+  respond = () => ({ status: 503 });
+  const retried = await checker.checkOnce();
+  assert.equal(retried.failure?.reason, "server");
+  assert.equal(retried.failure?.backoffMs, UPDATE_RETRY_FLOOR_MS);
+
+  respond = () => ({ status: 404 });
+  const ok = await checker.checkOnce();
+  assert.equal(ok.failure, undefined);
+  respond = () => ({ status: 503 });
+  const fresh = await checker.checkOnce();
+  assert.equal(fresh.failure?.backoffMs, UPDATE_RETRY_FLOOR_MS, "成功后拍数归零，从下限重来");
+});
