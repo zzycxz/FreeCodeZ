@@ -8,7 +8,7 @@ import { createMcpAdapter } from "../src/mcp/index.js";
 import type { McpPort, McpServerConfig } from "@zcode/contracts";
 
 const FIXTURE = new URL("./fixtures/minimal-mcp-server.mjs", import.meta.url).pathname;
-const SLOW_INIT_MS = 400;
+const SLOW_INIT_MS = 1200; // 400ms 在系统负载下窗口过窄致间歇失败（1/4 复现）——三倍余量
 
 function serverConfig(): McpServerConfig {
   return {
@@ -27,7 +27,7 @@ async function waitFor(
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     if (await predicate()) return;
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 25));
   }
   assert.ok(false, message);
 }
@@ -89,7 +89,7 @@ test("集成：全量注入、visibility 剔除、disabledTools 收敛豁免、l
   // SLOW_INIT_MS 保证 connecting 状态有足够窗口可观察。
   await waitFor(
     async () => (await adapter.status()).fixture?.status === "connecting",
-    2_000,
+    5_000,
     "未观察到 connecting 状态",
   );
   const connectingTools = await adapter.listTools();
