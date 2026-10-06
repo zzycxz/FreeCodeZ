@@ -16,25 +16,23 @@
 import {
   loadKoffiBindings,
   withCFString,
-  cfArrayToRefs,
   describeAxError,
   AXError,
 } from "./koffi-ax.js";
 import {
   listApplications,
   listWindows,
-  probePermissions,
 } from "./ax-observation.js";
+import { registerDiagnosticMethods } from "./koffi-diagnostics.js";
 import {
   ElementHandleTable,
   findSettableValueElement,
   resolveAppRefToPid,
   copyString,
-  copyStruct,
   copyActionNames,
-  flattenTree,
   loadAppInstruction,
   surfaceLifecycleFromDiff,
+  buildCaptureAppPayload,
 } from "./koffi-tree.js";
 import {
   clickAtPoint,
@@ -71,63 +69,7 @@ export function createKoffiBrokerMethods(options = {}) {
   const lastSurfaceSets = new Map();
   const methods = {};
 
-  // ── 诊断面 ──
-  methods.broker_info = async () => ({
-    ok: true,
-    backend: "koffi-in-process",
-    platform: "darwin",
-    capabilities: {
-      ax_observation: true,
-      synthetic_input: allowActions,
-      screen_capture: probePermissions().screenCapture,
-    },
-    version: "phase1",
-  });
-
-  methods.permission_status = async () => {
-    const status = probePermissions();
-    return {
-      ok: true,
-      accessibility: status.accessibility,
-      screen_capture: status.screenCapture,
-      accessibility_trusted: status.accessibility,
-    };
-  };
-
-  methods.screen_capture_status = async () => {
-    const status = probePermissions();
-    return { ok: true, available: status.screenCapture, authorized: status.screenCapture };
-  };
-
-  methods.screen_capture_probe = async () => {
-    const status = probePermissions();
-    return {
-      ok: true,
-      reason: status.screenCapture
-        ? "granted"
-        : "screen recording permission not granted to this process (grant to FreeCodeZ.app in System Settings → Privacy & Security → Screen Recording)",
-    };
-  };
-
-  methods.supports_accessibility = async () => ({
-    ok: true,
-    supported: true,
-    trusted: probePermissions().accessibility,
-  });
-
-  methods.input_permission_status = async () => ({
-    ok: true,
-    synthetic_input: allowActions,
-    accessibility_trusted: probePermissions().accessibility,
-  });
-
-  methods.request_access = async () => {
-    const status = probePermissions();
-    return {
-      ok: true,
-      status: status.accessibility ? "granted" : "accessibility permission required (System Settings → Privacy & Security → Accessibility → FreeCodeZ)",
-    };
-  };
+  registerDiagnosticMethods(methods, { allowActions });
 
   // ── 观测面 ──
   methods.list_applications = async () => {
@@ -157,70 +99,7 @@ export function createKoffiBrokerMethods(options = {}) {
     if (pid === undefined) {
       return { ok: false, error: { code: "app_not_found", message: "cannot resolve app_ref to a running application" } };
     }
-    let appEl;
-    try {
-      appEl = bindings.AXUIElementCreateApplication(pid);
-    } catch (error) {
-      return { ok: false, error: { code: "cua_koffi_error", message: String(error) } };
-    }
-    if (!appEl) {
-      return { ok: false, error: { code: "app_not_found", message: `AXUIElementCreateApplication(${pid}) returned null` } };
-    }
-    try {
-      const budget = { used: 0, elements: [] };
-      flattenTree(bindings, handles, pid, appEl, 0, budget);
-      const appName = copyString(bindings, appEl, "AXTitle");
-      // 主窗口：AXWindows[0]（Windows Helper 同语义——主窗口优 先）。
-      const windows = withCFString(bindings, "AXWindows", (name) => {
-        const out = [null];
-        bindings.AXUIElementCopyAttributeValue(appEl, name, out);
-        return cfArrayToRefs(bindings, out[0]);
-      });
-      let windowMeta = { title: "", bounds: [0, 0, 0, 0], window_id: 1 };
-      if (windows[0]) {
-        const title = copyString(bindings, windows[0], "AXTitle");
-        const position = copyStruct(bindings, windows[0], "AXPosition", 1);
-        const size = copyStruct(bindings, windows[0], "AXSize", 2);
-        windowMeta = {
-          title: title ?? "",
-          bounds: position && size ? [position.x, position.y, size.width, size.height] : [0, 0, 0, 0],
-          window_id: 1,
-        };
-        bindings.CFRelease(windows[0]);
-      }
-      const bundleId =
-        params?.app_ref && typeof params.app_ref === "string"
-          ? params.app_ref
-          : (params?.app_ref?.bundle_id ?? "");
-      // P1-e 双通道：bundle_id 键优先，app_ref 为显示名时（resolveAppRefToPid 也接受名）
-      // 用 AXTitle 名称通道兜底（例：app_ref="Numbers" → numbers.md）。
-      const instruction = loadAppInstruction(bundleId) ?? loadAppInstruction(appName);
-      // P1-f 生命周期：窗口标题入指纹（换主窗=换表面），附加表面（sheet/popover）按
-      // kind+title 入指纹；与上次快照差分出 stable/replaced/closed。
-      const surfaceFingerprints = new Set(budget.elements
-        .filter((entry) => entry.surface_kind && entry.surface_kind !== "window")
-        .map((entry) => `${entry.surface_kind}:${entry.title ?? ""}`));
-      surfaceFingerprints.add(`window:${windowMeta.title}`);
-      const previousSet = lastSurfaceSets.get(pid);
-      lastSurfaceSets.set(pid, surfaceFingerprints);
-      const lifecycle = surfaceLifecycleFromDiff(previousSet, surfaceFingerprints, {
-        hasWindow: Boolean(windows[0]),
-      });
-      return {
-        ok: true,
-        app: { bundle_id: bundleId || null, pid, name: appName ?? "" },
-        window: { ...windowMeta, surface_kind: "window", surface_lifecycle: lifecycle },
-        elements: budget.elements,
-        ...(instruction ? { app_instructions: instruction } : {}),
-        // 截图面：屏幕录制未授权时缺席（has_image=false 走纯 AX 观测）。
-      };
-    } finally {
-      try {
-        bindings.CFRelease(appEl);
-      } catch {
-        // 释放失败不折断结果。
-      }
-    }
+    return buildCaptureAppPayload({ bindings, handles, lastSurfaceSets, pid, params });
   };
 
   methods.read_element = async (params) => {

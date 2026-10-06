@@ -334,3 +334,67 @@ export function findSettableValueElement(bindings, element, depth = 0) {
   }
   return undefined;
 }
+
+
+/**
+ * capture_app 主体（自 koffi-broker-methods.js 拆出——max-lines 400 惯例，语义零变化）。
+ * 返回与原 methods.capture_app 相同的载荷；appEl 由本函数创建与释放。
+ */
+export async function buildCaptureAppPayload({ bindings, handles, lastSurfaceSets, pid, params }) {
+  let appEl;
+  try {
+    appEl = bindings.AXUIElementCreateApplication(pid);
+  } catch (error) {
+    return { ok: false, error: { code: "cua_koffi_error", message: String(error) } };
+  }
+  if (!appEl) {
+    return { ok: false, error: { code: "app_not_found", message: `AXUIElementCreateApplication(${pid}) returned null` } };
+  }
+      const budget = { used: 0, elements: [] };
+      flattenTree(bindings, handles, pid, appEl, 0, budget);
+      const appName = copyString(bindings, appEl, "AXTitle");
+      // 主窗口：AXWindows[0]（Windows Helper 同语义——主窗口优 先）。
+      const windows = withCFString(bindings, "AXWindows", (name) => {
+        const out = [null];
+        bindings.AXUIElementCopyAttributeValue(appEl, name, out);
+        return cfArrayToRefs(bindings, out[0]);
+      });
+      let windowMeta = { title: "", bounds: [0, 0, 0, 0], window_id: 1 };
+      if (windows[0]) {
+        const title = copyString(bindings, windows[0], "AXTitle");
+        const position = copyStruct(bindings, windows[0], "AXPosition", 1);
+        const size = copyStruct(bindings, windows[0], "AXSize", 2);
+        windowMeta = {
+          title: title ?? "",
+          bounds: position && size ? [position.x, position.y, size.width, size.height] : [0, 0, 0, 0],
+          window_id: 1,
+        };
+        bindings.CFRelease(windows[0]);
+      }
+      const bundleId =
+        params?.app_ref && typeof params.app_ref === "string"
+          ? params.app_ref
+          : (params?.app_ref?.bundle_id ?? "");
+      // P1-e 双通道：bundle_id 键优先，app_ref 为显示名时（resolveAppRefToPid 也接受名）
+      // 用 AXTitle 名称通道兜底（例：app_ref="Numbers" → numbers.md）。
+      const instruction = loadAppInstruction(bundleId) ?? loadAppInstruction(appName);
+      // P1-f 生命周期：窗口标题入指纹（换主窗=换表面），附加表面（sheet/popover）按
+      // kind+title 入指纹；与上次快照差分出 stable/replaced/closed。
+      const surfaceFingerprints = new Set(budget.elements
+        .filter((entry) => entry.surface_kind && entry.surface_kind !== "window")
+        .map((entry) => `${entry.surface_kind}:${entry.title ?? ""}`));
+      surfaceFingerprints.add(`window:${windowMeta.title}`);
+      const previousSet = lastSurfaceSets.get(pid);
+      lastSurfaceSets.set(pid, surfaceFingerprints);
+      const lifecycle = surfaceLifecycleFromDiff(previousSet, surfaceFingerprints, {
+        hasWindow: Boolean(windows[0]),
+      });
+      return {
+        ok: true,
+        app: { bundle_id: bundleId || null, pid, name: appName ?? "" },
+        window: { ...windowMeta, surface_kind: "window", surface_lifecycle: lifecycle },
+        elements: budget.elements,
+        ...(instruction ? { app_instructions: instruction } : {}),
+        // 截图面：屏幕录制未授权时缺席（has_image=false 走纯 AX 观测）。
+      };
+}
