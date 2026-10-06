@@ -26,6 +26,14 @@ import {
 import { V4UserInputDialog } from "@/v4/V4UserInputDialog.js";
 import { useV4Conversation } from "@/v4/V4ConversationContext.js";
 
+import { createPermissionDenialCounter, denialDisplayData } from "@zcode/shared";
+
+// 22①：会话级被拒计数单例（renderer 生命周期=app 生命周期；reset 由会话清理批接）。
+const permissionDenials = createPermissionDenialCounter();
+function recordPermissionDenial(taskId: string, decision: string | undefined): void {
+  if (decision) permissionDenials.record(taskId, decision);
+}
+
 interface V4InteractionDialogsProps {
   sessionId: string;
   workspacePath: string;
@@ -322,6 +330,8 @@ export function V4InteractionDialogs({
         }
         onRespond={(_requestId, option: ZCodePermissionOption, feedback?: string) => {
           if (permissionResponseFlight.current === pending.interactionId) return;
+          // 第四批 22①：被拒权限计数（deny 决策入账——UI 状态面板消费 denialDisplayData）。
+          recordPermissionDenial(sessionId, option.response?.decision);
           const interactionId = pending.interactionId;
           permissionResponseFlight.current = interactionId;
           setPermissionResponse({ interactionId, pending: true, failed: false });

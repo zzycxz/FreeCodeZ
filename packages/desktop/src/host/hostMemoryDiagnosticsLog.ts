@@ -8,6 +8,7 @@ import {
 
 interface HostMemoryDiagnosticsLogger {
   info(...args: unknown[]): void;
+  debug?(...args: unknown[]): void;
 }
 
 interface HostMemoryDiagnosticsTimerHandle {
@@ -82,7 +83,13 @@ export function startHostMemoryDiagnosticsLog(
       if (!reason) {
         return false;
       }
-      options.logger.info(formatMemorySampleLine(sample, reason));
+      // 尸壳清（手册 22④/24）：reason=heartbeat 是 5 分钟周期存活记录无诊断增量——降 debug
+      // 不再刷生产日志（first/changed 保留 info：有事实变化）。debug 语义=生产不落盘。
+      if (reason === "heartbeat") {
+        options.logger.debug?.(formatMemorySampleLine(sample, reason));
+      } else {
+        options.logger.info(formatMemorySampleLine(sample, reason));
+      }
       return true;
     } catch {
       // 诊断采样失败只丢当前样本，不能影响 Host 服务。

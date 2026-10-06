@@ -68,7 +68,9 @@ export {
   type HookInvocationRow,
 } from "../zcode-protocol-v4/rows.js";
 
-export const ZCODE_PROTOCOL_NAME = "ZCode Protocol" as const;
+export const ZCODE_PROTOCOL_NAME = "FreeCodeZ Protocol" as const;
+/** 尸壳清：旧 agent 进程仍报 "ZCode Protocol"——握手层双名兼容（接受旧名报新名）。 */
+export const LEGACY_ZCODE_PROTOCOL_NAME = "ZCode Protocol" as const;
 export const ZCODE_PROTOCOL_VERSION = 1 as const;
 // V4 wire 与 legacy 主协议并存；禁止为了 V4 physical framing 改写 legacy 版本。
 export const ZCODE_PROTOCOL_V4_WIRE_VERSION = 3 as const;
@@ -1030,7 +1032,7 @@ export const zcodeSessionStateSnapshotSchema = z
   .object({
     protocol: z
       .object({
-        name: z.literal(ZCODE_PROTOCOL_NAME),
+        name: z.literal(ZCODE_PROTOCOL_NAME).or(z.literal(LEGACY_ZCODE_PROTOCOL_NAME)),
         version: z.literal(ZCODE_PROTOCOL_VERSION),
       })
       .strict(),
