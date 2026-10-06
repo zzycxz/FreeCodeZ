@@ -1,17 +1,17 @@
-export const ZCODE_WORKSPACE_IDENTITY_ENV = "ZCODE_WORKSPACE_IDENTITY";
+export const ZCODE_WORKSPACE_IDENTITY_ENV = "FREECODEZ_WORKSPACE_IDENTITY";
 
-export const ZCODE_RUNTIME_ENV_KEY = "ZCODE_RUNTIME_ENV";
-export const ZCODE_HTTP_PROXY_ENV_KEY = "ZCODE_HTTP_PROXY";
-export const ZCODE_NO_PROXY_ENV_KEY = "ZCODE_NO_PROXY";
+export const ZCODE_RUNTIME_ENV_KEY = "FREECODEZ_RUNTIME_ENV";
+export const ZCODE_HTTP_PROXY_ENV_KEY = "FREECODEZ_HTTP_PROXY";
+export const ZCODE_NO_PROXY_ENV_KEY = "FREECODEZ_NO_PROXY";
 /** Desktop Host 只向 desktop-attached remote server 传递一次的网络配置。 */
 export const ZCODE_REMOTE_RUNTIME_NETWORK_AUTHORITY_ENV_KEY =
   "ZCODE_REMOTE_RUNTIME_NETWORK_AUTHORITY";
-export const ZCODE_REMOTE_HTTP_PROXY_ENV_KEY = "ZCODE_REMOTE_HTTP_PROXY";
-export const ZCODE_REMOTE_NO_PROXY_ENV_KEY = "ZCODE_REMOTE_NO_PROXY";
-export const ZCODE_AGENT_CA_CERT_ENV_KEY = "ZCODE_AGENT_CA_CERT";
-export const ZCODE_TOOL_ENV_PASSTHROUGH_ENV_KEY = "ZCODE_TOOL_ENV_PASSTHROUGH_JSON";
+export const ZCODE_REMOTE_HTTP_PROXY_ENV_KEY = "FREECODEZ_REMOTE_HTTP_PROXY";
+export const ZCODE_REMOTE_NO_PROXY_ENV_KEY = "FREECODEZ_REMOTE_NO_PROXY";
+export const ZCODE_AGENT_CA_CERT_ENV_KEY = "FREECODEZ_AGENT_CA_CERT";
+export const ZCODE_TOOL_ENV_PASSTHROUGH_ENV_KEY = "FREECODEZ_TOOL_ENV_PASSTHROUGH_JSON";
 /** Desktop Main 将服务端裁决的单功能灰度结果传给 Local/Remote Host。 */
-export const ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV = "ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED";
+export const ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV = "FREECODEZ_DESKTOP_CONTEXT_PROMPT_ENABLED";
 export const ZCODE_CUA_PRODUCT_HELPER_ENV_KEY = "ZCODE_CUA_PRODUCT_HELPER";
 export const ZCODE_CUA_BROKER_SOCKET_ENV_KEY = "ZCODE_CUA_PERMISSION_BROKER_SOCKET";
 /** Shared node_repl host marker; unlike the broker bearer values it is not a secret. */
@@ -100,6 +100,7 @@ const SANITIZED_RUNTIME_ENV_KEYS = [
   "ZCODE_CUA_PERMISSION_BROKER_TOKEN",
   "ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER",
   "ZCODE_CUA_PLUGIN_AUTHORITY",
+  "FREECODEZ_CUA_PLUGIN_AUTHORITY",
   // FreeCodeZ fork(P3 §3.7):遥测链已删;以下旧遥测环境键仅为隐私防护继续从子进程剔除。
   // 键名以拼接构造(前缀 × 后缀),避免品牌/链路字样以字面量散布源码。
   ...LEGACY_TELEMETRY_ENV_STRIP_KEYS,
@@ -140,7 +141,7 @@ export function resolveZCodeRuntimeEnv(
 
 // Exported so services/node.ts can inject the Helper's plugin authority into the agent spawn env
 // (mirrors feat; the agent-side plugin host verifies the broker authority via this env var).
-export const ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY = "ZCODE_CUA_PLUGIN_AUTHORITY";
+export const ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY = "FREECODEZ_CUA_PLUGIN_AUTHORITY";
 
 interface CapturedCuaBrokerCredentials {
   socket: string;
@@ -337,7 +338,7 @@ function isZCodeAgentTelemetryEnvKey(key: string): boolean {
   return (
     key.startsWith(["OTEL", "_"].join("")) ||
     key.startsWith(["ZCODE", "TELEMETRY_"].join("_")) ||
-    key === "ZCODE_MODEL_TELEMETRY_ENABLED"
+    key === "FREECODEZ_MODEL_TELEMETRY_ENABLED"
   );
 }
 

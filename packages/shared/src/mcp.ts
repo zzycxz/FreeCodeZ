@@ -14,7 +14,7 @@ export const ZCODE_CUA_OFFICIAL_PLUGIN_ID = "computer-use@zcode-plugins-official
 export const ZCODE_CUA_OFFICIAL_MCP_NAMESPACE_NAME = "plugin:computer-use:computer-use";
 // 插件身份 env key：resolver（adapters/src/plugins/mcp.ts）权威写入 loaded.id，manifest/user env 不可覆盖。
 // bootstrap + cli/plugin-host-command.ts 复用此常量识别 official zcode-cua plugin server，避免字面量漂移。
-export const ZCODE_PLUGIN_ID_ENV_KEY = "ZCODE_PLUGIN_ID";
+export const ZCODE_PLUGIN_ID_ENV_KEY = "FREECODEZ_PLUGIN_ID";
 
 export type McpSource = "mcp" | "zcodeagentmcp";
 export type CliMcpSource = Exclude<McpSource, "mcp">;

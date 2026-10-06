@@ -190,7 +190,7 @@ function assertShellExpansionContextAvailable(input: {
   for (const match of input.shellCommand.matchAll(SHELL_CONTEXT_VARIABLE_PATTERN)) {
     const name = match[1];
     if (!name) continue;
-    if (name === "CLAUDE_SKILL_DIR" || name === "ZCODE_SKILL_DIR") {
+    if (name === "CLAUDE_SKILL_DIR" || name === "FREECODEZ_SKILL_DIR") {
       throw new Error(
         `Custom command /${input.command.metadata.name} variable requires a skill context: ${name}`,
       );
@@ -199,7 +199,7 @@ function assertShellExpansionContextAvailable(input: {
       !input.sessionId &&
       (name === "CLAUDE_CODE_SESSION_ID" ||
         name === "CLAUDE_SESSION_ID" ||
-        name === "ZCODE_SESSION_ID")
+        name === "FREECODEZ_SESSION_ID")
     ) {
       throw new Error(
         `Custom command /${input.command.metadata.name} variable requires a runtime session context: ${name}`,

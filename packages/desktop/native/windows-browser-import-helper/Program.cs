@@ -15,7 +15,7 @@ using Microsoft.Win32.SafeHandles;
 
 internal static class Program
 {
-    private const string Protocol = "ZCODE_BROWSER_IMPORT_V1";
+    private const string Protocol = "FREECODEZ_BROWSER_IMPORT_V1";
     private const string HelperVersion = "2";
     private const int PipeTimeoutMs = 60000;
     private const int BrokerLifetimeMs = 90000;

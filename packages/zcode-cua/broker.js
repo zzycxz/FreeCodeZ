@@ -9,7 +9,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 export const BROKER_SOCKET_ENV = "ZCODE_CUA_PERMISSION_BROKER_SOCKET";
-export const BROKER_UNAVAILABLE_ENV = "ZCODE_CUA_PERMISSION_BROKER_UNAVAILABLE";
+export const BROKER_UNAVAILABLE_ENV = "FREECODEZ_CUA_PERMISSION_BROKER_UNAVAILABLE";
 
 // 版本铁律连接期闸:clientApiVersion > CUA_BROKER_IPC_VERSION 直接 version_mismatch(规格 R12)。
 export const CUA_BROKER_IPC_VERSION = 2;

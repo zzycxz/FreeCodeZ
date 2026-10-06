@@ -30,10 +30,11 @@ const OUTPUT_HYGIENE_ENV_SET: Readonly<Record<string, string>> = {
 };
 // 这些变量会越过 NO_COLOR 强制开色，需一并摘除。
 const OUTPUT_HYGIENE_ENV_UNSET: readonly string[] = ["FORCE_COLOR", "CLICOLOR_FORCE"];
-const PRESERVE_COLOR_ENV_KEY = "ZCODE_PRESERVE_COLOR";
+const PRESERVE_COLOR_ENV_KEY = "FREECODEZ_PRESERVE_COLOR";
+const PRESERVE_COLOR_LEGACY_ENV_KEY = "ZCODE_PRESERVE_COLOR";
 
 function isPreserveColorRequested(sourceEnv: NodeJS.ProcessEnv): boolean {
-  const value = sourceEnv[PRESERVE_COLOR_ENV_KEY];
+  const value = sourceEnv[PRESERVE_COLOR_ENV_KEY] ?? sourceEnv[PRESERVE_COLOR_LEGACY_ENV_KEY];
   return value === "1" || value === "true";
 }
 
