@@ -9,7 +9,7 @@ export const DEFAULT_ZAI_BUSINESS_BASE_URL = "https://api.z.ai";
 export const DEFAULT_ZAI_OAUTH_CLIENT_ID = "client_P8X5CMWmlaRO9gyO-KSqtg";
 
 // 构建仅注入公开链接；Node 调用方仍可显式传 env，避免读取另一进程的配置。
-declare const __ZCODE_ENDPOINT_ENV__: Record<string, string | undefined> | undefined;
+declare const __FREECODEZ_ENDPOINT_ENV__: Record<string, string | undefined> | undefined;
 export function pickProductEndpointEnv(
   env: Record<string, string | undefined>,
 ): Record<string, string> {
@@ -28,7 +28,7 @@ export function pickProductEndpointEnv(
 }
 export function readProductEndpointEnv(): Record<string, string | undefined> {
   return {
-    ...(typeof __ZCODE_ENDPOINT_ENV__ === "undefined" ? {} : __ZCODE_ENDPOINT_ENV__),
+    ...(typeof __FREECODEZ_ENDPOINT_ENV__ === "undefined" ? {} : __FREECODEZ_ENDPOINT_ENV__),
     ...pickProductEndpointEnv(typeof process === "undefined" ? {} : process.env),
   };
 }

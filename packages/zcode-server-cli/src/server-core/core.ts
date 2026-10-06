@@ -12,7 +12,7 @@ import { installParentDisconnectHandler } from "./parentDisconnect.js";
 import { resolveCoreServerId } from "./serverIdentity.js";
 import { createTaskActivityTracker } from "./taskActivityTracker.js";
 
-declare const __ZCODE_BUILTIN_PROVIDER_CONFIG_JSON__: string | undefined;
+declare const __FREECODEZ_BUILTIN_PROVIDER_CONFIG_JSON__: string | undefined;
 
 export async function runServerCore(generation: number): Promise<void> {
   let shutdown: ((reason: string) => Promise<void>) | undefined;
@@ -26,10 +26,10 @@ export async function runServerCore(generation: number): Promise<void> {
     process.env[ZCODE_BUILTIN_PROVIDER_CONFIG_FILE_ENV]?.trim();
   const zcodeBuiltinProviderConfigFilePath = explicitZCodeBuiltinProviderConfigFilePath
     ? explicitZCodeBuiltinProviderConfigFilePath
-    : typeof __ZCODE_BUILTIN_PROVIDER_CONFIG_JSON__ === "string"
+    : typeof __FREECODEZ_BUILTIN_PROVIDER_CONFIG_JSON__ === "string"
       ? await materializeZCodeBuiltinProviderConfig({
           environmentConfigRoot: getAppConfigDir(),
-          content: __ZCODE_BUILTIN_PROVIDER_CONFIG_JSON__,
+          content: __FREECODEZ_BUILTIN_PROVIDER_CONFIG_JSON__,
         })
       : undefined;
   if (!zcodeBuiltinProviderConfigFilePath) {

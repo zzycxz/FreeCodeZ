@@ -100,18 +100,18 @@ const desktopTsupBundleSecurityOptions = resolveDesktopTsupBundleSecurityOptions
 
 function createSharedDefines() {
   return {
-    __ZCODE_VERSION__: JSON.stringify(buildMetadata.appVersion),
-    __ZCODE_COMMIT__: JSON.stringify(buildMetadata.buildCommitId),
-    __ZCODE_BUILD_TIME__: JSON.stringify(buildMetadata.buildTime),
-    __ZCODE_ENV__: JSON.stringify(zcodeEnv),
-    __ZCODE_ENDPOINT_ENV__: JSON.stringify(pickProductEndpointEnv(env)),
-    __ZCODE_PRODUCT_FLAVOR__: JSON.stringify(zcodeProductFlavor),
+    __FREECODEZ_VERSION__: JSON.stringify(buildMetadata.appVersion),
+    __FREECODEZ_COMMIT__: JSON.stringify(buildMetadata.buildCommitId),
+    __FREECODEZ_BUILD_TIME__: JSON.stringify(buildMetadata.buildTime),
+    __FREECODEZ_ENV__: JSON.stringify(zcodeEnv),
+    __FREECODEZ_ENDPOINT_ENV__: JSON.stringify(pickProductEndpointEnv(env)),
+    __FREECODEZ_PRODUCT_FLAVOR__: JSON.stringify(zcodeProductFlavor),
     // Computer Use Helper build identity — helperInstaller 读它决定下载哪个 Helper bundle。
     // 缺失时 installer 抛 "Packaged ZCode is missing its embedded Computer Use Helper build identity"。
     // 与 node-repl-host/scripts/build.mjs 的同名 define 同源(cua-helper-build-id.mjs);env 可覆盖。
-    __ZCODE_CUA_HELPER_BUILD_ID__: JSON.stringify(resolveCuaHelperBuildId(env)),
+    __FREECODEZ_CUA_HELPER_BUILD_ID__: JSON.stringify(resolveCuaHelperBuildId(env)),
     // 客户端只有一个 CDN 配置，与发布端 OSS 目标列表分离。
-    __ZCODE_CDN_BASE_URL__: JSON.stringify((env.FREECODEZ_CDN_BASE_URL ?? env.ZCODE_CDN_BASE_URL)?.trim() || ""),
+    __FREECODEZ_CDN_BASE_URL__: JSON.stringify((env.FREECODEZ_CDN_BASE_URL ?? env.ZCODE_CDN_BASE_URL)?.trim() || ""),
   };
 }
 

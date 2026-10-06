@@ -24,9 +24,9 @@ function isRendererLoggingDisabled(): boolean {
   return (
     (
       globalThis as typeof globalThis & {
-        __ZCODE_RENDERER_DISABLE_LOGGING__?: boolean;
+        __FREECODEZ_RENDERER_DISABLE_LOGGING__?: boolean;
       }
-    ).__ZCODE_RENDERER_DISABLE_LOGGING__ === true
+    ).__FREECODEZ_RENDERER_DISABLE_LOGGING__ === true
   );
 }
 

@@ -82,10 +82,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      __ZCODE_ENDPOINT_ENV__: JSON.stringify(pickProductEndpointEnv(env)),
-      __ZCODE_VERSION__: JSON.stringify(version),
-      __ZCODE_COMMIT__: JSON.stringify((env.FREECODEZ_COMMIT ?? env.ZCODE_COMMIT) || "unknown"),
-      __ZCODE_ENV__: JSON.stringify(zcodeEnv),
+      __FREECODEZ_ENDPOINT_ENV__: JSON.stringify(pickProductEndpointEnv(env)),
+      __FREECODEZ_VERSION__: JSON.stringify(version),
+      __FREECODEZ_COMMIT__: JSON.stringify((env.FREECODEZ_COMMIT ?? env.ZCODE_COMMIT) || "unknown"),
+      __FREECODEZ_ENV__: JSON.stringify(zcodeEnv),
       "import.meta.env.VITE_ZCODE_BASE_URL": JSON.stringify(zcodeEndpointOrigin),
       // 兼容旧 Web runtime 读取名；新代码统一读 VITE_ZCODE_BASE_URL。
       "import.meta.env.VITE_ZCODE_ENDPOINT_ORIGIN": JSON.stringify(zcodeEndpointOrigin),

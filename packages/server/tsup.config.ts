@@ -18,9 +18,9 @@ const { environment: zcodeEnv, content: zcodeBuiltinProviderConfigJson } =
   await loadBuiltinProviderConfig();
 
 export const SERVER_HTTP_DEFINES = {
-  __ZCODE_VERSION__: JSON.stringify(version),
-  __ZCODE_ENV__: JSON.stringify(zcodeEnv),
-  __ZCODE_BUILTIN_PROVIDER_CONFIG_JSON__: JSON.stringify(zcodeBuiltinProviderConfigJson),
+  __FREECODEZ_VERSION__: JSON.stringify(version),
+  __FREECODEZ_ENV__: JSON.stringify(zcodeEnv),
+  __FREECODEZ_BUILTIN_PROVIDER_CONFIG_JSON__: JSON.stringify(zcodeBuiltinProviderConfigJson),
 };
 
 function createSharedDefines() {

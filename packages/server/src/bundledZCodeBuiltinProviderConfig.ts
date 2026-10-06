@@ -1,6 +1,6 @@
 import { materializeZCodeBuiltinProviderConfig } from "@zcode/services/node";
 
-declare const __ZCODE_BUILTIN_PROVIDER_CONFIG_JSON__: string | undefined;
+declare const __FREECODEZ_BUILTIN_PROVIDER_CONFIG_JSON__: string | undefined;
 
 interface MaterializeBundledZCodeBuiltinProviderConfigOptions {
   readonly environmentConfigRoot: string;
@@ -9,10 +9,10 @@ interface MaterializeBundledZCodeBuiltinProviderConfigOptions {
 
 /** 返回构建时嵌入远端 Server 的 ZCode Built-in Provider Config。 */
 export function readBundledZCodeBuiltinProviderConfig(): string {
-  if (typeof __ZCODE_BUILTIN_PROVIDER_CONFIG_JSON__ !== "string") {
+  if (typeof __FREECODEZ_BUILTIN_PROVIDER_CONFIG_JSON__ !== "string") {
     throw new Error("当前构建未嵌入 ZCode Built-in Provider Config");
   }
-  return __ZCODE_BUILTIN_PROVIDER_CONFIG_JSON__;
+  return __FREECODEZ_BUILTIN_PROVIDER_CONFIG_JSON__;
 }
 
 /**

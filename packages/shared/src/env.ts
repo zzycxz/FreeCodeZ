@@ -6,15 +6,15 @@ export type ZCodeProductFlavor = "production" | "preview";
 export type ArmsRumEnv = "local" | "prod";
 
 // 非构建环境（如 e2e 测试的 mocha）下 define 不存在，用 typeof 检查 + fallback 避免 ReferenceError
-declare const __ZCODE_ENV__: string;
-declare const __ZCODE_PRODUCT_FLAVOR__: string;
+declare const __FREECODEZ_ENV__: string;
+declare const __FREECODEZ_PRODUCT_FLAVOR__: string;
 
 export function normalizeZCodeEnv(value: string | undefined): ZCodeEnv {
   return value?.trim().toLowerCase() === "production" ? "production" : "test";
 }
 
 export const ZCODE_ENV = normalizeZCodeEnv(
-  typeof __ZCODE_ENV__ !== "undefined" ? __ZCODE_ENV__ : undefined,
+  typeof __FREECODEZ_ENV__ !== "undefined" ? __FREECODEZ_ENV__ : undefined,
 );
 
 /**
@@ -34,7 +34,7 @@ export function normalizeZCodeProductFlavor(
 }
 
 export const ZCODE_PRODUCT_FLAVOR = normalizeZCodeProductFlavor(
-  typeof __ZCODE_PRODUCT_FLAVOR__ !== "undefined" ? __ZCODE_PRODUCT_FLAVOR__ : undefined,
+  typeof __FREECODEZ_PRODUCT_FLAVOR__ !== "undefined" ? __FREECODEZ_PRODUCT_FLAVOR__ : undefined,
   ZCODE_ENV,
 );
 export const ZCODE_APP_VERSION_ENV = "ZCODE_APP_VERSION" as const;
