@@ -263,7 +263,10 @@ export * from "./process-names.js";
 export * from "./mcp.js";
 export * from "./runtime-tool-runtime.js";
 export * from "./git.js";
-export * from "./git-hunks.js";
+// git-hunks 不进 barrel（子路径 @zcode/shared/git-hunks 导出）：其 hashContent 依赖
+// node:crypto，barrel 的 export * 链 esbuild 无法摇掉未用导入——desktop 沙箱 preload
+// 经 barrel 被拖进 require("crypto")，模块初始化即炸 → contextBridge 不执行 →
+// 渲染进程 window 桥缺失 → 打包态白屏（2026-10-07 实证；dev 态 preload 非沙箱不炸）。
 export * from "./mcp-directory.js";
 export * from "./pr-ops.js";
 export * from "./permission-denials.js";

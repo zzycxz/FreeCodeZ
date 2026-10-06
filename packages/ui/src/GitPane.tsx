@@ -37,7 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog.js";
-import { hashContent } from "@zcode/shared";
+import { hashContent } from "@zcode/shared/git-hunks";
 import { useGitActions } from "@/hooks/useGitActions.js";
 import { getFileChangeFindState } from "@/GitPane/fileChangeFindSearch.js";
 import { logger } from "@/logger.js";

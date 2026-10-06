@@ -2,7 +2,7 @@ import * as fsp from "node:fs/promises";
 import { resolve } from "node:path";
 import type { GitBranchComparison, GitFileChange, GitChangeSectionId } from "@zcode/shared";
 import { isPathInWorkspaceScope, normalizeGitPath, toWorkspaceRelativeGitPath } from "./config.js";
-import { hashContent, rejectHunksInContent } from "@zcode/shared";
+import { hashContent, rejectHunksInContent } from "@zcode/shared/git-hunks";
 import { createWorktree, listWorktrees, removeWorktree } from "./worktrees.js";
 import { createGitCommandProvider } from "./providers/gitCommandProvider.js";
 import type { GitRejectHunksResult } from "@zcode/shared";

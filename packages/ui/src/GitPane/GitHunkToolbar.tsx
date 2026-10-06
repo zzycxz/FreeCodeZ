@@ -6,7 +6,7 @@
 import { useMemo, useState } from "react";
 import { Columns2Icon, RowsIcon, UndoIcon } from "lucide-react";
 import type { GitDiffResult } from "@zcode/shared";
-import { parseSingleFilePatch, summarizeHunks } from "@zcode/shared";
+import { parseSingleFilePatch, summarizeHunks } from "@zcode/shared/git-hunks";
 import { cn } from "@/components/lib/utils.js";
 
 export interface GitHunkToolbarProps {
