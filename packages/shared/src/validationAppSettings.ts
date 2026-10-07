@@ -451,6 +451,15 @@ const appSettingsObjectSchema = z.object({
   // 输入框电脑操作入口改为默认不展示，设置项保留、默认关闭。
   // default 只对缺省字段生效，显式存过 false 的用户仍保持展示。
   computerUseComposerEntryHidden: z.boolean().default(true),
+  // CUA 双门 + Appshot 三键（f220da0/305be73 落地时漏补运行时 schema——z.object 默认
+  // strip 把这五键静默剥掉，设置页开关点下去 update 剥键后弹回=「点不动」，且落盘
+  // setting.json 永远缺这五键（2026-10-07 用户装机实测抓到）。全部 optional：缺省语义
+  // 保持「观测关/动作关/热键 off/音效开(undefined!==false)/路由 current」。
+  cuaControlEnabled: z.boolean().optional(),
+  cuaActionsEnabled: z.boolean().optional(),
+  appshotHotkey: z.enum(["cmd", "alt", "shift", "off"]).optional(),
+  appshotSound: z.boolean().optional(),
+  appshotRoute: z.enum(["current", "new"]).optional(),
   taskAutoArchiveEnabled: z.boolean().default(false),
   taskAutoArchiveOlderThanDays: z.number().int().positive().max(365).default(7),
   closeToTrayOnWindows: z.boolean().default(true),
@@ -530,6 +539,12 @@ export const appSettingsPatchSchema = z.object({
   embeddedBrowserAllowInsecureCertificates: z.boolean().optional(),
   embeddedBrowserViewportPreference: embeddedBrowserViewportPreferenceSchema.optional(),
   computerUseComposerEntryHidden: z.boolean().optional(),
+  // CUA 双门 + Appshot 三键（patch schema 同步补齐——update 通道剥键同根因）。
+  cuaControlEnabled: z.boolean().optional(),
+  cuaActionsEnabled: z.boolean().optional(),
+  appshotHotkey: z.enum(["cmd", "alt", "shift", "off"]).optional(),
+  appshotSound: z.boolean().optional(),
+  appshotRoute: z.enum(["current", "new"]).optional(),
   taskAutoArchiveEnabled: z.boolean().optional(),
   taskAutoArchiveOlderThanDays: z.number().int().positive().max(365).optional(),
   closeToTrayOnWindows: z.boolean().optional(),
