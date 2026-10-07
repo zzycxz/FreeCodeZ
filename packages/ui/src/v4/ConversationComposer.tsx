@@ -610,8 +610,12 @@ function ConversationComposerImpl({
   const sendShortcut = resolveChatEnterShortcut({ enterSubmits });
   const updateText = useCallback(
     (next: string) => {
+      // contentRevisionRef 不在此递增：它是「用户编辑」水位（发送 ACK 清空守卫用它判定
+      // 等待期间是否有新一次 Submission）。程序性改写（草稿恢复/清空/外部插入回放）统一
+      // 不计——否则新会话首发 promotion 期的 scope 草稿恢复会 bump 水位，ACK 守卫误判
+      // 「用户又打了字」而跳过清空，首条输入残留输入框（2026-10-07 用户装机实测）。
+      // 用户输入的唯一递增点=handleEditorChange 的非程序性分支。
       textRef.current = next;
-      contentRevisionRef.current += 1;
       advanceComposerDraftRevision(workspacePath, workspaceIdentity);
       setText(next);
       onTextChange?.(next);
@@ -1469,7 +1473,12 @@ function ConversationComposerImpl({
 
   // Lexical onChange（首字符也稳定回传，见 LexicalChatInput.TextContentPlugin）。
   const handleEditorChange = useCallback(
-    (value: string) => {
+    (value: string, options?: { programmatic?: boolean }) => {
+      // 「用户编辑」水位：仅真实用户输入（含 IME 组合提交）递增；带程序性 tag 的
+      // 更新（setEditorStateJson/setText/clear 等草稿恢复路径）不计——见 updateText 注释。
+      if (!options?.programmatic) {
+        contentRevisionRef.current += 1;
+      }
       conversationTelemetry?.recordComposerTextChange(value);
       updateText(value);
       // 正文先进入与 mode/model 相同的内存 Draft；防抖只负责补充最新 Lexical JSON。

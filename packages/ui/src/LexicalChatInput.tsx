@@ -813,7 +813,7 @@ function TextContentPlugin({
   onChange,
   taskId,
 }: {
-  onChange?: (text: string) => void;
+  onChange?: (text: string, options?: { programmatic?: boolean }) => void;
   taskId?: string | null;
 }) {
   const [editor] = useLexicalComposerContext();
@@ -864,7 +864,7 @@ function TextContentPlugin({
           return;
         }
 
-        onChange(nextText);
+        onChange(nextText, { programmatic: tags.has(PROGRAMMATIC_UPDATE_TAG) });
 
         const lagMs = performance.now() - startedAt;
         // 程序化改写与 IME 组合态不算打字卡顿(判定在 recordInputLag 内统一短路)。
@@ -1316,7 +1316,7 @@ interface LexicalChatInputProps {
   enterSubmits?: boolean;
   onSubmit: (text: string) => LexicalSubmitResult;
   onModifiedSubmit?: (text: string) => LexicalSubmitResult;
-  onChange?: (text: string) => void;
+  onChange?: (text: string, options?: { programmatic?: boolean }) => void;
   onFocus?: () => void;
   triggerPanelContainer?: HTMLElement | null;
   workspacePath: string;
