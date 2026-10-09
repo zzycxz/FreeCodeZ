@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleExecutable</key>
+  <string>freecodez-computer-use-macos</string>
+  <key>CFBundleIdentifier</key>
+  <string>app.freecodez.computer-use</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>FreeCodeZ Computer Use</string>
+  <key>CFBundleDisplayName</key>
+  <string>FreeCodeZ Computer Use</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>14.0</string>
+  <key>LSUIElement</key>
+  <true/>
+  <key>NSAccessibilityUsageDescription</key>
+  <string>FreeCodeZ Computer Use needs Accessibility permission to read and interact with app interfaces when you ask FreeCodeZ to use apps.</string>
+  <key>NSScreenCaptureUsageDescription</key>
+  <string>FreeCodeZ Computer Use needs Screen Recording permission to capture app windows when you ask FreeCodeZ to inspect your screen.</string>
+</dict>
+</plist>

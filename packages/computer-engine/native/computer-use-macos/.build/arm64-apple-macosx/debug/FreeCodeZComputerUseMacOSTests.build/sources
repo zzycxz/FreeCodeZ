@@ -1,0 +1,14 @@
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ActionArgumentValidationTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentEntrypointSourceSafetyTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentSessionOwnershipTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AttributeValueCoercionTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AuthenticatedConnectionHangupMonitorTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ComputerSnapshotCachePolicyTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/KeyboardInputSafetyTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/NumericArgumentParsingTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionStatusSnapshotTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionTrustSettlingTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ScreenCapturePermissionPreflightSafetyTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SnapshotRenderingTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SyntheticMouseClickDeliveryTests.swift
+/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/UnixSocketPathSafetyTests.swift

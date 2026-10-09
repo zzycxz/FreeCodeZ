@@ -1,0 +1,13 @@
+{
+  "": {
+    "dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/FreeCodeZComputerUseMacOS.d",
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/FreeCodeZComputerUseMacOS.o",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/primary.swiftdeps"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOS/main.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/main.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/main.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/main.dia"
+  }
+}

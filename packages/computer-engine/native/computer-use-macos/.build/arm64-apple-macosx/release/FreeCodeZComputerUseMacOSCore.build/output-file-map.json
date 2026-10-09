@@ -1,0 +1,79 @@
+{
+  "": {
+    "dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/FreeCodeZComputerUseMacOSCore.d",
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/FreeCodeZComputerUseMacOSCore.o",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/primary.swiftdeps"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ActionArgumentValidation.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ActionArgumentValidation.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ActionArgumentValidation~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ActionArgumentValidation.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ActionArgumentValidation.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AgentSessionOwnership.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AgentSessionOwnership.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AgentSessionOwnership~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AgentSessionOwnership.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AgentSessionOwnership.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AttributeValueCoercion.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AttributeValueCoercion.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AttributeValueCoercion~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AttributeValueCoercion.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AttributeValueCoercion.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AuthenticatedConnectionHangupMonitor.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AuthenticatedConnectionHangupMonitor.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AuthenticatedConnectionHangupMonitor~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AuthenticatedConnectionHangupMonitor.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AuthenticatedConnectionHangupMonitor.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ComputerSnapshotCachePolicy.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ComputerSnapshotCachePolicy.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ComputerSnapshotCachePolicy~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ComputerSnapshotCachePolicy.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ComputerSnapshotCachePolicy.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/KeyboardInputSafety.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/KeyboardInputSafety.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/KeyboardInputSafety~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/KeyboardInputSafety.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/KeyboardInputSafety.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/NumericArgumentParsing.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/NumericArgumentParsing.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/NumericArgumentParsing~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/NumericArgumentParsing.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/NumericArgumentParsing.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionStatusSnapshot.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionStatusSnapshot.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionStatusSnapshot~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionStatusSnapshot.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionStatusSnapshot.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionTrustSettling.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionTrustSettling.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionTrustSettling~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionTrustSettling.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionTrustSettling.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SnapshotRendering.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SnapshotRendering.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SnapshotRendering~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SnapshotRendering.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SnapshotRendering.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SyntheticMouseClickDelivery.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SyntheticMouseClickDelivery.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SyntheticMouseClickDelivery~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SyntheticMouseClickDelivery.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SyntheticMouseClickDelivery.dia"
+  },
+  "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/UnixSocketPathSafety.swift": {
+    "object": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/UnixSocketPathSafety.swift.o",
+    "swiftmodule": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/UnixSocketPathSafety~partial.swiftmodule",
+    "swift-dependencies": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/UnixSocketPathSafety.swiftdeps",
+    "diagnostics": "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/arm64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/UnixSocketPathSafety.dia"
+  }
+}

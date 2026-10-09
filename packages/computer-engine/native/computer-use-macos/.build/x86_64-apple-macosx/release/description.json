@@ -1,0 +1,1276 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.xctest/Contents/MacOS/FreeCodeZComputerUseMacOSPackageTests",
+      "packagePath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos",
+      "productName" : "FreeCodeZComputerUseMacOSPackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.FreeCodeZComputerUseMacOS-x86_64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/sources",
+      "importPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOS/main.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOSCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "FreeCodeZComputerUseMacOS",
+      "moduleOutputPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOS.swiftmodule",
+      "objects" : [
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/main.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx14.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "10",
+        "-serialize-diagnostics",
+        "-O",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "FreeCodeZComputerUseMacOS_main",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "computer_use_macos"
+      ],
+      "outputFileMapPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOS.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOS/main.swift"
+      ],
+      "tempsPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOS.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.FreeCodeZComputerUseMacOSCore-x86_64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/sources",
+      "importPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ActionArgumentValidation.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AgentSessionOwnership.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AttributeValueCoercion.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AuthenticatedConnectionHangupMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ComputerSnapshotCachePolicy.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/KeyboardInputSafety.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/NumericArgumentParsing.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionStatusSnapshot.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionTrustSettling.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SnapshotRendering.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SyntheticMouseClickDelivery.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/UnixSocketPathSafety.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "FreeCodeZComputerUseMacOSCore",
+      "moduleOutputPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOSCore.swiftmodule",
+      "objects" : [
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ActionArgumentValidation.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AgentSessionOwnership.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AttributeValueCoercion.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AuthenticatedConnectionHangupMonitor.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ComputerSnapshotCachePolicy.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/KeyboardInputSafety.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/NumericArgumentParsing.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionStatusSnapshot.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionTrustSettling.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SnapshotRendering.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SyntheticMouseClickDelivery.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/UnixSocketPathSafety.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx14.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "10",
+        "-serialize-diagnostics",
+        "-O",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/include/FreeCodeZComputerUseMacOSCore-Swift.h",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "computer_use_macos"
+      ],
+      "outputFileMapPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ActionArgumentValidation.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AgentSessionOwnership.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AttributeValueCoercion.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AuthenticatedConnectionHangupMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ComputerSnapshotCachePolicy.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/KeyboardInputSafety.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/NumericArgumentParsing.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionStatusSnapshot.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionTrustSettling.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SnapshotRendering.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SyntheticMouseClickDelivery.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/UnixSocketPathSafety.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOSCore.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ActionArgumentValidation.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AgentSessionOwnership.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AttributeValueCoercion.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AuthenticatedConnectionHangupMonitor.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ComputerSnapshotCachePolicy.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/KeyboardInputSafety.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/NumericArgumentParsing.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionStatusSnapshot.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionTrustSettling.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SnapshotRendering.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SyntheticMouseClickDelivery.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/UnixSocketPathSafety.swift"
+      ],
+      "tempsPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.FreeCodeZComputerUseMacOSPackageTests-x86_64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/sources",
+      "importPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOSTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "FreeCodeZComputerUseMacOSPackageTests",
+      "moduleOutputPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOSPackageTests.swiftmodule",
+      "objects" : [
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx14.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "10",
+        "-serialize-diagnostics",
+        "-O",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/include/FreeCodeZComputerUseMacOSPackageTests-Swift.h",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "computer_use_macos"
+      ],
+      "outputFileMapPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOSPackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.FreeCodeZComputerUseMacOSTests-x86_64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/sources",
+      "importPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ActionArgumentValidationTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentEntrypointSourceSafetyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentSessionOwnershipTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AttributeValueCoercionTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AuthenticatedConnectionHangupMonitorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ComputerSnapshotCachePolicyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/KeyboardInputSafetyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/NumericArgumentParsingTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionStatusSnapshotTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionTrustSettlingTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ScreenCapturePermissionPreflightSafetyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SnapshotRenderingTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SyntheticMouseClickDeliveryTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/UnixSocketPathSafetyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOSCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "FreeCodeZComputerUseMacOSTests",
+      "moduleOutputPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOSTests.swiftmodule",
+      "objects" : [
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/ActionArgumentValidationTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AgentEntrypointSourceSafetyTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AgentSessionOwnershipTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AttributeValueCoercionTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AuthenticatedConnectionHangupMonitorTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/ComputerSnapshotCachePolicyTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/KeyboardInputSafetyTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/NumericArgumentParsingTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/PermissionStatusSnapshotTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/PermissionTrustSettlingTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/ScreenCapturePermissionPreflightSafetyTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/SnapshotRenderingTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/SyntheticMouseClickDeliveryTests.swift.o",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/UnixSocketPathSafetyTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx14.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "10",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/index/store",
+        "-O",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "computer_use_macos"
+      ],
+      "outputFileMapPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/ActionArgumentValidationTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AgentEntrypointSourceSafetyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AgentSessionOwnershipTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AttributeValueCoercionTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AuthenticatedConnectionHangupMonitorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/ComputerSnapshotCachePolicyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/KeyboardInputSafetyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/NumericArgumentParsingTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/PermissionStatusSnapshotTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/PermissionTrustSettlingTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/ScreenCapturePermissionPreflightSafetyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/SnapshotRenderingTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/SyntheticMouseClickDeliveryTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/UnixSocketPathSafetyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules/FreeCodeZComputerUseMacOSTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ActionArgumentValidationTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentEntrypointSourceSafetyTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentSessionOwnershipTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AttributeValueCoercionTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AuthenticatedConnectionHangupMonitorTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ComputerSnapshotCachePolicyTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/KeyboardInputSafetyTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/NumericArgumentParsingTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionStatusSnapshotTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionTrustSettlingTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ScreenCapturePermissionPreflightSafetyTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SnapshotRenderingTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SyntheticMouseClickDeliveryTests.swift",
+        "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/UnixSocketPathSafetyTests.swift"
+      ],
+      "tempsPath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build",
+      "wholeModuleOptimization" : true
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "FreeCodeZComputerUseMacOS" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "FreeCodeZComputerUseMacOS",
+      "-package-name",
+      "computer_use_macos",
+      "-c",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOS/main.swift",
+      "-I",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules",
+      "-target",
+      "x86_64-apple-macosx14.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "10",
+      "-serialize-diagnostics",
+      "-O",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "FreeCodeZComputerUseMacOS_main",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "computer_use_macos",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "FreeCodeZComputerUseMacOSCore" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "FreeCodeZComputerUseMacOSCore",
+      "-package-name",
+      "computer_use_macos",
+      "-c",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ActionArgumentValidation.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AgentSessionOwnership.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AttributeValueCoercion.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AuthenticatedConnectionHangupMonitor.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ComputerSnapshotCachePolicy.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/KeyboardInputSafety.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/NumericArgumentParsing.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionStatusSnapshot.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionTrustSettling.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SnapshotRendering.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SyntheticMouseClickDelivery.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/UnixSocketPathSafety.swift",
+      "-I",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules",
+      "-target",
+      "x86_64-apple-macosx14.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "10",
+      "-serialize-diagnostics",
+      "-O",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/include/FreeCodeZComputerUseMacOSCore-Swift.h",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "computer_use_macos",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "FreeCodeZComputerUseMacOSPackageTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "FreeCodeZComputerUseMacOSPackageTests",
+      "-package-name",
+      "computer_use_macos",
+      "-c",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.derived/runner.swift",
+      "-I",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules",
+      "-target",
+      "x86_64-apple-macosx14.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "10",
+      "-serialize-diagnostics",
+      "-O",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/include/FreeCodeZComputerUseMacOSPackageTests-Swift.h",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "computer_use_macos",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "FreeCodeZComputerUseMacOSTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "FreeCodeZComputerUseMacOSTests",
+      "-package-name",
+      "computer_use_macos",
+      "-c",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ActionArgumentValidationTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentEntrypointSourceSafetyTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentSessionOwnershipTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AttributeValueCoercionTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AuthenticatedConnectionHangupMonitorTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ComputerSnapshotCachePolicyTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/KeyboardInputSafetyTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/NumericArgumentParsingTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionStatusSnapshotTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionTrustSettlingTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ScreenCapturePermissionPreflightSafetyTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SnapshotRenderingTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SyntheticMouseClickDeliveryTests.swift",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/UnixSocketPathSafetyTests.swift",
+      "-I",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/Modules",
+      "-target",
+      "x86_64-apple-macosx14.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "10",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/index/store",
+      "-O",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "computer_use_macos",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "FreeCodeZComputerUseMacOS" : [
+      "FreeCodeZComputerUseMacOSCore"
+    ],
+    "FreeCodeZComputerUseMacOSCore" : [
+
+    ],
+    "FreeCodeZComputerUseMacOSPackageTests" : [
+      "FreeCodeZComputerUseMacOSTests",
+      "FreeCodeZComputerUseMacOSCore"
+    ],
+    "FreeCodeZComputerUseMacOSTests" : [
+      "FreeCodeZComputerUseMacOSCore"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOS/main.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/sources"
+    },
+    "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ActionArgumentValidation.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AgentSessionOwnership.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AttributeValueCoercion.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AuthenticatedConnectionHangupMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ComputerSnapshotCachePolicy.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/KeyboardInputSafety.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/NumericArgumentParsing.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionStatusSnapshot.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionTrustSettling.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SnapshotRendering.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SyntheticMouseClickDelivery.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/UnixSocketPathSafety.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/sources"
+    },
+    "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/sources"
+    },
+    "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ActionArgumentValidation.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AgentSessionOwnership.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AttributeValueCoercion.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AuthenticatedConnectionHangupMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ComputerSnapshotCachePolicy.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/KeyboardInputSafety.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/NumericArgumentParsing.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionStatusSnapshot.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionTrustSettling.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SnapshotRendering.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SyntheticMouseClickDelivery.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/UnixSocketPathSafety.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/ActionArgumentValidationTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AgentEntrypointSourceSafetyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AgentSessionOwnershipTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AttributeValueCoercionTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/AuthenticatedConnectionHangupMonitorTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/ComputerSnapshotCachePolicyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/KeyboardInputSafetyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/NumericArgumentParsingTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/PermissionStatusSnapshotTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/PermissionTrustSettlingTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/ScreenCapturePermissionPreflightSafetyTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/SnapshotRenderingTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/SyntheticMouseClickDeliveryTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/UnixSocketPathSafetyTests.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSPackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ActionArgumentValidationTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentEntrypointSourceSafetyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentSessionOwnershipTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AttributeValueCoercionTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AuthenticatedConnectionHangupMonitorTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ComputerSnapshotCachePolicyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/KeyboardInputSafetyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/NumericArgumentParsingTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionStatusSnapshotTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionTrustSettlingTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ScreenCapturePermissionPreflightSafetyTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SnapshotRenderingTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SyntheticMouseClickDeliveryTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/UnixSocketPathSafetyTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSTests.build/sources"
+    },
+    "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/freecodez-computer-use-macos.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOS.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ActionArgumentValidation.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AgentSessionOwnership.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AttributeValueCoercion.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/AuthenticatedConnectionHangupMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/ComputerSnapshotCachePolicy.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/KeyboardInputSafety.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/NumericArgumentParsing.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionStatusSnapshot.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/PermissionTrustSettling.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SnapshotRendering.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/SyntheticMouseClickDelivery.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/FreeCodeZComputerUseMacOSCore.build/UnixSocketPathSafety.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/freecodez-computer-use-macos.product/Objects.LinkFileList"
+    },
+    "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/homebaby/Desktop/swarm-os/FreeCodeZ/packages/computer-engine/native/computer-use-macos/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}

@@ -4,18 +4,118 @@
 （上游 stablyai/orca，MIT License，Copyright (c) 2026 Lovecast Inc.——原文见同目录 `LICENSE`）。
 
 - 快照标识：`1.4.214` + 下方全量 SHA256 清单（源仓库本地无 .git，不存在 commit 锚）。
-- 拷贝范围：`src/main/computer/`（非测试模块）+ `src/shared/computer-use-*.ts` +
-  `src/shared/{app-environment,clipboard-text,own-retained-string,owned-utf16-suffix,event-loop-yield,utf8-byte-limits,growing-byte-buffer}.ts` +
-  `src/shared/child-process/`（子树 12 件，spawnProcess 等基础设施）+
-  `src/shared/rpc-contract/{computer-params,computer-schemas-params,rpc-param-primitives}.ts` +
-  `src/main/macos-tcc-reset.ts`。
-- 修改件：`src/shared/runtime-types.ts` 为 FreeCodeZ 垫片（非 orca 原件）；`*.test.ts` 七件
-  自 vitest 迁写为 node:test（断言语义等价迁移，文件头带修改声明）。
-- A17 头审计：orca 原件无逐文件版权行（LICENSE 为仓库级声明），拷贝件保持逐字节一致（哈希可验）。
+- 拷贝范围：`src/main/computer/`（非测试模块）+ `src/shared/computer-use-*.ts` + shared 传递件
+  + `src/shared/child-process/` 子树 + `src/shared/rpc-contract/` computer 三件 + `src/main/macos-tcc-reset.ts`
+  + `native/computer-use-macos/`（Swift 整包：Sources + Tests + Package.swift）。
+- A17 头审计：orca 原件无逐文件版权行（LICENSE 为仓库级声明）；逐字节一致件以哈希清单可验。
 
-## SHA256 清单（与 orca 1.4.214 快照逐字节一致的文件）
+## 改写声明（A17：orca 派生件叠加修改）
+
+身份与信任面改写（W-11）：产品身份改自有（FreeCodeZ Computer Use / freecodez-computer-use-macos /
+app.freecodez.computer-use / Swift 模块名 FreeCodeZComputerUseMacOS*）；peer 信任双检改写——
+路径子串检改自有 sidecar 产物（`/computer-sidecar.js`），bundle id 白名单改 `app.freecodez.*` 族
+且**明令删除 com.github.Electron 信任项**（信任任意未签名 Electron 进程=安全红线）。
+测试运行器自 vitest 迁写 node:test（用例/夹具/断言语义等价）。
+
+- 同路径内容改写：9 件
+- 移动+内容改写（模块改名波及）：17 件
+- 仅路径重命名（字节一致）：10 件
+- 拷入后移除（vitest harness，随 W-22 迁入）：1 件
+- FreeCodeZ 自有新件（非 orca 原件）：10 件
+
+### 同路径内容改写
+
+- native/computer-use-macos/Package.swift
+- src/main/computer/computer-action-verification-normalization.test.ts
+- src/main/computer/computer-provider-lifecycle.test.ts
+- src/main/computer/computer-provider-unavailable-message.test.ts
+- src/main/computer/computer-sidecar-diagnostics.test.ts
+- src/main/computer/macos-native-provider-paths.ts
+- src/main/computer/windows-powershell-execution-policy.test.ts
+- src/shared/computer-use-error-recovery.test.ts
+- src/shared/computer-use-key-spec.test.ts
+
+### 移动+内容改写
+
+- native/computer-use-macos/Sources/OrcaComputerUseMacOS/main.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOS/main.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/AuthenticatedConnectionHangupMonitor.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AuthenticatedConnectionHangupMonitor.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/PermissionStatusSnapshot.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionStatusSnapshot.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/ActionArgumentValidationTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ActionArgumentValidationTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/AgentEntrypointSourceSafetyTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentEntrypointSourceSafetyTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/AgentSessionOwnershipTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AgentSessionOwnershipTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/AttributeValueCoercionTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AttributeValueCoercionTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/AuthenticatedConnectionHangupMonitorTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/AuthenticatedConnectionHangupMonitorTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/ComputerSnapshotCachePolicyTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ComputerSnapshotCachePolicyTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/KeyboardInputSafetyTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/KeyboardInputSafetyTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/NumericArgumentParsingTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/NumericArgumentParsingTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/PermissionStatusSnapshotTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionStatusSnapshotTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/PermissionTrustSettlingTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/PermissionTrustSettlingTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/ScreenCapturePermissionPreflightSafetyTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/ScreenCapturePermissionPreflightSafetyTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/SnapshotRenderingTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SnapshotRenderingTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/SyntheticMouseClickDeliveryTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/SyntheticMouseClickDeliveryTests.swift
+- native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/UnixSocketPathSafetyTests.swift  ->  native/computer-use-macos/Tests/FreeCodeZComputerUseMacOSTests/UnixSocketPathSafetyTests.swift
+
+### 仅路径重命名（字节一致）
+
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/ActionArgumentValidation.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ActionArgumentValidation.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/AgentSessionOwnership.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AgentSessionOwnership.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/AttributeValueCoercion.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/AttributeValueCoercion.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/ComputerSnapshotCachePolicy.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/ComputerSnapshotCachePolicy.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/KeyboardInputSafety.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/KeyboardInputSafety.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/NumericArgumentParsing.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/NumericArgumentParsing.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/PermissionTrustSettling.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/PermissionTrustSettling.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/SnapshotRendering.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SnapshotRendering.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/SyntheticMouseClickDelivery.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/SyntheticMouseClickDelivery.swift
+- native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/UnixSocketPathSafety.swift  ->  native/computer-use-macos/Sources/FreeCodeZComputerUseMacOSCore/UnixSocketPathSafety.swift
+
+### 拷入后移除
+
+- src/main/computer/desktop-script-provider-test-harness.ts
+
+### 自有新件
+
+- package.json
+- scripts/build-computer-macos.mjs
+- scripts/build-sidecar.mjs
+- src/ambient.d.ts
+- src/host/sidecar-harness.ts
+- src/index.ts
+- src/main/computer/index.ts
+- src/shared/runtime-types.ts
+- test/sidecar-smoke.test.ts
+- tsconfig.json
+
+## SHA256 清单（拷贝自 orca 1.4.214 快照的原件；改写/重命名前字节）
 
 ```
+4202996a191fc48866df6cd118b532f1c250930b87876cbc543af3b347a27845  native/computer-use-macos/Package.swift
+1eabe4e19f52bc6684c0b58e6cbc2c92ccf8b8d95d160205e3164432e9951601  native/computer-use-macos/Sources/OrcaComputerUseMacOS/main.swift
+66caabec17f4880b2088222a79684ccfc1d7ae5ee053595cc0e17264022602c2  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/ActionArgumentValidation.swift
+e685cbc26ec9719a85ea199e00218ea373ab33129f8d2617771276b29d04ca47  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/AgentSessionOwnership.swift
+6e2f8da5367bf5e21bad695ec6392563547b5f6428a4986855a1660628b2ba2e  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/AttributeValueCoercion.swift
+1f1c221eaed16166816091abca6d03a05f471a42edc0699a5e254bb281ad963a  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/AuthenticatedConnectionHangupMonitor.swift
+5d9c0739a48d91f58fef12beed451d58cb29bab70595bb3f9cff0676a9e1501d  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/ComputerSnapshotCachePolicy.swift
+3b0feef877b6f003503f17563771f42a8f35dc429677c31fe62b1626b6149a67  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/KeyboardInputSafety.swift
+917958923b28c493fe290285a6bf68f6dcf814cf0be7d16bb27bcc562f6e4a5a  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/NumericArgumentParsing.swift
+e734280c8900abf44a5607ad75cc8ab6170aa35bb1b634831328e60ee9ba7f89  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/PermissionStatusSnapshot.swift
+a1dacad77c755d6ff40aa139adf105af8d44426a7639455dd5d15e6794535f66  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/PermissionTrustSettling.swift
+dc73aeecff934ffec7fe1ec9e6e2b1aec714c80483320f8d4948633db53a35f8  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/SnapshotRendering.swift
+7beb128e95a8e4ed0f18e188a7a97231d6fd70a9e130ca1a4c6adff5eda395eb  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/SyntheticMouseClickDelivery.swift
+a91421666b734fe27c4b9ba042a6cee8e2a23a301550f041fb4888b0ba94ab53  native/computer-use-macos/Sources/OrcaComputerUseMacOSCore/UnixSocketPathSafety.swift
+d4240bcdfebe672453e0be6107a2a05abf9ccf8b7e6340e3aa6b76f2c1eb6fc1  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/ActionArgumentValidationTests.swift
+9a80bb0e559f62ef20db9786ae59a774b69c95114548865a7a577c61f056750b  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/AgentEntrypointSourceSafetyTests.swift
+9bfce5243ea699ba737eb70a735b9dd3332697daab80e77face201c98a881b74  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/AgentSessionOwnershipTests.swift
+e2c2c7aa38725b3f0a4c6ec823db367307e8dd983cdd33ea3431b91391dc7223  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/AttributeValueCoercionTests.swift
+c3c180d937a321e4948928b34a3cd6c47d4e1bfa38a725a1c28aaf8af07e94cc  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/AuthenticatedConnectionHangupMonitorTests.swift
+83bc853e9bd26e4674fdeca4a28641e0dedaed1cd6a649ddd03769ca626b8b50  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/ComputerSnapshotCachePolicyTests.swift
+1c0283ecb60e37385fa3b705c41ea0f457dcd26344b9b3eeef364ceb7689a4bc  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/KeyboardInputSafetyTests.swift
+4a9dbf457226a3df69c82086aa6405b6f5de0a53e820ddd72cbe123ba9e13e7d  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/NumericArgumentParsingTests.swift
+dce1589ed328de886a092c45843888c5e8ab6fc0877dabd3dfe42c8364666c0c  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/PermissionStatusSnapshotTests.swift
+c7f558241d379a93c62c7daf216ba9ee5b5d44fa7fadc7cd9dafedf5a004e907  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/PermissionTrustSettlingTests.swift
+5f30e4af3f0ed2e760326309002260aa05fc7eec2dd3895bd993ee3718da861d  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/ScreenCapturePermissionPreflightSafetyTests.swift
+d52d1110bf9251ce5e52d130ebdeaafedca5aa4a6352677e5a1d8bb85c004704  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/SnapshotRenderingTests.swift
+f365817232adab5d93712232f53722ec2352535d96ac07e4794f4ce47158bd55  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/SyntheticMouseClickDeliveryTests.swift
+1183272320d8406e55daf03ef8559d68619ea2e3a3aef3dbe92cae1680ee045c  native/computer-use-macos/Tests/OrcaComputerUseMacOSTests/UnixSocketPathSafetyTests.swift
 a6d534d37151777d419505f724a0fb3ad6d6d6ccccd3ce036759d8a913af1d37  src/main/computer/computer-action-verification-normalization.test.ts
 d774a429abd864b4c5296efcc17191cc31216638cb7169c19c79d9db88c1a159  src/main/computer/computer-action-verification-normalization.ts
 2377529bc5c35f890796140b32b55a956397a5ede91e400e1564ba66c0544e22  src/main/computer/computer-clipboard-paste-validation.ts
