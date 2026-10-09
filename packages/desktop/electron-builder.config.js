@@ -4,6 +4,7 @@ import { readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
+import { spawnSync } from "node:child_process";
 import { runCommand, runCommandAndReadStdout } from "../../scripts/spawn-command.mjs";
 import { loadBuiltinProviderConfig } from "../../scripts/builtin-provider-config.mjs";
 import { noticesFileName, stageElectronNotices } from "../../scripts/third-party-notices.mjs";
@@ -480,6 +481,46 @@ function pinMacAdhocSignIdentifiers(context) {
     entitlementsInherit: resolve(desktopPackageRoot, "build", "entitlements.mac.inherit.plist"),
   });
   applyMacAdhocSignIdentifiers(steps);
+
+  // 坑4（W-11 helper 产线）：嵌套 FreeCodeZ Computer Use.app 在 Resources/cua-helper/——
+  // build 期已以 app.freecodez.computer-use 身份签名（build-computer-macos.mjs），
+  // TCC 授权锚定该嵌套签名身份。主 app 的 adhoc 重签计划须把它排在 Frameworks
+  // Helper 族**之后、主 app 之前**（外层最后封内层），且重签用**嵌套件自己的
+  // entitlements**（空字典——helper 不需 hardened runtime 特权面），保证身份不漂移。
+  const computerUseHelper = resolve(
+    appBundlePath,
+    "Contents",
+    "Resources",
+    "cua-helper",
+    "FreeCodeZ Computer Use.app",
+  );
+  if (existsSync(computerUseHelper)) {
+    const helperEntitlements = resolve(
+      desktopPackageRoot,
+      "..",
+      "computer-engine",
+      "native",
+      "resources",
+      "entitlements.computer-use.mac.plist",
+    );
+    const result = spawnSync(
+      "codesign",
+      [
+        "--force",
+        "--sign",
+        "-",
+        ...(existsSync(helperEntitlements) ? ["--entitlements", helperEntitlements] : []),
+        computerUseHelper,
+      ],
+      { stdio: "pipe" },
+    );
+    if (result.status !== 0) {
+      throw new Error(
+        `afterPack: failed to re-sign nested Computer Use helper: ${result.stderr}`,
+      );
+    }
+    console.log("[afterPack] re-signed nested FreeCodeZ Computer Use.app (cua-helper)");
+  }
 }
 
 /** @type {import("electron-builder").Configuration} */
@@ -634,6 +675,21 @@ export default {
       from: "build/icon.png",
       to: "icon.png",
     },
+    ...(targetPlatform.os === "darwin"
+      ? [
+          {
+            // W-11 helper 产线（R19 语义，新引擎身份）：FreeCodeZ Computer Use.app
+            // 随包分发到 resources/cua-helper/。TCC 授权锚定嵌套 app 的代码签名身份
+            // （坑4：mac afterPack 重签链在 mac-sign-identifiers 段处理嵌套 helper）。
+            from: resolve(
+              workspaceRoot,
+              "packages/computer-engine/native/computer-use-macos/.build/release/FreeCodeZ Computer Use.app",
+            ),
+            to: "cua-helper/FreeCodeZ Computer Use.app",
+            filter: ["**/*"],
+          },
+        ]
+      : []),
     ...(targetPlatform.os === "linux"
       ? [
           {
