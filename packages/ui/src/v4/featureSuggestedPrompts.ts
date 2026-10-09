@@ -140,7 +140,7 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
   {
     id: "feature-recvvsS2usyGu7",
     mode: "office",
-    iconUrl: `${ASSETS}/zcode-cua/icon.png`,
+    iconUrl: `${ASSETS}/computer-use/icon.png`,
     iconStyle: "plugin",
     label: {
       cn: "帮我设置一个闲时任务，体验网站的完整用户旅程",
@@ -255,7 +255,7 @@ export const featureSuggestedPrompts: FeatureRecommendedPrompt[] = [
   {
     id: "feature-recvvsPdvclWR1",
     mode: "office",
-    iconUrl: `${ASSETS}/zcode-cua/icon.png`,
+    iconUrl: `${ASSETS}/computer-use/icon.png`,
     iconStyle: "plugin",
     label: {
       cn: "帮我把下载文件夹里的截图按月份批量归档",
