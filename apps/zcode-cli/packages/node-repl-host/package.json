@@ -6,9 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/server.ts",
-    "./cua-bridge": "./src/cua-bridge.ts",
     "./browser-bridge": "./src/browser-bridge.ts",
-    "./cua-broker": "./src/cua-broker.ts",
     "./result": "./src/result.ts",
     "./tool-contract": "./src/tool-contract.ts",
     "./runtime-bridge": "./src/runtime-bridge.ts"

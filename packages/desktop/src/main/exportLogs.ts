@@ -42,8 +42,8 @@ function getZCodeCliLogDir() {
 
 /**
  * Computer Use Helper 的运行目录。macOS 上 Helper 由 LaunchServices 启动，stderr 被系统丢弃，
- * 所以它把生命周期与后台输入诊断 tee 到 `<socket>.exit.log`（见 zcode-cua
- * helperExitLogPathFor）。同目录下还有 `.tokens` broker 凭据，收集时必须按文件名白名单。
+ * 所以它把生命周期与后台输入诊断 tee 到 `<socket>.exit.log`（旧引擎 helperExitLogPathFor
+ * 约定）。同目录下可能残留 broker 凭据文件，收集时必须按文件名白名单。
  */
 function getCuaHelperRunDir() {
   return join(homedir(), ".freecodez", "computer-use", "run");

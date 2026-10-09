@@ -8,7 +8,6 @@
   "exports": {
     "./storage-startup": "./src/storage-startup.ts",
     ".": "./src/index.ts",
-    "./cua-permission-broker": "./src/cua-permission-broker/index.ts",
     "./process/processTreeTerminator": "./src/process/processTreeTerminator.ts",
     "./node": "./src/node.ts"
   },

@@ -675,31 +675,6 @@ export default {
       to: "tools/ripgrep",
       filter: ["**/*"],
     },
-    ...(targetPlatform.os === "win32"
-      ? [
-          {
-            // 电脑控制执行引擎(B1-5):vendored helper runtime(ax_native.node + windows-helper.js
-            // + node_modules + runtime-manifest.json)。manifest 由 scripts/vendor-cua-assets.mjs
-            // 生成(scripts 侧唯一事实源);仅 win32 随包(R2/Linux 不支持,mac 独立产线)。
-            from: resolve(workspaceRoot, "apps/zcode-cli/dependencies/zcode-cua/helper-runtime"),
-            to: "tools/cua-helper",
-            filter: ["**/*", "!SHA256SUMS"],
-          },
-          {
-            // B1-5 helper runtime deps (sharp chain + express stack) MUST be a separate entry:
-            // app-builder-lib createFilter hard-excludes the copy-root direct node_modules
-            // (filter.js: relative equals node_modules returns false unconditionally).
-            // Copying from inside node_modules avoids the rule. A16 (2026-09-24) measured:
-            // a merged entry silently drops 460 runtime files and the Helper breaks on first use.
-            from: resolve(
-              workspaceRoot,
-              "apps/zcode-cli/dependencies/zcode-cua/helper-runtime/node_modules",
-            ),
-            to: "tools/cua-helper/node_modules",
-            filter: ["**/*"],
-          },
-        ]
-      : []),
     ...nativeSearchReleasePlan.extraResourceToolIds.map((toolId) => ({
       from: `bundled-tools/${targetPlatform.key}/${toolId}`,
       to: `tools/${toolId}`,
