@@ -44,9 +44,6 @@ importers:
       '@zcode/ui':
         specifier: workspace:*
         version: link:packages/ui
-      '@zcode/zcode-cua':
-        specifier: workspace:*
-        version: link:packages/zcode-cua
       module-details-from-path:
         specifier: ^1.0.4
         version: 1.0.4
@@ -214,9 +211,6 @@ importers:
       '@zcode/shared':
         specifier: workspace:*
         version: link:../../../../packages/shared
-      '@zcode/zcode-cua':
-        specifier: workspace:*
-        version: link:../../../../packages/zcode-cua
       ai:
         specifier: 6.0.193
         version: 6.0.193(zod@4.6.5)
@@ -292,9 +286,6 @@ importers:
       '@zcode/shared':
         specifier: workspace:*
         version: link:../../../../packages/shared
-      '@zcode/zcode-cua':
-        specifier: workspace:*
-        version: link:../../../../packages/zcode-cua
       diff:
         specifier: ^9.0.0
         version: 9.0.0
@@ -430,9 +421,6 @@ importers:
       '@zcode/shared-types':
         specifier: workspace:*
         version: link:../shared-types
-      '@zcode/zcode-cua':
-        specifier: workspace:*
-        version: link:../../../../packages/zcode-cua
       cheerio:
         specifier: ^1.0.0
         version: 1.2.0
@@ -552,9 +540,6 @@ importers:
       '@zcode/shared':
         specifier: workspace:*
         version: link:../../../../packages/shared
-      '@zcode/zcode-cua':
-        specifier: workspace:*
-        version: link:../../../../packages/zcode-cua
       zod:
         specifier: ^4.4.3
         version: 4.6.5
@@ -706,9 +691,6 @@ importers:
       '@zcode/ui':
         specifier: workspace:*
         version: link:../ui
-      '@zcode/zcode-cua':
-        specifier: workspace:*
-        version: link:../zcode-cua
       koffi:
         specifier: ^2.15.6
         version: 2.15.6
@@ -1002,9 +984,6 @@ importers:
       '@zcode/shared':
         specifier: workspace:*
         version: link:../shared
-      '@zcode/zcode-cua':
-        specifier: workspace:*
-        version: link:../zcode-cua
       croner:
         specifier: ^10.0.1
         version: 10.0.1
@@ -1054,9 +1033,6 @@ importers:
       '@zcode/model-option-map':
         specifier: workspace:*
         version: link:../model-option-map
-      '@zcode/zcode-cua':
-        specifier: workspace:*
-        version: link:../zcode-cua
       diff:
         specifier: ^9.0.0
         version: 9.0.0
@@ -1336,8 +1312,6 @@ importers:
       ws:
         specifier: ^8.20.0
         version: 8.20.0
-
-  packages/zcode-cua: {}
 
   packages/zcode-server-cli:
     dependencies:

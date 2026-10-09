@@ -9,10 +9,6 @@ import { resolveDesktopProductFlavor } from "./scripts/desktop-product-identity.
 const { loadBuiltinProviderConfig } = await import(
   pathToFileURL(resolve(import.meta.dirname, "../../scripts/builtin-provider-config.mjs")).href
 );
-// 电脑控制能力补位(B1-6):Helper 安装验签锚点与 node-repl-host build 同源(空值正式包 fail-closed)。
-const { resolveCuaHelperBuildId } = await import(
-  pathToFileURL(resolve(import.meta.dirname, "../../scripts/cua-helper-build-id.mjs")).href
-);
 
 const buildMetadata = getBuildMetadata();
 
@@ -106,10 +102,6 @@ function createSharedDefines() {
     __FREECODEZ_ENV__: JSON.stringify(zcodeEnv),
     __FREECODEZ_ENDPOINT_ENV__: JSON.stringify(pickProductEndpointEnv(env)),
     __FREECODEZ_PRODUCT_FLAVOR__: JSON.stringify(zcodeProductFlavor),
-    // Computer Use Helper build identity — helperInstaller 读它决定下载哪个 Helper bundle。
-    // 缺失时 installer 抛 "Packaged ZCode is missing its embedded Computer Use Helper build identity"。
-    // 与 node-repl-host/scripts/build.mjs 的同名 define 同源(cua-helper-build-id.mjs);env 可覆盖。
-    __FREECODEZ_CUA_HELPER_BUILD_ID__: JSON.stringify(resolveCuaHelperBuildId(env)),
     // 客户端只有一个 CDN 配置，与发布端 OSS 目标列表分离。
     __FREECODEZ_CDN_BASE_URL__: JSON.stringify((env.FREECODEZ_CDN_BASE_URL ?? env.ZCODE_CDN_BASE_URL)?.trim() || ""),
   };
@@ -173,8 +165,6 @@ export default defineConfig([
       "@zcode/provider-node",
       // services 已内联进 main，但其 producer import 曾被保留为裸包引用；
       // electron-builder 又会排除 node_modules/@zcode，导致安装包启动即 ERR_MODULE_NOT_FOUND。
-      // producer 的 JS broker 必须跟随 services 一起内联，原生 addon 仍只存在于独立 Helper。
-      "@zcode/zcode-cua",
       // zod 一旦进了 desktop dependencies 就会被 tsup 自动外联，安装包运行时改从
       // app.asar/node_modules 解析；而 electron-builder 收集依赖树时 zod 名字冲突会被
       // 传递依赖(ai→zod@3.25.x)抢占，main 拿到 zod v3 实例后 v4 写法的
@@ -240,7 +230,6 @@ export default defineConfig([
       "@zcode/client",
       "@zcode/provider",
       "@zcode/provider-node",
-      "@zcode/zcode-cua",
       // 与 main 同治：zod 内联，防止 host 运行时拿到 app.asar 里的 zod v3 实例。
       "zod",
     ],
@@ -271,7 +260,6 @@ export default defineConfig([
       "@zcode/client",
       "@zcode/provider",
       "@zcode/provider-node",
-      "@zcode/zcode-cua",
       // 与 main 同治：zod 内联，防止 scheduler 运行时拿到 app.asar 里的 zod v3 实例。
       "zod",
     ],

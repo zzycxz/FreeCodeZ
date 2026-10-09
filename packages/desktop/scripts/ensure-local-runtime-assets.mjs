@@ -30,12 +30,6 @@ const nativeSearchBuildPlan = nativeSearchReleasePlan.enabled
 // 显式 opt-in 时继续沿用原有按需构建，避免删除未来恢复所需代码。
 const shouldRequireWindowsBrowserImportHelper =
   target.os === "win32" && (process.env.FREECODEZ_ENABLE_WINDOWS_BROWSER_IMPORT ?? process.env.ZCODE_ENABLE_WINDOWS_BROWSER_IMPORT) === "1";
-// CUA 权限浮窗靠 zcode-window-bounds 读系统设置窗口 bounds 才能吸附。该 Swift 产物被
-// .gitignore 排除（仓库卫生门禁禁产物入库），生产链 prepare:runtime-assets 会在 darwin 上编它，
-// dev 链也必须 ensure —— 新 checkout、换 worktree 或清过 resources 后二进制缺失，watcher spawn
-// ENOENT 后 fail-open：浮窗照常显示、只是不再跟随系统设置窗口，且全程无报错，问题只能靠翻日志发现。
-// 缺 Xcode CLT 时 build 脚本自身 warn 后 exit 0，这里仍保持 not ready，至多每次 dev 多跑一次秒级脚本。
-const shouldRequireMacosWindowBounds = target.os === "darwin";
 
 function isNativeSearchReady() {
   if (!nativeSearchBuildPlan) return true;
@@ -86,18 +80,6 @@ const REQUIRED_LOCAL_RUNTIME_ASSETS = [
           script: "prepare:browser-import-helper",
           isReady: () =>
             existsSync(join(bundledToolsRoot, "browser-import", "zcode-browser-import-helper.exe")),
-        },
-      ]
-    : []),
-  ...(shouldRequireMacosWindowBounds
-    ? [
-        {
-          label: "macOS window bounds helper",
-          script: "prepare:macos-window-bounds",
-          isReady: () =>
-            existsSync(
-              join(desktopRoot, "resources", "macos-window-bounds", "zcode-window-bounds"),
-            ),
         },
       ]
     : []),

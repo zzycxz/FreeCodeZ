@@ -24,7 +24,6 @@
     "@zcode/contracts": "workspace:*",
     "@zcode/core": "workspace:*",
     "@zcode/shared": "workspace:*",
-    "@zcode/zcode-cua": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

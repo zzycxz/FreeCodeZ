@@ -4,7 +4,6 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stageAgentBundle } from "../packages/desktop/scripts/stage-agent-bundle.mjs";
 import { runCommand } from "./spawn-command.mjs";
-import { resolveCuaHelperBuildId } from "./cua-helper-build-id.mjs";
 
 // adapters tsc 在内存受限机器上会 OOM（exit 134），给整条构建链路提高堆上限。
 process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS ? process.env.NODE_OPTIONS + " " : ""}--max-old-space-size=8192`;
@@ -18,9 +17,6 @@ const useTurboBuild = (process.env.FREECODEZ_DESKTOP_AGENT_BUILD_MODE ?? process
 const useBootstrapWithRemoteBuild = (process.env.FREECODEZ_BOOTSTRAP_WITH_REMOTE ?? process.env.ZCODE_BOOTSTRAP_WITH_REMOTE) === "1";
 const pnpmRunEnv = {
   ...process.env,
-  // 电脑控制能力补位(B1-6):Helper 验签锚点在插件 runtime 构建前写入 env,
-  // 与 desktop tsup 同源;node-repl-host 的 build define 依赖它非空。
-  ZCODE_CUA_HELPER_BUILD_ID: resolveCuaHelperBuildId(process.env),
   ZCODE_ENV: await resolveBuiltinProviderBuildEnvironment({ root: repoRoot }),
   // pnpm 11 的 verify-deps-before-run 会在 apps/zcode-cli 子 workspace
   // 执行每个 run 前触发 pnpm install；子 workspace 运行时依赖根仓库 @zcode/shared，

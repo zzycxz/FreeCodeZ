@@ -16,7 +16,6 @@ import { basename, dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { runCommand } from "../../../scripts/spawn-command.mjs";
-import { resolveCuaHelperBuildId } from "../../../scripts/cua-helper-build-id.mjs";
 import {
   assertOfficialPluginSourcesExist,
   BROWSER_USE_PLUGIN_PACKAGE_NAME,
@@ -31,8 +30,6 @@ const cliBundlePath = resolve(repoRoot, "apps/zcode-cli/packages/cli/dist/zcode.
 const adaptersRoot = resolve(repoRoot, "apps/zcode-cli/packages/adapters");
 const pnpmRunEnv = {
   ...process.env,
-  // 电脑控制能力补位(B1-6):Helper 验签锚点同源注入(见 scripts/cua-helper-build-id.mjs)。
-  ZCODE_CUA_HELPER_BUILD_ID: resolveCuaHelperBuildId(process.env),
   // pnpm 11 会在 apps/zcode-cli 子 workspace 执行 run 前触发 install；
   // 子 workspace 不能解析根 workspace 的 @zcode/shared，Docker/web app 打包会因此卡在插件 runtime 构建。
   PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN: "false",
@@ -203,7 +200,7 @@ function stageCarriedNodeModules(plugin, sourceRoot, targetRoot) {
 
 // staged node-repl-host 的 node_modules 运行时（R18）。两件事：
 // ① darwin：server.ts captureComputerUseRuntimeFromEnvironment 的 koffi 进程内执行层
-//   （packages/zcode-cua/macos/koffi-ax require("koffi")）从 server.js 向上解析
+//   （原生 addon require("koffi") 等）从 server.js 向上解析
 //   node_modules，二进制必须落在 node-repl-host/node_modules；
 // ② 各平台：node_repl 会话内模型代码 require("sharp") 做截图/缩放处理——官方 glm 的
 //   node-repl-host/node_modules 同构携带 sharp 链（@img/detect-libc/semver/sharp）。
