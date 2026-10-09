@@ -2,7 +2,7 @@
 import { type ReactNode, useCallback, useMemo } from "react";
 import type { ApplicationIconRequest } from "@zcode/shared";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
-import { isZCodeCuaToolName } from "@/lib/cuaPermissionAction.js";
+import { isZCodeCuaToolName } from "@/lib/cuaToolName.js";
 import { ToolLayout } from "@/ToolCallBlocks/ToolLayout.js";
 import { readCuaActionDetail } from "@/ToolCallBlocks/renderers/cuaActionDetail.js";
 import { buildCuaAccessDetails } from "@/ToolCallBlocks/renderers/cuaAccessDetails.js";

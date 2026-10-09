@@ -202,7 +202,6 @@ export default defineConfig([
       "preload/browserVideoRecorder": "src/preload/browserVideoRecorder.ts",
       "preload/index": "src/preload/index.ts",
       "preload/resourceManager": "src/preload/resourceManager.ts",
-      "preload/cuaPermissionPanel": "src/preload/cuaPermissionPanel.ts",
     },
     outDir: "out",
     format: "cjs",
