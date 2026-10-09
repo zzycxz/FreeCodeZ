@@ -1,0 +1,18 @@
+{
+  "scenario": "x-type-cjk",
+  "method": "typeText",
+  "params": {
+    "app": "com.apple.finder",
+    "text": "中文输入测试"
+  },
+  "response": {
+    "id": 24,
+    "ok": false,
+    "error": {
+      "code": "window_not_focused",
+      "message": "keyboard input requires the target 访达 window to be focused; retry with --restore-window or use set-value for editable elements"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:29.223Z",
+  "engine": "orca-1.4.214-snapshot"
+}

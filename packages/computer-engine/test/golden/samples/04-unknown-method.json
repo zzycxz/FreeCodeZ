@@ -1,0 +1,16 @@
+{
+  "scenario": "04-unknown-method",
+  "note": "替补 authenticate_ok 的缺席面",
+  "method": "nonexistent_method",
+  "params": {},
+  "response": {
+    "id": 3,
+    "ok": false,
+    "error": {
+      "code": "invalid_argument",
+      "message": "unknown computer sidecar method 'nonexistent_method'"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:21.195Z",
+  "engine": "orca-1.4.214-snapshot"
+}

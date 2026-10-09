@@ -1,0 +1,120 @@
+{
+  "scenario": "12-list-apps",
+  "note": "NSWorkspace 无 TCC",
+  "method": "listApps",
+  "params": {},
+  "response": {
+    "id": 5,
+    "ok": true,
+    "result": {
+      "apps": [
+        {
+          "name": "ZCode",
+          "pid": 86378,
+          "bundleId": "dev.zcode.app",
+          "lastUsedAt": null,
+          "useCount": null,
+          "isRunning": true
+        },
+        {
+          "pid": 750,
+          "useCount": null,
+          "isRunning": true,
+          "name": "访达",
+          "bundleId": "com.apple.finder",
+          "lastUsedAt": null
+        },
+        {
+          "pid": 1346,
+          "isRunning": true,
+          "bundleId": "com.tencent.xinWeChat",
+          "lastUsedAt": null,
+          "useCount": null,
+          "name": "微信"
+        },
+        {
+          "lastUsedAt": null,
+          "name": "系统设置",
+          "bundleId": "com.apple.systempreferences",
+          "pid": 10748,
+          "useCount": null,
+          "isRunning": true
+        },
+        {
+          "lastUsedAt": null,
+          "useCount": null,
+          "bundleId": "com.moa",
+          "pid": 70330,
+          "name": "移动办公",
+          "isRunning": true
+        },
+        {
+          "name": "终端",
+          "lastUsedAt": null,
+          "useCount": null,
+          "pid": 733,
+          "bundleId": "com.apple.Terminal",
+          "isRunning": true
+        },
+        {
+          "name": "Claude",
+          "isRunning": true,
+          "lastUsedAt": null,
+          "useCount": null,
+          "bundleId": "com.anthropic.claudefordesktop",
+          "pid": 72012
+        },
+        {
+          "name": "Code",
+          "lastUsedAt": null,
+          "useCount": null,
+          "isRunning": true,
+          "bundleId": "com.microsoft.VSCode",
+          "pid": 4817
+        },
+        {
+          "isRunning": true,
+          "bundleId": "com.google.Chrome",
+          "lastUsedAt": null,
+          "name": "Google Chrome",
+          "useCount": null,
+          "pid": 11046
+        },
+        {
+          "lastUsedAt": null,
+          "name": "Orca",
+          "isRunning": true,
+          "useCount": null,
+          "pid": 36641,
+          "bundleId": "com.stablyai.orca"
+        },
+        {
+          "useCount": null,
+          "bundleId": "com.apple.Safari",
+          "name": "Safari浏览器",
+          "pid": 730,
+          "isRunning": true,
+          "lastUsedAt": null
+        },
+        {
+          "lastUsedAt": null,
+          "bundleId": "com.kingsoft.wpsoffice.mac",
+          "pid": 17232,
+          "useCount": null,
+          "name": "WPS Office",
+          "isRunning": true
+        },
+        {
+          "bundleId": "com.xiaomi.mimo.desktop-ai",
+          "name": "Xiaomi MiMo AI",
+          "isRunning": true,
+          "pid": 32354,
+          "useCount": null,
+          "lastUsedAt": null
+        }
+      ]
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:21.199Z",
+  "engine": "orca-1.4.214-snapshot"
+}

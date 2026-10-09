@@ -1,0 +1,19 @@
+{
+  "scenario": "29-window-not-focused-family",
+  "note": "未授权环境的权限族错误",
+  "method": "click",
+  "params": {
+    "app": "com.apple.finder",
+    "elementIndex": 1
+  },
+  "response": {
+    "id": 16,
+    "ok": false,
+    "error": {
+      "code": "window_not_focused",
+      "message": "coordinate click aborted because target pid 750 window 6218 is no longer the focused topmost recipient (current: no focused window); bring the target window forward, run get-app-state again, and retry"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:26.866Z",
+  "engine": "orca-1.4.214-snapshot"
+}

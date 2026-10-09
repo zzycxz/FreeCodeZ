@@ -1,0 +1,19 @@
+{
+  "scenario": "18-stale-index",
+  "note": "element_not_found 族",
+  "method": "click",
+  "params": {
+    "app": "com.apple.finder",
+    "elementIndex": 99999
+  },
+  "response": {
+    "id": 11,
+    "ok": false,
+    "error": {
+      "code": "element_not_found",
+      "message": "element 99999 is stale; run get-app-state again and use a fresh element index"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:25.109Z",
+  "engine": "orca-1.4.214-snapshot"
+}

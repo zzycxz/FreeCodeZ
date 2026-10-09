@@ -1,0 +1,18 @@
+{
+  "scenario": "36-app-not-found",
+  "note": "app_not_found 族",
+  "method": "listWindows",
+  "params": {
+    "app": "No Such App Ever"
+  },
+  "response": {
+    "id": 17,
+    "ok": false,
+    "error": {
+      "code": "app_not_found",
+      "message": "app 'No Such App Ever' not found"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:26.875Z",
+  "engine": "orca-1.4.214-snapshot"
+}

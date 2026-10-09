@@ -1,0 +1,19 @@
+{
+  "scenario": "20-not-settable",
+  "method": "setValue",
+  "params": {
+    "app": "com.apple.finder",
+    "elementIndex": 1,
+    "value": ""
+  },
+  "response": {
+    "id": 12,
+    "ok": false,
+    "error": {
+      "code": "value_not_settable",
+      "message": "element 1 is not settable"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:25.573Z",
+  "engine": "orca-1.4.214-snapshot"
+}

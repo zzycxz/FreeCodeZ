@@ -15,6 +15,10 @@ export type SidecarResponse = SidecarOkResponse | SidecarErrorResponse;
 export interface ComputerSidecarHarnessOptions {
   /** sidecar 产物路径（dist/computer-sidecar.js） */
   sidecarPath: string;
+  /** fork 执行体：缺省 process.execPath；装机/录制可换应用二进制（peer 信任面要求
+   *  sidecar 跑在可信 app 身份下——W-11 红线：裸 node 不受信）。 */
+  execPath?: string;
+  execArgv?: string[];
   /** 单请求超时；缺省 60s（附录 I 超时矩阵的宿主侧兜底） */
   requestTimeoutMs?: number;
   env?: NodeJS.ProcessEnv;
@@ -36,6 +40,10 @@ export class ComputerSidecarHarness {
     this.child = fork(options.sidecarPath, [], {
       stdio: ["ignore", "pipe", "pipe", "ipc"],
       env: { ...process.env, ...options.env },
+      ...(options.execPath ? { execPath: options.execPath } : {}),
+      // sidecar 是构建产物，不继承父进程 execArgv（父可能是 test runner/tsx，
+      // 其旗标 Electron-as-node 不认）；显式需要时经 options.execArgv 传。
+      execArgv: options.execArgv ?? [],
     });
     this.child.on("error", (error) => this.errors.push(error.stack ?? error.message));
     this.child.stderr?.on("data", (chunk) => this.errors.push(String(chunk)));

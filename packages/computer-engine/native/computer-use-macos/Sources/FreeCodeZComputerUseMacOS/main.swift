@@ -4102,9 +4102,8 @@ private func isAuthorizedAgentPeer(_ pid: pid_t) -> Bool {
 }
 
 private func isTrustedFreeCodeZApplication(_ pid: pid_t) -> Bool {
-    guard let app = NSRunningApplication(processIdentifier: pid),
-          let bundleId = app.bundleIdentifier
-    else {
+    let resolvedBundleId = resolvePeerBundleId(pid)
+    guard let bundleId = resolvedBundleId else {
         return false
     }
     // FreeCodeZ 改写（W-11 红线 + R16.1 跨产品互独立）：白名单只认自有 bundle id 族。
@@ -4112,6 +4111,37 @@ private func isTrustedFreeCodeZApplication(_ pid: pid_t) -> Bool {
     // dev/preview 包装 app（app.freecodez.* 前缀）同族放行，覆盖原 per-worktree wrapper 语义。
     return bundleId == "app.freecodez.app" ||
         bundleId.hasPrefix("app.freecodez.")
+}
+
+/// FreeCodeZ 改写补强：NSRunningApplication 只解析 GUI/LaunchServices 注册进程，
+/// ELECTRON_RUN_AS_NODE 形态（生产 agent/sidecar 的真实形态）返回无 bundle——
+/// 按可执行路径回溯 .app/Contents/Info.plist 取 CFBundleIdentifier（同一身份问题，
+/// 换解析 API；白名单裁决不放松）。两处都取不到 → 未信任（fail-closed）。
+private func resolvePeerBundleId(_ pid: pid_t) -> String? {
+    if let app = NSRunningApplication(processIdentifier: pid), let bundleId = app.bundleIdentifier {
+        return bundleId
+    }
+    guard let command = processCommand(pid) else { return nil }
+    // 命令行首段为可执行路径（ps command 可能含参数，取第一个空格前）。
+    let executable = command.split(separator: " ").first.map(String.init) ?? command
+    var current = (executable as NSString).deletingLastPathComponent
+    for _ in 0..<6 {
+        if current.hasSuffix(".app") {
+            let plistPath = (current as NSString).appendingPathComponent("Contents/Info.plist")
+            if let data = FileManager.default.contents(atPath: plistPath),
+               let plist = try? PropertyListSerialization.propertyList(from: data, format: nil),
+               let dict = plist as? [String: Any],
+               let bundleId = dict["CFBundleIdentifier"] as? String
+            {
+                return bundleId
+            }
+            return nil
+        }
+        let parent = (current as NSString).deletingLastPathComponent
+        if parent == current { break }
+        current = parent
+    }
+    return nil
 }
 
 private func parentProcessId(_ pid: pid_t) -> pid_t? {

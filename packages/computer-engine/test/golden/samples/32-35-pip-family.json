@@ -1,0 +1,55 @@
+{
+  "scenario": "32-35-pip-family",
+  "note": "D5 PiP 砍，无替补",
+  "method": "capabilities",
+  "params": {},
+  "response": {
+    "id": 21,
+    "ok": true,
+    "result": {
+      "providerVersion": "1.0.0",
+      "platform": "darwin",
+      "supports": {
+        "windows": {
+          "targetById": true,
+          "targetByIndex": true,
+          "list": true,
+          "focus": false,
+          "moveResize": false
+        },
+        "observation": {
+          "screenshot": true,
+          "elementFrames": true,
+          "ocr": false,
+          "annotatedScreenshot": false
+        },
+        "apps": {
+          "pids": true,
+          "list": true,
+          "bundleIds": true
+        },
+        "surfaces": {
+          "dialogs": false,
+          "menubar": false,
+          "menus": false,
+          "dock": false
+        },
+        "actions": {
+          "hotkey": true,
+          "pasteText": true,
+          "drag": true,
+          "typeText": true,
+          "setValue": true,
+          "click": true,
+          "performAction": true,
+          "pressKey": true,
+          "scroll": true
+        }
+      },
+      "protocolVersion": 1,
+      "provider": "freecodez-computer-use-macos"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:27.343Z",
+  "engine": "orca-1.4.214-snapshot"
+}

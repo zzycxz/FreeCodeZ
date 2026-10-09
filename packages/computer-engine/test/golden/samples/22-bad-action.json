@@ -1,0 +1,19 @@
+{
+  "scenario": "22-bad-action",
+  "method": "performSecondaryAction",
+  "params": {
+    "app": "com.apple.finder",
+    "elementIndex": 1,
+    "action": "NoSuchAction"
+  },
+  "response": {
+    "id": 13,
+    "ok": false,
+    "error": {
+      "code": "action_not_supported",
+      "message": "'NoSuchAction' is not a valid secondary action for element 1"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:25.977Z",
+  "engine": "orca-1.4.214-snapshot"
+}

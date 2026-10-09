@@ -1,0 +1,15 @@
+{
+  "scenario": "27-method-not-found",
+  "method": "no_such_tool",
+  "params": {},
+  "response": {
+    "id": 15,
+    "ok": false,
+    "error": {
+      "code": "invalid_argument",
+      "message": "unknown computer sidecar method 'no_such_tool'"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:25.977Z",
+  "engine": "orca-1.4.214-snapshot"
+}

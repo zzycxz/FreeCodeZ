@@ -1,0 +1,18 @@
+{
+  "scenario": "x-press-key",
+  "method": "pressKey",
+  "params": {
+    "app": "com.apple.finder",
+    "key": "Return"
+  },
+  "response": {
+    "id": 25,
+    "ok": false,
+    "error": {
+      "code": "window_not_focused",
+      "message": "keyboard input requires the target 访达 window to be focused; retry with --restore-window or use set-value for editable elements"
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:29.555Z",
+  "engine": "orca-1.4.214-snapshot"
+}

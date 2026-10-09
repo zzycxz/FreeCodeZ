@@ -1,0 +1,24 @@
+{
+  "scenario": "13-list-windows",
+  "method": "listWindows",
+  "params": {
+    "app": "com.apple.finder"
+  },
+  "response": {
+    "id": 6,
+    "ok": true,
+    "result": {
+      "app": {
+        "bundleId": "com.apple.finder",
+        "name": "访达",
+        "isRunning": true,
+        "pid": 750,
+        "useCount": null,
+        "lastUsedAt": null
+      },
+      "windows": []
+    }
+  },
+  "recordedAt": "2026-10-09T14:54:21.204Z",
+  "engine": "orca-1.4.214-snapshot"
+}
