@@ -653,6 +653,8 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  packages/computer-engine: {}
+
   packages/desktop:
     dependencies:
       '@babel/runtime':
