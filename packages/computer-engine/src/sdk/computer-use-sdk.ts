@@ -3,6 +3,7 @@
 // session 参数，多会话快照缓存隔离。G.3 划分：快照缓存/scale/verification/剪贴板/
 // blockedApps 在引擎；闩锁/租约/拆分教学/跨应用预检在本层。
 import { ComputerControlGate } from "../host/control-latch";
+import { loadAppInstructions } from "./app-instructions";
 import {
   createUserActivityReader,
   waitForUserQuiet,
@@ -76,10 +77,15 @@ export class ComputerUseSdk {
   async getAppState(
     target: AppTarget & { includeScreenshot?: boolean },
   ): Promise<unknown> {
-    return this.call("getAppState", {
+    const result = await this.call("getAppState", {
       ...this.targetParams(target),
       noScreenshot: target.includeScreenshot === false ? true : undefined,
     });
+    // W-27：命中应用要点随结果注入（G.1 app-instructions 注入点）。
+    const instructions = loadAppInstructions({ name: target.app });
+    return instructions !== undefined && result && typeof result === "object"
+      ? { ...(result as Record<string, unknown>), appInstructions: instructions }
+      : result;
   }
 
   // ---- 动作面 ----
