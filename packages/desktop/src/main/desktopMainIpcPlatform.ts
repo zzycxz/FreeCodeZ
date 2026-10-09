@@ -315,6 +315,43 @@ export function registerPlatformIpcHandlers(options: {
     ).fromRenderer?.(result.data.level, result.data.args);
   });
 
+  // W-19 电脑控制权限面（简版引导）：状态探测/引导/重置，直连 engine 权限面。
+  ipcMain.handle(PlatformChannels.ComputerUsePermissionStatus, async () => {
+    try {
+      const { getComputerUsePermissionStatus } = await import("@zcode/computer-engine/computer");
+      return await getComputerUsePermissionStatus();
+    } catch (error) {
+      return {
+        platform: process.platform,
+        permissions: [
+          { id: "accessibility", status: "unknown" },
+          { id: "screenshots", status: "unknown" },
+        ],
+        helperUnavailableReason: error instanceof Error ? error.message : String(error),
+      };
+    }
+  });
+  ipcMain.handle(
+    PlatformChannels.OpenComputerUsePermissionGuide,
+    async (_event, options?: { permission?: string }) => {
+      try {
+        const { openComputerUsePermissions } = await import("@zcode/computer-engine/computer");
+        await openComputerUsePermissions(options?.permission);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+      }
+    },
+  );
+  ipcMain.handle(PlatformChannels.ResetComputerUsePermission, async () => {
+    try {
+      const { resetComputerUsePermissions } = await import("@zcode/computer-engine/computer");
+      await resetComputerUsePermissions();
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
   ipcMain.handle(PlatformChannels.OpenInFileManager, async (_event, rawPath: string) =>
     openPathInFileManager(rawPath, options.logger),
   );

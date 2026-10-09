@@ -626,6 +626,19 @@ export interface IPlatformService {
   /** 使用系统默认应用打开本地文件；普通 Web 平台返回 unsupported。 */
   openExternalFile?(path: string): Promise<{ success: boolean; error?: string }>;
 
+  /** 电脑控制权限状态探测（W-19）。Desktop only。 */
+  computerUsePermissionStatus?(): Promise<{
+    platform: string;
+    permissions: Array<{ id: string; status: string }>;
+    helperUnavailableReason?: string | null;
+  }>;
+  /** 打开电脑控制权限引导（W-19 简版：系统设置定位 + 自注册）。Desktop only。 */
+  openComputerUsePermissionGuide?(options?: {
+    permission?: string;
+  }): Promise<{ success: boolean; error?: string }>;
+  /** 重置电脑控制权限（tccutil；二次确认后调用）。Desktop only。 */
+  resetComputerUsePermission?(): Promise<{ success: boolean; error?: string }>;
+
   /** 上报 OAuth state 给 main process，用于 deep link 路由 */
   registerOAuthState(payload: OAuthStateRegistration): void;
 

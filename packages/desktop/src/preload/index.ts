@@ -655,6 +655,15 @@ contextBridge.exposeInMainWorld("zcode", {
   openInFileManager: (path: string) => ipcRenderer.invoke(PlatformChannels.OpenInFileManager, path),
   /** 使用系统默认应用打开本地文件 */
   openExternalFile: (path: string) => ipcRenderer.invoke(PlatformChannels.OpenExternalFile, path),
+  /** 电脑控制权限状态探测（W-19） */
+  computerUsePermissionStatus: () =>
+    ipcRenderer.invoke(PlatformChannels.ComputerUsePermissionStatus),
+  /** 打开电脑控制权限引导 */
+  openComputerUsePermissionGuide: (options?: { permission?: string }) =>
+    ipcRenderer.invoke(PlatformChannels.OpenComputerUsePermissionGuide, options),
+  /** 重置电脑控制权限 */
+  resetComputerUsePermission: () =>
+    ipcRenderer.invoke(PlatformChannels.ResetComputerUsePermission),
   /** 上报 OAuth state 用于 deep link 路由 */
   registerOAuthState: (payload: OAuthStateRegistration) =>
     ipcRenderer.send(PlatformChannels.OAuthRegisterState, payload),

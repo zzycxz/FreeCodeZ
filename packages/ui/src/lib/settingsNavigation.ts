@@ -19,7 +19,8 @@ export type SettingsSectionId =
   | "hooks"
   | "workspaceFileSearch"
   | "automations"
-  | "shortcuts";
+  | "shortcuts"
+  | "computerUse";
 
 type SettingsUsageTabTarget = "app" | "codingPlan";
 type SettingsPluginTabTarget = "plugins" | "mcps" | "skills" | "commands";
@@ -78,6 +79,7 @@ function isSettingsSectionId(value: string): value is SettingsSectionId {
     value === "hooks" ||
     value === "workspaceFileSearch" ||
     value === "automations" ||
+    value === "computerUse" ||
     value === "shortcuts"
   );
 }

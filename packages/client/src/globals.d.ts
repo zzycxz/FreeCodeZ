@@ -193,6 +193,18 @@ declare global {
       openInFileManager(path: string): Promise<{ success: boolean; error?: string }>;
       /** 使用系统默认应用打开本地文件 */
       openExternalFile(path: string): Promise<{ success: boolean; error?: string }>;
+      /** 电脑控制权限状态探测（W-19） */
+      computerUsePermissionStatus?(): Promise<{
+        platform: string;
+        permissions: Array<{ id: string; status: string }>;
+        helperUnavailableReason?: string | null;
+      }>;
+      /** 打开电脑控制权限引导 */
+      openComputerUsePermissionGuide?(options?: {
+        permission?: string;
+      }): Promise<{ success: boolean; error?: string }>;
+      /** 重置电脑控制权限 */
+      resetComputerUsePermission?(): Promise<{ success: boolean; error?: string }>;
       /** 上报 OAuth state 用于 deep link 路由 */
       registerOAuthState(payload: OAuthStateRegistration): void;
       /** 注册 OAuth deep link 回调，返回 disposer */

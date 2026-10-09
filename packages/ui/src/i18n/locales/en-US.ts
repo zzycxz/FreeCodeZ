@@ -6303,6 +6303,18 @@ const enUS: Record<string, string> = {
   "settings.computerUse.toggleLabel": "Enable Computer Use",
   "settings.computerUse.toggleDescription":
     "Turning this on enables Computer Use — its MCP server and skills.",
+  "settings.computerUse.actionsLabel": "Allow actions (click, type, drag)",
+  "settings.computerUse.actionsDescription":
+    "When on, FreeCodeZ may operate your apps. Observe-only stays available with the main switch on.",
+  "settings.computerUse.permissions.title": "System permissions",
+  "settings.computerUse.permissions.accessibility": "Accessibility",
+  "settings.computerUse.permissions.screenshots": "Screen Recording",
+  "settings.computerUse.permissions.unknown": "Status unavailable",
+  "settings.computerUse.permissions.guide": "Open permission guide",
+  "settings.computerUse.permissions.reset": "Reset permissions",
+  "settings.computerUse.permissions.resetTitle": "Reset Computer Use permissions?",
+  "settings.computerUse.permissions.resetDescription":
+    "This clears the system permission decisions for FreeCodeZ Computer Use. You will be asked again on next use.",
   "settings.computerUse.composerEntry.label": "Show Computer Use button in the composer",
   "settings.computerUse.composerEntry.description": "When off, the composer button is hidden.",
   "settings.computerUse.composerEntry.requiresEnabled":

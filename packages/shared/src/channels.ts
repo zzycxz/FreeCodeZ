@@ -280,6 +280,12 @@ export const PlatformChannels = {
   OpenInFileManager: "zcode:open-in-file-manager",
   /** Renderer → Main：使用系统默认应用打开本地文件 */
   OpenExternalFile: "zcode:open-external-file",
+  /** Renderer → Main：电脑控制权限状态探测（W-19 简版引导的状态展示） */
+  ComputerUsePermissionStatus: "zcode:computer-use-permission-status",
+  /** Renderer → Main：打开电脑控制权限引导（系统设置定位/自注册） */
+  OpenComputerUsePermissionGuide: "zcode:open-computer-use-permission-guide",
+  /** Renderer → Main：重置电脑控制权限（tccutil，谨慎面——按钮二次确认） */
+  ResetComputerUsePermission: "zcode:reset-computer-use-permission",
   /** Renderer → Main：上报 OAuth state 用于 deep link 路由 */
   OAuthRegisterState: "zcode:oauth-register-state",
   /** Main → Renderer：转发 deep link URL */
@@ -903,6 +909,22 @@ export interface PlatformChannelMap {
   };
   [PlatformChannels.OpenExternalFile]: {
     request: string;
+    response: { success: boolean; error?: string };
+  };
+  [PlatformChannels.ComputerUsePermissionStatus]: {
+    request: void;
+    response: {
+      platform: string;
+      permissions: Array<{ id: string; status: string }>;
+      helperUnavailableReason?: string | null;
+    };
+  };
+  [PlatformChannels.OpenComputerUsePermissionGuide]: {
+    request: { permission?: string } | undefined;
+    response: { success: boolean; error?: string };
+  };
+  [PlatformChannels.ResetComputerUsePermission]: {
+    request: void;
     response: { success: boolean; error?: string };
   };
   [PlatformChannels.OAuthRegisterState]: {

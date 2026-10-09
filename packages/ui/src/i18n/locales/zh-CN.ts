@@ -6023,6 +6023,18 @@ const zhCN: Record<string, string> = {
   "settings.computerUse.title": "电脑控制",
   "settings.computerUse.toggleLabel": "启用电脑控制",
   "settings.computerUse.toggleDescription": "开启后将启用电脑控制及其 MCP 与技能。",
+  "settings.computerUse.actionsLabel": "允许操作（点击、输入、拖拽）",
+  "settings.computerUse.actionsDescription":
+    "开启后 FreeCodeZ 可以操作你的应用；关闭时仅保留观测能力（总开关开启时可用）。",
+  "settings.computerUse.permissions.title": "系统权限",
+  "settings.computerUse.permissions.accessibility": "辅助功能",
+  "settings.computerUse.permissions.screenshots": "屏幕录制",
+  "settings.computerUse.permissions.unknown": "状态不可用",
+  "settings.computerUse.permissions.guide": "打开授权引导",
+  "settings.computerUse.permissions.reset": "重置权限",
+  "settings.computerUse.permissions.resetTitle": "重置电脑控制权限？",
+  "settings.computerUse.permissions.resetDescription":
+    "这将清除 FreeCodeZ 电脑控制的系统授权决定，下次使用时会重新询问。",
   "settings.computerUse.composerEntry.label": "在输入框显示电脑操作按钮",
   "settings.computerUse.composerEntry.description": "关闭后输入框不再显示电脑操作按钮。",
   "settings.computerUse.composerEntry.requiresEnabled":

@@ -379,6 +379,19 @@ export interface AppSettings {
   appshotSound?: boolean;
   /** Phase 3a：路由（当前会话/新会话；缺省当前）。 */
   appshotRoute?: "current" | "new";
+  /**
+   * 电脑控制·总开关（观测层：读窗口/控件树/截图）。W-18 语义沿用旧键名——存量
+   * setting.json 的值直读有效（键在 schema 回归即免迁移）。缺省关。
+   */
+  cuaControlEnabled?: boolean;
+  /**
+   * 电脑控制·允许操作（动作层：点/打字/拖拽）。仅在 cuaControlEnabled 时生效；缺省关。
+   */
+  cuaActionsEnabled?: boolean;
+  /**
+   * 输入框「电脑操作」入口隐藏态（hidden 语义：undefined=默认显示；W-19 composer 入口）。
+   */
+  computerUseComposerEntryHidden?: boolean;
   /** 移动端远控的外部 relay 设备身份；deviceSid 由 relay 注册分配，刷新配对（rotate）时清空换新。 */
   webRemoteControlExternalRelayDevice?: { deviceSid: string };
   /** 上次开启移动端远控的窗口上下文；桌面重启后由首个匹配窗口独占恢复（全局一次性，恢复后保留记录）。 */
