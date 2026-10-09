@@ -26,7 +26,7 @@ const marketplaceUrl = new URL(
 const bundledManifestUrl = new URL("packages/shared/src/bundled-plugin-marketplace.ts", repoRoot);
 const snapshotUrl = new URL("config/plugin-marketplace/official-snapshot.json", repoRoot);
 
-// computer-use(zcode-cua-plugin)条目已随 CUA 栈拆除（规格书 W-01，2026-10-09）：
+// computer-use 旧条目已随 CUA 栈拆除（规格书 W-01，2026-10-09）：
 // vendored 树与 staging/definitions 条目同批删除，DEFERRED 名单保持空集，C3 全量对照。
 const DEFERRED_DEFINITIONS = new Set<string>();
 

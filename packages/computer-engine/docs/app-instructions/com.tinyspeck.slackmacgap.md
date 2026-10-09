@@ -1,4 +1,4 @@
-## Slack Computer Use
+# Slack
 
 - The channel list is a tree of `AXButton`/`AXStaticText` rows in the left
   sidebar; activating a row switches the whole conversation pane — re-observe

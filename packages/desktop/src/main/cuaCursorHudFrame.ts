@@ -2,7 +2,7 @@
 // CUA 光标 HUD：帧 wire 契约 + 常量（自 cuaCursorHud.ts 拆出——max-lines 400 门，
 // 拆分先例同 koffi-diagnostics/koffi-tree；语义零变化）
 // ============================================================
-// 帧来源：zcode-cua/macos/cursor-events.js（执行层输入事件旁路，UDP 广播）。
+// 帧来源：新引擎桥层 cursor-events 发射面（SDK 动作旁路，UDP 广播）。
 
 /** UDP 端口：与 desktop 主进程注入的 FREECODEZ_CUA_CURSOR_BROADCAST_PORT 对齐（node-repl-host 读侧双读旧键）。 */
 export const CUA_CURSOR_HUD_UDP_PORT = 53717;

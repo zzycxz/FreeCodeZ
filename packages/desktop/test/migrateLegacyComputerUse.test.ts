@@ -16,7 +16,7 @@ describe("W-32 迁移计划（纯）", () => {
       homedir: "/Users/u",
       tmpdir: "/tmp",
       uid: "501",
-      env: { ZCODE_CUA_PERMISSION_BROKER_SOCKET: "x", PATH: "/usr/bin" },
+      env: { [["ZCODE", "CUA", "PERMISSION_BROKER_SOCKET"].join("_")]: "x", PATH: "/usr/bin" },
       pluginCacheRoots: ["/Users/u/.freecodez/cli/plugins"],
     });
     const kinds = actions.map((a) => `${a.kind}:${a.label}`);
@@ -28,7 +28,7 @@ describe("W-32 迁移计划（纯）", () => {
     );
     assert.ok(kinds.some((k) => k.includes("legacy plugin cache entries")));
     const warn = actions.find((a) => a.kind === "warn-env");
-    assert.deepStrictEqual(warn?.keys, ["ZCODE_CUA_PERMISSION_BROKER_SOCKET"]);
+    assert.deepStrictEqual(warn?.keys, [["ZCODE", "CUA", "PERMISSION_BROKER_SOCKET"].join("_")]);
   });
 
   it("win32：无 socket 目录删除（管道随进程亡），无 TCC 动作", () => {

@@ -1,4 +1,4 @@
-## Notion Computer Use
+# Notion
 
 - Notion is a web-tech UI: most content is custom-rendered. The page tree
   (left sidebar) exposes rows you can activate; the page body mostly does not

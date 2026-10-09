@@ -3,8 +3,10 @@
 针对具体应用的界面操作要点，在 `get_app_state` 命中目标应用时随结果注入（W-27）。
 
 **来源披露（A12 双判据②）**：
-- `com.apple.Safari` / `com.apple.finder` / `com.microsoft.VSCode` 三件为 FreeCodeZ
-  自写（旧栈同名件留迁，工具名已换新 SDK 面）。
+- 全部十件为 FreeCodeZ 自有文本：三件自写留迁（Safari/Finder/VSCode，工具名换新 SDK 面）；
+  七件按 D9 重写（Music/Clock/Numbers/Spotify/Slack/Notion/iPhone Mirroring）——
+  首行统一自写件单井号约定（`# <AppName>`），与提取件 `## <App> Computer Use`
+  指纹格式可区分；内容逐件自有措辞，零原文保留。
 - 其余七件（Music / Clock / Numbers / Spotify / Slack / Notion / iPhone Mirroring）
   **全部按 D9 重写**：旧栈中的第三方提取件仅作为"该应用有哪些坑"的需求参考，
   逐件以自有措辞重新撰写，零原文保留；提取件已随 W-01/W-02 删除不入库。

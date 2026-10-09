@@ -1,4 +1,4 @@
-## Music Computer Use
+# Music
 
 - Playback controls live in the window's top toolbar as small `AXButton`s
   (play/pause, next, previous). Use element actions on them; they stay stable

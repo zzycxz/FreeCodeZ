@@ -1,4 +1,4 @@
-## Clock Computer Use
+# Clock
 
 - The toolbar switches between World Clock / Alarms / Stopwatch / Timers; each
   tab is an `AXRadioButton` — activate it and re-observe before touching

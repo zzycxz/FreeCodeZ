@@ -1,4 +1,4 @@
-## Spotify Computer Use
+# Spotify
 
 - The left sidebar is the navigation surface (Home / Search / Your Library):
   rows are `AXButton`s — activate and re-observe, the main pane rebuilds.

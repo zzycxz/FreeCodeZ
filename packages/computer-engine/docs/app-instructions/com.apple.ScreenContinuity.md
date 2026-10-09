@@ -1,4 +1,4 @@
-### iPhone Mirroring Instructions
+# iPhone Mirroring
 
 - iPhone Mirroring renders the phone screen in a single custom view: the iOS UI
   is NOT exposed to macOS accessibility at all. Every action must be

@@ -1,4 +1,4 @@
-// FreeCodeZ 原创件（R10①档）自 zcode-cua/macos/ 平移（W-29，历史 7ba4bec^）。
+// FreeCodeZ 原创件（R10①档）自旧执行层复刻包 macos/ 目录平移（W-29，溯源锚 git 7ba4bec^）。
 // ============================================================
 // Phase 1-b：AX 观测面——list_applications / list_windows / capture_app 树读取
 // （升级实施手册 桌面控制 Phase 1；只读阶段优先）

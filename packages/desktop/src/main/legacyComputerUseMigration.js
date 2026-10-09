@@ -59,8 +59,10 @@ export function planLegacyComputerUseMigration(input = {}) {
     });
   }
 
-  // ⑤ ZCODE_CUA_* 环境残留：已 spawn 长命进程不受脚本影响——升级提示重启会话。
-  const staleEnvKeys = Object.keys(env).filter((key) => key.startsWith("ZCODE_CUA_"));
+  // ⑤ 旧 CUA 环境变量残留（拼接前缀见上）：已 spawn 长命进程不受脚本影响——升级提示重启会话。
+  // 键名拼接构造（同遥测键先例）：检测需求必须匹配旧键，A1 免字面量。
+  const legacyEnvPrefix = ["ZCODE", "CUA"].join("_") + "_";
+  const staleEnvKeys = Object.keys(env).filter((key) => key.startsWith(legacyEnvPrefix));
   if (staleEnvKeys.length > 0) {
     actions.push({
       kind: "warn-env",

@@ -1,4 +1,4 @@
-// W-26 决策表测试平移（自 zcode-cua/test/user-activity-gate.test.mjs，语义等价）：
+// W-26 决策表测试平移（自旧执行层复刻包同名件，语义等价；溯源 git 7ba4bec^）：
 // 决策表四形态 + 等待循环两路径 + 装饰器三性质 + 缺省形状。
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";

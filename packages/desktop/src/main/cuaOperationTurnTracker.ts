@@ -61,7 +61,7 @@ export type CuaToolLifecycleEvent =
 const COMPUTER_USE_TOOL_PREFIXES = [
   "mcp__computer-use__",
   "mcp__computer_use__",
-  "mcp__plugin_zcode-cua_computer-use__",
+  "mcp__plugin_freecodez_computer-use__",
 ] as const;
 
 export function isComputerUseToolName(toolName: string): boolean {

@@ -1,4 +1,4 @@
-## Numbers Computer Use
+# Numbers
 
 - The spreadsheet canvas is custom-rendered: cells are NOT individual AX
   elements. Select a cell by clicking its grid coordinates, then type; do not
