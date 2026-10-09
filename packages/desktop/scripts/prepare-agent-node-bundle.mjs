@@ -11,8 +11,8 @@
 //
 // 远端（SSH/WSL/Docker）没有 Electron，仍走 prepare:remote-assets 的原生二进制，互不影响。
 
-import { cpSync, existsSync, mkdirSync, readdirSync, realpathSync, rmSync } from "node:fs";
-import { basename, dirname, resolve } from "node:path";
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, realpathSync, rmSync } from "node:fs";
+import { join, basename, dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { runCommand } from "../../../scripts/spawn-command.mjs";
@@ -155,6 +155,17 @@ function stageNodeReplHostRuntime(targetRoot) {
     cpSync(from, resolve(targetNodeModules, name), { recursive: true });
   }
   pruneCarriedNativeToTargetArch(targetNodeModules);
+
+  // W-14：引擎 sidecar 产物随宿主 seed（bridge 按 ../../computer-engine-dist/ 相对发现）。
+  const sidecarSource = resolve(repoRoot, "packages", "computer-engine", "dist", "computer-sidecar.js");
+  if (existsSync(sidecarSource)) {
+    const targetEngineDist = resolve(targetRoot, "..", "computer-engine-dist");
+    mkdirSync(targetEngineDist, { recursive: true });
+    copyFileSync(sidecarSource, join(targetEngineDist, "computer-sidecar.js"));
+    console.log(`[prepare:agent-bundle] staged engine sidecar alongside ${targetRoot}`);
+  } else {
+    console.log(`[prepare:agent-bundle] engine sidecar not built (skip staging)`);
+  }
   console.log(`[prepare:agent-bundle] staged ${platform} runtime node_modules for ${targetRoot}`);
 }
 const isBootstrapWithRemote = (process.env.FREECODEZ_BOOTSTRAP_WITH_REMOTE ?? process.env.ZCODE_BOOTSTRAP_WITH_REMOTE) === "1";
