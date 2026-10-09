@@ -502,7 +502,83 @@ let activeAppShutdownKind: AppShutdownKind | null = null;
 const WINDOWS_AGENT_FORCE_KILL_TIMEOUT_MS = 2_000;
 
 const broadcastHub = new BroadcastHub();
-const taskRealtimeBus = new TaskRealtimeBus({ logger });
+// W-29 操作指示器（win32 顶部提示条）+ W-29 turn tracker（tool-scheduled 判定平移）。
+// tracker 事件源缝：accept() 由宿主任务事件流喂入（W-30 事件源统一对接点）；
+// reporter → 指示器 handleState/clearSource（active/inactive 投影）。
+const windowsCuaOperationIndicator = createWindowsCuaOperationIndicator({
+  platform: process.platform,
+  getLocale: () => currentApplicationLocale,
+  logger,
+});
+const cuaOperationIndicatorSource = {};
+const cuaOperationTurnTracker = createCuaOperationTurnTracker({
+  reporter: {
+    onStateChanged: (event) =>
+      event.active
+        ? windowsCuaOperationIndicator.handleState(cuaOperationIndicatorSource, {
+            type: "cua-operation-state",
+            ...event,
+          })
+        : windowsCuaOperationIndicator.clearSource(cuaOperationIndicatorSource),
+  },
+  logger: {
+    debug: (message) => logger.debug(message),
+    info: (message) => logger.info(message),
+    warn: (message) => logger.warn(message),
+  },
+});
+/** 宿主任务事件流 → tracker 喂入口（bus onStreamEvent 观察口消费）。 */
+function feedComputerUseLifecycleEvent(
+  workspace: { workspacePath: string; workspaceIdentity?: string },
+  event: CuaToolLifecycleEvent,
+): void {
+  cuaOperationTurnTracker.accept(workspace, event);
+}
+
+// W-29 指示器事件源：流镜像 tool 生命周期事件 → tracker（schedule-then-confirm 判定）。
+// 映射：tool_call=tool-scheduled（携工具名）；tool_call_update in_progress=tool-started；
+// 终态（terminal 批）=session-closed 清口。taskId 充当 sessionId（会话内稳定键）。
+const taskRealtimeBus = new TaskRealtimeBus({
+  logger,
+  onStreamEvent: (target, event) => {
+    if (event.type !== "tool_call" && event.type !== "tool_call_update") return;
+    const workspace = { workspacePath: target.workspaceKey };
+    if (event.type === "tool_call") {
+      feedComputerUseLifecycleEvent(workspace, {
+        kind: "tool-scheduled",
+        eventId: `tc-${event.toolId}`,
+        sequenceNumber: event.toolId.length,
+        sessionId: target.taskId,
+        toolCallId: event.toolId,
+        toolName: event.kind ?? event.toolName ?? "",
+      });
+      return;
+    }
+    if (event.status === "in_progress") {
+      feedComputerUseLifecycleEvent(workspace, {
+        kind: "tool-started",
+        eventId: `tcu-${event.toolId}-${event.status}`,
+        sequenceNumber: event.toolId.length + 1,
+        sessionId: target.taskId,
+        toolCallId: event.toolId,
+      });
+      return;
+    }
+    if (
+      event.status === "completed" ||
+      event.status === "failed" ||
+      event.status === "stopped" ||
+      event.status === "denied"
+    ) {
+      feedComputerUseLifecycleEvent(workspace, {
+        kind: "session-closed",
+        eventId: `end-${event.toolId}-${event.status}`,
+        sequenceNumber: event.toolId.length + 2,
+        sessionId: target.taskId,
+      });
+    }
+  },
+});
 // bot /reconnect 链（附录D §3.2-1）：收 host 重连请求 → 委托窗口 renderer 重连（60s）→
 // 回结果给 host → 成功后广播 zcode:bot-remote-workspace-reconnected（官方同款）。
 const botRemoteWorkspaceReconnectExecutor = createBotRemoteWorkspaceReconnectExecutor({ logger });
@@ -704,39 +780,6 @@ const cuaAppshotController = startCuaAppshot({
   },
 });
 
-// W-29 操作指示器（win32 顶部提示条）+ W-29 turn tracker（tool-scheduled 判定平移）。
-// tracker 事件源缝：accept() 由宿主任务事件流喂入（W-30 事件源统一对接点）；
-// reporter → 指示器 handleState/clearSource（active/inactive 投影）。
-const windowsCuaOperationIndicator = createWindowsCuaOperationIndicator({
-  platform: process.platform,
-  getLocale: () => currentApplicationLocale,
-  logger,
-});
-const cuaOperationIndicatorSource = {};
-const cuaOperationTurnTracker = createCuaOperationTurnTracker({
-  reporter: {
-    onStateChanged: (event) =>
-      event.active
-        ? windowsCuaOperationIndicator.handleState(cuaOperationIndicatorSource, {
-            type: "cua-operation-state",
-            ...event,
-          })
-        : windowsCuaOperationIndicator.clearSource(cuaOperationIndicatorSource),
-  },
-  logger: {
-    debug: (message) => logger.debug(message),
-    info: (message) => logger.info(message),
-    warn: (message) => logger.warn(message),
-  },
-});
-/** W-30 事件源对接点：宿主任务事件流把 tool 生命周期事件喂给 tracker。 */
-function feedComputerUseLifecycleEvent(
-  workspace: { workspacePath: string; workspaceIdentity?: string },
-  event: CuaToolLifecycleEvent,
-): void {
-  cuaOperationTurnTracker.accept(workspace, event);
-}
-void feedComputerUseLifecycleEvent;
 
 const hostRunningTaskCountMap = new Map<ElectronUtilityProcess, number>();
 

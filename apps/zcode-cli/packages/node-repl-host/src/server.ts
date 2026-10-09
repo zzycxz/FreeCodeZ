@@ -16,6 +16,11 @@ import {
 import { z } from "zod";
 import { createBrowserBridgeGlobals, type ActiveNodeReplCall } from "./browser-bridge.js";
 import {
+  createComputerBridgeGlobals,
+  NODE_REPL_COMPUTER_BRIDGE_SYMBOL,
+  type ActiveComputerCall,
+} from "./computer-bridge.js";
+import {
   isDirectMcpEntrypoint,
   installNodeReplProcessGuards,
   installNodeReplShutdownTriggers,
@@ -100,8 +105,19 @@ export function setNodeReplMcpProcessTitle(target: { title: string } = process):
 export function createInProcessNodeReplExecutor(): NodeReplExecutor {
   return async (input) => {
     let activeCall: ActiveNodeReplCall | undefined;
+    let activeComputerCall: ActiveComputerCall | undefined;
+    let computerBridgeDispose: (() => Promise<void>) | undefined;
     let session: NodeReplSession;
     const generation = 1;
+    const computerGlobals = createComputerBridgeGlobals({
+      generation,
+      getActiveCall: () => activeComputerCall,
+      session: () => session,
+    });
+    const computerBridge = computerGlobals[NODE_REPL_COMPUTER_BRIDGE_SYMBOL] as
+      | { dispose(): Promise<void> }
+      | undefined;
+    computerBridgeDispose = computerBridge?.dispose;
     session = new NodeReplSession({
       injectedGlobals: () =>
         ({
@@ -111,12 +127,26 @@ export function createInProcessNodeReplExecutor(): NodeReplExecutor {
             getActiveCall: () => activeCall,
             session: () => session,
           }),
+          // W-14 桥接（S3 缝）：新引擎 SDK 经 Symbol.for 全局进 REPL（模型面 js 工具
+          // 写 setupComputerUseRuntime() 引导语句取桥；subagent 拒绝在 bridge 内）。
+          ...computerGlobals,
         }),
       restrictProcess: true,
     });
     activeCall = {
       generation,
       requestMeta: input.requestMeta,
+      signal: input.signal,
+    };
+    activeComputerCall = {
+      generation,
+      requestMeta: input.requestMeta,
+      runtimeScope:
+        input.requestMeta.runtime_scope === "subagent" ? "subagent" : "main",
+      sessionId:
+        typeof input.requestMeta.session_id === "string" && input.requestMeta.session_id.trim()
+          ? input.requestMeta.session_id
+          : `node-repl-${generation}`,
       signal: input.signal,
     };
     try {
@@ -127,6 +157,9 @@ export function createInProcessNodeReplExecutor(): NodeReplExecutor {
       });
     } finally {
       activeCall = undefined;
+      activeComputerCall = undefined;
+      // sidecar 生命周期随 REPL 会话收口（worker 态进程即退；in-process 态显式停）。
+      computerBridgeDispose?.();
       session.dispose();
     }
   };

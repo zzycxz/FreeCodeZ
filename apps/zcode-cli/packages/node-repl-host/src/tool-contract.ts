@@ -29,8 +29,8 @@ export const NODE_REPL_SERVER_INSTRUCTIONS =
   "Every `js` call starts fresh; reconstruct browser wrappers and recover persistent tabs from current BrowserControl facts.";
 
 export const JS_TOOL_DESCRIPTION =
-  "Browser Use only. Run JavaScript in a fresh Node-backed kernel with top-level await only as " +
-  "instructed by the corresponding official skill to control a browser. Do not use it as a general-purpose JavaScript runtime " +
+  "Browser Use / Computer Use. Run JavaScript in a fresh Node-backed kernel with top-level await only as " +
+  "instructed by the corresponding official skill to control a browser or your computer's desktop apps. Do not use it as a general-purpose JavaScript runtime " +
   "or for filesystem, shell, package inspection, data processing, or other non-browser work. " +
   "Always provide the required `title` as a short " +
   "user-facing description in the user's language without implementation terms. If `timeout_ms` is omitted, execution times out " +

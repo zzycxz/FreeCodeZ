@@ -19,3 +19,25 @@ export function readNodeReplBrowserRuntimeBridge(
   }
   return bridge as NodeReplBrowserRuntimeBridge;
 }
+
+export const NODE_REPL_COMPUTER_BRIDGE_SYMBOL = Symbol.for("freecodez.node-repl.computer-use-bridge");
+export const COMPUTER_UNAVAILABLE_IN_SUBAGENT_MESSAGE = "Computer control is not available in subagent";
+
+export interface NodeReplComputerRuntimeBridge {
+  documentationRoot: string;
+  assertAvailable(): void;
+  sdk(): unknown;
+  dispose(): Promise<void>;
+}
+
+export function readNodeReplComputerRuntimeBridge(
+  globals: Record<PropertyKey, unknown>,
+): NodeReplComputerRuntimeBridge {
+  const bridge = globals[NODE_REPL_COMPUTER_BRIDGE_SYMBOL];
+  if (!bridge || typeof bridge !== "object") {
+    throw new Error(
+      "Computer runtime bridge is unavailable. Use computer control from a FreeCodeZ desktop session with the engine enabled.",
+    );
+  }
+  return bridge as NodeReplComputerRuntimeBridge;
+}

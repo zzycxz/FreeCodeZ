@@ -10,6 +10,7 @@ import {
   type TaskRunLeaseAcquireRequest,
   type TaskRunLeaseResult,
   type TaskRunLeaseTarget,
+  type TaskStreamMirrorableEvent,
   type TaskStreamMirrorBatchEvent,
   type TaskStreamMirrorOp,
   type TaskStreamMirrorPublishOp,
@@ -134,9 +135,12 @@ export class TaskRealtimeBus {
     PendingSessionMessageDelivery
   >();
 
-  constructor(options: TaskRealtimeBusOptions = {}) {
+  private readonly streamEventObserver?: (target: TaskRunLeaseTarget, event: TaskStreamMirrorableEvent) => void;
+
+  constructor(options: TaskRealtimeBusOptions & { onStreamEvent?: (target: TaskRunLeaseTarget, event: TaskStreamMirrorableEvent) => void } = {}) {
     this.logger = options.logger ?? defaultLogger;
     this.seenEventLimit = options.seenEventLimit ?? 1000;
+    this.streamEventObserver = options.onStreamEvent;
   }
 
   registerHost(params: {
@@ -396,6 +400,16 @@ export class TaskRealtimeBus {
     const lease = this.leases.get(this.getLeaseKey(target.workspaceKey, target.taskId));
     if (!lease || lease.ownerHostId !== origin.hostId || lease.runId !== target.runId) {
       return;
+    }
+
+    // W-29 指示器事件源观察口：tool 生命周期流事件旁路给订阅方（tracker 平移件）。
+    // 异常吞掉——观察面不得折断镜像主链路。
+    if (op.kind === "stream_event" && this.streamEventObserver) {
+      try {
+        this.streamEventObserver(target, op.event);
+      } catch {
+        // 旁路观察失败静默。
+      }
     }
 
     const batchKey = this.getBatchKey(target.workspaceKey, target.taskId, target.runId);

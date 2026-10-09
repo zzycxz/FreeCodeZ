@@ -531,6 +531,9 @@ importers:
       '@modelcontextprotocol/server':
         specifier: 2.0.0
         version: 2.0.0
+      '@zcode/computer-engine':
+        specifier: workspace:*
+        version: link:../../../../packages/computer-engine
       '@zcode/contracts':
         specifier: workspace:*
         version: link:../contracts

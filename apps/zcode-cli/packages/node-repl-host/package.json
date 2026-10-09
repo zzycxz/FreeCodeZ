@@ -22,7 +22,8 @@
     "@zcode/contracts": "workspace:*",
     "@zcode/core": "workspace:*",
     "@zcode/shared": "workspace:*",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@zcode/computer-engine": "workspace:*"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.0.0",

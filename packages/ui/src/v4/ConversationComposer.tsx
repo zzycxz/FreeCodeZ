@@ -154,6 +154,7 @@ import { useOpenPptxElementReference } from "@/v4/composer/useOpenPptxElementRef
 import type { CodeViewerSource } from "@/lib/codeViewer.js";
 import { useConversationSelectionReferences } from "@/v4/composer/useConversationSelectionReferences.js";
 import { ConversationBackgroundWorkTrigger } from "@/v4/composer/ConversationBackgroundWorkTrigger.js";
+import { V4ComposerCuaEntry } from "@/v4/composer/V4ComposerCuaEntry.js";
 import {
   V4ComposerModeSwitch,
   V4ComposerModelControls,
@@ -2172,6 +2173,13 @@ function ConversationComposerImpl({
           activeConfigPicker={activeConfigPicker}
           onConfigPickerOpenChange={handleConfigPickerOpenChange}
           onSwitchMode={onSwitchMode}
+        />
+        {/* 电脑操作常驻入口：组件自身负责平台/远程/设置可见性，composer 不重复判定。 */}
+        <V4ComposerCuaEntry
+          workspacePath={workspacePath}
+          workspaceIdentity={workspaceIdentity}
+          remoteSessionId={remoteSessionId}
+          currentSessionBusy={canStop}
         />
         <ConversationBackgroundWorkTrigger
           backgroundWorks={snapshot?.backgroundWorks ?? []}

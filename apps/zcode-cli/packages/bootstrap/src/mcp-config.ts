@@ -32,6 +32,23 @@ export async function listMcpServerStatuses(
   return statuses;
 }
 
+/**
+ * W-14 桥接（S7 缝）：node_repl 的引擎面 env 注入。自有键名（R7：不留 ZCODE_* 回退）。
+ * fail-closed：sidecar 产物不在场（引擎未构建/未随 seed 携带）→ 不注入任何键，
+ * bridge 侧显式报"engine sidecar is not built"——绝不空凭据静默降级。
+ */
+export function withComputerEngineEnv(
+  env: Record<string, string | undefined>,
+  input: { engineDistDir?: string; engineReady?: boolean } = {},
+): Record<string, string | undefined> {
+  if (input.engineReady !== true || !input.engineDistDir) return env;
+  return {
+    ...env,
+    FREECODEZ_CUA_ENGINE_SIDECAR: input.engineDistDir,
+    FREECODEZ_CUA_ENGINE_READY: "1",
+  };
+}
+
 export function omitMcpServers(
   servers: Record<string, McpServerConfig>,
   omittedNames: ReadonlySet<string>,

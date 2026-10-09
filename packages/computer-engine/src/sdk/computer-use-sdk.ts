@@ -270,6 +270,68 @@ export class ComputerUseSdk {
     return results.length === 1 ? results[0] : results;
   }
 
+  // ---- W-31 方法缺口组合实现（D8：组合优先，语义化待上游 PR）----
+
+  /** element_focus：聚焦元素不点击（D8 组合实现——引擎无原生 focus；click 的 AX
+   * 聚焦路径是当前最近似，语义化 AXRequestedFocusConfirmation 待 orca 上游 PR）。 */
+  async elementFocus(input: {
+    target: AppTarget;
+    element: Extract<ActionTarget, { kind: "element" }>;
+  }): Promise<unknown> {
+    return this.leftClick({ target: input.target, element: input.element });
+  }
+
+  /** read_element：桥层快照内查找（G.0-3：模型面只有 index+treeText）——重观测取
+   * 新快照，按 index 从 treeText 行提取该元素行 + focusedElementId。 */
+  async readElement(input: {
+    target: AppTarget;
+    elementIndex: number;
+  }): Promise<{ elementIndex: number; line: string | null; focusedElementId: number | null; snapshotId: string }> {
+    const result = (await this.getAppState({
+      app: input.target.app,
+      windowId: input.target.windowId,
+      windowIndex: input.target.windowIndex,
+      includeScreenshot: false,
+    })) as {
+      snapshot?: { id?: string; treeText?: string; focusedElementId?: number | null };
+    };
+    const snapshot = result?.snapshot ?? {};
+    const treeText = typeof snapshot.treeText === "string" ? snapshot.treeText : "";
+    // tree 行按引擎渲染约定携带 [N] 索引标记；命中失败返回 null（模型重观测自查）。
+    const line =
+      treeText
+        .split("\n")
+        .find((candidate) => candidate.includes(`[${input.elementIndex}]`)) ?? null;
+    return {
+      elementIndex: input.elementIndex,
+      line,
+      focusedElementId: snapshot.focusedElementId ?? null,
+      snapshotId: String(snapshot.id ?? ""),
+    };
+  }
+
+  /** element_at_point：坐标命中元素（桥层近似——模型面无元素 frame 缓存，G.0-1）。
+   * D8 裁定=上游 PR 候选（AXHitTest 语义化）；当前组合实现返回新快照的
+   * focusedElementId 供模型比对，坐标直接命中留待上游。 */
+  async elementAtPoint(input: {
+    target: AppTarget;
+    x: number;
+    y: number;
+    scale?: number;
+  }): Promise<{ clicked: unknown; focusedElementId: number | null }> {
+    await this.leftClick({
+      target: input.target,
+      element: { kind: "coordinate", x: input.x, y: input.y, scale: input.scale },
+    });
+    const state = (await this.getAppState({
+      app: input.target.app,
+      windowId: input.target.windowId,
+      windowIndex: input.target.windowIndex,
+      includeScreenshot: false,
+    })) as { snapshot?: { focusedElementId?: number | null } };
+    return { clicked: true, focusedElementId: state?.snapshot?.focusedElementId ?? null };
+  }
+
   async performAction(input: {
     target: AppTarget;
     element: Extract<ActionTarget, { kind: "element" }>;
