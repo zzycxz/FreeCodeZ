@@ -48,13 +48,6 @@ import { deriveChildClientPorts } from "../helpers/child-client-ports.js";
 import { createCoordinatorResponsePort } from "../../subagent/coordinator-response.js";
 import { isStaleBranchRuntimeTaskEvent } from "./runtime-command-generation.js";
 import { loadPersistentAgentMemory } from "../../subagent/persistent-memory.js";
-import {
-  createOfficialCuaPolicy,
-  SUBAGENT_COMPUTER_USE_UNAVAILABLE_CODE,
-  SUBAGENT_COMPUTER_USE_UNAVAILABLE_MESSAGE,
-  type OfficialCuaPolicy,
-} from "../../subagent/computer-use-policy.js";
-import { computeOfficialCuaServerNames } from "./mcp.js";
 
 export function createDefaultSubagentPort(
   this: AgentRuntimeInternal,
@@ -146,21 +139,7 @@ export function createDefaultSubagentPort(
 
         cwd: request.workingDirectory,
       };
-      const officialCuaServerNames = computeOfficialCuaServerNames(
-        this.config.mcp?.servers ?? {},
-        new Set(this.config.mcp?.trustedOfficialCuaServerNames ?? []),
-      );
-      const preflightCuaPolicy = createOfficialCuaPolicy(
-        officialCuaServerNames,
-        [],
-        this.config.pluginReferenceCatalog,
-      );
-      await validateSubagentComputerUseConfiguration(request, preflightCuaPolicy, this.skillPort);
-      const childMcpAccess = await resolveSubagentMcpAccess.call(
-        this,
-        request,
-        officialCuaServerNames,
-      );
+      const childMcpAccess = await resolveSubagentMcpAccess.call(this, request);
       const childToolAllowlist = resolveSubagentToolAllowlist.call(
         this,
         request,
@@ -172,17 +151,7 @@ export function createDefaultSubagentPort(
         request.permissionMode,
         builtInExplore,
       );
-      const childCuaPolicy = createOfficialCuaPolicy(
-        officialCuaServerNames,
-        childMcpAccess.parentSnapshot?.tools ?? childMcpAccess.snapshot?.tools ?? [],
-        this.config.pluginReferenceCatalog,
-      );
-      await validateSubagentComputerUseConfiguration(request, childCuaPolicy, this.skillPort);
-      const childSkillPort = resolveSubagentSkillPort(
-        this.skillPort,
-        request.profile.skills,
-        childCuaPolicy,
-      );
+      const childSkillPort = resolveSubagentSkillPort(this.skillPort, request.profile.skills);
       const baseChildModelFactory = modelOverride
         ? createSubagentOverrideModelFactory(modelOverride, this.modelFactory)
         : inheritedModel
@@ -568,7 +537,6 @@ interface ResolvedSubagentMcpAccess {
 async function resolveSubagentMcpAccess(
   this: AgentRuntimeInternal,
   request: ExploreSubagentRuntimeRequest,
-  officialCuaServerNames: ReadonlySet<string>,
 ): Promise<ResolvedSubagentMcpAccess> {
   if (!shouldBorrowParentMcp(request)) {
     return { config: undefined, parentSnapshot: undefined, port: undefined, snapshot: undefined };
@@ -619,7 +587,6 @@ async function resolveSubagentMcpAccess(
     this.mcpPort,
     parentStartupSnapshot,
     scopedServerNames,
-    officialCuaServerNames,
   );
   return {
     config: { enabled: true },
@@ -720,7 +687,6 @@ function createSubagentMcpUnavailableError(
 function resolveSubagentSkillPort(
   parentSkillPort: SkillPort | undefined,
   skillNames: readonly string[] | undefined,
-  cuaPolicy: OfficialCuaPolicy,
 ): SkillPort | undefined {
   if (!parentSkillPort) {
     return parentSkillPort;
@@ -728,7 +694,6 @@ function resolveSubagentSkillPort(
   return new FilteredSkillPort(
     parentSkillPort,
     skillNames && skillNames.length > 0 ? new Set(skillNames) : undefined,
-    cuaPolicy,
   );
 }
 
@@ -736,7 +701,6 @@ class FilteredSkillPort implements SkillPort {
   constructor(
     private readonly parent: SkillPort,
     private readonly allowedSkills: ReadonlySet<string> | undefined,
-    private readonly cuaPolicy: OfficialCuaPolicy,
   ) {}
 
   async discoverSkills(
@@ -756,12 +720,6 @@ class FilteredSkillPort implements SkillPort {
     request: Parameters<SkillPort["loadSkill"]>[0],
     options?: SkillOperationOptions,
   ): Promise<SkillContent> {
-    if (
-      this.cuaPolicy.isOfficialSkillRequest(request.name) ||
-      (await this.hasUniqueOfficialSkillMatch(request, options))
-    ) {
-      throw createSubagentComputerUseUnavailableError(request.name);
-    }
     const resolvedName = await this.resolveAllowedSkillRequestName(request, options);
     if (!resolvedName) {
       throw createCoreError(
@@ -780,24 +738,7 @@ class FilteredSkillPort implements SkillPort {
     return this.parent.loadSkill({ ...request, name: resolvedName }, options);
   }
 
-  private async hasUniqueOfficialSkillMatch(
-    request: Parameters<SkillPort["loadSkill"]>[0],
-    options?: SkillOperationOptions,
-  ): Promise<boolean> {
-    if (request.name.includes(":")) return false;
-    const outcome = await this.parent.discoverSkills(
-      {
-        workingDirectory: request.workingDirectory,
-        roots: request.roots,
-        trace: request.trace,
-      },
-      options,
-    );
-    return isUniqueOfficialSkillRequest(outcome.skills, request.name, this.cuaPolicy);
-  }
-
   private isAllowedSkill(skill: SkillContent["metadata"]): boolean {
-    if (this.cuaPolicy.isOfficialSkill(skill)) return false;
     return (
       this.allowedSkills === undefined ||
       this.allowedSkills.has(skill.name) ||
@@ -840,77 +781,6 @@ class FilteredSkillPort implements SkillPort {
     // 子 agent 按 bare alias 调用时，先绑定回过滤后的 metadata，避免父端按全局同名 skill 误加载。
     return matches[0]?.qualifiedName ?? matches[0]?.name;
   }
-}
-
-async function validateSubagentComputerUseConfiguration(
-  request: ExploreSubagentRuntimeRequest,
-  cuaPolicy: OfficialCuaPolicy,
-  parentSkillPort: SkillPort | undefined,
-): Promise<void> {
-  const explicitServer = request.profile.mcpServers?.find((serverName) =>
-    cuaPolicy.serverNames.has(serverName.trim()),
-  );
-  const explicitTool = request.allowedTools.find(
-    (toolName) =>
-      cuaPolicy.isOfficialToolRequest(toolName) || cuaPolicy.isOfficialServerSelector(toolName),
-  );
-  let explicitSkill = request.profile.skills?.find((skillName) =>
-    cuaPolicy.isOfficialSkillRequest(skillName),
-  );
-  if (!explicitSkill && parentSkillPort && request.profile.skills?.length) {
-    try {
-      const outcome = await parentSkillPort.discoverSkills({
-        workingDirectory: request.workingDirectory,
-        trace: request.traceContext,
-      });
-      explicitSkill = request.profile.skills.find((skillName) =>
-        isUniqueOfficialSkillRequest(outcome.skills, skillName, cuaPolicy),
-      );
-    } catch {
-      // Skill discovery remains lazy; a later Skill load will surface its own error.
-    }
-  }
-  if (!explicitServer && !explicitTool && !explicitSkill) return;
-
-  throw createCoreError(
-    CoreErrorType.ConfigurationError,
-    SUBAGENT_COMPUTER_USE_UNAVAILABLE_MESSAGE,
-    {
-      context: {
-        agentType: request.agentType,
-        code: SUBAGENT_COMPUTER_USE_UNAVAILABLE_CODE,
-        ...(explicitServer ? { mcpServer: explicitServer } : {}),
-        ...(explicitTool ? { mcpTool: explicitTool } : {}),
-        ...(explicitSkill ? { skill: explicitSkill } : {}),
-      },
-      recoverable: true,
-    },
-  );
-}
-
-function isUniqueOfficialSkillRequest(
-  skills: readonly SkillContent["metadata"][],
-  requestName: string,
-  cuaPolicy: Pick<OfficialCuaPolicy, "isOfficialSkill">,
-): boolean {
-  if (requestName.includes(":")) return false;
-  const matches = skills.filter((skill) => matchesSkillRequestName(skill, requestName));
-  return matches.length === 1 && matches[0] !== undefined && cuaPolicy.isOfficialSkill(matches[0]);
-}
-
-function createSubagentComputerUseUnavailableError(skillName: string) {
-  return createCoreError(
-    CoreErrorType.ToolExecutionFailed,
-    SUBAGENT_COMPUTER_USE_UNAVAILABLE_MESSAGE,
-    {
-      context: {
-        code: SUBAGENT_COMPUTER_USE_UNAVAILABLE_CODE,
-        skill: skillName,
-        toolName: "Skill",
-      },
-      recoverable: true,
-    },
-  );
 }
 
 function matchesSkillRequestName(skill: SkillContent["metadata"], requestName: string): boolean {

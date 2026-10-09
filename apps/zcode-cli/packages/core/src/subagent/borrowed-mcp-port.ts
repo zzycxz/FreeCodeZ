@@ -1,5 +1,4 @@
 import type { McpConnectionSnapshot, McpPort } from "@zcode/contracts";
-import { SUBAGENT_COMPUTER_USE_UNAVAILABLE_MESSAGE } from "./computer-use-policy.js";
 
 interface BorrowedSubagentMcpAccess {
   port: McpPort;
@@ -10,12 +9,9 @@ export function createBorrowedSubagentMcpAccess(
   parentPort: McpPort,
   parentStartupSnapshot: McpConnectionSnapshot,
   scopedServerNames?: readonly string[],
-  deniedServerNames?: ReadonlySet<string>,
 ): BorrowedSubagentMcpAccess {
   const scope = scopedServerNames === undefined ? undefined : new Set(scopedServerNames);
-  const isDenied = (serverName: string): boolean => deniedServerNames?.has(serverName) === true;
-  const isInScope = (serverName: string): boolean =>
-    (scope === undefined || scope.has(serverName)) && !isDenied(serverName);
+  const isInScope = (serverName: string): boolean => scope === undefined || scope.has(serverName);
   const statuses = Object.fromEntries(
     Object.entries(parentStartupSnapshot.statuses).filter(([serverName]) => isInScope(serverName)),
   );
@@ -40,9 +36,6 @@ export function createBorrowedSubagentMcpAccess(
     snapshot,
     port: {
       async callTool(request, options) {
-        if (isDenied(request.serverName)) {
-          throw new Error(SUBAGENT_COMPUTER_USE_UNAVAILABLE_MESSAGE);
-        }
         if (!connectedServerNames.has(request.serverName)) {
           throw new Error(`Subagent MCP server is outside visible scope: ${request.serverName}`);
         }

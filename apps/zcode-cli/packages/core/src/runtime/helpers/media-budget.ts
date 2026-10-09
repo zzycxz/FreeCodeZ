@@ -13,10 +13,6 @@ import type {
   ModelMessageContentBlock,
   TraceContext,
 } from "../deps.js";
-import {
-  officialCuaImageRefIndexesForUnavailableMedia,
-  officialCuaRasterUnavailableBlock,
-} from "./official-cua-media.js";
 import { findLatestRealUserMessageIndex } from "./conversation.js";
 import {
   projectMessagesForInputFormat,
@@ -222,21 +218,11 @@ function projectContent(
     }
   });
 
-  const pairedTextIndexes = officialCuaImageRefIndexesForUnavailableMedia(
-    content,
-    omittedBlockIndexes,
-  );
-
   return content.map((block, blockIndex) => {
-    if (pairedTextIndexes.has(blockIndex)) {
-      return { type: "text", text: "" };
-    }
     if (mediaRequestBytes(block) === 0) return cloneContentBlock(block);
     const key = mediaKey({ blockIndex, messageIndex });
     if (retainedKeys.has(key)) return cloneContentBlock(block);
-    return pairedTextIndexes.has(blockIndex + 1)
-      ? officialCuaRasterUnavailableBlock()
-      : mediaOmittedTextBlock(block);
+    return mediaOmittedTextBlock(block);
   });
 }
 

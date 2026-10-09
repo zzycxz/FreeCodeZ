@@ -1,5 +1,5 @@
 import type { PermissionOptionsPolicy, PermissionUpdate } from "@zcode/contracts";
-import { OFFICIAL_CUA_PERMISSION_RULE_TOOL_NAME, type ZCodePermissionOption } from "@zcode/shared";
+import type { ZCodePermissionOption } from "@zcode/shared";
 
 const PROJECT_RULE_INPUT_KEYS = ["command", "url", "file_path", "path", "pattern"] as const;
 
@@ -40,9 +40,6 @@ export function buildProtocolPermissionOptions(
   const permissionUpdates = source.suggestedPermissionUpdates?.length
     ? source.suggestedPermissionUpdates
     : defaultPermissionUpdates(source);
-  const officialCuaProjectScope = permissionUpdates.some((update) =>
-    update.rules.some((rule) => rule.toolName === OFFICIAL_CUA_PERMISSION_RULE_TOOL_NAME),
-  );
   return [
     {
       kind: "allow_once",
@@ -74,13 +71,9 @@ export function buildProtocolPermissionOptions(
           ]
         : [
             {
-              description: officialCuaProjectScope
-                ? "Do not ask again for official Computer Use tools in this project"
-                : "Do not ask again for matching requests in this project",
+              description: "Do not ask again for matching requests in this project",
               kind: "allow_always" as const,
-              name: officialCuaProjectScope
-                ? "Always allow Computer Use in this project"
-                : "Always allow in this project",
+              name: "Always allow in this project",
               optionId: "allow_project",
               response: {
                 decision: "allow" as const,

@@ -77,7 +77,6 @@ import type {
   AssistantTextRow,
   ApiRetryState,
   BackgroundWorkSummary,
-  CuaAppIdentity,
   ConversationDelta,
   ConversationRow,
   ConversationRowTarget,
@@ -105,11 +104,6 @@ import type {
   MutableConversationSnapshotAccumulator,
   WorkflowRunProgressEnvelope,
 } from "@zcode/shared/zcode-protocol-v4";
-import {
-  parseListAppsSnapshot,
-  readOfficialCuaAction,
-  resolveCuaAppIdentity,
-} from "./cua-app-snapshot.js";
 import {
   PROTOCOL_V4_LIMITS,
   applyConversationDeltas,
@@ -422,7 +416,6 @@ export class ProductProjection {
   // 这里只保留上一条满足 length/zero-tool/视觉紧邻条件的 text row，任何真实边界都会清空。
   private outputContinuationTextRowId: number | null = null;
   private toolRowIdByCallId = new Map<string, number>();
-  private latestListAppsSnapshot = new Map<number, CuaAppIdentity>();
   // snapshot 是权威状态；该 Set 只是 TurnComplete 缺终态兜底的派生索引，避免每轮扫描全表。
   private openForegroundToolCallIds = new Set<string>();
   private fileToolInputPreviewByCallId = new Map<string, FileToolInputPreviewState>();
@@ -1075,8 +1068,6 @@ export class ProductProjection {
     clone.streamingReasoningRowId = this.streamingReasoningRowId;
     clone.outputContinuationTextRowId = this.outputContinuationTextRowId;
     clone.toolRowIdByCallId = new Map(this.toolRowIdByCallId);
-    // 实时发布逐事件走原子 clone；遗漏该侧表会让成功的 list_apps 快照在提交时丢失。
-    clone.latestListAppsSnapshot = new Map(this.latestListAppsSnapshot);
     clone.openForegroundToolCallIds = new Set(this.openForegroundToolCallIds);
     clone.fileToolInputPreviewByCallId = new Map(
       [...this.fileToolInputPreviewByCallId].map(([toolCallId, state]) => [
@@ -1137,7 +1128,6 @@ export class ProductProjection {
     this.streamingReasoningRowId = candidate.streamingReasoningRowId;
     this.outputContinuationTextRowId = candidate.outputContinuationTextRowId;
     this.toolRowIdByCallId = candidate.toolRowIdByCallId;
-    this.latestListAppsSnapshot = candidate.latestListAppsSnapshot;
     this.openForegroundToolCallIds = candidate.openForegroundToolCallIds;
     this.fileToolInputPreviewByCallId = candidate.fileToolInputPreviewByCallId;
     this.subagentRowIdByAgentId = candidate.subagentRowIdByAgentId;
@@ -2632,7 +2622,7 @@ export class ProductProjection {
       ...this.rowBase(event, this.turnIdOf(event), fact.entityId),
       kind: "reasoning",
       // Bug 原因：canonical stream 已携带 assistant response 身份，但旧投影只在正文与工具行
-      // 保存它，UI 因而无法把同 response 的 reasoning 确定性归入 CUA Group。
+      // 保存它，UI 因而无法把同 response 的 reasoning 确定性归入同一分组。
       ...(fact.stream.assistantResponseId
         ? { assistantResponseId: fact.stream.assistantResponseId }
         : {}),
@@ -2881,11 +2871,6 @@ export class ProductProjection {
     this.fileToolInputPreviewByCallId.delete(toolCallId);
     if (shouldHideInvalidToolCallFromProduct(payload.toolName)) return [];
     const inputText = stringifyToolInput(payload.input);
-    const cuaAction = readOfficialCuaAction(payload.toolName);
-    const cuaApp =
-      cuaAction && cuaAction !== "list_apps"
-        ? resolveCuaAppIdentity(payload.input, this.latestListAppsSnapshot)
-        : undefined;
     const existing = this.findToolRow(toolCallId);
     const planDeltas = this.todoPlanDeltas(
       event,
@@ -2908,7 +2893,6 @@ export class ProductProjection {
               : {}),
             inputText,
             input: payload.input,
-            ...(cuaApp ? { cuaApp } : {}),
             ...(payload.display?.kind === "mcp_tool" ? { display: payload.display } : {}),
           },
         },
@@ -2926,7 +2910,6 @@ export class ProductProjection {
       status: "inputStreaming",
       inputText,
       input: payload.input,
-      ...(cuaApp ? { cuaApp } : {}),
       ...(payload.display?.kind === "mcp_tool" ? { display: payload.display } : {}),
     };
     this.toolRowIdByCallId.set(toolCallId, row.rowId);
@@ -2948,11 +2931,6 @@ export class ProductProjection {
     const row = this.findToolRow(toolCallId);
     if (!row) return [];
     const success = payload.result.success;
-    if (success && readOfficialCuaAction(row.toolName) === "list_apps") {
-      // 摘要身份必须来自 Agent 已观察到的成功事实；失败结果不能清空旧快照。
-      const snapshot = parseListAppsSnapshot(payload.result.content, payload.result.display);
-      if (snapshot) this.latestListAppsSnapshot = snapshot;
-    }
     const display = toProtocolToolCallDisplay(payload.result.display);
     const next: ToolCallRow = {
       ...row,

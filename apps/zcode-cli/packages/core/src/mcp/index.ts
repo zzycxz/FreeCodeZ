@@ -28,18 +28,12 @@ export { McpToolOutputJsonSchema, MCP_TOOL_TIMEOUT_MS } from "./tool-entry.js";
 export interface RegisterMcpToolsOptions {
   allowedTools?: readonly string[];
   disallowedTools?: readonly string[];
-  /**
-   * 由 runtime 使用不可伪造的 product authority 凭据验明的官方 CUA server。
-   * 名称本身不构成信任；省略时 fail-closed，所有 MCP 都按普通工具处理，
-   * 不投影官方 CUA 规范名，也不挂载 provider 拼写别名。
-   */
-  officialCuaServerNames?: ReadonlySet<string>;
 }
 
 /**
  * allow/deny 名单判定（registerMcpTools 与目录态 deferred 分流共用同一谓词）：
- * 官方 CUA 投影模型主名后，只按新名检查会让升级前保存的 namespaced denylist 静默
- * 失效。新旧名称任一命中 deny 即拒绝，任一命中 allow 即接受。
+ * 注册名与 descriptor 原名任一命中 deny 即拒绝，任一命中 allow 即接受——
+ * 保持升级前保存的名单在名称投影变化后不静默失效。
  */
 function mcpToolNamePermitted(
   name: string,
@@ -63,12 +57,10 @@ export function registerMcpTools(
   const registered: string[] = [];
 
   for (const descriptor of descriptors) {
-    const officialCuaAuthorityVerified =
-      options.officialCuaServerNames?.has(descriptor.serverName) === true;
     const descriptorName = toMcpToolName(descriptor);
-    const name = toRegisteredMcpToolName(descriptor, officialCuaAuthorityVerified);
+    const name = toRegisteredMcpToolName(descriptor);
     if (!mcpToolNamePermitted(name, descriptorName, allowed, disallowed)) continue;
-    registry.register(createMcpToolEntry(name, descriptor, mcpPort, officialCuaAuthorityVerified));
+    registry.register(createMcpToolEntry(name, descriptor, mcpPort));
     registered.push(name);
   }
 
@@ -129,10 +121,7 @@ export function registerMcpToolsWithDirectory(
       // 语义（它是入选工具的通道），但单独命中 deny 即整条通道关闭。
       const permittedDeferred = deferred.filter((descriptor) =>
         mcpToolNamePermitted(
-          toRegisteredMcpToolName(
-            descriptor,
-            rest.officialCuaServerNames?.has(descriptor.serverName) === true,
-          ),
+          toRegisteredMcpToolName(descriptor),
           toMcpToolName(descriptor),
           allowed,
           disallowed,

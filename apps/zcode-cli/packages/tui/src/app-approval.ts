@@ -1,5 +1,4 @@
 import type { PermissionBrokerRequest, PermissionBrokerResult } from "@zcode/contracts";
-import { OFFICIAL_CUA_PERMISSION_RULE_TOOL_NAME } from "@zcode/shared";
 import type { KeyEvent } from "@mbears/opentui-core";
 import type React from "react";
 import type { ApprovalDecision, ApprovalPrompt } from "./app-model.js";
@@ -51,26 +50,10 @@ export function handleApprovalKey(
   }
 }
 
-export function approvalDecisionLabel(
-  decision: ApprovalDecision,
-  request?: PermissionBrokerRequest,
-): string {
+export function approvalDecisionLabel(decision: ApprovalDecision): string {
   if (decision === "allow_once") return "Allow once";
-  if (decision === "allow_project") {
-    return request && isOfficialCuaProjectApproval(request)
-      ? "Always allow Computer Use in this project"
-      : "Always allow in this project";
-  }
+  if (decision === "allow_project") return "Always allow in this project";
   return "Deny";
-}
-
-export function isOfficialCuaProjectApproval(request: PermissionBrokerRequest): boolean {
-  return permissionUpdatesForApproval(request).some(
-    (update) =>
-      update.type === "addRules" &&
-      update.behavior === "allow" &&
-      update.rules.some((rule) => rule.toolName === OFFICIAL_CUA_PERMISSION_RULE_TOOL_NAME),
-  );
 }
 
 export function approvalRequestDescription(request: PermissionBrokerRequest): string {

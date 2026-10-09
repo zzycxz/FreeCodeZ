@@ -9,7 +9,6 @@ import {
   type ReactNode,
 } from "react";
 import {
-  OFFICIAL_CUA_PERMISSION_RULE_TOOL_NAME,
   WORKFLOW_REFINE_PERMISSION_OPTION_ID,
   type ZCodePermissionOption,
   type ZCodePermissionRequest,
@@ -102,15 +101,6 @@ function readPermissionRuleScopes(option: ZCodePermissionOption): PermissionRule
     }
   }
   return scopes.slice(0, 5);
-}
-
-function isOfficialCuaProjectPermission(option: ZCodePermissionOption): boolean {
-  return (option.response?.permissionUpdates ?? []).some(
-    (update) =>
-      update.type === "addRules" &&
-      update.behavior === "allow" &&
-      update.rules.some((rule) => rule.toolName === OFFICIAL_CUA_PERMISSION_RULE_TOOL_NAME),
-  );
 }
 
 /**
@@ -736,17 +726,14 @@ export function PermissionDialog({
             >
               {orderedOptions.map((option, index) => {
                 const isSelected = index === selectedIndex;
-                const officialCuaProjectPermission = isOfficialCuaProjectPermission(option);
-                const labelMessageId = officialCuaProjectPermission
-                  ? "chat.permission.cua.allowForProject"
-                  : option.name.trim().toLowerCase() === "always allow in this project" &&
+                const labelMessageId =
+                  option.name.trim().toLowerCase() === "always allow in this project" &&
                       preview.scope === "command"
                     ? "chat.permission.allowCommand"
                     : getOptionLabelMessageId(option.kind);
                 const nameMessageIds = getProviderOptionNameMessageIds(provider, option.name);
-                const descriptionMessageId = officialCuaProjectPermission
-                  ? "chat.permission.cua.allowForProject.description"
-                  : labelMessageId === "chat.permission.allowCommand"
+                const descriptionMessageId =
+                  labelMessageId === "chat.permission.allowCommand"
                     ? "chat.permission.allowCommand.description"
                     : (nameMessageIds?.description ??
                       getOptionDescriptionMessageId(option.kind, preview.scope));

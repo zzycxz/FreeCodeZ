@@ -41,7 +41,6 @@ import type {
   JsonSchema,
   ModelToolSideEffectScope,
   PermissionBrokerReasonSource,
-  PermissionCapabilityGroup,
   PermissionRuleBehavior,
   PermissionRuleValue,
   PermissionUpdate,
@@ -318,10 +317,6 @@ export interface ToolEntry extends ToolContractDeclaration {
    */
   resultArtifactContentType?: string;
   metadata: ToolMetadata;
-  /**
-   * 只由宿主验证后的可信来源写入；不能从模型可见的 MCP 名称或 descriptor 推导。
-   */
-  permissionCapabilityGroup?: PermissionCapabilityGroup;
   executionMode?: ToolExecutionMode;
   providerNative?: ProviderNativeToolSpec;
   handler: ToolHandler;

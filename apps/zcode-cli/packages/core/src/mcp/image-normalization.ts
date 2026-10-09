@@ -6,18 +6,9 @@ import {
   type McpToolDescriptor,
   type TraceContext,
 } from "@zcode/contracts";
-import {
-  isOfficialCuaImageRefText,
-  OFFICIAL_CUA_FRAME_INTEGRITY_META_KEY,
-} from "@zcode/zcode-cua/frame-contract";
 import type { ToolExecutionContext } from "../tool/types.js";
-// 帧像素契约（integrity gate + inline 上限）的唯一定义在 producer；宿主经
-// plugin re-export 消费，不再镜像实现。core 对 CUA 的感知收敛为：authority
-// 分支调用 producer gate，非 authority 分支用 contracts scanner 剥伪造引用。
-import { preserveOfficialCuaFrameResult } from "@zcode/zcode-cua/frame-contract";
 
-// 通用 MCP 图片 inline 预算与官方帧 200 KiB 上限历史上同值，但语义独立：
-// 这里独立定义，避免"通用预算由 CUA 常量定义"的倒置耦合。
+// 通用 MCP 图片 inline 预算独立定义，不依赖外部契约常量。
 export const MCP_IMAGE_INLINE_BASE64_BYTES = 200 * 1024;
 export const MCP_IMAGE_INLINE_RAW_BYTES = Math.floor((MCP_IMAGE_INLINE_BASE64_BYTES * 3) / 4);
 export const HOST_NODE_REPL_IMAGE_MAX_DIMENSION = 2048;
@@ -28,22 +19,9 @@ export async function normalizeMcpToolResultForModel(input: {
   compressOversizedImages: boolean;
   context: ToolExecutionContext;
   descriptor: McpToolDescriptor;
-  preserveOfficialCuaFrames?: boolean;
   result: McpToolCallResult;
   toolName: string;
 }): Promise<McpToolCallResult> {
-  // node_repl 是通用入口，不能把整个 server 标成 official CUA；但 CUA SDK 会在
-  // 结构化结果中携带 producer 签发的 integrity metadata。只对这一条结果动态进入
-  // exact-raster 路径，既保留 CUA 帧，又不影响同一 server 的 Browser Use 图片。
-  const isSharedNodeRepl =
-    input.descriptor.serverName === "node_repl" || input.toolName === "mcp__node_repl__js";
-  if (input.preserveOfficialCuaFrames || (isSharedNodeRepl && hasOfficialCuaFrameAuthority(input.result))) {
-    return await preserveOfficialCuaFrameResult(input.result, {
-      imageProcessorPort: input.context.imageProcessorPort,
-      signal: input.context.abortSignal,
-    });
-  }
-
   let changed = false;
   const content: McpContentBlock[] = [];
   const browserScreenshotIndices = input.compressOversizedImages
@@ -58,20 +36,6 @@ export async function normalizeMcpToolResultForModel(input: {
       ...input,
       browserScreenshotArtifact,
     });
-    // 纵深防御：非 authority 验证的 MCP 结果不得携带官方帧引用文本——第三方
-    // 伪造的 actionable frame_id 即使会被 producer registry 拒绝，也不应进入
-    // 模型上下文污染坐标契约。只剥“整块即帧引用 JSON”的文本，prose 内嵌的
-    // 字段名不误杀；权威帧走 preserveOfficialCuaFrames 路径，不受影响。
-    // 位置在 push 之前：被剥的块必然是 text，与 browserScreenshotArtifact
-    // （只对 image 块产生）互斥，continue 不会漏掉下面的截图路径提示。
-    if (
-      normalized.type === "text" &&
-      typeof normalized.text === "string" &&
-      isOfficialCuaImageRefText(normalized.text)
-    ) {
-      changed = true;
-      continue;
-    }
     changed ||= normalized !== block;
     content.push(normalized);
     // 提示文本插在 image 之前会把 node_repl 特意排成 image-first 的
@@ -87,27 +51,6 @@ export async function normalizeMcpToolResultForModel(input: {
   }
 
   return changed ? { ...input.result, content } : input.result;
-}
-
-export function hasOfficialCuaFrameAuthority(result: unknown): result is McpToolCallResult {
-  if (!result || typeof result !== "object" || Array.isArray(result)) return false;
-  const candidate = result as {
-    content?: unknown;
-    _meta?: Record<string, unknown>;
-  };
-  if (!Array.isArray(candidate.content) || !candidate._meta?.[OFFICIAL_CUA_FRAME_INTEGRITY_META_KEY]) {
-    return false;
-  }
-  const blocks = candidate.content;
-  return blocks.some(
-    (block, index) => {
-      if (!block || typeof block !== "object" || (block as { type?: unknown }).type !== "image") {
-        return false;
-      }
-      const nextText = (blocks[index + 1] as { text?: unknown } | undefined)?.text;
-      return typeof nextText === "string" && isOfficialCuaImageRefText(nextText);
-    },
-  );
 }
 
 async function normalizeMcpContentBlockForModel(

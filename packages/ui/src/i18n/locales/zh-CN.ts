@@ -5109,8 +5109,6 @@ const zhCN: Record<string, string> = {
   "chat.permission.allowCommand.description": "项目范围内，后续相同命令不再询问",
   "chat.permission.allowCommand": "始终允许此命令",
   "chat.permission.allowForProject": "始终允许本项目",
-  "chat.permission.cua.allowForProject": "始终允许本项目中的电脑控制",
-  "chat.permission.cua.allowForProject.description": "本项目后续官方电脑控制操作不再询问",
   "chat.permission.deny": "拒绝",
   "chat.permission.denyAlways": "始终拒绝",
   "chat.permission.files": "涉及文件",

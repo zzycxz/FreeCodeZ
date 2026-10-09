@@ -5,11 +5,7 @@ import {
   zcodeMcpListResultSchema,
   type ZCodeMcpListResult,
 } from "@zcode/shared";
-import {
-  listMcpServerStatuses,
-  omitMcpServers,
-  resolveTrustedOfficialCuaServerNames,
-} from "../mcp-config.js";
+import { listMcpServerStatuses, omitMcpServers } from "../mcp-config.js";
 import { StartupTimer, startupNow } from "../startup-logging.js";
 import { getCliStorageRoot } from "../app/paths.js";
 import { resolveStartupPlugins } from "../app/startup-marks.js";
@@ -67,10 +63,6 @@ export async function listMcpServers(
       ? (explicitRuntimeMcp?.servers ?? {})
       : configResult.config.mcp.servers),
   };
-  const trustedOfficialCuaServerNames = resolveTrustedOfficialCuaServerNames(
-    configuredMcpServers,
-    pluginOutcome.mcpServers,
-  );
   // 产品决定 workspace MCP 开箱即用：project 作用域 MCP 默认 trusted，并自动连接。
   const untrustedProjectMcpServers = new Set<string>();
   const mcpPort = context.deps.mcpPort;
@@ -92,11 +84,7 @@ export async function listMcpServers(
     // `protocol-settings` lease；不带 revalidate 时连接池会直接复用旧 entry 并返回陈旧快照，
     // 停掉的 HTTP MCP 会永远显示已连接（见 adapters/src/mcp/pool.ts revalidateEntry）。
     const connectPromise = mcpPort.connectConfiguredServers(
-      omitMcpServers(
-        configuredMcpServers,
-        untrustedProjectMcpServers,
-        trustedOfficialCuaServerNames,
-      ),
+      omitMcpServers(configuredMcpServers, untrustedProjectMcpServers),
       {
         revalidate: true,
         workingDirectory,

@@ -9,13 +9,6 @@ import type { InteractionRequestOrigin, SessionId, ToolCallId, TraceId, TurnId }
 
 export type PermissionRuleBehavior = "allow" | "deny" | "ask";
 
-export const PermissionCapabilityGroup = {
-  OfficialCua: "official_cua",
-} as const;
-
-export type PermissionCapabilityGroup =
-  (typeof PermissionCapabilityGroup)[keyof typeof PermissionCapabilityGroup];
-
 export interface PermissionRuleValue {
   toolName: string;
   ruleContent?: string;

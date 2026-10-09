@@ -173,19 +173,6 @@ const pluginsSchema = z.object({
   suppressedBuiltins: z.array(z.string().min(1)).optional(),
 });
 
-export const LEGACY_CUA_PLUGIN_ID = "zcode-cua@zcode-plugins-official";
-export const CANONICAL_CUA_PLUGIN_ID = "computer-use@zcode-plugins-official";
-
-export function canonicalizePluginId(pluginId: string): string {
-  return pluginId === LEGACY_CUA_PLUGIN_ID ? CANONICAL_CUA_PLUGIN_ID : pluginId;
-}
-
-export function pluginIdAliases(pluginId: string): readonly string[] {
-  return canonicalizePluginId(pluginId) === CANONICAL_CUA_PLUGIN_ID
-    ? [CANONICAL_CUA_PLUGIN_ID, LEGACY_CUA_PLUGIN_ID]
-    : [pluginId];
-}
-
 const skillToggleSchema = z.object({
   enable: z.boolean().optional(),
 });
@@ -428,37 +415,7 @@ function parsedConfigFileToRuntimePatch(parsed: ZCodeConfigFile): RuntimeConfigP
 function normalizePluginConfig(
   plugins: ZCodeConfigFile["plugins"],
 ): NonNullable<RuntimeConfigPatch["plugins"]> {
-  if (!plugins) return {};
-  const enabledPlugins = plugins.enabledPlugins ? { ...plugins.enabledPlugins } : undefined;
-  if (enabledPlugins?.[LEGACY_CUA_PLUGIN_ID] !== undefined) {
-    if (enabledPlugins[CANONICAL_CUA_PLUGIN_ID] === undefined) {
-      enabledPlugins[CANONICAL_CUA_PLUGIN_ID] = enabledPlugins[LEGACY_CUA_PLUGIN_ID];
-    }
-    delete enabledPlugins[LEGACY_CUA_PLUGIN_ID];
-  }
-  const suppressedBuiltins = plugins.suppressedBuiltins
-    ? plugins.suppressedBuiltins.reduce<string[]>((ids, id) => {
-        const canonicalId = id === LEGACY_CUA_PLUGIN_ID ? CANONICAL_CUA_PLUGIN_ID : id;
-        if (canonicalId === CANONICAL_CUA_PLUGIN_ID && ids.includes(CANONICAL_CUA_PLUGIN_ID)) {
-          return ids;
-        }
-        ids.push(canonicalId);
-        return ids;
-      }, [])
-    : undefined;
-  const options = plugins.options ? { ...plugins.options } : undefined;
-  if (options?.[LEGACY_CUA_PLUGIN_ID] !== undefined) {
-    if (options[CANONICAL_CUA_PLUGIN_ID] === undefined) {
-      options[CANONICAL_CUA_PLUGIN_ID] = options[LEGACY_CUA_PLUGIN_ID];
-    }
-    delete options[LEGACY_CUA_PLUGIN_ID];
-  }
-  return {
-    ...plugins,
-    ...(enabledPlugins ? { enabledPlugins } : {}),
-    ...(suppressedBuiltins ? { suppressedBuiltins } : {}),
-    ...(options ? { options } : {}),
-  };
+  return { ...plugins };
 }
 
 function normalizeConfigFileInput(value: unknown, diagnostics: ConfigDiagnostic[]): unknown {

@@ -8,10 +8,6 @@ import {
   type ToolResultBudget,
   type TraceContext,
 } from "@zcode/contracts";
-import {
-  OFFICIAL_CUA_FRAME_MODEL_CONTENT_PROTECTION,
-  containsOfficialCuaImageRefCredentialText,
-} from "@zcode/zcode-cua/frame-contract";
 import type { ToolEntry, ToolResultSerialization } from "../types.js";
 import { formatHookAdditionalContexts } from "./hook-flow.js";
 import {
@@ -21,11 +17,8 @@ import {
 import {
   appendHookToPersistedArtifactPreview,
   appendHookToStringContent,
-  appendHookWithoutReorderingStructuredContent,
   fitContentWithSuffix,
-  OfficialCuaFrameContractError,
   projectHookAugmentedModelContent,
-  projectOfficialCuaStructuredContent,
 } from "./result-content-projection.js";
 import type { ToolExecutorDeps } from "./types.js";
 import { isRecord } from "./utils.js";
@@ -38,10 +31,6 @@ const DEFAULT_RESULT_BUDGET: ToolResultBudget = {
     direction: "head",
   },
 };
-
-const OFFICIAL_CUA_INVALID_RASTER_RECOVERY_TEXT =
-  "This CUA raster is invalid and cannot be used in this request. " +
-  "Do not send a coordinate target; capture a new raster first.";
 
 export async function serializeOutput(
   deps: ToolExecutorDeps,
@@ -97,66 +86,6 @@ export async function serializeOutput(
       )
     : undefined;
   const resolvedArtifactPath = artifact?.path ?? artifact?.uri ?? artifactPath;
-
-  if (
-    entry.modelContentProtection === OFFICIAL_CUA_FRAME_MODEL_CONTENT_PROTECTION &&
-    hasImageBlock(modelContent)
-  ) {
-    let protectedProjection;
-    try {
-      protectedProjection = projectOfficialCuaStructuredContent(
-        modelContent,
-        maxModelBytes,
-        effectiveBudget.preview?.direction ?? "head",
-      );
-    } catch (error) {
-      if (!(error instanceof OfficialCuaFrameContractError)) throw error;
-      // 原因：非 canonical frame 必须继续 fail closed，但低层布局 invariant 不能作为
-      // tool result 暴露给模型；这里只记录稳定诊断，再交给 executor 生成可恢复错误结果。
-      deps.logger?.warn("Official CUA frame contract rejected during result serialization", {
-        ...traceContextToLogContext(traceContext),
-        code: error.code,
-        event: "tool.result.cua_frame_contract_rejected",
-        module: "core.tool.executor",
-        status: "failed",
-        toolCallId,
-        toolName: entry.metadata.name,
-      });
-      throw createCoreError(
-        CoreErrorType.ToolExecutionFailed,
-        OFFICIAL_CUA_INVALID_RASTER_RECOVERY_TEXT,
-        {
-          context: { code: error.code, source: "tool" },
-          recoverable: true,
-        },
-      );
-    }
-    if (protectedProjection) {
-      const projectedModelContent = protectedProjection.content;
-      const projectedContent = stringifyModelContentForSerialization(projectedModelContent);
-      const projectedBytes = Buffer.byteLength(projectedContent, "utf8");
-      // 序列化文本里 image 块只是短占位符；真实 base64 栅格（bridge 上限 200 KiB）
-      // 会原样进入模型请求。returnedBytes 语义是"发给模型的字节"，必须计入
-      // 图片载荷，否则 setOutputBytes / turn-tool-usage / usage-observability
-      // 每次 CUA 帧系统性少计一张栅格。只保留 aggregate，避免文本/媒体分量
-      // 与 returnedBytes 形成需要同步维护的第二份状态。
-      const structuredPayloadBytes = structuredMediaBytes(projectedModelContent);
-
-      // 官方 CUA 的 image/image_ref 原子对始终原样保留；图片字节由 bridge 的独立
-      // 上限保护，普通文本仍走 resultBudget，不能借一张合法 raster 绕过上下文预算。
-      // 早返回与 official CUA protection authority 强制成对；配对验证失败
-      //（protectedProjection 为 undefined）时不得绕过通用预算。
-      return {
-        content: projectedContent,
-        modelContent: projectedModelContent,
-        originalBytes,
-        returnedBytes: projectedBytes + structuredPayloadBytes,
-        truncated: protectedProjection.truncated,
-        budgetStrategy: effectiveBudget.strategy,
-        artifactPath: resolvedArtifactPath,
-      };
-    }
-  }
 
   if (
     (originalBytes <= maxModelBytes && !exceedsCharacterBudget) ||
@@ -223,29 +152,9 @@ export function appendHookAdditionalContexts(
   entry: ToolEntry,
 ): ToolResultSerialization {
   if (additionalContexts.length === 0) return serialization;
-  const filteredAdditionalContexts =
-    entry.modelContentProtection === OFFICIAL_CUA_FRAME_MODEL_CONTENT_PROTECTION
-      ? additionalContexts.filter((context) => !containsOfficialCuaImageRefCredentialText(context))
-      : additionalContexts;
-  const omittedFrameCredential = filteredAdditionalContexts.length !== additionalContexts.length;
-  if (filteredAdditionalContexts.length === 0) {
-    return omittedFrameCredential ? { ...serialization, truncated: true } : serialization;
-  }
-  const hookContext = formatHookAdditionalContexts(filteredAdditionalContexts);
+  const hookContext = formatHookAdditionalContexts(additionalContexts);
   const suffix = `\n\n${hookContext}`;
   const maxModelBytes = resolveMaxModelBytes(entry);
-  if (
-    entry.modelContentProtection === OFFICIAL_CUA_FRAME_MODEL_CONTENT_PROTECTION &&
-    hasImageBlock(serialization.modelContent ?? serialization.content)
-  ) {
-    const projected = appendHookWithoutReorderingStructuredContent(
-      serialization,
-      hookContext,
-      suffix,
-      maxModelBytes,
-    );
-    return omittedFrameCredential ? { ...projected, truncated: true } : projected;
-  }
   const previewDirection = entry.resultBudget?.preview?.direction ?? "head";
   const artifactPreview = isPersistedArtifactPreview(serialization);
   const contentProjection = artifactPreview
@@ -267,23 +176,7 @@ export function appendHookAdditionalContexts(
     returnedBytes: Buffer.byteLength(contentProjection.content, "utf8"),
     truncated: serialization.truncated || contentProjection.truncated,
   };
-  return omittedFrameCredential ? { ...projected, truncated: true } : projected;
-}
-
-function hasImageBlock(content: ModelMessageContent): content is ModelMessageContentBlock[] {
-  return Array.isArray(content) && content.some((block) => block.type === "image");
-}
-
-/** 结构化内容里所有 image/file 块的真实载荷字节（dataUrl 原样计入）。 */
-function structuredMediaBytes(content: ModelMessageContent): number {
-  if (!Array.isArray(content)) return 0;
-  return content.reduce((total, block) => {
-    if (block.type === "image") return total + Buffer.byteLength(block.dataUrl, "utf8");
-    // file-with-text 的模型可见内容是 text（dataUrl 不进请求），不计入媒体字节。
-    if (block.type === "file" && block.dataUrl !== undefined && block.text === undefined)
-      return total + Buffer.byteLength(block.dataUrl, "utf8");
-    return total;
-  }, 0);
+  return projected;
 }
 
 function resolveMaxModelBytes(entry: ToolEntry): number {

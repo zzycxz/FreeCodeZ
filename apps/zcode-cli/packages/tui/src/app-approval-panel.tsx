@@ -3,7 +3,6 @@ import type { ApprovalPrompt } from "./app-model.js";
 import { approvalDecisions, palette } from "./app-model.js";
 import {
   approvalDecisionLabel,
-  isOfficialCuaProjectApproval,
   approvalPermissionScopes,
   approvalRequestDescription,
   previewPermissionInput,
@@ -105,22 +104,11 @@ function approvalRows(approval: ApprovalPrompt, contentWidth: number): ApprovalT
     );
   }
 
-  if (isOfficialCuaProjectApproval(approval.request)) {
-    rows.push(
-      approvalTextRow(
-        "computer-use-scope",
-        "Do not ask again for official Computer Use actions in this project",
-        palette.muted,
-        contentWidth,
-      ),
-    );
-  }
-
   for (const decision of approvalDecisions) {
     rows.push(
       approvalTextRow(
         decision,
-        `${approval.selectedDecision === decision ? ">" : " "} ${approvalDecisionLabel(decision, approval.request)}`,
+        `${approval.selectedDecision === decision ? ">" : " "} ${approvalDecisionLabel(decision)}`,
         approval.selectedDecision === decision ? palette.accent : palette.text,
         contentWidth,
       ),

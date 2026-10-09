@@ -23,7 +23,7 @@ test("native 运行时插件的 seed 定义必须携带 node_modules", () => {
     assert.ok(
       definition.runtimeTopLevelPaths?.includes("node_modules"),
       `${name} 的 runtimeTopLevelPaths 必须含 "node_modules"（置空=缓存副本缺 koffi/sharp，` +
-        `执行层 try/catch 静默降级，包态电脑控制消失；参考 computer-use 条目“勿再置空”注释）`,
+        `执行层 try/catch 静默降级，包态电脑控制消失；node_modules 必须随 seed 携带）`,
     );
   }
 });

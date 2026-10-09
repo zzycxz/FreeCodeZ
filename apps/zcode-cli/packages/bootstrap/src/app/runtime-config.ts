@@ -10,7 +10,7 @@ import {
   type HooksRuntimeConfig,
   type McpServerConfig,
 } from "@zcode/contracts";
-import { omitMcpServers, resolveTrustedOfficialCuaServerNames } from "../mcp-config.js";
+import { omitMcpServers } from "../mcp-config.js";
 import { resolveDefaultEmbeddedSearchBackend } from "./embedded-search-backend.js";
 import { getProjectMemoryRoot } from "./paths.js";
 import type { ZCodeAppOptions } from "./types.js";
@@ -95,24 +95,9 @@ export function resolveAppRuntimeConfig(input: {
     ...(options.runtimeConfig?.mcp?.servers ?? configResult.config.mcp.servers),
     ...builtInMcpServers,
   };
-  const trustedOfficialCuaServerNames = resolveTrustedOfficialCuaServerNames(
-    configuredMcpServers,
-    pluginMcpServers ?? {},
-  );
-  const cuaBridgeServerNames = new Set(trustedOfficialCuaServerNames);
-  if (pluginRuntimeFeatures?.computerUse === true && configuredMcpServers.node_repl) {
-    // node_repl 需要 broker 注入，但不是 CUA MCP server。注入资格与官方 CUA 图片
-    // authority 必须分开；把它塞进 trustedOfficialCuaServerNames 会让整个
-    // 通用 node_repl 结果被误送进 exact-raster gate，Browser 截图和 console 日志都会失败。
-    cuaBridgeServerNames.add("node_repl");
-  }
   // 产品决定 workspace MCP 开箱即用：project 作用域 MCP 默认 trusted，并自动连接。
   const untrustedProjectMcpServers = new Set<string>();
-  const autoConnectMcpServers = omitMcpServers(
-    configuredMcpServers,
-    untrustedProjectMcpServers,
-    cuaBridgeServerNames,
-  );
+  const autoConnectMcpServers = omitMcpServers(configuredMcpServers, untrustedProjectMcpServers);
   const runtimeBuiltInModelSelectionOverrides =
     options.runtimeConfig?.subagents?.builtInModelSelectionOverrides ?? {};
   const runtimeConfig: AgentRuntimeConfig = {
@@ -155,7 +140,6 @@ export function resolveAppRuntimeConfig(input: {
     mcp: {
       enabled: options.runtimeConfig?.mcp?.enabled ?? configResult.config.features.mcp,
       servers: autoConnectMcpServers,
-      trustedOfficialCuaServerNames: [...trustedOfficialCuaServerNames],
     },
     hooks: mergeRuntimeHooks(
       options.runtimeConfig?.hooks

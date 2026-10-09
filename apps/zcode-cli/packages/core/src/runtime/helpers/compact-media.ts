@@ -6,10 +6,6 @@ import type {
   ModelMessageContentBlock,
   TraceContext,
 } from "../deps.js";
-import {
-  officialCuaImageRefIndexesForUnavailableMedia,
-  officialCuaRasterUnavailableBlock,
-} from "./official-cua-media.js";
 
 interface CompactMediaPlaceholderProjection {
   messages: ModelInputMessage[];
@@ -68,12 +64,6 @@ function projectCompactContent(content: ModelMessageContent): {
     if (projectedBlock.replaced) replacedIndexes.add(blockIndex);
     return projectedBlock.block;
   });
-
-  const imageRefIndexes = officialCuaImageRefIndexesForUnavailableMedia(content, replacedIndexes);
-  for (const imageRefIndex of imageRefIndexes) {
-    projectedBlocks[imageRefIndex - 1] = officialCuaRasterUnavailableBlock();
-    projectedBlocks[imageRefIndex] = { type: "text", text: "" };
-  }
 
   return {
     content: replacedIndexes.size > 0 ? projectedBlocks : content,

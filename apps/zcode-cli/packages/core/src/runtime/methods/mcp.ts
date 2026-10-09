@@ -1,45 +1,10 @@
 import {
-  ZCODE_CUA_OFFICIAL_PLUGIN_ID,
-  ZCODE_PLUGIN_ID_ENV_KEY,
-} from "@zcode/shared";
-import {
-  getCapturedZCodeCuaBrokerCredentials,
-  ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
-} from "@zcode/shared/runtime-env";
-import {
   registerMcpToolsWithDirectory, traceContextToLogContext } from "../deps.js";
 import { createMcpDirectoryEntry } from "../deps.js";
 import type { McpConnectionSnapshot, McpServerConfig, McpToolDescriptor, TraceContext } from "../deps.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 
 const MCP_SESSION_OAUTH_AUTHORIZATION_TIMEOUT_MS = 15_000;
-
-/**
- * 只有同时携带 resolver 注入的官方 plugin id 和本进程私有 authority 的 server 才能共享
- * Computer Use 项目授权。server 名、tool 名和 manifest env 都可被第三方仿造，不能单独作为信任依据。
- */
-export function computeOfficialCuaServerNames(
-  servers: Record<string, McpServerConfig>,
-  trustedServerNames: ReadonlySet<string>,
-): Set<string> {
-  const expectedAuthority = getCapturedZCodeCuaBrokerCredentials().pluginAuthority;
-  const names = new Set<string>();
-  if (!expectedAuthority) return names;
-
-  for (const [name, config] of Object.entries(servers)) {
-    if (!trustedServerNames.has(name)) continue;
-    if (config.type !== "stdio") continue;
-    if (
-      config.env?.[ZCODE_PLUGIN_ID_ENV_KEY]?.trim().toLowerCase() !==
-        ZCODE_CUA_OFFICIAL_PLUGIN_ID ||
-      config.env?.[ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]?.trim() !== expectedAuthority
-    ) {
-      continue;
-    }
-    names.add(name);
-  }
-  return names;
-}
 
 export function startMcpStartup(
   this: AgentRuntimeInternal,
@@ -155,10 +120,6 @@ export async function initializeMcp(
       {
         allowedTools: this.config.toolAllowlist,
         disallowedTools: this.config.toolDisallowlist,
-        officialCuaServerNames: computeOfficialCuaServerNames(
-          this.config.mcp?.servers ?? {},
-          new Set(this.config.mcp?.trustedOfficialCuaServerNames ?? []),
-        ),
         globalDeferredEnabled,
         serverExposure,
         registerDirectoryTool: (

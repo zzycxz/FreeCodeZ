@@ -20,8 +20,6 @@ export const TASK_OUTPUT_DISPLAY_MAX_STATUS_CHARS = 64;
 export const TASK_OUTPUT_DISPLAY_MAX_OUTPUT_CHARS = 2_000;
 export const MCP_TOOL_DISPLAY_MAX_NAME_CHARS = 256;
 export const MCP_TOOL_DISPLAY_MAX_DESCRIPTION_CHARS = 4 * 1024;
-export const CUA_TARGET_APP_DISPLAY_META_KEY = "zcode.cua/target-app-display-v1" as const;
-
 export const applicationIconLocatorSchema = z.discriminatedUnion("kind", [
   z
     .object({ kind: z.literal("darwin-bundle-id"), value: z.string().trim().min(1).max(512) })
@@ -34,24 +32,6 @@ export const applicationIconLocatorSchema = z.discriminatedUnion("kind", [
     .strict(),
   z.object({ kind: z.literal("windows-aumid"), value: z.string().trim().min(1).max(512) }).strict(),
 ]);
-
-export const cuaTargetAppDisplaySchema = z
-  .object({
-    schemaVersion: z.literal(1),
-    displayName: z.string().trim().min(1).max(512).optional(),
-    iconLocators: z.array(applicationIconLocatorSchema).max(3),
-  })
-  .strict();
-
-export const cuaRequestAccessStatusDisplaySchema = z
-  .object({
-    schemaVersion: z.literal(1),
-    platform: z.literal("darwin"),
-    grantOwner: z.string().trim().min(1).max(512),
-    accessibility: z.enum(["granted", "stale", "denied"]),
-    screenRecording: z.enum(["granted", "denied", "unknown"]),
-  })
-  .strict();
 
 // CreateWorkflow display 诊断的限长常量与条目 schema 已移至 create-workflow.ts
 // （被 create_workflow 与 eval_workflow_snippet 两个 display payload 复用，放这里会成环）。
@@ -111,37 +91,6 @@ export const respondToCoordinatorToolResultDisplayPayloadSchema = z
   .object({
     kind: z.literal("respond_to_coordinator"),
     status: z.enum(["success", "failed"]),
-  })
-  .strict();
-
-export const cuaToolResultDisplayPayloadSchema = z
-  .object({
-    kind: z.literal("cua"),
-    schemaVersion: z.literal(1),
-    toolName: z.string().min(1),
-    status: z.enum(["success", "failed"]),
-    // 旧 v1 历史记录曾重复携带 ToolCallRow.input；只为回放兼容继续接受，新 producer 不再写入。
-    input: z.string().optional(),
-    structuredContent: z.string().optional(),
-    text: z.string().optional(),
-    errorCode: z.string().optional(),
-    suggestedAction: z.string().optional(),
-    targetApp: cuaTargetAppDisplaySchema.optional(),
-    permissionStatus: cuaRequestAccessStatusDisplaySchema.optional(),
-    media: z
-      .array(
-        z
-          .object({
-            mimeType: z.string().min(1),
-            // 256 KiB 原始图片编码后的最大 base64 长度；总预算由投影器执行。
-            data: z.string().min(1).max(349_528).optional(),
-            artifactUri: z.string().min(1).optional(),
-          })
-          .strict(),
-      )
-      .max(4)
-      .optional(),
-    truncated: z.boolean().optional(),
   })
   .strict();
 
@@ -238,7 +187,6 @@ export const toolResultDisplayPayloadSchema = z.discriminatedUnion("kind", [
   taskStopToolResultDisplayPayloadSchema,
   taskOutputToolResultDisplayPayloadSchema,
   respondToCoordinatorToolResultDisplayPayloadSchema,
-  cuaToolResultDisplayPayloadSchema,
   nodeReplImageToolResultDisplayPayloadSchema,
   mcpToolResultDisplayPayloadSchema,
   createWorkflowToolResultDisplayPayloadSchema,
@@ -265,10 +213,7 @@ export type TaskOutputToolResultDisplayPayload = z.infer<
 export type RespondToCoordinatorToolResultDisplayPayload = z.infer<
   typeof respondToCoordinatorToolResultDisplayPayloadSchema
 >;
-export type CuaToolResultDisplayPayload = z.infer<typeof cuaToolResultDisplayPayloadSchema>;
 export type ApplicationIconLocator = z.infer<typeof applicationIconLocatorSchema>;
-export type CuaTargetAppDisplay = z.infer<typeof cuaTargetAppDisplaySchema>;
-export type CuaRequestAccessStatusDisplay = z.infer<typeof cuaRequestAccessStatusDisplaySchema>;
 export type NodeReplImageToolResultDisplayPayload = z.infer<
   typeof nodeReplImageToolResultDisplayPayloadSchema
 >;

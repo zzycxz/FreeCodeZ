@@ -31,8 +31,6 @@ export const OFFICIAL_BROWSER_USE_PLUGIN_ID = `${OFFICIAL_BROWSER_USE_PLUGIN_NAM
  */
 export const OFFICIAL_NODE_REPL_HOST_PLUGIN_NAME = "node-repl-host";
 export const OFFICIAL_NODE_REPL_HOST_PLUGIN_ID = `${OFFICIAL_NODE_REPL_HOST_PLUGIN_NAME}@${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE}`;
-const OFFICIAL_CUA_PLUGIN_NAME = "computer-use";
-export const OFFICIAL_CUA_PLUGIN_ID = `${OFFICIAL_CUA_PLUGIN_NAME}@${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE}`;
 
 export interface OfficialPluginDefinition {
   // 内容型 plugin (无 MCP server / 无系统依赖) 可以设为 true,
@@ -91,9 +89,9 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
     // 无 listing：宿主不进市场、不对用户露出。它必须始终可用，因为 node_repl 的注册门禁
     // 是「Browser Use 或 Computer Use 任一启用」，宿主自己不参与那个判断。
     //
-    // 这里的 defaultEnabled 不违反「仅限内容型插件」那条约定（见下方 computer-use 的说明）：
+    // 这里的 defaultEnabled 不违反「仅限内容型插件」那条约定：
     // 约定要防的是「首启即注入整套工具集并拉起 Helper」，而 seed 宿主两件都不做——工具是否
-    // 进模型工具池由两个能力插件的启停决定，Helper 由 SDK 首次调用时才拉起。
+    // 进模型工具池由能力插件的启停决定。
     defaultEnabled: true,
     name: OFFICIAL_NODE_REPL_HOST_PLUGIN_NAME,
     requiredSeedPaths: OFFICIAL_NODE_REPL_HOST_REQUIRED_SEED_PATHS,
@@ -107,8 +105,8 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
     // scanOfficialCache），server.js 内联的 koffi-ax 用 createRequire(import.meta.url)
     // 从缓存副本解析 require("koffi")——此前无此开关，node_modules 被 seed 过滤掉，
     // MODULE_NOT_FOUND 被 try/catch 吞掉 → bindings=null → 电脑控制执行层静默消失
-    // （dev 态靠仓库根 hoisted node_modules 蒙对，只有包态炸）。与 computer-use 条目
-    // 的 runtimeTopLevelPaths 同义：node_modules 随 seed 携带，勿再置空。
+    // （dev 态靠仓库根 hoisted node_modules 蒙对，只有包态炸）。
+    // node_modules 随 seed 携带，勿再置空。
     runtimeTopLevelPaths: ["node_modules"],
     version: "0.6.0",
   },

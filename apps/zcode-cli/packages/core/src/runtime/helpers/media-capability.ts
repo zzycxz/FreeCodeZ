@@ -13,10 +13,6 @@ import type {
   ModelMessageContentBlock,
   TraceContext,
 } from "../deps.js";
-import {
-  officialCuaImageRefIndexesForUnavailableMedia,
-  officialCuaRasterUnavailableBlock,
-} from "./official-cua-media.js";
 
 export interface MediaCapabilityProjection {
   messages: ModelInputMessage[];
@@ -59,16 +55,7 @@ export function projectMessagesForInputFormat(
     message.content.forEach((block, index) => {
       if (unsupportedMediaReplacement(block, inputFormat)) unavailableMediaIndexes.add(index);
     });
-    const imageRefIndexes = officialCuaImageRefIndexesForUnavailableMedia(
-      message.content,
-      unavailableMediaIndexes,
-    );
-    const content = message.content.map((block, index) => {
-      if (imageRefIndexes.has(index)) {
-        messageChanged = true;
-        changed = true;
-        return { type: "text" as const, text: "" };
-      }
+    const content = message.content.map((block) => {
       const replacement = unsupportedMediaReplacement(block, inputFormat);
       if (!replacement) {
         if (isProviderVisibleModelInputMediaBlock(block)) retainedMediaCount++;
@@ -81,7 +68,7 @@ export function projectMessagesForInputFormat(
       else if (isProviderVisiblePdfModelInputBlock(block)) omittedPdfCount++;
       else if (isProviderVisibleVideoModelInputBlock(block)) omittedVideoCount++;
       else omittedOtherMediaCount++;
-      return imageRefIndexes.has(index + 1) ? officialCuaRasterUnavailableBlock() : replacement;
+      return replacement;
     });
 
     if (!messageChanged) {

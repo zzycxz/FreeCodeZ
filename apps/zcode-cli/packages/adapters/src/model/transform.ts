@@ -17,7 +17,6 @@ import { providerOptionsForReasoningBlock } from "./anthropic-reasoning-metadata
 import {
   shouldTextifyStructuredToolResults,
   toStructuredToolResultText,
-  undeliverableFrameReferenceText,
   toToolResultMediaUserParts,
   toolResultHasVideoMedia,
 } from "./tool-result-media-projection.js";
@@ -111,15 +110,8 @@ export function toAiSdkMessages(
         const messageTextifyToolResult =
           textifyStructuredToolResults || toolResultHasVideoMedia(message.content);
 
-        // 通用 fail-closed：帧引用结果在媒体不可投递时整体错误化（约束：
-        // 引用文本不得与"媒体不可用"占位符同现，否则 actionable frame_id 会诱导
-        // 模型对未见过画面的坐标产生动作）。
-        const frameReferenceFailure = undeliverableFrameReferenceText(message.content, options);
-
         const toolMediaParts =
-          frameReferenceFailure === undefined &&
-          messageTextifyToolResult &&
-          message.isError !== true
+          messageTextifyToolResult && message.isError !== true
             ? toToolResultMediaUserParts(message.content, {
                 ...options,
                 toolName,
@@ -132,14 +124,12 @@ export function toAiSdkMessages(
               type: "tool-result",
               toolCallId: message.toolCallId,
               toolName,
-              output: frameReferenceFailure
-                ? { type: "error-text", value: frameReferenceFailure }
-                : toAiSdkToolResultOutput(
-                    message.content,
-                    options,
-                    message.isError === true,
-                    messageTextifyToolResult,
-                  ),
+              output: toAiSdkToolResultOutput(
+                message.content,
+                options,
+                message.isError === true,
+                messageTextifyToolResult,
+              ),
             },
           ],
           ...providerOptionsForCacheControl(message.cacheControl),

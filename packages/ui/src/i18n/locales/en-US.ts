@@ -5328,9 +5328,6 @@ const enUS: Record<string, string> = {
     "Do not ask again for matching commands in this project",
   "chat.permission.allowCommand": "Always allow this command",
   "chat.permission.allowForProject": "Always allow in this project",
-  "chat.permission.cua.allowForProject": "Always allow Computer Use in this project",
-  "chat.permission.cua.allowForProject.description":
-    "Do not ask again for official Computer Use actions in this project",
   "chat.permission.deny": "Deny",
   "chat.permission.denyAlways": "Always deny",
   "chat.permission.files": "Files",

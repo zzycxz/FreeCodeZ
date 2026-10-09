@@ -60,8 +60,7 @@ export function writeOfficialPluginRuntimeManifest(input: OfficialRuntimeManifes
   const hostPrefixArgs = officialPluginHostPrefixArgs();
   if (!hostPrefixArgs) return;
 
-  // 保留对其他历史 official plugin MCP 的通用重写；zcode-cua 当前是 skill/SDK-only，
-  // 不会进入这个分支，也不会生成独立的 CUA MCP server。
+  // 保留对其他历史 official plugin MCP 的通用重写。
   for (const [serverKey, serverRaw] of Object.entries(mcpServers)) {
     const mcpServer = asRecord(serverRaw);
     const mcpServerEnv = isRecord(mcpServer.env) ? mcpServer.env : {};
@@ -73,8 +72,7 @@ export function writeOfficialPluginRuntimeManifest(input: OfficialRuntimeManifes
       // 官方插件 MCP server 缺少 Node 模式 env 时会误进 Electron main，触发 deep-link 注册等桌面副作用。
       ELECTRON_RUN_AS_NODE: "1",
       // 权威写入插件身份（pluginName@marketplace，来自本地 plugin registry，manifest/user env 不可覆盖）。
-      // 其他 official plugin 仍带上不可伪造的 plugin identity；CUA broker 凭据由 shared
-      // node_repl 的可信配置注入，不再写入独立 server。
+      // 其他 official plugin 仍带上不可伪造的 plugin identity。
       [ZCODE_PLUGIN_ID_ENV_KEY]: `${input.pluginName}@${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE}`,
     };
     mcpServers[serverKey] = mcpServer;

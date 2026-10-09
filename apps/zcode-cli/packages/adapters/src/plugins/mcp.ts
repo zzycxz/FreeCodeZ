@@ -210,8 +210,7 @@ function resolveMcpServerConfig(
       { allowSensitive: true },
     );
     // 插件 manifest 可自定义 env，但插件身份必须由 resolver 权威写入（loaded.id 来自本地 plugin
-    // registry，不是可序列化配置），不能让第三方伪造 official zcode-cua 身份后获得只应定向注入给
-    // 内置插件的 broker 凭据。manifest env spread 之后覆写，确保 user/manifest 无法覆盖。
+    // registry，不是可序列化配置），manifest env spread 之后覆写，确保 user/manifest 无法覆盖。
     env[ZCODE_PLUGIN_ID_ENV_KEY] = context.loaded.id;
     return {
       type: "stdio",

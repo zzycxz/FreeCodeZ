@@ -12,8 +12,6 @@ export function resolveRuntimePermissionCapability(
   return {
     ...entry.metadata,
     ...runtimeCapability,
-    // capability group is provenance, not a runtime/model-controlled override.
-    permissionCapabilityGroup: entry.permissionCapabilityGroup,
     permission: {
       ...entry.permission,
       ...runtimeCapability?.permission,

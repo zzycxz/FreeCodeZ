@@ -169,8 +169,6 @@ export interface AgentRuntimeConfig {
      * 是否允许 node_repl 注入 agent.browsers。还需要宿主提供 browserControlPort。
      */
     browserUse?: boolean;
-    /** 是否把 CUA broker 凭据注入共享 node_repl；不代表注册独立 CUA MCP。 */
-    computerUse?: boolean;
     /**
      * 官方 browser-use plugin 的 docs 资产目录。由 bootstrap 从 plugin metadata.rootPath 推导，
      * 不属于 plugin manifest schema。
@@ -181,11 +179,6 @@ export interface AgentRuntimeConfig {
   mcp?: {
     enabled?: boolean;
     servers?: Record<string, McpServerConfig>;
-    /**
-     * Process-local provenance supplied by bootstrap after resolving bundled
-     * official plugins. Never derive this list from serialized MCP config.
-     */
-    trustedOfficialCuaServerNames?: readonly string[];
   };
   /**
    * Session 冻结的 Plugin 身份 catalog。

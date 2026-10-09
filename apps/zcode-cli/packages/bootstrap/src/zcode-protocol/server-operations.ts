@@ -108,7 +108,6 @@ import { createProtocolInteractionBroker } from "./interaction-broker.js";
 import { createProtocolAutomationPort } from "./automation-port.js";
 import { createProtocolOffPeakPort } from "./offpeak-port.js";
 import { createProtocolBrowserControlBroker } from "./browser-control-broker.js";
-import { mapComputerUseOperationEvent } from "./computer-use-operation-event.js";
 import { protocolMcpServersToRuntimeMcpConfig } from "./protocol-mcp-config.js";
 import { projectIdFromDirectory } from "../app/paths.js";
 import {
@@ -3003,36 +3002,6 @@ export function onSessionEvent(
   record: ZCodeProtocolSessionRecord,
   event: SessionEvent,
 ): void {
-  const computerUseOperationEvent = mapComputerUseOperationEvent(event);
-  if (computerUseOperationEvent) {
-    try {
-      // 桌面 v4 主链没有旧 session/event 的 deliveryKind 订阅，顶部提示不能继续
-      // 依赖该旧门控；这里只发送无内容的生命周期元数据，并与 v4 投影并行、互不阻断。
-      context.notify({
-        method: zcodeProtocolMethods.computerUseOperationEvent,
-        params: computerUseOperationEvent,
-      });
-      // 这条 notify 过去只在抛错时有日志，成功路径无痕，于是「agent 压根没发」
-      // 与「发了但宿主侧静默丢弃」无法区分。CLI 自己的 jsonl 收 debug 级，足够闭环到源头。
-      context.logger?.debug("Computer Use operation lifecycle notification sent", {
-        event: "zcode_protocol.computer-use.operation-event.sent",
-        eventId: computerUseOperationEvent.eventId,
-        sessionId: computerUseOperationEvent.sessionId,
-        kind: computerUseOperationEvent.kind,
-        turnId:
-          "turnId" in computerUseOperationEvent ? computerUseOperationEvent.turnId : undefined,
-      });
-    } catch (error) {
-      context.logger?.warn("Computer Use operation lifecycle notification failed", {
-        error: error instanceof Error ? error.message : String(error),
-        event: "zcode_protocol.computer-use.operation-event.failed",
-        eventId: computerUseOperationEvent.eventId,
-        sessionId: computerUseOperationEvent.sessionId,
-        turnId:
-          "turnId" in computerUseOperationEvent ? computerUseOperationEvent.turnId : undefined,
-      });
-    }
-  }
   if (String(event.sessionId) !== record.app.sessionId) {
     // subagent runtime 复用父 runtime 的外部 event sink，但 raw child event
     // 仍属于 child session。无条件用 parent record id ingest 会让 child topic 打开后

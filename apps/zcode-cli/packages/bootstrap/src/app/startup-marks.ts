@@ -26,7 +26,6 @@ export function resolveStartupPlugins(input: {
       extraRoots: input.options.officialPluginRoots,
       logger: input.logger,
       storageRoot: pluginStorageRoot,
-      suppressedBuiltins: new Set(input.configResult.config.plugins.suppressedBuiltins),
     }),
     // defaultEnabled 的 official plugin (如 skill-creator) 只有在这里
     // 把名单传给 discoverNodePluginsSync 才会真正默认开启。CLI 子命令路径
