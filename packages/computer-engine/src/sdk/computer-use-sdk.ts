@@ -4,6 +4,12 @@
 // blockedApps 在引擎；闩锁/租约/拆分教学/跨应用预检在本层。
 import { ComputerControlGate } from "../host/control-latch";
 import {
+  createUserActivityReader,
+  waitForUserQuiet,
+  type UserActivityGateOptions,
+  type UserActivityReader,
+} from "../host/user-activity-gate";
+import {
   ComputerUseSdkError,
   mapEngineError,
   type SdkErrorMapping,
@@ -28,6 +34,9 @@ export interface ComputerUseSdkOptions {
   gate?: ComputerControlGate;
   /** 测试/装机注入；缺省 process.platform。 */
   platform?: NodeJS.Platform;
+  /** W-26 用户活动闸检测器；缺席=恒放行（干预面缺席不折断动作本体）。 */
+  readUserActivity?: UserActivityReader;
+  activityGate?: Partial<UserActivityGateOptions>;
 }
 
 /** typeText 单次上限（UTF-16 code units，G.1 拆分教学）。 */
@@ -38,12 +47,16 @@ export class ComputerUseSdk {
   private readonly sessionId: string;
   readonly gate: ComputerControlGate;
   private readonly platform: NodeJS.Platform;
+  private readonly readUserActivity: UserActivityReader;
+  private readonly activityGate: Partial<UserActivityGateOptions>;
 
   constructor(options: ComputerUseSdkOptions) {
     this.transport = options.transport;
     this.sessionId = options.sessionId;
     this.gate = options.gate ?? new ComputerControlGate();
     this.platform = options.platform ?? process.platform;
+    this.readUserActivity = createUserActivityReader(options.readUserActivity);
+    this.activityGate = options.activityGate ?? {};
   }
 
   // ---- 探测面 ----
@@ -276,8 +289,25 @@ export class ComputerUseSdk {
     return { x: target.x / scale, y: target.y / scale };
   }
 
+  /** W-26：观测面不套闸（读不驱动输入），动作面执行前等待用户静默。 */
+  private static readonly OBSERVE_METHODS = new Set([
+    "capabilities",
+    "listApps",
+    "listWindows",
+    "getAppState",
+  ]);
+
   private async call(method: string, params: Record<string, unknown>): Promise<unknown> {
     this.gate.assertMethodAllowed(method);
+    if (!ComputerUseSdk.OBSERVE_METHODS.has(method)) {
+      const quiet = await waitForUserQuiet(this.readUserActivity, this.activityGate);
+      if (!quiet.ok) {
+        throw new ComputerUseSdkError(
+          { sdkCode: "user_active", retry: "retry", possiblySent: false },
+          quiet.error.message,
+        );
+      }
+    }
     let payload: unknown;
     try {
       payload = await this.transport.request(method, params);

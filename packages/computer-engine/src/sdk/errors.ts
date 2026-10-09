@@ -20,7 +20,8 @@ export type SdkErrorCode =
   | "not_selectable"
   | "control_stopped"
   | "controller_busy"
-  | "cancelled";
+  | "cancelled"
+  | "user_active";
 
 export type RetryClass = "reobserve" | "never" | "retry";
 
