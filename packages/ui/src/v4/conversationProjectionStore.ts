@@ -25,7 +25,7 @@ import { uiMemoryDiagnosticsRegistry } from "@/lib/memoryDiagnostics.js";
 /**
  * runtime 换代打断 subscribe 后的退避节奏。
  *
- * CUA Helper 冷启动就绪会 recycleUntilStable → disposeWorkspace 回收 agent
+ * runtime 冷启动换代会 recycleUntilStable → disposeWorkspace 回收 agent
  * runtime，在途 subscribe 被 rejectAll 打断。若把这次瞬态失败定格成 status="error"，
  * 懒启动的 agent 在 dispose 后可能无人拉起，onRuntimeRestart 就不会到达，面板只能靠用户
  * 手点「重新连接」。subscribeConversationV4 走 start-if-needed，重订阅自身会拉起 runtime，

@@ -21,8 +21,15 @@ export interface ConversationCuaGroupRenderItem {
   assistantResponseIds: string[];
 }
 
+// W-30/P-C(E)① 工具名前缀双轨：新命名空间（S10 自有插件 id 族）用于新注册工具；
+// 旧前缀**仅用于历史会话渲染**（存量 toolCallRows 的工具名带旧前缀，只读兼容——
+// 不再注册工具），否则升级后旧会话的 CUA 卡片全部失渲染。canonical 中性名
+// `mcp__computer-use__` 两个时代共用。
 const OFFICIAL_CUA_TOOL_PREFIXES = [
+  // canonical 中性名（两个时代共用）+ 新命名空间（S10 自有插件 id 族）：
   "mcp__computer-use__",
+  "mcp__plugin_freecodez_computer-use__",
+  // 历史只读兼容（勿删）：
   "mcp__plugin_zcode-cua_computer-use__",
 ] as const;
 

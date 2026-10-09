@@ -10,6 +10,12 @@ import {
   cursorEventsForText,
   emitCursorEvents,
 } from "../host/cursor-events.js";
+import {
+  buildCuaAppSnapshot,
+  resolveCuaAppIdentity,
+  type CuaAppIdentity,
+  type ListAppsEntry,
+} from "./cua-app-projection";
 import { loadAppInstructions } from "./app-instructions";
 import {
   createUserActivityReader,
@@ -77,8 +83,23 @@ export class ComputerUseSdk {
     return this.call("capabilities", {});
   }
 
+  private lastCuaAppSnapshot: Map<number, CuaAppIdentity> | undefined;
+
   async listApps(): Promise<unknown> {
-    return this.call("listApps", {});
+    const result = await this.call("listApps", {});
+    // W-30：缓存最近 listApps 快照供 cuaApp 投影（G.1）。
+    const entries = extractAppEntries(result);
+    if (entries) {
+      this.lastCuaAppSnapshot = buildCuaAppSnapshot(entries);
+    }
+    return result;
+  }
+
+  /** cuaApp 身份投影：按动作输入（app_ref）解析最近快照。 */
+  cuaAppFor(input: unknown): CuaAppIdentity | undefined {
+    return this.lastCuaAppSnapshot
+      ? resolveCuaAppIdentity(input, this.lastCuaAppSnapshot)
+      : undefined;
   }
 
   async listWindows(target: { app: string }): Promise<unknown> {
@@ -364,4 +385,12 @@ export class ComputerUseSdk {
     const mapping: SdkErrorMapping = mapEngineError(code ?? "invalid_argument", message);
     throw new ComputerUseSdkError(mapping, message, code);
   }
+}
+
+/** listApps 结果条目提取（apps 数组或裸数组两种 wire 形状）。 */
+function extractAppEntries(result: unknown): ListAppsEntry[] | undefined {
+  if (Array.isArray(result)) return result as ListAppsEntry[];
+  const record = result as { apps?: unknown } | null;
+  if (Array.isArray(record?.apps)) return record.apps as ListAppsEntry[];
+  return undefined;
 }

@@ -55,14 +55,14 @@ interface DraftRuntimeRebuildGate {
 }
 
 /**
- * CUA Helper 就绪、liveness 恢复等原因会回收 agent runtime（workspace-dispose），把草稿态
+ * runtime 换代（liveness 恢复等）会回收 agent runtime（workspace-dispose），把草稿态
  * 尚未持久化的预热会话一并冲掉。此 hook 在 runtime 换代时递增 draftRuntimeInvalidationVersion
  * 触发重建，并在重建窗口内给出 rebuilding=true 供发送门禁使用。
  *
  * 换代信号优先取 onRuntimeLifecycle 的 unavailable：它在 dispose 当场到达。onRuntimeRestart
  * 只在新 agent 进程 spawn 时才发，而 agent 是懒启动——没人发请求就不 spawn，于是换代通知
  * 永不到达、预热会话永不重建，附件一直卡在 waitingSession，直到用户手动点一次发送才被踹活
- * （生产实测 helper ready 到重建间隔 2.3s/6.0s/26.3s，全等于用户点击时刻）。
+ * （生产实测换代到重建间隔 2.3s/6.0s/26.3s，全等于用户点击时刻）。
  *
  * 正式会话态（sessionId !== null）不启用：那条路径由 CLI 的 cold-session-resume 负责。
  */

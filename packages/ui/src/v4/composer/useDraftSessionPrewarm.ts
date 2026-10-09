@@ -179,7 +179,7 @@ interface DraftPrewarmCurrent {
 /**
  * createSession 失败后的退避重试节奏。
  *
- * CUA Helper ready 会触发 workspace-dispose 回收，正在飞的 createSession 被
+ * runtime 换代会触发 workspace-dispose 回收，正在飞的 createSession 被
  * client disposed 打断；只 warn 一次会永久「回落无预热路径」，草稿态从此拿不到
  * sessionId，粘贴的图片永远停在 waitingSession（进度 0%）。回收是瞬态的，隔一会儿重试即可
  * 成功，所以这里做有界退避而不是放弃。
