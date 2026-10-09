@@ -60,7 +60,6 @@ import {
   zcodeAutomationDeleteParamsSchema,
   zcodeAutomationListParamsSchema,
   zcodeAutomationUpdateParamsSchema,
-  zcodeComputerUseOperationEventSchema,
   zcodeProviderRuntimeHeadersCancelledSchema,
   zcodeProviderRuntimeHeadersRequestParamsSchema,
   zcodeProviderTestModelConnectivityResultSchema,
@@ -182,7 +181,6 @@ import type {
   ZCodeAgentDescribePluginParams,
   ZCodeAgentListMcpServerStatusesParams,
   ZCodeAgentWorkspaceTarget,
-  ZCodeAgentCuaPermissionObservation,
   ZCodeAgentCreateAutomationParams,
   ZCodeAgentUpdateAutomationParams,
   ZCodeAgentAutomationIdParams,
@@ -228,7 +226,6 @@ import {
   conversationTopic,
   conversationTopicWireCandidateSchema,
   conversationTelemetryFactSchema,
-  cuaPermissionObservationSchema,
   sessionsIndexTopic,
   sessionsIndexTopicWireCandidateSchema,
   MAX_LEGACY_TASK_IDS_PER_SUBSCRIBE,
@@ -296,16 +293,9 @@ import {
   collectBrowserAmbientContext,
   type BrowserAmbientContextExecutor,
 } from "./zcodeAgentBrowserAmbientContext.js";
-import {
-  createCuaOperationTurnTracker,
-  type CuaOperationWorkspaceTarget,
-  type CuaOperationStateReporter,
-} from "./cuaOperationTurnTracker.js";
-import type { PipSessionEvent } from "@zcode/zcode-cua/pip-session";
 import { registerMemoryDiagnosticsProvider } from "#src/memoryDiagnostics.js";
 
 const logger = createServiceLogger("zcode-agent-service");
-const cuaOperationLogger = createServiceLogger("cua-operation-turn");
 const PLUGIN_MANAGEMENT_WORKSPACE_DIR_NAME = "plugin-workspace";
 // 状态探测完成后释放闲置的 MCP 子进程；只作用于控制面，不回收会话进程。
 const MCP_STATUS_LANE_IDLE_TIMEOUT_MS = 5 * 60_000;
@@ -363,7 +353,7 @@ const SESSION_CREATE_OPTIONAL_COMPAT_FIELDS = new Set<SessionCreateCompatField>(
   "persistence",
   "thoughtLevel",
   "mcpServers",
-  // CUA 工具隔离新增：buildSessionCreateParams 会带 toolAllowlist/toolDenylist。若旧 app-server
+  // 工具隔离：buildSessionCreateParams 会带 toolAllowlist/toolDenylist。若旧 app-server
   // 的 .strict() schema 不认，需可降级重试而不是整个 createSession 硬失败。
   "toolAllowlist",
   "toolDenylist",
@@ -473,11 +463,9 @@ function ensurePluginManagementWorkspacePath(): string {
 // session/create params (the app→protocol channel). It is deliberately independent of the
 // CLI/bootstrap MCP servers configured in ~/.freecodez/cli/config.json (mcp.servers), which the agent
 // runtime connects separately and reports via the `mcp.server.connected`/toolCount events. So a
-// createSession log line with mcpServerCount:0 is EXPECTED when zcode-cua is a CLI-config MCP server
+// createSession log line with mcpServerCount:0 is EXPECTED when a plugin is a CLI-config MCP server
 // (e.g. the product Helper broker path injected through the gated bootstrap env): the model still receives those
-// tools — the two numbers describe different channels, not a missing tool set. Verified on-machine:
-// real kimi-k2.6 turns call mcp__zcode-cua__* tools (get_app_state/type/open_application, status
-// completed) in sessions whose createSession logged mcpServerCount:0.
+// tools — the two numbers describe different channels, not a missing tool set.
 function getMcpServerCount(params: { mcpServers?: readonly unknown[] }): number {
   return params.mcpServers?.length ?? 0;
 }
@@ -634,7 +622,7 @@ function buildSessionCreateParams(
     ...(params.mcpServers !== undefined && !omittedFields.has("mcpServers")
       ? { mcpServers: params.mcpServers }
       : {}),
-    // CUA 工具隔离字段是可降级的：旧 app-server 的 .strict() schema 若不认，兼容重试会把它们放进
+    // 工具隔离字段是可降级的：旧 app-server 的 .strict() schema 若不认，兼容重试会把它们放进
     // omittedFields 省略后重试（而不是硬失败）。故这里必须同样受 omittedFields 门控。
     ...(params.toolAllowlist !== undefined && !omittedFields.has("toolAllowlist")
       ? { toolAllowlist: params.toolAllowlist }
@@ -683,7 +671,7 @@ function buildSessionResumeParams(
       ? { mcpServers: params.mcpServers }
       : {}),
     // 工具面约束必须和 create 路径一致随 resume 下发，否则冷恢复重建 runtime 后会丢失 allow/deny
-    // 隔离（CUA 会话会重新可见 Bash 等被禁工具）。旧 app-server 不认时经 omittedFields 降级。
+    // 隔离（隔离会话会重新可见 Bash 等被禁工具）。旧 app-server 不认时经 omittedFields 降级。
     ...(params.toolAllowlist !== undefined && !omittedFields.has("toolAllowlist")
       ? { toolAllowlist: params.toolAllowlist }
       : {}),
@@ -898,11 +886,6 @@ interface CreateZCodeAgentServiceOptions extends Omit<
    */
   browserControlExecutor?: BrowserAmbientContextExecutor;
   /** desktop-local Host 注入；只消费已校验、已去重的 live session event。 */
-  cuaOperationStateReporter?: CuaOperationStateReporter;
-  onCuaPipSessionLifecycle?: (
-    workspace: CuaOperationWorkspaceTarget,
-    event: Exclude<PipSessionEvent, { kind: "focus-changed" }>,
-  ) => void;
 }
 
 function toProtocolAutomation(automation: ZCodeAutomation) {
@@ -984,22 +967,6 @@ export function createZCodeAgentService(
 ): IZCodeAgentService & { disposeAllAndWait(): Promise<void> } {
   const processManager = new ZCodeAgentProcessManager(options);
   // Windows indicator 与 macOS producer lifecycle client 共用已校验、去重的 sideband facts。
-  const cuaOperationTurnTracker =
-    options?.cuaOperationStateReporter || options?.onCuaPipSessionLifecycle
-      ? createCuaOperationTurnTracker({
-          ...(options?.cuaOperationStateReporter
-            ? { reporter: options.cuaOperationStateReporter }
-            : {}),
-          ...(options?.onCuaPipSessionLifecycle
-            ? { onPipSessionLifecycle: options.onCuaPipSessionLifecycle }
-            : {}),
-          logger: {
-            debug: (message) => cuaOperationLogger.debug(undefined, message),
-            info: (message) => cuaOperationLogger.info(undefined, message),
-            warn: (message) => cuaOperationLogger.warn(undefined, message),
-          },
-        })
-      : undefined;
   // AutomationRepo 也持有 tasks-index.sqlite 连接，disposeAll 需一并收口（见下方 disposeAll 注释）
   const automationRepo = new AutomationRepo();
   const automationService = new AutomationService(automationRepo);
@@ -1058,7 +1025,6 @@ export function createZCodeAgentService(
   const conversationFrameEmitters = new Map<string, Emitter<ConversationTopicWireCandidate>>();
   const localTtftFactsEmitter = new Emitter<{ workspaceKey: string; facts: LocalTtftFacts }>();
   const conversationTelemetryFactEmitters = new Map<string, Emitter<ConversationTelemetryFact>>();
-  const cuaPermissionObservationEmitter = new Emitter<ZCodeAgentCuaPermissionObservation>();
   // sessions-index 帧 fan-out：与 conversation 同一 conversationFrame 通知，按 topic 前缀分流到此 emitter。
   const sessionsIndexFrameEmitters = new Map<string, Emitter<SessionsIndexTopicWireCandidate>>();
   // workspace-config 帧 fan-out：配置目录活性（task-index syncer 消费），同一通知按前缀分流。
@@ -1079,7 +1045,6 @@ export function createZCodeAgentService(
   const v4RouteKeyByOwnership = new Map<string, string>();
   const v4RouteRuntimeRestartDisposable = processManager.onRuntimeRestarted(({ workspaceKey }) => {
     clearV4SubscriptionRoutes(workspaceKey);
-    cuaOperationTurnTracker?.clearWorkspaceKey(workspaceKey);
   });
   const sessionEventSequenceStates = new Map<string, SessionEventSequenceState>();
   const wiredClients = new WeakSet<ZCodeProtocolClient>();
@@ -1164,10 +1129,6 @@ export function createZCodeAgentService(
 
   const runtimeLifecycleDisposable = processManager.onRuntimeLifecycle((event) => {
     if (event.state !== "unavailable") return;
-    // 协议关闭、进程崩溃或请求超时时，runtime 可能不会再发送 turn-failed/
-    // session-closed，也不一定能成功启动下一代 runtime。必须在 unavailable 这个权威
-    // 生命周期边界清掉 CUA tracker，否则 Windows 顶部提示和 Helper 恢复门控会永久残留。
-    cuaOperationTurnTracker?.clearWorkspaceKey(event.workspaceKey);
     const active = activeClientsByWorkspaceKey.get(event.workspaceKey);
     if (!active) return;
     // Process manager 只会为当前 available runtime 发布 unavailable；这里再绑定当前
@@ -1735,25 +1696,6 @@ export function createZCodeAgentService(
           return;
         }
 
-        if (message.method === zcodeProtocolMethods.computerUseOperationEvent) {
-          const parsed = zcodeComputerUseOperationEventSchema.safeParse(message.params);
-          if (parsed.success) {
-            // v4 会话不会投影 legacy session/event，CUA 提示必须直接消费 runtime sideband，
-            // 避免把两条独立事件流的 sequenceNumber/seq 混为同一顺序域。
-            cuaOperationTurnTracker?.accept(workspace, parsed.data);
-          } else {
-            logger.warn(undefined, "丢弃无效 ZCode Protocol Computer Use operation event", {
-              issues: parsed.error.issues.map((issue) => ({
-                code: issue.code,
-                message: issue.message,
-                path: issue.path.join("."),
-              })),
-              workspaceKey: resolveWorkspaceKey(workspace),
-            });
-          }
-          return;
-        }
-
         if (message.method === "session/event") {
           const parsed = zcodeSessionEventSchema.safeParse(message.params);
           if (parsed.success) {
@@ -1805,34 +1747,6 @@ export function createZCodeAgentService(
           } else {
             // 严格丢弃未知字段，避免 CLI runtime 新字段未经审计穿透到 renderer reporter。
             logger.warn(undefined, "丢弃无效 v4 conversation telemetry fact", {
-              issues: parsed.error.issues.map((issue) => ({
-                code: issue.code,
-                message: issue.message,
-                path: issue.path.join("."),
-              })),
-              workspaceKey: resolveWorkspaceKey(workspace),
-            });
-          }
-          return;
-        }
-
-        if (message.method === V4_NOTIFICATIONS.cuaPermissionObservation) {
-          const parsed = cuaPermissionObservationSchema.safeParse(message.params);
-          if (
-            parsed.success &&
-            !workspace.remoteSessionId &&
-            !(workspace.workspaceIdentity && isRemoteWorkspaceIdentity(workspace.workspaceIdentity))
-          ) {
-            cuaPermissionObservationEmitter.fire({
-              ...parsed.data,
-              workspacePath: workspace.workspacePath,
-              ...(workspace.workspaceIdentity
-                ? { workspaceIdentity: workspace.workspaceIdentity }
-                : {}),
-            });
-          } else if (!parsed.success) {
-            // 原因：权限观察会触发 renderer 副作用，未知字段必须 fail closed，不能宽松透传。
-            logger.warn(undefined, "丢弃无效 v4 CUA 权限观察", {
               issues: parsed.error.issues.map((issue) => ({
                 code: issue.code,
                 message: issue.message,
@@ -2757,7 +2671,6 @@ export function createZCodeAgentService(
     }
     conversationTelemetryFactEmitters.clear();
     localTtftFactsEmitter.dispose();
-    cuaPermissionObservationEmitter.dispose();
     for (const emitter of workspaceConfigFrameEmitters.values()) {
       emitter.dispose();
     }
@@ -2777,7 +2690,6 @@ export function createZCodeAgentService(
     activeClientsByWorkspaceKey.clear();
     cancelAllWaitingWorkspaceStartups();
     interactionPreferenceSyncByWorkspaceKey.clear();
-    cuaOperationTurnTracker?.clearAll();
     clearV4SubscriptionRoutes();
     v4RouteRuntimeRestartDisposable.dispose();
     runtimeLifecycleDisposable.dispose();
@@ -2875,9 +2787,6 @@ export function createZCodeAgentService(
         processManager.onStorageStartupChanged((event) => {
           if (event.workspaceKey === workspaceKey) listener(event.snapshot);
         });
-    },
-    hasActiveCuaOperationTurn(): boolean {
-      return cuaOperationTurnTracker?.hasActiveTurn() ?? false;
     },
     async initialize(params: ZCodeAgentWorkspaceTarget): Promise<ZCodeAgentInitializeResult> {
       const workspaceKey = resolveWorkspaceKey(params);
@@ -5044,9 +4953,6 @@ export function createZCodeAgentService(
       return getConversationTelemetryFactEmitter(params).event;
     },
 
-    onDynamicCuaPermissionObservation() {
-      return cuaPermissionObservationEmitter.event;
-    },
 
     // ── sessions-index 通道（列表活性）：复用 conversationSubscribe RPC，
     // 按 topic 前缀由 CLI server 分派 ──
@@ -5186,7 +5092,6 @@ export function createZCodeAgentService(
       // 否则它会在 dispose 完成后把同一个 workspace 的 Agent 再次启动。
       cancelWaitingWorkspaceStartup(workspaceKey);
       clearV4SubscriptionRoutes(workspaceKey);
-      cuaOperationTurnTracker?.clearWorkspaceKey(workspaceKey);
       const active = activeClientsByWorkspaceKey.get(workspaceKey);
       if (active) {
         invalidateWorkspaceClient(workspaceKey, active.client);

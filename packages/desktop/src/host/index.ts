@@ -42,7 +42,6 @@ import {
   IZCodeAgentService,
   IZCodeTaskService,
   IZCodeSessionService,
-  ICuaPipSessionService,
   createZCodeAgentConnectionScope,
   type ZCodeAgentV4ClientMode,
   collectServiceMemoryDiagnostics,
@@ -755,18 +754,6 @@ const runtimeTaskReporter = {
     });
   },
 } satisfies NonNullable<Parameters<typeof createLocalServices>[0]>["taskRuntimeReporter"];
-
-const cuaOperationStateReporter = {
-  onStateChanged(event) {
-    if (!parentPort) {
-      return;
-    }
-    parentPort.postMessage({
-      type: HostResponseTypes.CuaOperationState,
-      ...event,
-    });
-  },
-} satisfies NonNullable<Parameters<typeof createLocalServices>[0]>["cuaOperationStateReporter"];
 
 let untrackedPromptRpcCount = 0;
 function reportHostRunningTaskCount(): void {
@@ -1941,19 +1928,6 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
     return;
   }
 
-  if (msg.type === HostMessageTypes.CuaPipFocusChanged) {
-    const service = activeServices?.getOptional(ICuaPipSessionService);
-    if (service) {
-      void service.publishFocus(msg.event);
-    } else {
-      // 取不到服务时过去静默丢弃，focus-changed 于是从链路上凭空消失
-      // （dev 实测 0 条，正式包同期 92 条）。补这条才能把「main 没发」与
-      // 「host 收到了但服务没注册」分开。
-      logger.warn("[cua-pip-session] focus event dropped: service unavailable");
-    }
-    return;
-  }
-
   if (msg.type === HostMessageTypes.ResourceUsageSnapshotRequest) {
     void hostResourceUsageResponder.handleRequest(msg);
     return;
@@ -2480,9 +2454,6 @@ parentPort.on("message", async (e: Electron.MessageEvent) => {
               browserControlExecutor: browserControlMainBridge,
               // bot /reconnect 与远端拦截：RemoteWorkspaceGate 以真实远程连接态判定，重连委托 main→renderer。
               remoteWorkspaceService: botRemoteWorkspaceGate,
-              // CUA 顶部提示属于物理 Windows 桌面投影；非 Windows 和远端 authority 都不得上报。
-              cuaOperationStateReporter:
-                process.platform === "win32" ? cuaOperationStateReporter : undefined,
             });
             activeServices = initializedServices;
             activeHostApiNetworkTransport = hostApiNetworkTransport;

@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- shared node_repl host 的 worker、CUA bridge 和生命周期必须保持同一边界。 */
 import { resolve } from "node:path";
 import { isMainThread, parentPort, Worker, workerData } from "node:worker_threads";
 import { INVALID_PARAMS, Server, type Tool } from "@modelcontextprotocol/server";
@@ -14,17 +13,8 @@ import {
   type NodeReplRequestMeta,
   type NodeReplRunResult,
 } from "@zcode/core/repl";
-import { createSocket } from "node:dgram";
-import { createComputerUseRuntime, type ComputerUseRuntime } from "@zcode/zcode-cua";
-import { createKoffiBrokerMethods } from "@zcode/zcode-cua/macos";
 import { z } from "zod";
 import { createBrowserBridgeGlobals, type ActiveNodeReplCall } from "./browser-bridge.js";
-import {
-  createComputerUseBridgeGlobals,
-  type ActiveCuaNodeReplCall,
-  type NodeReplCuaBrokerConnection,
-} from "./cua-bridge.js";
-import { createNodeReplCuaBroker, type NodeReplCuaBroker } from "./cua-broker.js";
 import {
   isDirectMcpEntrypoint,
   installNodeReplProcessGuards,
@@ -43,13 +33,7 @@ const UNTRUSTED_SESSION_KEY = "__unscoped__";
 const WORKER_KIND = "zcode-node-repl-call";
 export const NODE_REPL_MCP_PROCESS_TITLE = "zcode-node-repl-mcp";
 const pluginRoot = process.env.ZCODE_PLUGIN_ROOT ?? process.cwd();
-// CUA 与 Browser Use 共用 node_repl host，但文档和 native 依赖必须按领域隔离；
-// 否则 CUA skill 会因为 host root 恰好来自 Browser Use 而再次产生隐式依赖。
 const browserDocumentationRoot = resolve(pluginRoot, "docs");
-const cuaDocumentationRoot = resolve(
-  process.env.ZCODE_CUA_PLUGIN_ROOT ?? pluginRoot,
-  "docs",
-);
 const jsInputSchema = z
   .object({
     code: z.string(),
@@ -89,7 +73,6 @@ export interface NodeReplExecuteInput {
   requestMeta: NodeReplRequestMeta;
   signal: AbortSignal;
   syncTimeoutMs: number;
-  cuaBroker?: NodeReplCuaBrokerConnection;
 }
 
 export type NodeReplExecutor = (input: NodeReplExecuteInput) => Promise<NodeReplRunResult>;
@@ -104,7 +87,6 @@ interface WorkerCallData {
   kind: typeof WORKER_KIND;
   requestMeta: NodeReplRequestMeta;
   syncTimeoutMs: number;
-  cuaBroker?: NodeReplCuaBrokerConnection;
 }
 
 export function setNodeReplMcpProcessTitle(target: { title: string } = process): void {
@@ -118,7 +100,6 @@ export function setNodeReplMcpProcessTitle(target: { title: string } = process):
 export function createInProcessNodeReplExecutor(): NodeReplExecutor {
   return async (input) => {
     let activeCall: ActiveNodeReplCall | undefined;
-    let activeCuaCall: ActiveCuaNodeReplCall | undefined;
     let session: NodeReplSession;
     const generation = 1;
     session = new NodeReplSession({
@@ -130,22 +111,10 @@ export function createInProcessNodeReplExecutor(): NodeReplExecutor {
             getActiveCall: () => activeCall,
             session: () => session,
           }),
-          ...createComputerUseBridgeGlobals({
-            broker: input.cuaBroker,
-            generation,
-            getActiveCall: () => activeCuaCall,
-            session: () => session,
-            documentationRoot: cuaDocumentationRoot,
-          }),
         }),
       restrictProcess: true,
     });
     activeCall = {
-      generation,
-      requestMeta: input.requestMeta,
-      signal: input.signal,
-    };
-    activeCuaCall = {
       generation,
       requestMeta: input.requestMeta,
       signal: input.signal,
@@ -158,21 +127,15 @@ export function createInProcessNodeReplExecutor(): NodeReplExecutor {
       });
     } finally {
       activeCall = undefined;
-      activeCuaCall = undefined;
       session.dispose();
     }
   };
 }
 
 export function createNodeReplMcpRuntime(
-  input: { executeJs?: NodeReplExecutor; cuaRuntime?: ComputerUseRuntime } = {},
+  input: { executeJs?: NodeReplExecutor } = {},
 ): NodeReplMcpRuntime {
   const executeJs = input.executeJs ?? executeJsInWorker;
-  const cuaRuntime =
-    input.cuaRuntime ?? captureComputerUseRuntimeFromEnvironment();
-  const cuaBroker = cuaRuntime
-    ? createNodeReplCuaBroker({ runtime: cuaRuntime, platform: process.platform })
-    : undefined;
   const queues = new Map<string, Promise<void>>();
   const activeCalls = new Set<AbortController>();
   let disposed = false;
@@ -228,7 +191,6 @@ export function createNodeReplMcpRuntime(
             requestMeta: callMeta,
             signal,
             syncTimeoutMs: Math.min(timeoutMs, MAX_SYNC_TIMEOUT_MS),
-            cuaBroker: cuaBroker?.connection,
           });
           return toMcpRunResult(run);
         } finally {
@@ -246,8 +208,6 @@ export function createNodeReplMcpRuntime(
       for (const controller of activeCalls) controller.abort();
       activeCalls.clear();
       queues.clear();
-      void cuaBroker?.close();
-      void cuaRuntime?.dispose();
     },
   };
 }
@@ -259,7 +219,6 @@ async function executeJsInWorker(input: NodeReplExecuteInput): Promise<NodeReplR
     kind: WORKER_KIND,
     requestMeta: input.requestMeta,
     syncTimeoutMs: input.syncTimeoutMs,
-    cuaBroker: input.cuaBroker,
   };
   const worker = new Worker(new URL(import.meta.url), { workerData: data });
   return await new Promise<NodeReplRunResult>((resolveRun, rejectRun) => {
@@ -317,15 +276,9 @@ export { installNodeReplProcessGuards, installNodeReplShutdownTriggers };
 export async function main(): Promise<void> {
   setNodeReplMcpProcessTitle();
   const runtimes = new Set<NodeReplMcpRuntime>();
-  // 官方 plugin host 在 main() 返回后会清除短暂恢复的 Helper 凭据，而
-  // serveStdio 的 server factory 要到 MCP initialize 时才执行。过去在 factory 内读取
-  // process.env，必然得到空值，导致 node_repl 永久把 Computer Use 判为 unavailable。
-  // 这里在 main() 生命周期内先捕获 runtime；Worker 只收到二次 bridge token，
-  // 不会接触 Helper 的原始 socket/token。
-  const computerUseRuntime = captureComputerUseRuntimeFromEnvironment();
   const handle = serveStdio(
     () => {
-      const runtime = createNodeReplMcpRuntime({ cuaRuntime: computerUseRuntime });
+      const runtime = createNodeReplMcpRuntime();
       runtimes.add(runtime);
       return runtime.server;
     },
@@ -357,7 +310,6 @@ if (!isMainThread && isWorkerCallData(workerData)) {
     requestMeta: workerData.requestMeta,
     signal: controller.signal,
     syncTimeoutMs: workerData.syncTimeoutMs,
-    cuaBroker: workerData.cuaBroker,
   })
     .then((result) => parentPort?.postMessage(result))
     .catch((error) => {
@@ -369,50 +321,6 @@ if (!isMainThread && isWorkerCallData(workerData)) {
         },
       } satisfies NodeReplRunResult);
     });
-}
-
-export function captureComputerUseRuntimeFromEnvironment(
-  env: NodeJS.ProcessEnv = process.env,
-): ComputerUseRuntime | undefined {
-  // Phase 1-d（升级实施手册）：koffi 进程内执行层（三道保险之一——总开关默认关）。
-  // darwin + FREECODEZ_CUA_KOFFI_EXECUTION=1（旧键 ZCODE_* 回退）+ 绑定可用 → 旁路 socket 直调；
-  // 动作面由 FREECODEZ_CUA_KOFFI_ACTIONS=1 二次放行（缺省只读观测）。
-  if (
-    (env.FREECODEZ_CUA_KOFFI_EXECUTION?.trim() || env.ZCODE_CUA_KOFFI_EXECUTION?.trim()) === "1" &&
-    process.platform === "darwin"
-  ) {
-    // Phase 2-1b：输入事件 UDP 广播（HUD 光标消费）。端口 env 显式给才开——
-    // desktop main 侧 HUD 监听器在位时注入；无端口=无广播（零开销）。
-    const cursorPort = Number(
-      env.FREECODEZ_CUA_CURSOR_BROADCAST_PORT?.trim() ||
-        env.ZCODE_CUA_CURSOR_BROADCAST_PORT?.trim() ||
-        0,
-    );
-    const cursorBroadcast =
-      Number.isInteger(cursorPort) && cursorPort > 0 && cursorPort < 65536
-        ? createCursorEventUdpBroadcaster(cursorPort)
-        : undefined;
-    const backend = createKoffiBrokerMethods({
-      allowActions:
-        (env.FREECODEZ_CUA_KOFFI_ACTIONS?.trim() || env.ZCODE_CUA_KOFFI_ACTIONS?.trim()) === "1",
-      ...(cursorBroadcast ? { onInputEvent: cursorBroadcast.send } : {}),
-    });
-    if (backend) {
-      return createComputerUseRuntime({
-        inProcessMethods: backend.methods,
-        disposeInProcess: () => {
-          backend.dispose();
-          cursorBroadcast?.close();
-        },
-      });
-    }
-  }
-  const socketPath = env.ZCODE_CUA_PERMISSION_BROKER_SOCKET?.trim();
-  if (!socketPath) return undefined;
-  return createComputerUseRuntime({
-    brokerSocketPath: socketPath,
-    refreshMarkerPath: env.ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER?.trim(),
-  });
 }
 
 function isWorkerCallData(value: unknown): value is WorkerCallData {
@@ -427,40 +335,4 @@ if (isMainThread && (await isDirectMcpEntrypoint(import.meta.url, process.argv[1
     );
     process.exitCode = 1;
   });
-}
-
-
-/**
- * Phase 2-1b：光标事件 UDP 广播器（127.0.0.1 单播，HUD 监听端口）。
- * dgram socket 惰性建 + unref（不钉住进程）；发送失败静默（可视化旁路）。
- */
-function createCursorEventUdpBroadcaster(port: number): {
-  send: (event: { v: number; kind: string; x?: number; y?: number; detail?: string }) => void;
-  close: () => void;
-} {
-  let socket: import("node:dgram").Socket | undefined;
-  const ensureSocket = () => {
-    if (socket) return socket;
-    socket = createSocket("udp4");
-    socket.unref();
-    return socket;
-  };
-  return {
-    send(event) {
-      try {
-        const payload = Buffer.from(JSON.stringify(event), "utf8");
-        ensureSocket().send(payload, port, "127.0.0.1");
-      } catch {
-        // 广播失败不影响输入合成本体。
-      }
-    },
-    close() {
-      try {
-        socket?.close();
-      } catch {
-        // 双 close 防御。
-      }
-      socket = undefined;
-    },
-  };
 }

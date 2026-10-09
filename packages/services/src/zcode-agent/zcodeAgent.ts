@@ -76,7 +76,6 @@ import type {
   CommandsQueryResult,
   ConversationTopicWireCandidate,
   ConversationTelemetryFact,
-  CuaPermissionObservation,
   ConversationRowTarget,
   HelloMessage,
   SessionsIndexTopicWireCandidate,
@@ -152,7 +151,7 @@ export interface ZCodeAgentResumeSessionParams extends ZCodeAgentSessionTarget {
   model?: ModelSelection;
   thoughtLevel?: string;
   mcpServers?: ZCodeAgentMcpServer[];
-  // 冷恢复会重建 runtime，工具面隔离必须和 create 保持同一安全边界（CUA 只放行 zcode-cua 工具、
+  // 冷恢复会重建 runtime，工具面隔离必须和 create 保持同一安全边界（隔离会话只放行允许的工具、
   // 禁 Bash 等）。否则 resume 后模型可见工具面/执行权限会比创建时更宽。
   toolAllowlist?: string[];
   toolDenylist?: string[];
@@ -191,9 +190,6 @@ export interface ZCodeAgentRuntimeLifecycleEvent extends ZCodeAgentWorkspaceTarg
   runtimeIdentity: ZCodeAgentWorkspaceRuntimeIdentity;
   state: "available" | "unavailable";
 }
-
-export type ZCodeAgentCuaPermissionObservation = CuaPermissionObservation &
-  ZCodeAgentWorkspaceTarget;
 
 export interface ZCodeAgentCreateSessionParams extends ZCodeAgentWorkspaceTarget {
   sessionId?: string;
@@ -839,8 +835,6 @@ export interface IZCodeAgentService {
   onDynamicConversationTelemetryFact(
     params: ZCodeAgentWorkspaceTarget,
   ): Event<ConversationTelemetryFact>;
-  /** 当前窗口全部本地 live task 的 CUA 权限观察；历史、远程与 replayable 不在此事件面。 */
-  onDynamicCuaPermissionObservation(): Event<ZCodeAgentCuaPermissionObservation>;
   // ── sessions-index 通道（列表活性）──
   subscribeSessionsIndexV4(
     params: ZCodeAgentSessionsIndexSubscribeParams,
@@ -878,8 +872,6 @@ export interface IZCodeAgentService {
   onAgentRuntimeLifecycle?: (
     listener: (event: ZCodeAgentRuntimeLifecycleEvent) => void,
   ) => IDisposable;
-  /** 当前 desktop-local CUA turn 是否仍在执行，用于 Helper recovery 避免中途回收 Agent。 */
-  hasActiveCuaOperationTurn(): boolean;
   disposeWorkspace(params: ZCodeAgentWorkspaceTarget): Promise<void>;
   disposeAll(): void;
 }

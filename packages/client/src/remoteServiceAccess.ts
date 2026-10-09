@@ -14,7 +14,6 @@ import {
   IZCodeTaskService,
   IZCodeAgentService,
   IZCodeSessionService,
-  ICuaPermissionService,
   IFileWatcherService,
   IModelSelectionService,
   IProviderSettingsService,
@@ -60,9 +59,6 @@ export class RemoteServiceAccess implements IServiceAccessor {
   readonly windowControllerService: IWindowControllerService;
   readonly zcodeAgentService: IZCodeAgentService;
   readonly zcodeSessionService: IZCodeSessionService;
-  // cuaPermissionService 在 IServiceAccessor 上是可选（远端 host 不提供），但桌面 renderer
-  // 经 RPC 一定能拿到（main host 始终注册此 descriptor；非 macOS / 未启用时方法返回 available:false）。
-  readonly cuaPermissionService: ICuaPermissionService;
   readonly fileWatcherService: IFileWatcherService;
   readonly providerSettingsService: IProviderSettingsService;
   readonly modelSelectionService: IModelSelectionService;
@@ -132,9 +128,6 @@ export class RemoteServiceAccess implements IServiceAccessor {
     );
     this.zcodeSessionService = ProxyChannel.toService<IZCodeSessionService>(
       channelClient.getChannel(IZCodeSessionService.channelName),
-    );
-    this.cuaPermissionService = ProxyChannel.toService<ICuaPermissionService>(
-      channelClient.getChannel(ICuaPermissionService.channelName),
     );
     this.fileWatcherService = ProxyChannel.toService<IFileWatcherService>(
       channelClient.getChannel(IFileWatcherService.channelName),

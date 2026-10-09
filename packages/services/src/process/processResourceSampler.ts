@@ -341,7 +341,7 @@ interface AttributeHostProcessTreeOptions {
   samples: ReadonlyMap<number, ProcessResourceSample>;
   hostPid: number;
   agents: readonly HostResourceUsageAgent[];
-  /** Host 直接管理的内置插件进程（如 Windows CUA Helper）：pid → 插件名 */
+  /** Host 直接管理的内置插件进程：pid → 插件名 */
   builtinPluginPids?: ReadonlyMap<number, string>;
 }
 

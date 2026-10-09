@@ -11,7 +11,6 @@ import type { IBotsService } from "./bots/bots.js";
 import type { IZCodeTaskService } from "./session/zcodeTaskService.js";
 import type { IZCodeAgentService } from "./zcode-agent/zcodeAgent.js";
 import type { IZCodeSessionService } from "./zcode-session/zcodeSession.js";
-import type { ICuaPermissionService } from "./cua-permission-broker/cuaPermissionService.js";
 import type { IFileWatcherService } from "./fileWatcher/fileWatcher.js";
 import type {
   IModelSelectionService,
@@ -56,8 +55,6 @@ export interface IServiceAccessor {
   readonly windowControllerService?: IWindowControllerService;
   readonly zcodeAgentService: IZCodeAgentService;
   readonly zcodeSessionService: IZCodeSessionService;
-  // CUA 是 opt-in 内测特性：local macOS host 提供，远端 等 host 没有。可选避免连锁必填。
-  readonly cuaPermissionService?: ICuaPermissionService;
   readonly fileWatcherService: IFileWatcherService;
   /** 当前 Environment 的 Provider 配置与设置视图。 */
   readonly providerSettingsService: IProviderSettingsService;

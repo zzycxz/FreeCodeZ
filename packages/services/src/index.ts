@@ -151,7 +151,6 @@ export type {
   ZCodeAgentAttachmentChunkParams,
   ZCodeAgentAttachmentTerminalParams,
   ZCodeAgentCreateSessionParams,
-  ZCodeAgentCuaPermissionObservation,
   ZCodeAgentInitializeResult,
   ZCodeAgentStorageStartupSnapshot,
   ZCodeAgentRuntimeLifecycleEvent,
@@ -228,20 +227,6 @@ export { ISkillsService } from "./skills/skills.js";
 export { ISkillSyncService } from "./skill-sync/skillSync.js";
 export { IMcpSyncService } from "./mcp-sync/mcpSync.js";
 export { IPluginSyncService } from "./plugin-sync/pluginSync.js";
-export {
-  ICuaPermissionService,
-  type CuaPermissionState,
-  type CuaPermissionRestartOptions,
-  type CuaPermissionStatus,
-  type CuaPermissionStatusQueryOptions,
-  type CuaPermissionStatusResult,
-  type CuaPermissionStatusUnavailable,
-  isCuaPermissionStatusAvailable,
-} from "./cua-permission-broker/cuaPermissionService.js";
-export {
-  ICuaPipSessionService,
-  type CuaPipSessionService,
-} from "./cua-permission-broker/cuaPipSession.js";
 
 // Plugins service — IPluginsService is both a type (interface) and value (descriptor)
 export { IPluginsService } from "./plugins/plugins.js";

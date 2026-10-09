@@ -27,7 +27,6 @@ import { createZCodeSessionApiRetryRuntimeTracker } from "#src/zcode-session/zco
 import { appendWorkspaceToFilesystemMcpServers } from "#src/session/mcpWorkspaceScope.js";
 import { repairEmptyImportedClaudeSessionSnapshot } from "#src/zcode-session/importedClaudeSessionRepair.js";
 import { createZCodeDeferredDraftRegistry } from "#src/zcode-session/zcodeSessionDraftRegistry.js";
-import type { CuaProductMcpServerResolver } from "#src/cua-permission-broker/index.js";
 
 const logger = createServiceLogger("zcode-session-service");
 
@@ -41,13 +40,11 @@ interface CreateZCodeSessionServiceOptions {
    * 让侧边栏列表立刻看到 first_input title 和 updatedAt 排序刷新。
    */
   taskIndexSyncer?: ZCodeTaskIndexSyncer;
-  cuaProductMcpServerResolver?: CuaProductMcpServerResolver;
 }
 
 export function createZCodeSessionService({
   agentService,
   taskIndexSyncer,
-  cuaProductMcpServerResolver,
 }: CreateZCodeSessionServiceOptions): IZCodeSessionService {
   const { withApiRetryRuntime } = createZCodeSessionApiRetryRuntimeTracker();
   const deferredDraftSessions = createZCodeDeferredDraftRegistry();
@@ -179,19 +176,13 @@ export function createZCodeSessionService({
       params.mcpServers,
       params.workspacePath,
     );
-    const resolvedMcpServers = cuaProductMcpServerResolver
-      ? await cuaProductMcpServerResolver.resolveMcpServers(mcpServers, {
-          workspacePath: params.workspacePath,
-        })
-      : mcpServers;
-    if (resolvedMcpServers === params.mcpServers) {
+    if (mcpServers === params.mcpServers) {
       return params;
     }
     // desktop-continuous session 路径绕过 legacy task adapter，之前不会执行
     // filesystem MCP 的 workspace 注入，导致同一 MCP 在直接 session 首发时缺少当前项目授权。
-    // 这里只改发往 runtime 的临时参数，不回写用户配置，避免污染跨 workspace 的 MCP 设置；
-    // product CUA broker socket/token 同样只注入 runtime 参数。
-    return { ...params, mcpServers: resolvedMcpServers };
+    // 这里只改发往 runtime 的临时参数，不回写用户配置，避免污染跨 workspace 的 MCP 设置。
+    return { ...params, mcpServers };
   }
 
   return {

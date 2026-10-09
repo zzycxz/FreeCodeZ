@@ -1,9 +1,4 @@
-import {
-  ZCODE_MCP_BROWSER_SCREENSHOT_CONTENT_INDICES_META_KEY,
-  ZCODE_MCP_NODE_REPL_CUA_APP_META_KEY,
-} from "@zcode/contracts/mcp";
-import { isOfficialCuaImageRefText } from "@zcode/zcode-cua/frame-contract";
-import { CUA_APP_ASSOCIATIONS_META_KEY } from "@zcode/zcode-cua/host-display-contract";
+import { ZCODE_MCP_BROWSER_SCREENSHOT_CONTENT_INDICES_META_KEY } from "@zcode/contracts/mcp";
 import type { NodeReplRunResult } from "@zcode/core/repl";
 import type { CallToolResult } from "@modelcontextprotocol/server";
 
@@ -47,31 +42,6 @@ function parseEmbeddedMcpResult(value: string): EmbeddedMcpResult | undefined {
   }
 }
 
-/**
- * 一个 cell 里多次带截图的观察，只把**最后一张** raster 交给模型。
- *
- * 模型在一个 cell 里调了两次带截图的观察，结果里就有两张图，
- * 被 exact-raster 门按「每个结果只允许一张最终 raster」把整帧原子否决 —— 模型一张都没拿到。
- *
- * 「最新者胜」本来就是 producer 的既定语义：坐标只对最新那张 raster 有效
- * （zcode-cua 的 frame-pixel-latest-only 测试即此契约），旧帧对模型没有使用价值。
- * 所以这里保留最后一对 image/authority、丢掉更早的，与契约一致，不是放宽门禁 ——
- * 真正的两张不同 raster 同时有效仍然不被允许。
- *
- * 只处理 CUA 的「图 + 紧邻权威」原子对；不带权威的图片（如 Browser Use 截图）不受影响。
- */
-function keepLatestCuaFrame(blocks: EmbeddedContentBlock[]): EmbeddedContentBlock[] {
-  const pairStarts: number[] = [];
-  blocks.forEach((block, index) => {
-    if (block.type !== "image") return;
-    const next = blocks[index + 1];
-    if (next?.type === "text" && isOfficialCuaImageRefText(next.text)) pairStarts.push(index);
-  });
-  if (pairStarts.length <= 1) return blocks;
-  const dropped = new Set(pairStarts.slice(0, -1).flatMap((start) => [start, start + 1]));
-  return blocks.filter((_, index) => !dropped.has(index));
-}
-
 export function toMcpRunResult(run: NodeReplRunResult): CallToolResult {
   const textParts: string[] = [];
   // SDK 结果通过专用 sink 写入后，不能再从 run.result/console 日志解析第二份副本。
@@ -89,21 +59,14 @@ export function toMcpRunResult(run: NodeReplRunResult): CallToolResult {
   // 该 key 决定 core 是否把原图落盘，不能允许 REPL 代码通过
   // setResponseMeta 伪造来源；只接受 NodeReplSession 根据真实 screenshot payload 生成的索引。
   delete responseMeta[ZCODE_MCP_BROWSER_SCREENSHOT_CONTENT_INDICES_META_KEY];
-  // 同款处置：producer 的应用元数据决定工具卡显示哪个 App 的名称和图标。它经
-  // `projectToHost` -> `nodeRepl.emitStructuredResult` 到达上面的合并循环，而那个 API 挂在模型
-  // 可见的 sandbox globals 上 —— cell 里自己 emit 一份就能让卡片声称操作了别的应用。因此这里
-  // 无条件丢弃，只接受 CUA bridge 从 broker 响应直接记录的 run.cuaApp。
-  delete responseMeta[CUA_APP_ASSOCIATIONS_META_KEY];
-  delete responseMeta[ZCODE_MCP_NODE_REPL_CUA_APP_META_KEY];
-  if (run.cuaApp) responseMeta[ZCODE_MCP_NODE_REPL_CUA_APP_META_KEY] = run.cuaApp;
   // Anthropic 兼容网关（如 bigmodel MaaS）只解析 tool_result.content 开头的连续
   // image block，一旦先遇到 text 就丢弃后面的图，模型只能看到 image_ref 元数据而看不到画面
   // （实测 [image]/[image,text] 可见，[text,image]/[text,image,text] 不可见）。
   // 把 image 排在 text 之前即可让图稳定到达模型；顺序在 Anthropic 规范里本就是自由的。
   // image 因此从 content[0] 起连续排列，image 下标与 content 下标相等，无需再做 +1 偏移。
   const browserScreenshotContentIndices = run.browserScreenshotImageIndices;
-  const structuredContent = keepLatestCuaFrame(
-    structuredResults.flatMap((structured) => structured.content as EmbeddedContentBlock[]),
+  const structuredContent = structuredResults.flatMap(
+    (structured) => structured.content as EmbeddedContentBlock[],
   );
   const structuredContentResult = [...structuredResults]
     .reverse()
