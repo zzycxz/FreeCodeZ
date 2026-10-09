@@ -682,6 +682,13 @@ let appshotSettings: {
 void mainSettingService.get().then((settings) => {
   appshotSettings = settings;
 });
+
+// W-32 升级路径：存量用户旧运行时状态一次性迁移（幂等；fire-and-forget 不阻断启动）。
+void import("./legacyComputerUseMigration.js").then(({ planLegacyComputerUseMigration, runLegacyComputerUseMigration }) =>
+  runLegacyComputerUseMigration(planLegacyComputerUseMigration(), {
+    log: (message) => logger.info(message),
+  }),
+);
 const cuaAppshotController = startCuaAppshot({
   getFocusedWindow: () => BrowserWindow.getFocusedWindow() ?? undefined,
   getAppshotSettings: () => {

@@ -318,7 +318,7 @@ export function registerPlatformIpcHandlers(options: {
   // W-19 电脑控制权限面（简版引导）：状态探测/引导/重置，直连 engine 权限面。
   ipcMain.handle(PlatformChannels.ComputerUsePermissionStatus, async () => {
     try {
-      const { getComputerUsePermissionStatus } = await import("@zcode/computer-engine/computer");
+      const { getComputerUsePermissionStatus } = await import("./cua-runtime/engine-bridge.js");
       return await getComputerUsePermissionStatus();
     } catch (error) {
       return {
@@ -335,7 +335,7 @@ export function registerPlatformIpcHandlers(options: {
     PlatformChannels.OpenComputerUsePermissionGuide,
     async (_event, options?: { permission?: string }) => {
       try {
-        const { openComputerUsePermissions } = await import("@zcode/computer-engine/computer");
+        const { openComputerUsePermissions } = await import("./cua-runtime/engine-bridge.js");
         await openComputerUsePermissions(options?.permission);
         return { success: true };
       } catch (error) {
@@ -345,7 +345,7 @@ export function registerPlatformIpcHandlers(options: {
   );
   ipcMain.handle(PlatformChannels.ResetComputerUsePermission, async () => {
     try {
-      const { resetComputerUsePermissions } = await import("@zcode/computer-engine/computer");
+      const { resetComputerUsePermissions } = await import("./cua-runtime/engine-bridge.js");
       await resetComputerUsePermissions();
       return { success: true };
     } catch (error) {
