@@ -672,6 +672,9 @@ importers:
       '@zcode/client':
         specifier: workspace:*
         version: link:../client
+      '@zcode/computer-engine':
+        specifier: workspace:*
+        version: link:../computer-engine
       '@zcode/provider':
         specifier: workspace:*
         version: link:../provider

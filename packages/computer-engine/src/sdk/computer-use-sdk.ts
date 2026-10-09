@@ -3,6 +3,13 @@
 // session 参数，多会话快照缓存隔离。G.3 划分：快照缓存/scale/verification/剪贴板/
 // blockedApps 在引擎；闩锁/租约/拆分教学/跨应用预检在本层。
 import { ComputerControlGate } from "../host/control-latch";
+import {
+  cursorEventsForClick,
+  cursorEventsForDrag,
+  cursorEventsForKey,
+  cursorEventsForText,
+  emitCursorEvents,
+} from "../host/cursor-events.js";
 import { loadAppInstructions } from "./app-instructions";
 import {
   createUserActivityReader,
@@ -38,6 +45,8 @@ export interface ComputerUseSdkOptions {
   /** W-26 用户活动闸检测器；缺席=恒放行（干预面缺席不折断动作本体）。 */
   readUserActivity?: UserActivityReader;
   activityGate?: Partial<UserActivityGateOptions>;
+  /** W-28 HUD 帧出口：动作前发 point/down/up 帧、text 发 loading 帧（旁路可视化）。 */
+  onInputEvent?: (event: unknown) => void;
 }
 
 /** typeText 单次上限（UTF-16 code units，G.1 拆分教学）。 */
@@ -50,6 +59,7 @@ export class ComputerUseSdk {
   private readonly platform: NodeJS.Platform;
   private readonly readUserActivity: UserActivityReader;
   private readonly activityGate: Partial<UserActivityGateOptions>;
+  private readonly onInputEvent: ((event: unknown) => void) | undefined;
 
   constructor(options: ComputerUseSdkOptions) {
     this.transport = options.transport;
@@ -58,6 +68,7 @@ export class ComputerUseSdk {
     this.platform = options.platform ?? process.platform;
     this.readUserActivity = createUserActivityReader(options.readUserActivity);
     this.activityGate = options.activityGate ?? {};
+    this.onInputEvent = options.onInputEvent;
   }
 
   // ---- 探测面 ----
@@ -97,6 +108,19 @@ export class ComputerUseSdk {
     count?: number;
     modifiers?: string;
   }): Promise<unknown> {
+    // W-28：坐标点击发 point/down/up 帧；元素点击坐标不可知（引擎侧缓存持有），
+    // 不发帧——旁路可视化不折断动作本体。
+    if (input.element?.kind === "coordinate") {
+      const scale = input.element.scale ?? 1;
+      emitCursorEvents(
+        this.onInputEvent,
+        cursorEventsForClick({
+          x: input.element.x / scale,
+          y: input.element.y / scale,
+          button: input.button ?? "left",
+        }),
+      );
+    }
     return this.call("click", {
       ...this.targetParams(input.target),
       ...this.actionTargetParams(input.element),
@@ -135,6 +159,10 @@ export class ComputerUseSdk {
     }
     const from = this.actionTargetParams(input.from);
     const to = this.actionTargetParams(input.to);
+    emitCursorEvents(
+      this.onInputEvent,
+      cursorEventsForDrag({ fromX: from.x, fromY: from.y, toX: to.x, toY: to.y }),
+    );
     return this.call("drag", {
       ...this.targetParams(input.target),
       fromElementIndex: from.elementIndex,
@@ -155,6 +183,7 @@ export class ComputerUseSdk {
     if (input.element) {
       await this.leftClick({ target: input.target, element: input.element });
     }
+    emitCursorEvents(this.onInputEvent, cursorEventsForText({ text: input.text }));
     const results: unknown[] = [];
     // >1024 UTF-16 拆分（G.1）：引擎单发有界，SDK 负责分段教学与顺序保真。
     for (let offset = 0; offset < input.text.length; offset += TYPE_CHUNK_LIMIT) {
@@ -207,6 +236,7 @@ export class ComputerUseSdk {
   }): Promise<unknown> {
     // hold_seconds 无引擎对应（D8 砍）；repeat 由 SDK 循环（G.1）。
     const times = Math.max(1, input.repeat ?? 1);
+    emitCursorEvents(this.onInputEvent, cursorEventsForKey({ key: input.key }));
     const results: unknown[] = [];
     for (let i = 0; i < times; i += 1) {
       results.push(
@@ -233,6 +263,7 @@ export class ComputerUseSdk {
 
   async paste(input: { target: AppTarget; text: string }): Promise<unknown> {
     // 仅 text 档（D8：md/html 砍）。
+    emitCursorEvents(this.onInputEvent, cursorEventsForText({ text: input.text }));
     return this.call("pasteText", {
       ...this.targetParams(input.target),
       text: input.text,

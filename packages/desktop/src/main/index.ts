@@ -75,6 +75,18 @@ import { logger } from "./logger.js";
 import { createBotRemoteWorkspaceReconnectExecutor } from "./botRemoteWorkspaceReconnect.js";
 import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createUpdateChecker, resolveManifestUrl } from "./updateChecker.js";
+import { createCuaCursorHud, resolveHudScreenDeps, type CuaCursorHud } from "./cuaCursorHud.js";
+import { startCuaAppshot } from "./cuaAppshot.js";
+import { createWindowsCuaOperationIndicator } from "./windowsCuaOperationIndicator.js";
+import {
+  createCuaOperationTurnTracker,
+  type CuaToolLifecycleEvent,
+} from "./cuaOperationTurnTracker.js";
+import {
+  BrowserWindow as HudBrowserWindow,
+  globalShortcut,
+  screen as HudScreen,
+} from "electron";
 import { BroadcastHub } from "./broadcastHub.js";
 
 // ---- FreeCodeZ fork 更新链空壳(P3 §3.6):autoUpdater 已删,以下符号改为本地 no-op ----
@@ -639,6 +651,86 @@ if (app.isPackaged) {
   });
 }
 
+// W-28 HUD 重接线：darwin 常驻 UDP 监听（无事件零成本），首个输入帧惰性建窗、
+// 6 秒静默自动隐藏。总闸 FREECODEZ_CUA_CURSOR_HUD=0 可关；帧源=新 SDK 桥层
+// （packages/computer-engine cursor-events 发射面）。Esc 取消链保留：光标活跃期
+// 用户按 Esc → 向聚焦窗发停止信号（与 UI 停止按钮同一路径）。
+const cuaCursorHud: CuaCursorHud | undefined =
+  process.platform === "darwin" && process.env.FREECODEZ_CUA_CURSOR_HUD?.trim() !== "0"
+    ? createCuaCursorHud({
+        BrowserWindow: HudBrowserWindow,
+        // Electron 41 已移除 screenToDipPoint——运行时探测 API 缺席即省略该键。
+        screen: resolveHudScreenDeps(HudScreen),
+        globalShortcut: {
+          register: (accelerator, callback) => globalShortcut.register(accelerator, callback),
+          unregister: (accelerator) => globalShortcut.unregister(accelerator),
+        },
+        onUserCancel: () => {
+          const focused = BrowserWindow.getFocusedWindow();
+          focused?.webContents.send("cua-user-cancel");
+        },
+      })
+    : undefined;
+
+// W-29 appshot 重接线：双击修饰键热键（设置键 appshotHotkey 优先于 env
+// FREECODEZ_APPSHOT_HOTKEY，默认 off）；触发后截图+AX 摘要注入聚焦会话 composer。
+let appshotSettings: {
+  appshotHotkey?: string;
+  appshotSound?: boolean;
+  appshotRoute?: string;
+} | undefined;
+void mainSettingService.get().then((settings) => {
+  appshotSettings = settings;
+});
+const cuaAppshotController = startCuaAppshot({
+  getFocusedWindow: () => BrowserWindow.getFocusedWindow() ?? undefined,
+  getAppshotSettings: () => {
+    if (appshotSettings) return appshotSettings;
+    return {};
+  },
+  playSound: () => {
+    if (appshotSettings?.appshotSound === false) return;
+    void electronShell.beep();
+  },
+  log: (message, context) => {
+    logger.info(message, context);
+  },
+});
+
+// W-29 操作指示器（win32 顶部提示条）+ W-29 turn tracker（tool-scheduled 判定平移）。
+// tracker 事件源缝：accept() 由宿主任务事件流喂入（W-30 事件源统一对接点）；
+// reporter → 指示器 handleState/clearSource（active/inactive 投影）。
+const windowsCuaOperationIndicator = createWindowsCuaOperationIndicator({
+  platform: process.platform,
+  getLocale: () => currentApplicationLocale,
+  logger,
+});
+const cuaOperationIndicatorSource = {};
+const cuaOperationTurnTracker = createCuaOperationTurnTracker({
+  reporter: {
+    onStateChanged: (event) =>
+      event.active
+        ? windowsCuaOperationIndicator.handleState(cuaOperationIndicatorSource, {
+            type: "cua-operation-state",
+            ...event,
+          })
+        : windowsCuaOperationIndicator.clearSource(cuaOperationIndicatorSource),
+  },
+  logger: {
+    debug: (message) => logger.debug(message),
+    info: (message) => logger.info(message),
+    warn: (message) => logger.warn(message),
+  },
+});
+/** W-30 事件源对接点：宿主任务事件流把 tool 生命周期事件喂给 tracker。 */
+function feedComputerUseLifecycleEvent(
+  workspace: { workspacePath: string; workspaceIdentity?: string },
+  event: CuaToolLifecycleEvent,
+): void {
+  cuaOperationTurnTracker.accept(workspace, event);
+}
+void feedComputerUseLifecycleEvent;
+
 const hostRunningTaskCountMap = new Map<ElectronUtilityProcess, number>();
 
 // 常驻 cron scheduler 进程句柄；app ready 后拉起，退出前销毁。
@@ -977,6 +1069,9 @@ async function prepareAppQuit(reason: string, kind: AppShutdownKind = "normal"):
 
   markForceQuit(reason);
   browserScreenshotSurfaceCoordinator.dispose();
+  cuaCursorHud?.dispose();
+  cuaAppshotController.stop();
+  windowsCuaOperationIndicator.dispose();
 
   const cronSchedulerToDispose = cronScheduler;
   cronScheduler = null;
@@ -1400,7 +1495,9 @@ function resolveFocusedDesktopZoomLevel(): number {
 }
 
 function getVisibleApplicationWindows(): BrowserWindow[] {
-  return BrowserWindow.getAllWindows().filter((win) => !win.isDestroyed());
+  return BrowserWindow.getAllWindows().filter(
+    (win) => !win.isDestroyed() && !windowsCuaOperationIndicator.ownsWindow(win),
+  );
 }
 
 function getMainApplicationWindows(): BrowserWindow[] {
