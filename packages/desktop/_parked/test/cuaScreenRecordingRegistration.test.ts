@@ -2,7 +2,7 @@
 // ① 已授权不请求；② 未授权发起请求并记日志；③ probe/请求抛错 fail-soft 不向上抛。
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ensureMainScreenRecordingRegistration } from "../src/main/cuaScreenRecordingRegistration.js";
+import { ensureMainScreenRecordingRegistration } from "../main/cuaScreenRecordingRegistration.js";
 
 test("R21b：已授权不请求；未授权请求一次并记日志", () => {
   const calls: string[] = [];

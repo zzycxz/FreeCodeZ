@@ -67,7 +67,6 @@ import {
   buildZCodeEndpointUrls,
   resolveZCodeEndpointOrigin,
   type UpdateStatePayload,
-  HostMessageTypes,
   type LoadCliMcpFromUserDirectoryRequest,
   type MigrateLegacyCommonMcpRequest,
   type SaveCliMcpToUserDirectoryRequest,
@@ -75,13 +74,7 @@ import {
 import { logger } from "./logger.js";
 import { createBotRemoteWorkspaceReconnectExecutor } from "./botRemoteWorkspaceReconnect.js";
 import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
-import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
-import { resolveCuaControlHostEnv } from "./cuaControlSettings.js";
-import { createCuaCursorHud, resolveHudScreenDeps, type CuaCursorHud } from "./cuaCursorHud.js";
-import { startCuaAppshot } from "./cuaAppshot.js";
-import { ensureCuaPermissionEntries } from "./cuaPermissionEntries.js";
 import { createUpdateChecker, resolveManifestUrl } from "./updateChecker.js";
-import { BrowserWindow as HudBrowserWindow, globalShortcut, screen as HudScreen } from "electron";
 import { BroadcastHub } from "./broadcastHub.js";
 
 // ---- FreeCodeZ fork 更新链空壳(P3 §3.6):autoUpdater 已删,以下符号改为本地 no-op ----
@@ -133,7 +126,6 @@ import { resolveWindowsAppUserModelIdForFlavor } from "../../scripts/desktop-pro
 import type { DesktopWindowSize } from "./desktopWindowSize.js";
 import { maybeWarnArchitectureMismatch } from "./desktopArchitectureGuard.js";
 import { createWindowsDesktopTray, updateWindowsDesktopTrayMenu } from "./desktopTray.js";
-import { createWindowsCuaOperationIndicator } from "./windowsCuaOperationIndicator.js";
 import {
   configureDockMenu,
   createWindow,
@@ -520,31 +512,6 @@ interface RuntimeProcessEnvPreparation {
 }
 
 let runtimeProcessEnvPrewarmSequence = 0;
-/**
- * 电脑控制设置桥：合入 runtime env 补丁。InitLocal 把补丁 assign 进 host
- * process.env，host 的 agent/node-repl-host 子进程继承——设置变更对新窗口的
- * 会话生效（本桥在每次窗口的 env 准备期异步刷新）。mainSettingService 在本
- * 模块后段初始化，这里只在 promise 回调里引用（模块加载完成后的运行时）。
- */
-async function withCuaControlEnv(patch: Record<string, string>): Promise<Record<string, string>> {
-  try {
-    const settings = await mainSettingService.get();
-    return {
-      ...patch,
-      ...resolveCuaControlHostEnv({
-        settings,
-        env: { ...hostProcessLocalEnv, ...process.env },
-        darwin: process.platform === "darwin",
-        cursorHudActive:
-          (process.env.FREECODEZ_CUA_CURSOR_HUD?.trim() || process.env.ZCODE_CUA_CURSOR_HUD?.trim()) !==
-          "0",
-      }),
-    };
-  } catch (error) {
-    logger.warn("[startup] cua control settings bridge failed; inherited env gates apply", error);
-    return patch;
-  }
-}
 function createRuntimeProcessEnvPreparation(): RuntimeProcessEnvPreparation {
   const prewarmId = ++runtimeProcessEnvPrewarmSequence;
   const startedAt = Date.now();
@@ -572,12 +539,12 @@ function createRuntimeProcessEnvPreparation(): RuntimeProcessEnvPreparation {
         logger.warn(
           `[startup] login shell env unavailable id=${prewarmId}; using shell-free fallback after ${Date.now() - startedAt}ms`,
         );
-        return await withCuaControlEnv(patch);
+        return patch;
       }
       logger.info(
         `[startup] runtime process env prepared asynchronously id=${prewarmId} in ${Date.now() - startedAt}ms`,
       );
-      return await withCuaControlEnv(patch);
+      return patch;
     },
     (error) => {
       logger.warn(
@@ -609,32 +576,6 @@ const windowWorkspaceMap = new Map<number, Set<string>>();
 const windowTaskRealtimeHostIdMap = new Map<number, string>();
 const windowUnreadCountMap = new Map<number, number>();
 const windowHostProcessMap = new Map<number, ElectronUtilityProcess>();
-// Phase 2-1c（升级实施手册 桌面控制 Phase 2 第一步）：CUA 光标 HUD。
-// darwin 常驻 UDP 监听（无事件零成本）；窗口在执行层首个输入事件时惰性创建，
-// 6 秒静默自动隐藏。HUD 只在 FREECODEZ_CUA_KOFFI_ACTIONS 链路广播端口时才有源——
-// 监听器自身无害，先装上（darwin only；其他平台光标层走各自宿主；HUD 总闸
-// FREECODEZ_CUA_CURSOR_HUD=0 可关，旧键 ZCODE_CUA_CURSOR_HUD 回退读）。
-const cuaCursorHud: CuaCursorHud | undefined =
-  process.platform === "darwin" &&
-  (process.env.FREECODEZ_CUA_CURSOR_HUD?.trim() || process.env.ZCODE_CUA_CURSOR_HUD?.trim()) !== "0"
-    ? createCuaCursorHud({
-        BrowserWindow: HudBrowserWindow,
-        // Electron 41 已移除 screenToDipPoint——resolveHudScreenDeps 运行时探测 API 缺席
-        // 即省略该键，走控制器 fallback（2026-10-07 装机实测：无条件包装曾把首个光标帧
-        // 炸成 main uncaughtException、错误弹窗阻断退出）。
-        screen: resolveHudScreenDeps(HudScreen),
-        globalShortcut: {
-          register: (accelerator, callback) => globalShortcut.register(accelerator, callback),
-          unregister: (accelerator) => globalShortcut.unregister(accelerator),
-        },
-        // Phase 2：Esc 取消 = 光标活跃期间用户按 Esc，向聚焦窗发停止信号
-        // （与 UI 停止按钮同一路径——聚焦窗的 task 停止链处理实际中断）。
-        onUserCancel: () => {
-          const focused = BrowserWindow.getFocusedWindow();
-          focused?.webContents.send("cua-user-cancel");
-        },
-      })
-    : undefined;
 
 // 条目 3：更新检查器。设置键 updateManifestUrl 为空=功能关闭（零网络零定时器）；
 // 设置后 production 形态启动延迟 60s 首查、按日复查（受管 timer），新版本系统通知+查看新版。
@@ -698,45 +639,7 @@ if (app.isPackaged) {
   });
 }
 
-// Phase 3a：Appshot 双击热键（FREECODEZ_APPSHOT_HOTKEY=cmd|alt|shift|off，默认 off——
-// 显式开启才有全局轮询；触发后截图+AX 树注入聚焦会话 composer）。
-const cuaAppshotController = startCuaAppshot({
-  getFocusedWindow: () => BrowserWindow.getFocusedWindow() ?? undefined,
-  // Phase 3a 设置面：设置键优先于 env（UI 改设置即改热键，无需重启）。
-  getAppshotSettings: () => {
-    const cached = appshotSettingsCache;
-    if (cached) return cached;
-    return {};
-  },
-  // Phase 3a 音效：系统截屏声（macOS 内建）。
-  playSound: () => {
-    if (appshotSettingsCache?.appshotSound === false) return;
-    void shell.beep();
-  },
-  log: (message, context) => {
-    logger.info(message, context);
-  },
-});
-// 设置缓存（settings 变更时刷新——见 mainSettingService 观察面）。
-let appshotSettingsCache: { appshotHotkey?: string; appshotSound?: boolean; appshotRoute?: string } | undefined;
-void mainSettingService.get().then((settings) => {
-  appshotSettingsCache = settings;
-});
-
-const cuaPipFocusRouter = createCuaPipFocusRouter({
-  send: (windowId, event) => {
-    windowHostProcessMap.get(windowId)?.postMessage({
-      type: HostMessageTypes.CuaPipFocusChanged,
-      event,
-    });
-  },
-});
 const hostRunningTaskCountMap = new Map<ElectronUtilityProcess, number>();
-const windowsCuaOperationIndicator = createWindowsCuaOperationIndicator({
-  platform: process.platform,
-  getLocale: () => currentApplicationLocale,
-  logger,
-});
 
 // 常驻 cron scheduler 进程句柄；app ready 后拉起，退出前销毁。
 let cronScheduler: CronSchedulerHandle | null = null;
@@ -829,18 +732,8 @@ function awaitFirstHostSpawnDecision(): Promise<void> {
   })();
   return firstHostSpawnDecisionPromise;
 }
-app.on("browser-window-focus", (_event, win) => {
+app.on("browser-window-focus", () => {
   rebuildMenu();
-  // 设置/更新等无 Host 的 ZCode 窗口也算前台：router 会先把旧 workspace Host 清成 null，
-  // 再把无 Host 的新窗口事实静默丢弃，避免旧会话 PiP 继续显示。
-  cuaPipFocusRouter.focusWindow(resolveCuaPipWindowKey(win));
-});
-app.on("browser-window-blur", (_event, win) => {
-  cuaPipFocusRouter.blurWindow(resolveCuaPipWindowKey(win));
-});
-app.on("browser-window-created", (_event, win) => {
-  const windowKey = resolveCuaPipWindowKey(win);
-  win.once("closed", () => cuaPipFocusRouter.removeWindow(windowKey));
 });
 
 const remoteSessionManager = createRemoteWorkspaceSessionManager({
@@ -935,7 +828,7 @@ function resolveExternalWorkspaceConfirmationCopy() {
 }
 
 function focusForceUpdateGateWindow() {
-  const gateWindow = getApplicationWindowsExcludingCuaIndicator()[0];
+  const gateWindow = getVisibleApplicationWindows()[0];
   if (!gateWindow) {
     return;
   }
@@ -950,7 +843,7 @@ function focusForceUpdateGateWindow() {
 }
 
 const primaryWindowCoordinator = createPrimaryWindowCoordinator({
-  listWindows: getApplicationWindowsExcludingCuaIndicator,
+  listWindows: getVisibleApplicationWindows,
   resolveStartupWindowBootstrap: () => {
     if (startupOpenWorkspaceRequest) {
       const request = startupOpenWorkspaceRequest;
@@ -1034,7 +927,7 @@ function syncImmediateAppSettings(patch: Partial<AppSettings>) {
     // 这里重建应用菜单 accelerator，并通知所有窗口刷新设置快照 —— 其他窗口的
     // useAppKeyboard 生效表与设置页跟随更新。先例：setAutoDownloadAndInstallUpdates 的全窗口广播。
     rebuildMenu();
-    for (const win of getApplicationWindowsExcludingCuaIndicator()) {
+    for (const win of getVisibleApplicationWindows()) {
       if (!win.isDestroyed()) {
         win.webContents.send(PlatformChannels.SettingsChanged);
       }
@@ -1056,7 +949,7 @@ async function setAutoDownloadAndInstallUpdates(enabled: boolean) {
   syncImmediateAppSettings({
     autoDownloadAndInstallUpdates: enabled,
   });
-  for (const win of getApplicationWindowsExcludingCuaIndicator()) {
+  for (const win of getVisibleApplicationWindows()) {
     if (!win.isDestroyed()) {
       win.webContents.send(PlatformChannels.SettingsChanged);
     }
@@ -1083,7 +976,6 @@ async function prepareAppQuit(reason: string, kind: AppShutdownKind = "normal"):
   }
 
   markForceQuit(reason);
-  windowsCuaOperationIndicator.dispose();
   browserScreenshotSurfaceCoordinator.dispose();
 
   const cronSchedulerToDispose = cronScheduler;
@@ -1374,7 +1266,7 @@ function confirmAppQuit(originWindow?: BrowserWindow | null) {
     originWindow && !originWindow.isDestroyed()
       ? originWindow
       : (BrowserWindow.getFocusedWindow() ??
-        getApplicationWindowsExcludingCuaIndicator()[0] ??
+        getVisibleApplicationWindows()[0] ??
         null);
   const dialogOptions = {
     type: "question" as const,
@@ -1507,14 +1399,12 @@ function resolveFocusedDesktopZoomLevel(): number {
   return resolveDesktopZoomLevelFromFactor(focusedWindow.webContents.getZoomFactor());
 }
 
-function getApplicationWindowsExcludingCuaIndicator(): BrowserWindow[] {
-  return BrowserWindow.getAllWindows().filter(
-    (win) => !win.isDestroyed() && !windowsCuaOperationIndicator.ownsWindow(win),
-  );
+function getVisibleApplicationWindows(): BrowserWindow[] {
+  return BrowserWindow.getAllWindows().filter((win) => !win.isDestroyed());
 }
 
 function getMainApplicationWindows(): BrowserWindow[] {
-  return getApplicationWindowsExcludingCuaIndicator().filter((win) => win !== updateStatusWindow);
+  return getVisibleApplicationWindows().filter((win) => win !== updateStatusWindow);
 }
 
 function isUpdateStatusWindowCloseLocked(state: UpdateStatePayload) {
@@ -1754,7 +1644,6 @@ function createWindowInstance(startupBootstrap: StartupWindowBootstrap = {}) {
         hideWindow: () => win.hide(),
       }),
     windowHostProcessMap,
-    onHostProcessReady: (windowKey) => cuaPipFocusRouter.refreshWindow(windowKey),
     awaitFirstHostSpawnDecision,
     spawnHostProcess: (win, label, initMessage) => {
       const child = spawnHostProcess(
@@ -1775,10 +1664,6 @@ function createWindowInstance(startupBootstrap: StartupWindowBootstrap = {}) {
           taskRealtimeBus,
           windowHostProcessMap,
           hostRunningTaskCountMap,
-          onCuaOperationStateChanged: (source, event) =>
-            windowsCuaOperationIndicator.handleState(source, event),
-          onCuaOperationStateSourceExited: (source) =>
-            windowsCuaOperationIndicator.clearSource(source),
           onCronRunResult: forwardCronRunResult,
           onOffPeakRunResult: forwardOffPeakRunResult,
           onCronSchedulerWakeRequested: wakeCronScheduler,
@@ -1853,7 +1738,7 @@ app.on("open-url", (event, url) => {
     focusForceUpdateGateWindow();
     return;
   }
-  if (workspacePath && getApplicationWindowsExcludingCuaIndicator().length === 0) {
+  if (workspacePath && getVisibleApplicationWindows().length === 0) {
     // macOS 冷启动 Finder Service 会先触发 open-url，再创建首窗。
     // 把目标目录按 deep link 来源记录，首窗 bootstrap 前仍要走确认 gate。
     startupOpenWorkspaceRequest = { path: workspacePath, source: "deep-link" };
@@ -1864,7 +1749,7 @@ app.on("open-url", (event, url) => {
   }
   handleDeepLink(url, logger, {
     confirmationCopy: resolveExternalWorkspaceConfirmationCopy(),
-    resolveApplicationWindow: () => getApplicationWindowsExcludingCuaIndicator()[0] ?? null,
+    resolveApplicationWindow: () => getVisibleApplicationWindows()[0] ?? null,
   });
 });
 const gotTheLock = app.requestSingleInstanceLock(createDeepLinkSingleInstanceData(process.argv));
@@ -1885,9 +1770,9 @@ app.on("second-instance", (_event, argv, _workingDirectory, additionalData) => {
           ...options,
           resolveApplicationWindow:
             options?.resolveApplicationWindow ??
-            (() => getApplicationWindowsExcludingCuaIndicator()[0] ?? null),
+            (() => getVisibleApplicationWindows()[0] ?? null),
         }),
-      resolveApplicationWindow: () => getApplicationWindowsExcludingCuaIndicator()[0] ?? null,
+      resolveApplicationWindow: () => getVisibleApplicationWindows()[0] ?? null,
       logger,
       workspaceConfirmationCopy: resolveExternalWorkspaceConfirmationCopy(),
     })
@@ -1895,7 +1780,7 @@ app.on("second-instance", (_event, argv, _workingDirectory, additionalData) => {
     return;
   }
 
-  const win = getApplicationWindowsExcludingCuaIndicator()[0];
+  const win = getVisibleApplicationWindows()[0];
   if (win) {
     if (win.isMinimized()) {
       win.restore();
@@ -1999,17 +1884,6 @@ app.whenReady().then(async () => {
     app.clearRecentDocuments();
   }
 
-  // R21b/R21c（2026-10-09 用户裁决「FreeCodeZ 要像 ZCode 一样主动要求权限」+「TCC 条目由
-  // 应用自身产生，不走手动 +/拖拽」）：启动期一次性自建全部权限条目——主应用 AX+录屏、
-  // FreeCodeZ Computer Use AX+录屏（helper 一次性请求模式拉起）。权限状态已定时各请求都是
-  // 零弹窗 no-op，只在装机后未定态弹一次；延迟发送不与启动争抢，失败不影响启动。设置页打开
-  // 电脑控制权限区时经 EnsureCuaPermissionEntries 幂等兜底。
-  if (process.platform === "darwin") {
-    setTimeout(() => {
-      void ensureCuaPermissionEntries({ logger }).catch(() => undefined);
-    }, 1500);
-  }
-
   rebuildMenu();
   configureDockMenu(
     () =>
@@ -2072,9 +1946,8 @@ app.whenReady().then(async () => {
     },
     applyApplicationLocale: async (locale) => {
       currentApplicationLocale = locale;
-      windowsCuaOperationIndicator.refreshContent();
       rebuildMenu();
-      for (const win of getApplicationWindowsExcludingCuaIndicator()) {
+      for (const win of getVisibleApplicationWindows()) {
         if (!win.isDestroyed()) {
           win.webContents.send(PlatformChannels.ApplicationLocaleChanged, currentApplicationLocale);
         }
@@ -2113,8 +1986,6 @@ app.whenReady().then(async () => {
     executeDesktopCommand: executeDesktopCommandForApp,
     acknowledgePostUpdateReleaseNotes: (version) =>
       acknowledgePostUpdateReleaseNotes(version, mainSettingService),
-    syncActiveTaskSession: (windowId, sessionId) =>
-      cuaPipFocusRouter.updateActiveSession(windowId, sessionId),
     syncTaskRealtimeWorkspaceKeys: (windowId, workspaceKeys) => {
       const hostId = windowTaskRealtimeHostIdMap.get(windowId);
       if (hostId) {
@@ -2164,7 +2035,7 @@ app.whenReady().then(async () => {
   void maybeWarnArchitectureMismatch({
     locale: currentApplicationLocale,
     logger,
-    parentWindow: getApplicationWindowsExcludingCuaIndicator()[0] ?? null,
+    parentWindow: getVisibleApplicationWindows()[0] ?? null,
     icon: nativeImage.createFromPath(iconPath),
   }).catch((error) => {
     logger.warn("[architecture] 架构检测弹框失败:", error);
@@ -2174,7 +2045,7 @@ app.whenReady().then(async () => {
   if (startupDeepLinkConsumptionGate.shouldHandleReadyProtocolUrl(protocolUrl)) {
     handleDeepLink(protocolUrl, logger, {
       confirmationCopy: resolveExternalWorkspaceConfirmationCopy(),
-      resolveApplicationWindow: () => getApplicationWindowsExcludingCuaIndicator()[0] ?? null,
+      resolveApplicationWindow: () => getVisibleApplicationWindows()[0] ?? null,
     });
   }
 });
@@ -2214,9 +2085,6 @@ app.on("window-all-closed", () => {
   app.quit();
 });
 app.on("before-quit", (event) => {  // Windows 最后窗口关闭会在 close 阶段提前确认并标记 forceQuit；
-  // Phase 2-1c：光标 HUD 覆盖窗随退出关闭（UDP 监听 + 透明窗不留残影）。
-  cuaCursorHud?.dispose();
-  cuaAppshotController.stop();
   updateChecker.stopPeriodic();
   // macOS 的 Cmd+Q / 菜单退出不会走该窗口关闭确认，必须在 before-quit 保留应用级确认兜底。
   if (!forceQuitRef.current && shouldConfirmAppQuit() && !confirmAppQuit()) {
@@ -2231,7 +2099,7 @@ app.on("before-quit", (event) => {  // Windows 最后窗口关闭会在 close �
     localMediaPreviewPathRegistry.clear();
     event.preventDefault();
     void prepareAppQuit("app-before-quit").finally(() => {
-      const remainingWindows = getApplicationWindowsExcludingCuaIndicator();
+      const remainingWindows = getVisibleApplicationWindows();
       logger.info(
         `[app-quit] preparation finished, resuming quit with windows=${remainingWindows.length}`,
       );
@@ -2246,7 +2114,7 @@ app.on("before-quit", (event) => {  // Windows 最后窗口关闭会在 close �
 
       let exitRequested = false;
       const exitAfterLastWindowClosed = () => {
-        if (exitRequested || getApplicationWindowsExcludingCuaIndicator().length > 0) {
+        if (exitRequested || getVisibleApplicationWindows().length > 0) {
           return;
         }
         exitRequested = true;

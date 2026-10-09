@@ -9,7 +9,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const EXCLUDE_DIRS = new Set(["node_modules", "dist", "upstream-assets-3.14.3", ".git"]);
+const EXCLUDE_DIRS = new Set(["node_modules", "dist", "upstream-assets-3.14.3", ".git", "_parked"]);
 
 function* walk(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

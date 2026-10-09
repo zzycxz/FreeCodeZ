@@ -25,7 +25,7 @@ import {
   CUA_LENS_AUTO_OFF_MS,
   type CuaCursorEventFrame,
   type CuaCursorHudWindowLike,
-} from "../src/main/cuaCursorHud.js";
+} from "../main/cuaCursorHud.js";
 
 test("事件表：click = point→down→up 同序同坐标（HUD 依此画移位+脉冲）", () => {
   const events = cursorEventsForClick({ x: 100.4, y: 200.7, button: "left" });

@@ -16,7 +16,6 @@ import {
   type HostAgentProcessExitedResponse,
   type HostAgentProcessReadyResponse,
   type HostAgentProcessSpawnedResponse,
-  type HostCuaOperationStateResponse,
   type TaskRealtimeHostDeliveryKind,
   formatZCodeHostProcessName,
   HostMessageTypes,
@@ -175,11 +174,6 @@ export function spawnHostProcess(
     onAgentProcessException?: (event: HostAgentProcessExceptionResponse) => void;
     onAgentProcessReady?: (event: HostAgentProcessReadyResponse) => void;
     onAgentProcessSpawned?: (event: HostAgentProcessSpawnedResponse) => void;
-    onCuaOperationStateChanged?: (
-      source: ElectronUtilityProcess,
-      event: HostCuaOperationStateResponse,
-    ) => void;
-    onCuaOperationStateSourceExited?: (source: ElectronUtilityProcess) => void;
     /** host → main：定时任务派发结果，转交给 cron scheduler 结算调度状态机。 */
     onCronRunResult?: (result: {
       runId: string;
@@ -236,14 +230,6 @@ export function spawnHostProcess(
       ...buildHostProcessEnv(dependencies.hostProcessLocalEnv),
       ...buildHostE2ECoverageEnv(),
       ZCODE_PROCESS_LABEL: label,
-      // macOS-only: the Computer Use Helper launcher runs inside this forked host utilityProcess, whose
-      // code-signing identity is a nested Electron helper (not the main app's app.freecodez.app id).
-      // Publish THIS (main Electron) process's pid — the launcher-pid mechanism is identity-agnostic
-      // and the Helper anchors on the app.freecodez.cua-helper bundle-id family (R20) — so helperLauncher passes
-      // it as `--launcher-pid` and the Helper's peer verification succeeds instead of
-      // health-timing out. Env-name mirror of services' LAUNCHER_PID_ENV. Not set on
-      // Windows/Linux (CUA is macOS-only; nothing reads it there) to keep the host env pristine.
-      ...(process.platform === "darwin" ? { ZCODE_CUA_LAUNCHER_PID: String(process.pid) } : {}),
       ...(dependencies.desktopContextPromptEnabled
         ? {
             [ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV]: dependencies.desktopContextPromptEnabled()
@@ -361,12 +347,6 @@ export function spawnHostProcess(
             error: error instanceof Error ? error.message : String(error),
           });
         });
-      return;
-    }
-
-    if (result.data.type === HostResponseTypes.CuaOperationState) {
-      // Main 只投影 Host 已经判定的 turn 状态，不在这里重复解析 session/tool 业务事件。
-      dependencies.onCuaOperationStateChanged?.(child, result.data);
       return;
     }
 
@@ -582,7 +562,6 @@ export function spawnHostProcess(
   child.on("exit", (code) => {
     exitedHostProcesses.add(child);
     // Host exit 是 fail-hidden 权威边界；不能依赖即将退出的 Host 再补发 inactive。
-    dependencies.onCuaOperationStateSourceExited?.(child);
     hostLogRelay.flushRawLogs();
     dependencies.logger.info(`[spawnHostProcess] host process (${label}) exited with code ${code}`);
     dependencies.hostRunningTaskCountMap.delete(child);

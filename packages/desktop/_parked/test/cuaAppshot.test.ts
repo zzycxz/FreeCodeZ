@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { nextDoubleTapState, pickFrontmostAppWindow } from "@zcode/zcode-cua/macos";
-import { startCuaAppshot, resolveAppshotHotkeySetting, APPSHOT_ADD_TO_CHAT_EVENT } from "../src/main/cuaAppshot.js";
+import { startCuaAppshot, resolveAppshotHotkeySetting, APPSHOT_ADD_TO_CHAT_EVENT } from "../main/cuaAppshot.js";
 
 test("双击状态机：两次完整按下-抬起触发；超窗回落；静默期防三击", () => {
   let state;
