@@ -74,11 +74,6 @@ export const OFFICIAL_BROWSER_USE_REQUIRED_SEED_PATHS = [
   "skills/web-gui-tester/SKILL.md",
 ] as const;
 
-const OFFICIAL_CUA_REQUIRED_SEED_PATHS = [
-  "docs/computer-use.md",
-  "scripts/computer-use-client.mjs",
-  "skills/computer-use/SKILL.md",
-] as const;
 
 // zcode-guide 原本没有 requiredSeedPaths，seed 丢文件时会静默装出一个
 // 没有 /workflow 命令的插件——症状是命令不存在，没有任何诊断。commands/ 与技能正文都钉住。
@@ -316,49 +311,6 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
     // 内容对齐上游 0.3.0 语义（单文件 dynamic-workflows SKILL），版本沿 fork 自有
     // 序列继续演进；技能按小方案留在 zcode-guide，不建 bundled-skills 出包链。
     version: "0.3.0",
-  },
-  {
-    // 产品决策：电脑控制回退为默认关闭，需用户在设置页显式开启。
-    // 因此这里不声明 defaultEnabled——computer-use 携带 MCP server 与系统 Helper 依赖，
-    // 默认开启意味着每个新用户首启即注入整套工具集并拉起 Helper。
-    // 「defaultEnabled 仅限内容型插件」的旧约定随之恢复完整。
-    // 判定式是 enabledPlugins[id] ?? defaultEnabled：曾在设置页手动开过的用户已落盘
-    // 显式 true，不受本次默认值变更影响。改回默认开启时，需同步
-    // packages/shared/src/plugin-marketplaces.ts 的名单（bootstrap 单测机械对照两者）、
-    // isZCodeCuaInternalFeatureEnabled（打包层默认 true）与输入框入口 hidden 默认值的联动语义。
-    name: "computer-use",
-    hostMcpServerNames: ["node_repl"],
-    // 用户露出名统一为「Computer Use / 电脑控制」。包名与 producer 仓库仍保持 zcode-cua，
-    // 以兼容原生 Helper identity；EN 描述基线走 manifest
-    // description，这里只放 zh-CN 覆盖；resolveLocalizedText 在 en-US 时回退到 manifest。
-    listing: {
-      author: ZAI_AUTHOR,
-      category: "productivity",
-      displayName: "Computer Use",
-      displayName_i18n: { "zh-CN": "电脑控制" },
-      description_i18n: {
-        "zh-CN": "自动化桌面应用：智能体驱动鼠标、键盘与界面元素，代你完成实际任务。",
-      },
-      // 插件更名为 computer-use 后，CDN 图标仍发布在 zcode-cua 目录；沿用资源路径避免 404。
-      icon: `${OFFICIAL_PLUGIN_ASSETS_BASE_URL}/zcode-cua/icon.png`,
-    },
-    rootCandidates: [
-      "packages/zcode-cua-plugin",
-      "../zcode-cua-plugin",
-      "../../zcode-cua-plugin",
-      "../../../zcode-cua-plugin",
-      // vendored 位置(B1-1 native-search 先例):repo 内运行打包产物时 agent 入口落在
-      // apps/zcode-cli/packages/cli/dist(dev 邻接解析),上面四条全部扑空导致静默跳过
-      // (2026-09-24 打包实测:内置 12 缺电脑控制行)。此候选同时覆盖 dev 树邻接布局。
-      "../../../dependencies/zcode-cua/plugin",
-    ],
-    requiredSeedPaths: OFFICIAL_CUA_REQUIRED_SEED_PATHS,
-    // 电脑控制能力补位（B1-2）：node_modules 随 seed 携带，否则装上的插件缺 koffi/sharp，
-    // 启用即断。这是 bundled-plugins.ts filesystem seed 的复制开关，勿再置空。
-    runtimeTopLevelPaths: ["node_modules"],
-    // 这里的 version 追踪上游 zcode-cua runtime 版本，使插件 UI 展示、缓存路径、
-    // marketplace 条目都对齐；具体版本由原子 producer bump 工作流维护。
-    version: "0.6.3",
   },
 ];
 

@@ -26,9 +26,8 @@ const marketplaceUrl = new URL(
 const bundledManifestUrl = new URL("packages/shared/src/bundled-plugin-marketplace.ts", repoRoot);
 const snapshotUrl = new URL("config/plugin-marketplace/official-snapshot.json", repoRoot);
 
-// 电脑控制能力补位(2026-09-23):computer-use(zcode-cua-plugin)已随
-// docs/spec/computer-control-capability.md B1 vendor 进 apps/zcode-cli/dependencies/zcode-cua/plugin,
-// koffi/sharp 原生运行时走 staging 白名单携带——DEFERRED 名单清空,C3 恢复全量对照。
+// computer-use(zcode-cua-plugin)条目已随 CUA 栈拆除（规格书 W-01，2026-10-09）：
+// vendored 树与 staging/definitions 条目同批删除，DEFERRED 名单保持空集，C3 全量对照。
 const DEFERRED_DEFINITIONS = new Set<string>();
 
 const OFFICIAL_MARKETPLACE = "zcode-plugins-official";

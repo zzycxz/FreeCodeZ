@@ -13,8 +13,8 @@ import {
 
 // 需要随 seed 携带 node_modules 的插件：执行进程从各自 rootPath 解析原生依赖。
 // - node-repl-host：server.js 内联 koffi-ax require("koffi")（电脑控制执行层）；
-// - computer-use：SDK 脚本 require("sharp")（截图/缩放链）。
-const NATIVE_RUNTIME_PLUGINS = [OFFICIAL_NODE_REPL_HOST_PLUGIN_NAME, "computer-use"];
+// computer-use 条目已随 CUA 栈拆除（规格书 W-01），其 sharp 携带语义不再入库。
+const NATIVE_RUNTIME_PLUGINS = [OFFICIAL_NODE_REPL_HOST_PLUGIN_NAME];
 
 test("native 运行时插件的 seed 定义必须携带 node_modules", () => {
   for (const name of NATIVE_RUNTIME_PLUGINS) {

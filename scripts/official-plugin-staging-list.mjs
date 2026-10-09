@@ -10,14 +10,6 @@
 // 历史教训：平行清单各改各的，曾因「删源漏改清单」（上游 44b25ed46c）让远端预构建与桌面
 // 打包先后以 missing runtime 挂掉；故收敛为本模块 + 机械对照测试，禁止再复制第三份。
 //
-// computer-use（zcode-cua-plugin）条目（vendored 于 apps/zcode-cli/dependencies/zcode-cua/plugin）：
-// 其 runtime 依赖 koffi/sharp 原生包，node_modules 按 carriedNodeModules 白名单随插件携带
-// （规格 docs/spec/computer-control-capability.md B1-2/B1-3）；R2 仅 desktop-local 提供，
-// stageOnRemote:false 不进远端资产。carriedNodeModules：win32 从 vendored 源携带（win32 二进制
-// 形态）；darwin/linux 从构建机 workspace 携带（desktop deps 装出目标平台二进制，R18「包内具备
-// 同等能力」）；koffi 仅 darwin 携带（win32 走 vendored helper addon、linux 无 AX 执行层）——
-// 三平台策略均在 prepare-agent-node-bundle.mjs 落地，afterPack verifyCuaPluginAssets 的 koffi
-// 断言与此同源（仅 darwin），win32 只断言 sharp 链与 helper 资产。
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -118,22 +110,6 @@ export const officialPluginStagingList = [
     relativePath: "apps/zcode-cli/packages/zcode-guide-plugin",
     requiresRuntime: false,
     stagedPath: "packages/zcode-guide-plugin",
-  },
-  {
-    // 电脑控制:SDK/技能 + koffi/sharp 原生运行时(vendored 随包资产,非 workspace 成员,
-    // 依赖图零漂移)。三处版本(package/package.json、.zcode-plugin/plugin.json、
-    // official-plugin-definitions)由 pluginMarketplaceParity 测试机械对照。
-    packageName: "@zcode/zcode-cua-plugin",
-    relativePath: "apps/zcode-cli/dependencies/zcode-cua/plugin",
-    requiresRuntime: false,
-    stagedPath: "packages/zcode-cua-plugin",
-    stageOnRemote: false,
-    carriedNodeModules: ["koffi", "sharp", "@img", "semver", "detect-libc"],
-    requiredSeedPaths: [
-      "docs/computer-use.md",
-      "scripts/computer-use-client.mjs",
-      "skills/computer-use/SKILL.md",
-    ],
   },
 ];
 
