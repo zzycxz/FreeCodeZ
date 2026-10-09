@@ -52,7 +52,7 @@ const SKILL_CLI_SETTINGS_DIR = join(resolveUserHomeDir(), ".freecodez", "cli");
 const SKILL_CLI_CONFIG_FILE = join(SKILL_CLI_SETTINGS_DIR, "config.json");
 const GIT_MARKER = ".git";
 const HOME_PREFIX = "~/";
-const ZCODE_OFFICIAL_PLUGIN_MARKETPLACE = "zcode-plugins-official";
+const FREECODEZ_PLUGIN_MARKETPLACE = "freecodez";
 const ZCODE_INLINE_PLUGIN_MARKETPLACE = "inline";
 const ZCODE_PLUGIN_MANIFEST_PATH = join(".zcode-plugin", "plugin.json");
 const CLAUDE_PLUGIN_MANIFEST_PATH = join(".claude-plugin", "plugin.json");
@@ -685,7 +685,7 @@ function resolveInside(rootPath: string, rawPath: string): string | null {
 }
 
 async function scanOfficialPluginCacheRoots(pluginStorageRoot: string): Promise<string[]> {
-  const cacheRoot = join(pluginStorageRoot, "cache", ZCODE_OFFICIAL_PLUGIN_MARKETPLACE);
+  const cacheRoot = join(pluginStorageRoot, "cache", FREECODEZ_PLUGIN_MARKETPLACE);
   let pluginEntries: Dirent[] = [];
   try {
     pluginEntries = await readdir(cacheRoot, { withFileTypes: true });
@@ -790,7 +790,7 @@ async function resolvePluginSkillRootDescriptors(): Promise<SkillRootDescriptor[
     })),
     ...officialCacheRoots.map((rootPath) => ({
       defaultEnabled: false,
-      marketplace: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE,
+      marketplace: FREECODEZ_PLUGIN_MARKETPLACE,
       rootPath,
     })),
     ...installedRoots,
@@ -808,7 +808,7 @@ async function resolvePluginSkillRootDescriptors(): Promise<SkillRootDescriptor[
     // 官方 cache 时不经过 CLI resolve 的过滤，需要在这里同样跳过，否则被卸载的内置插件
     // 仍会从 cache 贡献技能。
     if (
-      candidate.marketplace === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE &&
+      candidate.marketplace === FREECODEZ_PLUGIN_MARKETPLACE &&
       config.suppressedBuiltins.includes(pluginId)
     ) {
       continue;

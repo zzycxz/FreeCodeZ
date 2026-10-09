@@ -30,7 +30,7 @@ const snapshotUrl = new URL("config/plugin-marketplace/official-snapshot.json", 
 // vendored 树与 staging/definitions 条目同批删除，DEFERRED 名单保持空集，C3 全量对照。
 const DEFERRED_DEFINITIONS = new Set<string>();
 
-const OFFICIAL_MARKETPLACE = "zcode-plugins-official";
+const OFFICIAL_MARKETPLACE = "freecodez";
 
 test("C1 快照字段合同:26 条全过、产物同步,剥离 icon/source 的旧代样例被拒", async () => {
   const { collectSnapshotContractErrors, renderBundledMarketplaceModule, OUTPUT_PATH } =

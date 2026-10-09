@@ -5,7 +5,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { execFile } from "node:child_process";
 import { isDeepStrictEqual, promisify } from "node:util";
 import type { PluginDiagnostic, PluginManifest, PluginStoreListing } from "@zcode/contracts";
-import { isOfficialMarketplaceId, ZCODE_OFFICIAL_PLUGIN_MARKETPLACE } from "@zcode/contracts";
+import { isOfficialMarketplaceId, FREECODEZ_PLUGIN_MARKETPLACE } from "@zcode/contracts";
 import {
   BUNDLED_OFFICIAL_PLUGIN_MARKETPLACE_MANIFEST,
   DEFAULT_PLUGIN_MARKETPLACES,
@@ -402,17 +402,17 @@ export async function addMarketplace(input: {
       );
     }
     if (
-      input.trustedId === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE &&
-      loaded.manifest.name !== ZCODE_OFFICIAL_PLUGIN_MARKETPLACE
+      input.trustedId === FREECODEZ_PLUGIN_MARKETPLACE &&
+      loaded.manifest.name !== FREECODEZ_PLUGIN_MARKETPLACE
     ) {
       throw new Error(
-        `Official marketplace source must provide ${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE}, received ${loaded.manifest.name}`,
+        `Official marketplace source must provide ${FREECODEZ_PLUGIN_MARKETPLACE}, received ${loaded.manifest.name}`,
       );
     }
     // C4 单一写入路径：官方目录内容固定取随包冻结快照（P5 冻结策略），调用方 source 不能
     // 注入条目；旧代/漂移由同一入口整体重播纠正（spec §6 C4/C5）。
     const persistedManifest =
-      loaded.manifest.name === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE
+      loaded.manifest.name === FREECODEZ_PLUGIN_MARKETPLACE
         ? parseRequiredMarketplaceManifest(ensureOfficialCatalogPartitionSync(input.storageRoot))
         : loaded.manifest;
     // 旧流程先删 marketplace target 再复制 source，刷新失败会丢失最后成功快照。
@@ -425,7 +425,7 @@ export async function addMarketplace(input: {
         persistedManifest.raw,
         operationSignal,
       );
-    } else if (loaded.manifest.name !== ZCODE_OFFICIAL_PLUGIN_MARKETPLACE) {
+    } else if (loaded.manifest.name !== FREECODEZ_PLUGIN_MARKETPLACE) {
       marketplaceActivation = await stageMarketplaceManifest(
         input.storageRoot,
         loaded.manifest.name,

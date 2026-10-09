@@ -7,12 +7,12 @@ import spreadsheetsIconUrl from "@/assets/plugin-icons/spreadsheets.png";
 import { isTrustedImageUrl } from "@/lib/trustedImageUrl.js";
 
 const OFFICIAL_PLUGIN_ICON_BY_ID: Readonly<Record<string, string>> = {
-  "documents@zcode-plugins-official": documentsIconUrl,
-  "image-search@zcode-plugins-official": imageSearchIconUrl,
-  "pdf@zcode-plugins-official": pdfIconUrl,
-  "plugin-creator@zcode-plugins-official": pluginCreatorIconUrl,
-  "presentations@zcode-plugins-official": presentationsIconUrl,
-  "spreadsheets@zcode-plugins-official": spreadsheetsIconUrl,
+  "documents@freecodez": documentsIconUrl,
+  "image-search@freecodez": imageSearchIconUrl,
+  "pdf@freecodez": pdfIconUrl,
+  "plugin-creator@freecodez": pluginCreatorIconUrl,
+  "presentations@freecodez": presentationsIconUrl,
+  "spreadsheets@freecodez": spreadsheetsIconUrl,
 };
 
 const TRUSTED_BUNDLED_PLUGIN_ICONS = new Set(Object.values(OFFICIAL_PLUGIN_ICON_BY_ID));

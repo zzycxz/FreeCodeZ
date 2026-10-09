@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 import { writeBundledOfficialMarketplacePartitionSync } from "@zcode/adapters";
-import { ZCODE_OFFICIAL_PLUGIN_MARKETPLACE, type Logger } from "@zcode/contracts";
+import { FREECODEZ_PLUGIN_MARKETPLACE, type Logger } from "@zcode/contracts";
 import {
   createOfficialPluginCacheRetryBudget,
   getOfficialPluginCacheRetryAttempts,
@@ -29,7 +29,7 @@ import {
   withOfficialPluginSeedLock,
 } from "./official-plugin-seed-lock.js";
 
-const OFFICIAL_PLUGIN_MARKETPLACE = ZCODE_OFFICIAL_PLUGIN_MARKETPLACE;
+const OFFICIAL_PLUGIN_MARKETPLACE = FREECODEZ_PLUGIN_MARKETPLACE;
 const SEA_PLUGIN_ASSET_PREFIX = "zcode-official-plugins/";
 const SEA_PLUGIN_MANIFEST_ASSET_KEY = `${SEA_PLUGIN_ASSET_PREFIX}manifest.json`;
 const SEED_MARKER_FILE = ".zcode-plugin-seed.json";

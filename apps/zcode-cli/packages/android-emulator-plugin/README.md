@@ -18,10 +18,10 @@ When enabled, ZCode loads:
 ## ZCode CLI Usage
 
 ZCode bundles this package as the official
-`android-emulator@zcode-plugins-official` plugin. Enable the plugin to project
+`android-emulator@freecodez` plugin. Enable the plugin to project
 its skill, slash command, and MCP server into the session.
 At startup ZCode copies the packaged plugin files into
-`~/.zcode/cli/plugins/cache/zcode-plugins-official/android-emulator/0.1.0/`
+`~/.zcode/cli/plugins/cache/freecodez/android-emulator/0.1.0/`
 and runs the MCP server from that cache directory. SEA builds rewrite the
 official plugin's ZCode manifest to launch the cached MCP server through ZCode's
 internal plugin host, so the server uses the embedded Node.js runtime.
@@ -34,10 +34,10 @@ Example `~/.zcode/cli/config.json` entry:
 {
   "plugins": {
     "enabledPlugins": {
-      "android-emulator@zcode-plugins-official": true
+      "android-emulator@freecodez": true
     },
     "options": {
-      "android-emulator@zcode-plugins-official": {
+      "android-emulator@freecodez": {
         "default_avd": "medium_phone",
         "api_level": "35"
       }

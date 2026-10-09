@@ -2,7 +2,7 @@
 
 ZCode official plugin for restoring old ACP-era ZCode session snapshots into the new task index and CLI session DB.
 
-This plugin is bundled as `restore-legacy-sessions@zcode-plugins-official` and is disabled by default. Enable it only when you need to inspect or restore old session data.
+This plugin is bundled as `restore-legacy-sessions@freecodez` and is disabled by default. Enable it only when you need to inspect or restore old session data.
 
 ## Enable
 

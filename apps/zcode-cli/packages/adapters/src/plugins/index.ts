@@ -21,7 +21,7 @@ import {
   HookEventName as HookEventNameValue,
   HookMatcherConfigSchema,
   ZCODE_INLINE_PLUGIN_MARKETPLACE,
-  ZCODE_OFFICIAL_PLUGIN_MARKETPLACE,
+  FREECODEZ_PLUGIN_MARKETPLACE,
 } from "@zcode/contracts";
 import {
   directoryExists,
@@ -249,7 +249,7 @@ export class NodePluginAdapter implements PluginPort {
     for (const rootPath of request.officialPluginRoots ?? []) {
       candidates.push({
         defaultEnabled: false,
-        marketplace: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE,
+        marketplace: FREECODEZ_PLUGIN_MARKETPLACE,
         rootPath: resolve(rootPath),
         source: "official",
       });
@@ -257,7 +257,7 @@ export class NodePluginAdapter implements PluginPort {
     candidates.push(
       ...scanOfficialCache(request.storageRoot, diagnostics, options).map((rootPath) => ({
         defaultEnabled: false,
-        marketplace: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE,
+        marketplace: FREECODEZ_PLUGIN_MARKETPLACE,
         rootPath,
         source: "official" as const,
       })),
@@ -866,7 +866,7 @@ function scanOfficialCache(
     return bundledRoots;
   }
 
-  const cacheRoot = join(storageRoot, "cache", ZCODE_OFFICIAL_PLUGIN_MARKETPLACE);
+  const cacheRoot = join(storageRoot, "cache", FREECODEZ_PLUGIN_MARKETPLACE);
   try {
     const roots: string[] = [];
     for (const pluginEntry of readdirSync(cacheRoot, { withFileTypes: true })) {

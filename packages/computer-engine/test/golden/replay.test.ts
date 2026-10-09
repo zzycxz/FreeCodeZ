@@ -91,7 +91,7 @@ describe("golden 回放门禁（W-22）", () => {
     }
   });
 
-  it("只读场景 wire 级回放一致（capabilities/listApps/listWindows/getAppState）", async () => {
+  it("确定性场景 wire 级回放一致（capabilities + 全部 error 形态）", async () => {
     execFileSync(process.execPath, [join(pkgRoot, "scripts", "build-sidecar.mjs")], {
       cwd: pkgRoot,
       stdio: "pipe",
@@ -129,6 +129,11 @@ describe("golden 回放门禁（W-22）", () => {
       for (const file of files) {
         const sample = JSON.parse(readFileSync(join(samplesDir, file), "utf8"));
         if (!SAFE_METHODS.has(sample.method)) continue;
+        // 确定性口径：capabilities 全量比对；listApps/listWindows/getAppState 的
+        // ok 形态嵌活桌面状态（应用集/窗口集随开关变化）不进 wire 级重放——
+        // 由上一用例的契约形状校验覆盖（信封+必备键）。error 形态信封确定，全量比对。
+        const isErrorForm = sample.response.ok !== true;
+        if (sample.method !== "capabilities" && !isErrorForm) continue;
         const response = await harness.request(sample.method, sample.params);
         assert.deepStrictEqual(
           canonicalize(response),

@@ -27,7 +27,7 @@ import { usePluginManagementStore } from "@/store/pluginManagementStore.js";
 import { useSkillStore } from "@/store/skillStore.js";
 import { formatImportSummary } from "./browserImportSummary.js";
 
-const OFFICIAL_BROWSER_USE_PLUGIN_ID = "browser-use@zcode-plugins-official";
+const OFFICIAL_BROWSER_USE_PLUGIN_ID = "browser-use@freecodez";
 
 interface BrowserSettingsSectionProps {
   isDesktop: boolean;

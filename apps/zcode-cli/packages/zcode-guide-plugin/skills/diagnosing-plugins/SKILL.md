@@ -9,7 +9,7 @@ Goal: reduce any plugin problem to a single concrete fix.
 
 Plugins are managed in **Settings → Plugin Management** — the **Installed** tab (enable/disable, view details, configure, uninstall) and the **Discover** tab (browse, install, and add marketplaces via the **`+`** button).
 
-> Key facts: enable/disable state is stored under `plugins` in `~/.zcode/cli/config.json`; the official marketplace is `zcode-plugins-official`; and for cloning marketplace repositories behind a proxy, ZCode reads the proxy from `ZCODE_HTTP_PROXY` (a bare `http_proxy` is not used).
+> Key facts: enable/disable state is stored under `plugins` in `~/.zcode/cli/config.json`; the official marketplace is `freecodez`; and for cloning marketplace repositories behind a proxy, ZCode reads the proxy from `ZCODE_HTTP_PROXY` (a bare `http_proxy` is not used).
 
 ## 1. Plugin lifecycle and persistence
 

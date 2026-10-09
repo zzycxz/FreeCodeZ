@@ -25,8 +25,8 @@ const OFFICIAL_BUILTIN_PLUGIN_NAMES = new Set([
 ]);
 
 const OFFICIAL_PLUGIN_PATH_MARKERS = [
-  "/zcode-plugins-official/",
-  "\\zcode-plugins-official\\",
+  "/freecodez/",
+  "\\freecodez\\",
   "/android-emulator-plugin/",
   "/browser-use-plugin/",
   "/document-skills-plugin/",

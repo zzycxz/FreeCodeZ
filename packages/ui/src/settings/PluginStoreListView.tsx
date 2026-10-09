@@ -3,7 +3,7 @@ import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
 import { useMemo, useState } from "react";
 import { Download, Loader2, Settings2 } from "lucide-react";
 import type { PluginStoreOrder, ZCodePluginMarketplaceSummary } from "@zcode/shared";
-import { ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID } from "@zcode/shared";
+import { FREECODEZ_PLUGIN_MARKETPLACE_ID } from "@zcode/shared";
 import { Button } from "@/components/ui/button.js";
 import { cn } from "@/components/lib/utils.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
@@ -29,7 +29,7 @@ import { resolveMarketplaceDisplayName } from "@/settings/pluginSourceLabel.js";
 
 // 分类/市场分组手动收起后的展示数量；默认完整展示，避免较少的插件又被自动隐藏。
 const CATEGORY_VISIBLE_LIMIT = 6;
-const RETIRED_STORE_PLUGIN_ID = `restore-legacy-sessions@${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID}`;
+const RETIRED_STORE_PLUGIN_ID = `restore-legacy-sessions@${FREECODEZ_PLUGIN_MARKETPLACE_ID}`;
 
 export type PluginStoreSegment = "public" | "personal";
 

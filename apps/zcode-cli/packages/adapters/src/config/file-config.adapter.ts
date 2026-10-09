@@ -1,6 +1,6 @@
 // File Config Adapter - Load and patch JSON configuration files
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
@@ -83,7 +83,14 @@ export function loadFileConfig(filePath?: string, options: FileConfigOptions = {
 
   try {
     const content = readFileSync(resolvedPath, "utf-8");
-    const parsed = JSON.parse(content);
+    let parsed = JSON.parse(content);
+    // S10 存量迁移：marketplace id 改名后旧键变死引用——装载时一次性读旧写新
+    //（enabledPlugins/options/suppressedBuiltins 三面 + 落盘，否则升级后插件显示未启用）。
+    const migratedPluginConfig = migrateMarketplacePluginConfig(parsed);
+    if (migratedPluginConfig) {
+      parsed = migratedPluginConfig;
+      writeConfigFileAtomic(resolvedPath, parsed);
+    }
     const result = parseConfigFileToRuntimePatchWithDiagnostics(parsed);
 
     return {
@@ -99,6 +106,73 @@ export function loadFileConfig(filePath?: string, options: FileConfigOptions = {
       path: resolvedPath,
       loaded: false,
     };
+  }
+}
+
+/**
+ * S10 marketplace id 迁移（zcode-plugins-official → freecodez）：
+ * 三个键面（enabledPlugins/options/suppressedBuiltins）逐条改名；任一面命中才落盘。
+ * 返回迁移后的对象（浅拷贝），未命中返回 undefined（不写盘）。
+ */
+function migrateMarketplacePluginConfig(value: Record<string, unknown>): Record<string, unknown> | undefined {
+  const plugins = value.plugins;
+  if (!isRecord(plugins)) return undefined;
+  const LEGACY_SUFFIX = "@zcode-plugins-official";
+  const renameKey = (key: string): string =>
+    key.endsWith(LEGACY_SUFFIX) ? `${key.slice(0, -LEGACY_SUFFIX.length)}@freecodez` : key;
+  let changed = false;
+  const nextPlugins: Record<string, unknown> = { ...plugins };
+
+  if (isRecord(plugins.enabledPlugins)) {
+    const next: Record<string, unknown> = {};
+    for (const [key, setting] of Object.entries(plugins.enabledPlugins)) {
+      const renamed = renameKey(key);
+      if (renamed !== key && next[renamed] === undefined) next[renamed] = setting;
+      else if (renamed === key) next[key] = setting;
+      changed ||= renamed !== key;
+    }
+    nextPlugins.enabledPlugins = next;
+  }
+
+  if (Array.isArray(plugins.suppressedBuiltins)) {
+    const next = plugins.suppressedBuiltins.map((id) =>
+      typeof id === "string" ? renameKey(id) : id,
+    );
+    if (JSON.stringify(next) !== JSON.stringify(plugins.suppressedBuiltins)) {
+      nextPlugins.suppressedBuiltins = next;
+      changed = true;
+    }
+  }
+
+  if (isRecord(plugins.options)) {
+    const next: Record<string, unknown> = {};
+    for (const [key, opts] of Object.entries(plugins.options)) {
+      const renamed = renameKey(key);
+      if (renamed !== key && next[renamed] === undefined) next[renamed] = opts;
+      else if (renamed === key) next[key] = opts;
+      changed ||= renamed !== key;
+    }
+    nextPlugins.options = next;
+  }
+
+  return changed ? { ...value, plugins: nextPlugins } : undefined;
+}
+
+/** 原子写回（temp + rename；失败不阻断装载）。 */
+function writeConfigFileAtomic(filePath: string, value: Record<string, unknown>): void {
+  const tempPath = `${filePath}.migrate.${process.pid}.${Date.now()}.tmp`;
+  try {
+    writeFileSync(tempPath, `${JSON.stringify(value, null, 2)}\n`, {
+      encoding: "utf-8",
+      mode: 0o600,
+    });
+    renameSync(tempPath, filePath);
+  } catch {
+    try {
+      unlinkSync(tempPath);
+    } catch {
+      // 临时文件清理失败不影响当前配置装载。
+    }
   }
 }
 

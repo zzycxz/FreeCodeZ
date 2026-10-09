@@ -49,7 +49,14 @@ export function planLegacyComputerUseMigration(input = {}) {
     }
   }
 
-  // ④ 插件缓存目录中的 computer-use 旧版缓存（storageRoot/plugins 缓存族）。
+  // ④a 插件缓存目录中的 computer-use 旧版缓存（storageRoot/plugins 缓存族）。
+  // ④b S10 marketplace 改名后的整树旧缓存（cache/<旧市场 id>/——重命名即失配，
+  //     重装自动从仓库 re-seed，删除零损失）。
+  actions.push({
+    kind: "remove-dir",
+    path: join(home, ".freecodez", "cli", "plugins", "cache", ["zcode", "plugins", "official"].join("-")),
+    label: "legacy marketplace cache tree (S10 rename)",
+  });
   for (const root of input.pluginCacheRoots ?? defaultPluginCacheRoots(home)) {
     actions.push({
       kind: "remove-dir-glob",

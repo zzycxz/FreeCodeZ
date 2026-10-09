@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
-  ZCODE_OFFICIAL_PLUGIN_MARKETPLACE,
+  FREECODEZ_PLUGIN_MARKETPLACE,
   ZCODE_PLUGIN_HOST_COMMAND,
   type McpServerConfig,
 } from "@zcode/contracts";
@@ -73,7 +73,7 @@ export function writeOfficialPluginRuntimeManifest(input: OfficialRuntimeManifes
       ELECTRON_RUN_AS_NODE: "1",
       // 权威写入插件身份（pluginName@marketplace，来自本地 plugin registry，manifest/user env 不可覆盖）。
       // 其他 official plugin 仍带上不可伪造的 plugin identity。
-      [ZCODE_PLUGIN_ID_ENV_KEY]: `${input.pluginName}@${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE}`,
+      [ZCODE_PLUGIN_ID_ENV_KEY]: `${input.pluginName}@${FREECODEZ_PLUGIN_MARKETPLACE}`,
     };
     mcpServers[serverKey] = mcpServer;
   }

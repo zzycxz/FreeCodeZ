@@ -2,7 +2,7 @@
 // 与 plugins.ts（安装/市场/启停等管理面）分文件：本查询是会话/草稿 Picker 的只读投影，
 // 且 plugins.ts 已接近 max-lines 门禁。
 import {
-  ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
+  FREECODEZ_PLUGIN_MARKETPLACE_ID,
   zcodeProtocolNotifications,
   zcodePluginsReferenceCatalogParamsSchema,
   zcodePluginsResolveSuggestedReferenceParamsSchema,
@@ -59,7 +59,7 @@ export async function getPluginReferenceCatalog(
   };
 }
 
-const SUGGESTED_PLUGIN_MARKETPLACE = ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID;
+const SUGGESTED_PLUGIN_MARKETPLACE = FREECODEZ_PLUGIN_MARKETPLACE_ID;
 const SUGGESTED_PLUGIN_MARKETPLACE_REFRESH_TIMEOUT_MS = 10_000;
 
 /** 推荐 Prompt 的安装前可信解析；missing 必须先刷新官方目录，失败时禁止旧快照安装。 */
@@ -92,7 +92,7 @@ export async function resolveSuggestedPluginReference(
   ) {
     return unavailable(
       "plugin_suggested_reference_untrusted_source",
-      "推荐插件不是受信任的官方 zcode-plugins-official 来源",
+      "推荐插件不是受信任的官方 freecodez 来源",
     );
   }
 
@@ -163,7 +163,7 @@ export async function resolveSuggestedPluginReference(
       // 刷新超时必须中止底层网络/进程；仅结束协议等待会让旧 operation 继续改写目录快照。
       refreshTimeout = setTimeout(() => {
         refreshTimedOut = true;
-        const timeoutError = new Error("刷新 zcode-plugins-official 超时（10000 ms）");
+        const timeoutError = new Error("刷新 freecodez 超时（10000 ms）");
         timeoutError.name = "TimeoutError";
         refreshController.abort(timeoutError);
         reject(timeoutError);

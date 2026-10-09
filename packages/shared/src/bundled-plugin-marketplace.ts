@@ -4,7 +4,7 @@
    由 config/plugin-marketplace/official-snapshot.json 经 scripts/gen-bundled-marketplace.mjs
    生成；更新快照后重新运行脚本生成本模块。禁止手改。 */
 export const BUNDLED_OFFICIAL_PLUGIN_MARKETPLACE_MANIFEST = {
-  "name": "zcode-plugins-official",
+  "name": "freecodez",
   "description": "Official FreeCodeZ plugins marketplace: built-in and community plugins for FreeCodeZ.",
   "plugins": [
     {

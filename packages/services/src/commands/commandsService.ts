@@ -44,7 +44,7 @@ const DEFAULT_COMMAND_AGENT_SOURCE: CommandAgentSource = ZCODE_COMMAND_AGENT_SOU
 const COMMAND_AGENT_SOURCE_ORDER: readonly CommandAgentSource[] = ZCODE_COMMAND_AGENT_SOURCES;
 const ENABLE_OVERRIDE_KEY = "enable";
 const HOME_PREFIX = "~/";
-const ZCODE_OFFICIAL_PLUGIN_MARKETPLACE = "zcode-plugins-official";
+const FREECODEZ_PLUGIN_MARKETPLACE = "freecodez";
 const ZCODE_INLINE_PLUGIN_MARKETPLACE = "inline";
 const ZCODE_PLUGIN_MANIFEST_PATH = join(".zcode-plugin", "plugin.json");
 const CLAUDE_PLUGIN_MANIFEST_PATH = join(".claude-plugin", "plugin.json");
@@ -256,7 +256,7 @@ function resolveInside(rootPath: string, rawPath: string): string | null {
 }
 
 async function scanOfficialPluginCacheRoots(pluginStorageRoot: string): Promise<string[]> {
-  const cacheRoot = join(pluginStorageRoot, "cache", ZCODE_OFFICIAL_PLUGIN_MARKETPLACE);
+  const cacheRoot = join(pluginStorageRoot, "cache", FREECODEZ_PLUGIN_MARKETPLACE);
   let pluginEntries: string[] = [];
   try {
     pluginEntries = await readdir(cacheRoot);
@@ -364,7 +364,7 @@ async function resolvePluginCommandRootDescriptors(): Promise<PluginCommandRootD
     })),
     ...officialCacheRoots.map((rootPath) => ({
       defaultEnabled: false,
-      marketplace: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE,
+      marketplace: FREECODEZ_PLUGIN_MARKETPLACE,
       rootPath,
     })),
     ...installedRoots,
@@ -382,7 +382,7 @@ async function resolvePluginCommandRootDescriptors(): Promise<PluginCommandRootD
     // 官方 cache 时不经过 CLI resolve 的过滤，需要在这里同样跳过，否则被卸载的内置插件
     // 仍会从 cache 贡献命令。
     if (
-      candidate.marketplace === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE &&
+      candidate.marketplace === FREECODEZ_PLUGIN_MARKETPLACE &&
       config.suppressedBuiltins.includes(pluginId)
     ) {
       continue;

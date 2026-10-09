@@ -8,7 +8,7 @@ import type {
   PluginManifest,
   PluginOptionValues,
 } from "@zcode/contracts";
-import { ZCODE_OFFICIAL_PLUGIN_MARKETPLACE } from "@zcode/contracts";
+import { FREECODEZ_PLUGIN_MARKETPLACE } from "@zcode/contracts";
 import { ZCODE_PLUGIN_ID_ENV_KEY } from "@zcode/shared";
 import type { LoadedPlugin } from "./types.js";
 import { isNotFoundError, isPluginOptionValue, isRecord, resolveInside } from "./helpers.js";
@@ -182,7 +182,7 @@ function resolveMcpServerConfig(
   // ZCode 官方市场同时包含随应用装载的 Builtin Plugin 与按需安装的 CDN Plugin；后者运行时
   // source 为 `cache`，因此必须按 marketplace 身份归类，不能只看 loader source。
   const source: McpServerRuntimeSource = {
-    kind: context.loaded.marketplace === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE ? "builtin" : "plugin",
+    kind: context.loaded.marketplace === FREECODEZ_PLUGIN_MARKETPLACE ? "builtin" : "plugin",
   };
 
   // FreeCodeZ fork(P7 §3.2 B1):zcode_official 鉴权链已删。声明该 auth 类型的 MCP

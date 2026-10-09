@@ -103,6 +103,6 @@ test("输入框推荐提示词映射出 4 条，跳转动作与插件绑定不�
   // stableId 取被引用条目的 contents（插件 id），label 取其 labels（展示名）。
   const ppt = items.find((item) => item.id === "item-4YwHmg");
   assert.ok(ppt, "缺少「PPT 制作」推荐项");
-  assert.equal(ppt.plugin?.stableId, "document-skills@zcode-plugins-official");
+  assert.equal(ppt.plugin?.stableId, "document-skills@freecodez");
   assert.equal(ppt.plugin?.label.cn, "文档技能");
 });

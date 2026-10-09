@@ -48,7 +48,7 @@ import type {
   PluginMetadata,
   PluginStoreListing,
 } from "@zcode/contracts";
-import { ZCODE_OFFICIAL_PLUGIN_MARKETPLACE, isOfficialMarketplaceId } from "@zcode/contracts";
+import { FREECODEZ_PLUGIN_MARKETPLACE, isOfficialMarketplaceId } from "@zcode/contracts";
 import { resolveOfficialPluginRoots } from "./app/bundled-plugins.js";
 import {
   DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS,
@@ -242,7 +242,7 @@ function countVisibleMarketplacePlugins(
   plugins: readonly { name: string }[] | undefined,
 ): number | undefined {
   if (!plugins) return undefined;
-  if (marketplaceId !== ZCODE_OFFICIAL_PLUGIN_MARKETPLACE) return plugins.length;
+  if (marketplaceId !== FREECODEZ_PLUGIN_MARKETPLACE) return plugins.length;
   return plugins.filter((entry) => entry.name !== OFFICIAL_NODE_REPL_HOST_PLUGIN_NAME).length;
 }
 
@@ -289,7 +289,7 @@ export function getZCodePluginsOverview(
   const installedIds = new Set(installed.map((record) => record.id));
 
   // 每个市场的 manifest 只读一次：同时取 entries（目录条目）与 featured（策展名单）。
-  // zcode-plugins-official 的内置与 CDN 分片已在 adapter 层合并为唯一 canonical manifest。
+  // freecodez 的内置与 CDN 分片已在 adapter 层合并为唯一 canonical manifest。
   const catalogs: Array<{
     summary: ZCodeMarketplaceSummaryData;
     entries: PluginMarketplaceEntry[];
@@ -339,15 +339,15 @@ export function getZCodePluginsOverview(
   const suppressed = new Set(configResult.config.plugins.suppressedBuiltins);
   const restorableBuiltins: ZCodeAvailablePluginData[] = OFFICIAL_PLUGIN_DEFINITIONS.filter(
     (def) =>
-      suppressed.has(`${def.name}@${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE}`),
+      suppressed.has(`${def.name}@${FREECODEZ_PLUGIN_MARKETPLACE}`),
   ).map((def) => {
     const listing = def.listing
       ? parseEntryStoreListing({ name: def.name, ...def.listing })
       : undefined;
     return {
-      id: `${def.name}@${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE}`,
+      id: `${def.name}@${FREECODEZ_PLUGIN_MARKETPLACE}`,
       name: def.name,
-      marketplace: ZCODE_OFFICIAL_PLUGIN_MARKETPLACE,
+      marketplace: FREECODEZ_PLUGIN_MARKETPLACE,
       version: def.version,
       installed: false,
       ...(listing ? { listing } : {}),
@@ -420,7 +420,7 @@ function loadPluginListingsById(storageRoot: string): Record<string, PluginStore
     if (!definition.listing) continue;
     const listing = parseEntryStoreListing({ name: definition.name, ...definition.listing });
     if (listing) {
-      listings.set(`${definition.name}@${ZCODE_OFFICIAL_PLUGIN_MARKETPLACE}`, listing);
+      listings.set(`${definition.name}@${FREECODEZ_PLUGIN_MARKETPLACE}`, listing);
     }
   }
 
@@ -641,7 +641,7 @@ export async function installZCodeMarketplacePlugin(
     options.marketplace,
   )?.plugins.find((entry) => entry.name === options.pluginName);
   const isSuppressedBundledOfficial =
-    options.marketplace === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE &&
+    options.marketplace === FREECODEZ_PLUGIN_MARKETPLACE &&
     configResult.config.plugins.suppressedBuiltins.includes(pluginId) &&
     (bundledEntry?.source === "filesystem" || bundledEntry?.source === "sea");
   if (isSuppressedBundledOfficial) {
@@ -722,7 +722,7 @@ export async function installZCodeMarketplacePlugin(
       ],
     };
   }
-  if (options.marketplace === ZCODE_OFFICIAL_PLUGIN_MARKETPLACE) {
+  if (options.marketplace === FREECODEZ_PLUGIN_MARKETPLACE) {
     // 官方 marketplace 复用内置插件的 id 空间。若同名 CDN 插件重新安装，
     // 清掉历史内置 suppression，否则 Runtime 仍会把已拥有的安装误判为 suppressed。
     for (const record of installed.installed) {
@@ -756,7 +756,7 @@ export async function uninstallZCodeMarketplacePlugin(
   return withPluginStorageLock(pluginStorageRoot, async () => {
     const pluginId = resolvePluginIdForMutation(options);
 
-    // 官方 CDN marketplace 与内置插件共享 zcode-plugins-official id 空间，且其缓存
+    // 官方 CDN marketplace 与内置插件共享 freecodez id 空间，且其缓存
     // 也位于 official cache 下。若先看 runtime source="official"，会把已有
     // installed_plugins.json 记录的 CDN 插件误判成内置插件，只写 suppression 却不删安装记录，
     // 导致 UI 永远保持 installed、无法重装。持久化安装记录是 marketplace 所有权的权威证据，

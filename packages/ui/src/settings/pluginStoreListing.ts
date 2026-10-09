@@ -14,7 +14,7 @@ import {
   isPublicStoreMarketplaceId,
   resolveLocalizedText,
   resolvePluginDisplayName,
-  ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID,
+  FREECODEZ_PLUGIN_MARKETPLACE_ID,
 } from "@zcode/shared";
 import { pluginSearchMatches } from "@/settings/pluginSearch.js";
 
@@ -154,7 +154,7 @@ export interface PersonalMarketplaceGroup {
   items: StorePluginItem[];
 }
 
-const OFFICIAL_MARKETPLACE_ORDER: readonly string[] = [ZCODE_OFFICIAL_PLUGIN_MARKETPLACE_ID];
+const OFFICIAL_MARKETPLACE_ORDER: readonly string[] = [FREECODEZ_PLUGIN_MARKETPLACE_ID];
 
 /**
  * 市场源管理排序：官方源固定置顶；自定义源按最近刷新时间倒序，未刷新过的沉底。

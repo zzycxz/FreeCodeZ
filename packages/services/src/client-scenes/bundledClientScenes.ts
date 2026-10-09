@@ -244,8 +244,8 @@ export const BUNDLED_CLIENT_SCENES: readonly ClientSceneConfig[] = [
             id: "item-017cd7",
             type: "plugins",
             contents: {
-              cn: "github@zcode-plugins-official",
-              en: "github@zcode-plugins-official",
+              cn: "github@freecodez",
+              en: "github@freecodez",
             },
             labels: {
               cn: "Github",
@@ -256,8 +256,8 @@ export const BUNDLED_CLIENT_SCENES: readonly ClientSceneConfig[] = [
             id: "item-75f7f9",
             type: "plugins",
             contents: {
-              cn: "document-skills@zcode-plugins-official",
-              en: "document-skills@zcode-plugins-official",
+              cn: "document-skills@freecodez",
+              en: "document-skills@freecodez",
             },
             labels: {
               cn: "文档技能",
