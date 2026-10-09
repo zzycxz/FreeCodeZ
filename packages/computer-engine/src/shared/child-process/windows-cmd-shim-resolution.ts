@@ -25,7 +25,7 @@ import { readFileSync, statSync, type Stats } from 'node:fs'
 import { win32 } from 'node:path'
 
 /** Escape hatch if resolution ever picks the wrong target in the field. */
-const DISABLE_FLAG = 'ORCA_DISABLE_CMD_SHIM_RESOLUTION'
+const DISABLE_FLAG = 'FREECODEZ_DISABLE_CMD_SHIM_RESOLUTION'
 
 /** Real shims are under 2KB; anything larger is not one of these generators. */
 const MAX_SHIM_BYTES = 64 * 1024

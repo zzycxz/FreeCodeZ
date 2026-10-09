@@ -6,7 +6,8 @@
 - 快照标识：`1.4.214` + 下方全量 SHA256 清单（源仓库本地无 .git，不存在 commit 锚）。
 - 拷贝范围：`src/main/computer/`（非测试模块）+ `src/shared/computer-use-*.ts` + shared 传递件
   + `src/shared/child-process/` 子树 + `src/shared/rpc-contract/` computer 三件 + `src/main/macos-tcc-reset.ts`
-  + `native/computer-use-macos/`（Swift 整包：Sources + Tests + Package.swift）。
+  + `native/computer-use-macos/`（Swift 整包：Sources + Tests + Package.swift）
+  + `native/computer-use-{linux,windows}/`（runtime.py/runtime.ps1 + 伴随渲染测试，W-12）。
 - A17 头审计：orca 原件无逐文件版权行（LICENSE 为仓库级声明）；逐字节一致件以哈希清单可验。
 
 ## 改写声明（A17：orca 派生件叠加修改）
@@ -16,6 +17,7 @@ app.freecodez.computer-use / Swift 模块名 FreeCodeZComputerUseMacOS*）；pee
 路径子串检改自有 sidecar 产物（`/computer-sidecar.js`），bundle id 白名单改 `app.freecodez.*` 族
 且**明令删除 com.github.Electron 信任项**（信任任意未签名 Electron 进程=安全红线）。
 测试运行器自 vitest 迁写 node:test（用例/夹具/断言语义等价）。
+W-12：runtime.py/runtime.ps1 及其渲染测试的 Orca/orca 标识改 FreeCodeZ/freecodez（往返比对零残差）；引擎 env 键 ORCA_COMPUTER_*/ORCA_* 四枚改 FREECODEZ_*。
 
 - 同路径内容改写：9 件
 - 移动+内容改写（模块改名波及）：17 件

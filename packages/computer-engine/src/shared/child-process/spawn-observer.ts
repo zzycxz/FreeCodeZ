@@ -1,7 +1,7 @@
 /**
  * Diagnostic seam for counting every child process started through this
  * package. `src/main/diagnostics/main-thread-churn-probe` registers itself here
- * under ORCA_MAIN_THREAD_DIAGNOSTICS=1; with nothing registered every spawn
+ * under FREECODEZ_MAIN_THREAD_DIAGNOSTICS=1; with nothing registered every spawn
  * pays one undefined check, so production behaviour is unchanged.
  *
  * Why a seam rather than a direct import: run-process.ts also runs in the
