@@ -3,7 +3,7 @@
 // export * 链），esbuild 摇不掉未用导入——barrel 可达图里任何 node: 原生模块或未内联的
 // 外部包，都会以 require(...) 死代码进 preload bundle，沙箱（只许 require electron）
 // 模块初始化即炸 → contextBridge 不执行 → 渲染进程 window 桥缺失 → 打包态白屏。
-// 两发事故：git-hunks→node:crypto（248dbaf）、runtimeEnv→@zcode/zcode-cua（本条）。
+// 两发事故：git-hunks→node:crypto（248dbaf）、runtimeEnv→电脑控制复刻包（本条）。
 // 涉事模块的解法都是"退出 barrel、改子路径导出"；本测试保证第三发进不来。
 //
 // 允许清单的依据：tsup preload target 的 noExternal = ["@zcode/shared", "zod"]（见
@@ -25,7 +25,7 @@ const sharedSrc = resolve(dirname(fileURLToPath(import.meta.url)), "..", "src");
 // - zod：tsup preload noExternal 明确内联（packages/desktop/tsup.config.ts）；
 // - @zcode/model-option-map：workspace 纯 JS 包，不在 desktop dependencies（tsup 默认
 //   只外部化 dependencies），esbuild 内联进 bundle——2026-10-07 实测 preload require
-//   集合仅 electron+zcode-cua 两枚，model-option-map 无 require 形态即内联佐证。
+//   集合仅 electron 与该复刻包两枚，model-option-map 无 require 形态即内联佐证。
 // 新增裸导入必须先确认"内联且纯 JS"（不引 node: 原生）才能加进来；打包态最终以
 // tsup preload onSuccess 的 require 断言兜底（out/preload/*.cjs 只许 require electron）。
 const INLINEABLE_EXTERNALS = new Set(["zod", "@zcode/model-option-map"]);

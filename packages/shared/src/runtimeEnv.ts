@@ -12,40 +12,10 @@ export const ZCODE_AGENT_CA_CERT_ENV_KEY = "FREECODEZ_AGENT_CA_CERT";
 export const ZCODE_TOOL_ENV_PASSTHROUGH_ENV_KEY = "FREECODEZ_TOOL_ENV_PASSTHROUGH_JSON";
 /** Desktop Main 将服务端裁决的单功能灰度结果传给 Local/Remote Host。 */
 export const ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV = "FREECODEZ_DESKTOP_CONTEXT_PROMPT_ENABLED";
-export const ZCODE_CUA_PRODUCT_HELPER_ENV_KEY = "ZCODE_CUA_PRODUCT_HELPER";
-export const ZCODE_CUA_BROKER_SOCKET_ENV_KEY = "ZCODE_CUA_PERMISSION_BROKER_SOCKET";
-/** Shared node_repl host marker; unlike the broker bearer values it is not a secret. */
-export const ZCODE_CUA_NODE_REPL_HOST_ENV_KEY = "ZCODE_CUA_NODE_REPL_HOST";
-// One-knob local-development bundle. Setting ZCODE_CUA_DEV_MODE implies the internal feature
-// flag (below) plus the local-helper relaxations wired in packages/services (unsigned/
-// unauthenticated local helper, dev install variant, "Dev.app" naming). It exists so a developer
-// can launch the full local CUA loop with a single env var instead of the historical four-var
-// incantation. 这些开关只在未打包本地构建生效；正式 desktop/Helper bundle 会在编译期关闭并在
-// main→host 边界删除，不能用于 signed release 的 runtime override。
-export const ZCODE_CUA_DEV_MODE_ENV_KEY = "ZCODE_CUA_DEV_MODE";
 
 export type ZCodeRuntimeEnv = "development" | "production" | "test";
 
-// R16.1（FC/ZCode 互独立）：凭据归属校验用自家品牌化默认路径，与 zcode-cua broker 的
-// 固定命名同源（darwin /tmp/freecodez-cua-<uid>、linux ~/.freecodez/cua-broker、win32 契约管道名）。
-// 不用 resolveBrokerSocketPath：它会读 env 显式覆盖，而捕获面只该认父进程按默认约定注入的值。
-import { mintBrokerSocketPath } from "@zcode/zcode-cua/broker/socketPath";
-
 type EnvRecord = Record<string, string | undefined>;
-
-export function isCuaDevModeRequested(env: EnvRecord = process.env): boolean {
-  const explicit = env[ZCODE_CUA_DEV_MODE_ENV_KEY]?.trim().toLowerCase();
-  return explicit === "1" || explicit === "true" || explicit === "on";
-}
-
-export function isZCodeCuaInternalFeatureEnabled(env: EnvRecord = process.env): boolean {
-  // CUA 现已默认打包进正式版（plugin staged + Helper enabled），不再需要显式 env flag。
-  // DEV_MODE 仍然 implied（开发一键），PRODUCT_HELPER=0/off/false 可显式关闭。
-  if (isCuaDevModeRequested(env)) return true;
-  const explicit = env[ZCODE_CUA_PRODUCT_HELPER_ENV_KEY]?.trim().toLowerCase();
-  if (explicit === "0" || explicit === "false" || explicit === "off") return false;
-  return true;
-}
 
 // 旧遥测出口键与旧身份键;拼接生成,grep 断言友好。
 const LEGACY_OTEL_EXPORTER_SUFFIXES = [
@@ -75,6 +45,14 @@ const LEGACY_TELEMETRY_ENV_STRIP_KEYS: readonly string[] = [
   ].map((suffix) => ["ZCODE", "TELEMETRY"].join("_") + suffix),
 ];
 
+// 旧 CUA broker 凭据键（键名拼接构造避免字面量散布，同遥测键先例）。
+const LEGACY_CUA_SECRET_ENV_KEYS: readonly string[] = [
+  ["ZCODE", "CUA", "PERMISSION_BROKER_SOCKET"].join("_"),
+  ["ZCODE", "CUA", "PERMISSION_BROKER_TOKEN"].join("_"),
+  ["ZCODE", "CUA", "PERMISSION_BROKER_REFRESH_MARKER"].join("_"),
+  ["ZCODE", "CUA", "PLUGIN_AUTHORITY"].join("_"),
+];
+
 const SANITIZED_RUNTIME_ENV_KEYS = [
   "NODE_ENV",
   "ELECTRON_RUN_AS_NODE",
@@ -92,19 +70,10 @@ const SANITIZED_RUNTIME_ENV_KEYS = [
   ZCODE_REMOTE_RUNTIME_NETWORK_AUTHORITY_ENV_KEY,
   ZCODE_REMOTE_HTTP_PROXY_ENV_KEY,
   ZCODE_REMOTE_NO_PROXY_ENV_KEY,
-  // CUA broker socket 是只该给目标 zcode-cua MCP server 的连接材料（由 desktop/CLI 在
-  // 解析该 server 时定向注入其 env）。绝不能随 agent 全局 env 泄漏给其它 MCP server / Bash / tool
-  // 子进程 —— 否则同 agent 内的恶意 MCP 或被 prompt-injection 触发的命令能直接驱动
-  // 已授权 Helper（confused-deputy）。这里统一从所有子进程 env 剔除；zcode-cua server 的定向
-  // env 注入在 buildMcpStdioEnv 之后 spread，因此仍能拿到（见 adapters/mcp StdioClientTransport）。
-  ZCODE_CUA_BROKER_SOCKET_ENV_KEY,
-  // 遗留 bearer token：当前 broker 是 identity 模式（socket + authority，无口令，见
-  // captureZCodeCuaBrokerCredentials），本进程不再产生也不再消费它。仍然剔除，因为用户机上
-  // 可能装着旧版 Helper —— 那些版本认 bearer token，一旦这个变量随 agent 全局 env 漏给别的
-  // MCP server / Bash 子进程，同一个 confused-deputy 又成立。剔除一个已不用的键是零成本的。
-  "ZCODE_CUA_PERMISSION_BROKER_TOKEN",
-  "ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER",
-  "ZCODE_CUA_PLUGIN_AUTHORITY",
+  // 旧 CUA broker 凭据键继续从所有子进程 env 剔除（confused-deputy 防护）：用户机可能残留
+  // 旧版 Helper 或宿主泄漏的 env，漏给其它 MCP server / Bash / tool 子进程就能直接驱动已授权
+  // Helper。旧引擎已拆除但剔除是零成本的防御纵深；键名拼接构造避免字面量散布（同遥测键先例）。
+  ...LEGACY_CUA_SECRET_ENV_KEYS,
   "FREECODEZ_CUA_PLUGIN_AUTHORITY",
   // FreeCodeZ fork(P3 §3.7):遥测链已删;以下旧遥测环境键仅为隐私防护继续从子进程剔除。
   // 键名以拼接构造(前缀 × 后缀),避免品牌/链路字样以字面量散布源码。
@@ -117,10 +86,11 @@ const NON_TOOL_PASSTHROUGH_RUNTIME_ENV_KEYS = [
   "NODE_ENV",
   "ELECTRON_RUN_AS_NODE",
   "NODE_NO_WARNINGS",
-  // CUA broker 凭据不得经 tool-env-passthrough 恢复到 Bash/tool 子进程（否则等于绕过上面的剔除）。
-  ZCODE_CUA_BROKER_SOCKET_ENV_KEY,
-  "ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER",
-  "ZCODE_CUA_PLUGIN_AUTHORITY",
+  // 旧 CUA broker 凭据不得经 tool-env-passthrough 恢复到 Bash/tool 子进程（否则等于绕过
+  // 上面的剔除）。含遗留 bearer token：文档意图本就是"绝不漏给 tool 子进程"，旧清单漏列它，
+  // 这里一并封死。
+  ...LEGACY_CUA_SECRET_ENV_KEYS,
+  "FREECODEZ_CUA_PLUGIN_AUTHORITY",
   ZCODE_REMOTE_RUNTIME_NETWORK_AUTHORITY_ENV_KEY,
   ZCODE_REMOTE_HTTP_PROXY_ENV_KEY,
   ZCODE_REMOTE_NO_PROXY_ENV_KEY,
@@ -144,68 +114,8 @@ export function resolveZCodeRuntimeEnv(
   return normalizeZCodeRuntimeEnv(env[ZCODE_RUNTIME_ENV_KEY]) ?? fallback;
 }
 
-// Exported so services/node.ts can inject the Helper's plugin authority into the agent spawn env
-// (mirrors feat; the agent-side plugin host verifies the broker authority via this env var).
-export const ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY = "FREECODEZ_CUA_PLUGIN_AUTHORITY";
 
-interface CapturedCuaBrokerCredentials {
-  socket: string;
-  pluginAuthority: string;
-  refreshMarker?: string;
-}
-
-let capturedCuaBrokerCredentials: Readonly<CapturedCuaBrokerCredentials> | undefined;
 const capturedZCodeAgentTelemetryEnv: Record<string, string> = {};
-
-// R16.1：外来 socket 告警去重（每个路径只报一次；shared 刻意不依赖 services logger，
-// 与 warnLegacyZCodeEnvKeys 同款取舍——一次性 console.warn 供人排障）。
-const foreignCuaBrokerSocketWarned = new Set<string>();
-
-// CUA broker socket 会被上面的 sanitize 从子进程 env 中剔除（confused-deputy 防护 —— 不能让
-// 其它 MCP server / Bash / tool 子进程直接驱动已授权 Helper）。但 CLI 入口在 bootstrap
-// 解析全局 ~/.freecodez/cli/config.json 里的 `zcode-cua` server 之前就会先 sanitize process.env，导致
-// 定向注入时已经读不到凭据 → 全局 zcode-cua 回退 `--backend auto`，让 Python/uvx 成为 TCC 主体
-// （fail-open，违反 "Python/uvx must never become the implicit permission owner"）。因此在剔除前把
-// 凭据捕获进本进程私有存储，只经 getCapturedZCodeCuaBrokerCredentials() 暴露给 bootstrap 的定向
-// 注入路径，绝不写回任何子进程 env。
-function captureZCodeCuaBrokerCredentials(env: Record<string, string | undefined>): void {
-  const socket = env[ZCODE_CUA_BROKER_SOCKET_ENV_KEY]?.trim();
-  const pluginAuthority = env[ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]?.trim();
-  const refreshMarker = env["ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER"]?.trim();
-  // R16.1（FC/ZCode 互独立）：socket 键沿用官方名（ZCODE_CUA_PERMISSION_BROKER_SOCKET），
-  // 宿主 ZCode 会话的凭据若经 open 转发/终端直启泄漏进 FC 进程 env，会走到这里。外来
-  // socket 指向 ZCode 的 broker——一旦采信，FC 的 CUA 工具会连接并驱动 ZCode 已授权的
-  // Helper（跨产品 confused-deputy）。归属不符 → 整组拒收（成对与否都拒），绝不明知
-  // 外来仍放行。authority 键虽已品牌化异名挡住了"外来成组"，那是键名巧合不是结构保证，
-  // 本校验把独立性变成显式断言。win32 管道名同样品牌化（\\.\pipe\freecodez-cua-helper-，
-  // broker.js WINDOWS_NAMED_PIPE_PREFIX），外来官方管道会被下方比较一并拒收——旧注释称
-  // "与官方同契约无法按路径区分"已过时（2026-10-07 复核修正）。
-  if (socket && socket !== mintBrokerSocketPath()) {
-    capturedCuaBrokerCredentials = undefined;
-    if (!foreignCuaBrokerSocketWarned.has(socket)) {
-      foreignCuaBrokerSocketWarned.add(socket);
-      console.warn(
-        `[cua.broker] Rejected foreign broker credential socket "${socket}" ` +
-          `(expected "${mintBrokerSocketPath()}"); FreeCodeZ never consumes another app's Computer Use broker.`,
-      );
-    }
-    return;
-  }
-  // 连接没有口令：socket + authority（config-provenance 随机数）同批出现才构成有效凭据组；
-  // 半组说明上游注入不完整或正在轮换。
-  if (socket && pluginAuthority) {
-    capturedCuaBrokerCredentials = Object.freeze({
-      socket,
-      pluginAuthority,
-      ...(refreshMarker ? { refreshMarker } : {}),
-    });
-    return;
-  }
-  if (socket || pluginAuthority) {
-    // 发现半组凭据说明上游注入不完整或正在轮换；清掉旧快照并 fail-closed，不能复用另一半。
-    capturedCuaBrokerCredentials = undefined;
-  }
-}
 
 function captureZCodeAgentTelemetryEnv(env: Record<string, string | undefined>): void {
   Object.assign(capturedZCodeAgentTelemetryEnv, readZCodeAgentTelemetryEnv(env));
@@ -231,21 +141,6 @@ export function getCapturedZCodeAgentTelemetryEnv(): Record<string, string> {
   return { ...capturedZCodeAgentTelemetryEnv };
 }
 
-export function getCapturedZCodeCuaBrokerCredentials(): {
-  socket: string | undefined;
-  pluginAuthority: string | undefined;
-  refreshMarker?: string;
-} {
-  return capturedCuaBrokerCredentials
-    ? { ...capturedCuaBrokerCredentials }
-    : { socket: undefined, pluginAuthority: undefined };
-}
-
-// 仅供测试重置进程内捕获状态。
-export function resetCapturedZCodeCuaBrokerCredentialsForTest(): void {
-  capturedCuaBrokerCredentials = undefined;
-}
-
 export function resetCapturedZCodeAgentTelemetryEnvForTest(): void {
   for (const key of Object.keys(capturedZCodeAgentTelemetryEnv)) {
     delete capturedZCodeAgentTelemetryEnv[key];
@@ -253,16 +148,12 @@ export function resetCapturedZCodeAgentTelemetryEnvForTest(): void {
 }
 
 // 条目1（升级实施手册）：ZCODE_*→FREECODEZ_* 命名空间迁移期。
-// 这些旧键属于「仓外桥」：node-repl-host / CUA helper / hexin 插件按旧名读，FC 注入链
+// 这些旧键属于「仓外桥」：node-repl-host / hexin 插件按旧名读，FC 注入链
 // 双写桥接——见到的 ZCODE_* 是我们自己桥进去的，不算外来配置，不告警。
 export const MIGRATION_BRIDGED_ZCODE_KEYS = new Set([
   "ZCODE_DATA_BASE_DIR",
-  "ZCODE_CUA_PERMISSION_BROKER_SOCKET",
-  "ZCODE_CUA_PLUGIN_ROOT",
   "ZCODE_PLUGIN_ROOT",
   "ZCODE_PLUGIN_DATA",
-  "ZCODE_CUA_HELPER_INSTALL_VARIANT",
-  "ZCODE_CUA_BUNDLED_HELPER_APP_PATH",
   "ZCODE_BASE_URL",
   "ZCODE_ENDPOINT_ORIGIN",
 ]);
@@ -298,7 +189,6 @@ export function warnLegacyZCodeEnvKeys(env: Record<string, string | undefined>):
 export function sanitizeZCodeRuntimeEnv<T extends Record<string, string | undefined>>(
   env: T,
 ): Record<string, string> {
-  captureZCodeCuaBrokerCredentials(env);
   captureZCodeAgentTelemetryEnv(env);
   warnLegacyZCodeEnvKeys(env);
   const sanitized: Record<string, string> = {};
@@ -353,7 +243,6 @@ export function readZCodeToolEnvPassthroughEnv(env: EnvRecord): Record<string, s
 }
 
 export function sanitizeZCodeRuntimeEnvInPlace(env: Record<string, string | undefined>): void {
-  captureZCodeCuaBrokerCredentials(env);
   captureZCodeAgentTelemetryEnv(env);
   for (const key of Object.keys(env)) {
     if (shouldSanitizeZCodeRuntimeEnvKey(key)) {

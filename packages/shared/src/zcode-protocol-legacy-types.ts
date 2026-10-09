@@ -41,8 +41,6 @@ export const zcodeWorkspaceRefSchema = z
   .strict();
 export const zcodePermissionDecisionSchema = z.enum(["allow", "deny", "escalate", "modify"]);
 export const zcodePermissionRuleBehaviorSchema = z.enum(["allow", "deny", "ask"]);
-/** Backward-compatible wire/storage key interpreted only for trusted official CUA tools. */
-export const OFFICIAL_CUA_PERMISSION_RULE_TOOL_NAME = "zcode:permission-capability:official_cua";
 /**
  * workflow 运行确认窗第三选项「Refine」（拒绝并附修改意见）的稳定 optionId。
  * CLI 侧 v4 投影合成选项、broker 应答映射与 GUI 特判共用同一常量；

@@ -386,7 +386,6 @@ export const V4_NOTIFICATIONS = {
   conversationTelemetryFact: "v4/telemetry/event",
   localTtftFacts: "v4/telemetry/local-ttft",
   // 仅当前进程 live ToolCallResult 产生；历史与 replayable 链路不得补造。
-  cuaPermissionObservation: "v4/cua/permission-observation",
 } as const;
 
 /** 3.3.6 SSH 历史任务归属证明与 sessions-index 冷种子共享同一有界窗口。 */

@@ -3,9 +3,6 @@ import type {
   DesktopZoomState,
   DesktopWindowChromeState,
   DesktopTitleBarTheme,
-  CuaAccessibilitySettingsResult,
-  OpenCuaPermissionOnboardingOptions,
-  PrepareCuaHelperPermissionDragResult,
   AppSettings,
   BrowserViewOperationPayload,
   BrowserGuestAttachResult,
@@ -196,16 +193,6 @@ declare global {
       openInFileManager(path: string): Promise<{ success: boolean; error?: string }>;
       /** 使用系统默认应用打开本地文件 */
       openExternalFile(path: string): Promise<{ success: boolean; error?: string }>;
-      /** 打开 FreeCodeZ Computer Use 完整权限引导 */
-      openCuaPermissionOnboarding?(
-        options?: OpenCuaPermissionOnboardingOptions,
-      ): Promise<CuaAccessibilitySettingsResult>;
-      /** 只取消当前 renderer 以 operationId 发起的 onboarding participant。 */
-      cancelCuaPermissionOnboarding?(operationId: string): void;
-      /** 预热并缓存已验证的 Helper 路径，使 dragstart 能同步 startDrag */
-      prepareCuaHelperPermissionDrag?(): Promise<PrepareCuaHelperPermissionDragResult>;
-      /** 从权限浮窗拖拽 Helper.app 到 macOS 权限列表 */
-      startCuaHelperPermissionDrag?(): void;
       /** 上报 OAuth state 用于 deep link 路由 */
       registerOAuthState(payload: OAuthStateRegistration): void;
       /** 注册 OAuth deep link 回调，返回 disposer */

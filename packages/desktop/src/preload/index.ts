@@ -66,7 +66,6 @@ import type {
   WindowControlsOverlayMetrics,
   WindowControlsOverlayReadyPayload,
   CreateTempTextAttachmentRequest,
-  OpenCuaPermissionOnboardingOptions,
   ConfigureFinalArmsCustomEventE2ERequest,
   FinalArmsCustomEventE2EEntry,
 } from "@zcode/shared";
@@ -656,23 +655,6 @@ contextBridge.exposeInMainWorld("zcode", {
   openInFileManager: (path: string) => ipcRenderer.invoke(PlatformChannels.OpenInFileManager, path),
   /** 使用系统默认应用打开本地文件 */
   openExternalFile: (path: string) => ipcRenderer.invoke(PlatformChannels.OpenExternalFile, path),
-  /** 打开 FreeCodeZ Computer Use 完整权限引导 */
-  openCuaPermissionOnboarding: (options?: OpenCuaPermissionOnboardingOptions) =>
-    ipcRenderer.invoke(PlatformChannels.OpenCuaPermissionOnboarding, options),
-  /** 确保 CUA 权限条目由应用自建（主应用 + helper 各自 AX/录屏；R21c） */
-  ensureCuaPermissionEntries: () =>
-    ipcRenderer.invoke(PlatformChannels.EnsureCuaPermissionEntries),
-  /** 只取消当前 renderer 以 operationId 发起的 onboarding participant。 */
-  cancelCuaPermissionOnboarding: (operationId: string) =>
-    ipcRenderer.send(PlatformChannels.CancelCuaPermissionOnboarding, {
-      operationId,
-    }),
-  /** 预热并缓存已验证的 Helper 路径，使 dragstart 能同步 startDrag（避免异步 I/O 错过手势） */
-  prepareCuaHelperPermissionDrag: () =>
-    ipcRenderer.invoke(PlatformChannels.PrepareCuaHelperPermissionDrag),
-  /** 从权限浮窗拖拽 Helper.app 到 macOS 权限列表。必须是 send —— invoke 的往返会错过手势。 */
-  startCuaHelperPermissionDrag: () =>
-    ipcRenderer.send(PlatformChannels.StartCuaHelperPermissionDrag),
   /** 上报 OAuth state 用于 deep link 路由 */
   registerOAuthState: (payload: OAuthStateRegistration) =>
     ipcRenderer.send(PlatformChannels.OAuthRegisterState, payload),

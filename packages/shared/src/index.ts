@@ -99,11 +99,9 @@ export * from "./zcode-media-policy.js";
 export * from "./media-preview.js";
 export * from "./plugin-display-name.js";
 export * from "./zcode-agent-runtime.js";
-// runtimeEnv 不进 barrel（子路径 @zcode/shared/runtime-env 导出）：其 CUA 凭据归属校验
-// 依赖 @zcode/zcode-cua/broker/socketPath，barrel 的 export * 链 esbuild 无法摇掉未用
-// 导入——desktop 沙箱 preload 经 barrel 被拖进 require("@zcode/zcode-cua/...")，模块
-// 初始化即炸 → contextBridge 不执行 → 渲染进程 window 桥缺失 → 打包态白屏
-// （2026-10-07 二次实证，与上方 git-hunks 同型；dev 态 preload 非沙箱不炸）。
+// runtimeEnv 不进 barrel（子路径 @zcode/shared/runtime-env 导出）：barrel 的 export * 链
+// esbuild 无法摇掉未用导入——desktop 沙箱 preload 经 barrel 被拖进不需要的模块，
+// 模块初始化即炸 → contextBridge 不执行 → 打包态白屏（2026-10-07 实证，与 git-hunks 同型）。
 export * from "./dynamic-workflow-feature.js";
 export * from "./markdown-artifact-images.js";
 export * from "./serviceAuthority.js";
@@ -195,7 +193,6 @@ export type {
   SaveFileResult,
   PrintPageToPdfResult,
   DesktopCommandId,
-  CuaOsSupport,
   DesktopWindowChromeState,
   DesktopTitleBarTheme,
   DockerContainerInfo,
@@ -221,12 +218,6 @@ export type {
   WSLDistro,
   ZCodeStdioTapDevState,
 } from "./platform.js";
-export type {
-  CuaAccessibilitySettingsResult,
-  CuaPermissionKind,
-  OpenCuaPermissionOnboardingOptions,
-  PrepareCuaHelperPermissionDragResult,
-} from "./cuaAccessibilitySettings.js";
 export type { ZCodeTaskCreateResult } from "./zcode-task-types.js";
 export * from "./zcode-task-types.js";
 export * from "./automation-types.js";

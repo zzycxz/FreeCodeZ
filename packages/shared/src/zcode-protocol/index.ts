@@ -1061,58 +1061,6 @@ export const zcodeEventEnvelopeSchema = z
   })
   .strict();
 
-const zcodeComputerUseOperationEventBaseSchema = z
-  .object({
-    eventId: nonEmptyString,
-    sequenceNumber: z.number().int().nonnegative(),
-    sessionId: nonEmptyString,
-    timestamp: timestampMsSchema,
-  })
-  .strict();
-
-const zcodeComputerUseTurnStartedEventSchema = zcodeComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("turn-started"),
-  turnId: nonEmptyString,
-});
-const zcodeComputerUseTurnCompletedEventSchema = zcodeComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("turn-completed"),
-  turnId: nonEmptyString,
-});
-const zcodeComputerUseTurnFailedEventSchema = zcodeComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("turn-failed"),
-  turnId: nonEmptyString,
-});
-const zcodeComputerUseToolScheduledEventSchema = zcodeComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("tool-scheduled"),
-  turnId: nonEmptyString,
-  toolCallId: nonEmptyString,
-  toolName: nonEmptyString,
-  // 这个 cell 是否在用 Computer Use。只表达布尔事实，不再携带动作名——旧的
-  // operationAction 靠从模型源码里抽取动作名得到，SDK 面一变就整体失配（见
-  // bootstrap/src/zcode-protocol/computer-use-operation-event.ts 的 usesComputerUse）。
-  // 只挂在 scheduled 上：ToolCallStartedPayload 没有 input，start 时已拿不到模型源码。
-  computerUse: z.literal(true).optional(),
-});
-const zcodeComputerUseToolStartedEventSchema = zcodeComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("tool-started"),
-  turnId: nonEmptyString.optional(),
-  toolCallId: nonEmptyString,
-  toolName: nonEmptyString.optional(),
-});
-const zcodeComputerUseSessionClosedEventSchema = zcodeComputerUseOperationEventBaseSchema.extend({
-  kind: z.literal("session-closed"),
-});
-
-export const zcodeComputerUseOperationEventSchema = z.discriminatedUnion("kind", [
-  zcodeComputerUseTurnStartedEventSchema,
-  zcodeComputerUseTurnCompletedEventSchema,
-  zcodeComputerUseTurnFailedEventSchema,
-  zcodeComputerUseToolScheduledEventSchema,
-  zcodeComputerUseToolStartedEventSchema,
-  zcodeComputerUseSessionClosedEventSchema,
-]);
-export type ZCodeComputerUseOperationEvent = z.infer<typeof zcodeComputerUseOperationEventSchema>;
-
 export const zcodeSessionEventTypeSchema = z.enum([
   "session.created",
   "session.resumed",
@@ -1614,7 +1562,7 @@ export const zcodeSessionResumeParamsSchema = z
     // 旧 session 尚无 runtime/model_selection entry 时，由同 task 的索引元数据提供迁移 hint。
     thoughtLevel: nonEmptyString.optional(),
     mcpServers: z.array(zcodeProtocolMcpServerSchema).optional(),
-    // 冷恢复重建 runtime 时必须沿用 create 的工具面约束（否则会绕过 allow/deny，尤其 CUA 会话）。
+    // 冷恢复重建 runtime 时必须沿用 create 的工具面约束（否则会绕过 allow/deny）。
     toolAllowlist: z.array(nonEmptyString).optional(),
     toolDenylist: z.array(nonEmptyString).optional(),
     // 与 create 同语义；resume 不带会导致冷恢复丢 Off-Peak 工具面。
@@ -3621,7 +3569,6 @@ export type ZCodeOffPeakListProtocolResult = z.infer<typeof zcodeOffPeakListResu
 
 export const zcodeProtocolMethods = {
   runtimeCapabilities: "runtime/capabilities",
-  computerUseOperationEvent: "computer-use/operation-event",
   sessionCreate: "session/create",
   sessionResume: "session/resume",
   sessionList: "session/list",

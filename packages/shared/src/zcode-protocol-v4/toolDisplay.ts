@@ -5,7 +5,6 @@ import { z } from "zod";
 import { bashOutputDisplaySchema } from "../bash-output-display.js";
 import { timestampSchema } from "./core.js";
 import { OFFICIAL_MCP_TOOL_ERROR_CODES } from "../official-mcp-tool-error.js";
-import { cuaRequestAccessStatusSchema } from "./cuaPermission.js";
 import { toolCallCreateWorkflowDisplaySchema } from "./create-workflow-display.js";
 import {
   toolCallEvalWorkflowSnippetDisplaySchema,
@@ -16,10 +15,8 @@ import {
   toolCallResumeWorkflowRunDisplaySchema,
 } from "./workflow-observation-display.js";
 
-// toolCall 终态 output 的结构化展示模型（port 自 feat；CUA 工具靠 kind:"cua" 分支把
-// errorCode/suggestedAction/media(screenshot) 等结构化内容带到 renderer）。consume-main 之前
-// 缺这个 union + toolOutputSchema.display 字段——协议层 zod 校验会把 agent 下发的 display 整个
-// strip 掉，导致 UI 永远拿不到 display?.kind==="cua"，CUA 工具调用退化成 fallback 渲染。
+// toolCall 终态 output 的结构化展示模型。协议层 zod 校验必须声明 agent 下发的 display
+// 各 kind——缺成员会把整块 display strip 掉，工具卡退化成 fallback 渲染。
 const toolResultDisplaySchema = z.discriminatedUnion("kind", [
   bashOutputDisplaySchema,
   z.object({
@@ -63,6 +60,11 @@ const toolResultDisplaySchema = z.discriminatedUnion("kind", [
     kind: z.literal("respond_to_coordinator"),
     status: z.enum(["success", "failed"]),
   }),
+  // 归档解析成员（零生产者）：存量 topic frame/snapshot 里的 CUA 工具卡 display 形状。
+  // strict union 缺员不是"卡片失渲染"而是整行解析失败（display 在场但无成员匹配 →
+  // toolOutputSchema 拒收 → 行/帧整体丢弃，历史正文跟着消失）。按 S6 解析兼容先例保留
+  // 成员仅供回放；permissionStatus 形状随 cuaPermission.ts 内联收编。W-30 重建渲染链时
+  // 统一收口（届时可随新 SDK 形状迁移）。
   z.object({
     kind: z.literal("cua"),
     schemaVersion: z.literal(1),
@@ -74,7 +76,16 @@ const toolResultDisplaySchema = z.discriminatedUnion("kind", [
     text: z.string().optional(),
     errorCode: z.string().optional(),
     suggestedAction: z.string().optional(),
-    permissionStatus: cuaRequestAccessStatusSchema.optional(),
+    permissionStatus: z
+      .object({
+        schemaVersion: z.literal(1),
+        platform: z.literal("darwin"),
+        grantOwner: z.string().trim().min(1).max(512),
+        accessibility: z.enum(["granted", "stale", "denied"]),
+        screenRecording: z.enum(["granted", "denied", "unknown"]),
+      })
+      .strict()
+      .optional(),
     targetApp: z
       .object({
         schemaVersion: z.literal(1),

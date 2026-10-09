@@ -271,12 +271,6 @@ export interface AppSettings {
   embeddedBrowserAllowInsecureCertificates?: boolean;
   /** 人类用户主动打开 Browser tab 时的一次性显示偏好；Agent Browser Use 不读写。 */
   embeddedBrowserViewportPreference?: EmbeddedBrowserViewportPreference;
-  /**
-   * 用户已在设置页关闭输入框的「电脑操作」按钮（内部 hidden 态）。
-   * 取 hidden 语义而非 visible：undefined 即默认显示，老用户无需数据迁移。
-   * 关闭后按钮不再渲染，且不因重启或版本更新自愈，仅能在设置页重新开启。
-   */
-  computerUseComposerEntryHidden?: boolean;
   /** 自动归档已完成旧任务的总开关 */
   taskAutoArchiveEnabled?: boolean;
   /** 自动归档阈值；当任务最后更新时间早于该天数时允许被归档 */
@@ -385,17 +379,6 @@ export interface AppSettings {
   appshotSound?: boolean;
   /** Phase 3a：路由（当前会话/新会话；缺省当前）。 */
   appshotRoute?: "current" | "new";
-  /**
-   * 电脑控制·功能开关（macOS 观测层：读窗口/控件树/截图）。设置键优先于 env
-   * （FREECODEZ_CUA_KOFFI_EXECUTION 为部署/开发覆盖，旧键 ZCODE_CUA_KOFFI_EXECUTION
-   * 回退读）；缺省关。经主进程桥接进 host/agent 子进程 env，对新窗口的会话生效。
-   */
-  cuaControlEnabled?: boolean;
-  /**
-   * 电脑控制·允许操作（动作层：点/打字/拖拽）。仅在 cuaControlEnabled 时生效；
-   * 缺省关。env 覆盖同名语义（FREECODEZ_CUA_KOFFI_ACTIONS，旧键回退）。
-   */
-  cuaActionsEnabled?: boolean;
   /** 移动端远控的外部 relay 设备身份；deviceSid 由 relay 注册分配，刷新配对（rotate）时清空换新。 */
   webRemoteControlExternalRelayDevice?: { deviceSid: string };
   /** 上次开启移动端远控的窗口上下文；桌面重启后由首个匹配窗口独占恢复（全局一次性，恢复后保留记录）。 */
