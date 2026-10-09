@@ -10,7 +10,8 @@
     "./computer": "./src/main/computer/index.ts",
     "./shared/*": "./src/shared/*",
     "./rpc-contract/*": "./src/shared/rpc-contract/*",
-    "./host/*": "./src/host/*"
+    "./host/*": "./src/host/*",
+    "./sdk/*": "./src/sdk/*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

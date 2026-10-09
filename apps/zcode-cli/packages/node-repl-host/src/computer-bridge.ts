@@ -39,9 +39,12 @@ function resolveSidecarPath(): string | null {
     if (existsSync(fromEnv)) return fromEnv;
   }
   const here = dirname(fileURLToPath(import.meta.url));
+  // 布局两形态：开发态 src/ 在五层深处（src→node-repl-host→packages→zcode-cli→apps→根）；
+  // 打包态编译产物 dist/ 在三层深处（dist→node-repl-host→packages→根，包随 seed 布局）。
   const candidates = [
     resolve(here, "../../computer-engine-dist/computer-sidecar.js"),
-    resolve(here, "../../../../packages/computer-engine/dist/computer-sidecar.js"),
+    resolve(here, "../../../../../packages/computer-engine/dist/computer-sidecar.js"),
+    resolve(here, "../../../packages/computer-engine/dist/computer-sidecar.js"),
   ];
   return candidates.find((candidate) => existsSync(candidate)) ?? null;
 }
