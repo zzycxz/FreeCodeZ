@@ -72,8 +72,10 @@ export interface CuaCursorHudDeps {
   loadBindings?: () => unknown;
   screen: {
     getPrimaryDisplay(): { workArea: { x: number; y: number; width: number; height: number } };
-    /** CGEvent 坐标（屏幕点）→ Electron DIP；缩放非 1 的显示器必须换算（实测发现）。 */
-    screenToDipPoint?(point: { x: number; y: number }): { x: number; y: number };
+    /** CGEvent 坐标（屏幕点）→ Electron DIP；缩放非 1 的显示器必须换算（实测发现）。
+     * 返回 undefined=API 缺席/不可用（Electron 34 起移除；app ready 前访问即抛），
+     * 调用方按 `??` fallback 用原坐标。 */
+    screenToDipPoint?(point: { x: number; y: number }): { x: number; y: number } | undefined;
   };
   /** Phase 2：用户按 Esc 取消——由调用方接任务停止链（手册"Esc 退出由宿主 HUD 处理"）。 */
   onUserCancel?: () => void;
@@ -83,6 +85,30 @@ export interface CuaCursorHudDeps {
     unregister(accelerator: string): void;
   };
   createUdpListener?: (port: number, onFrame: (frame: CuaCursorEventFrame) => void) => { close(): void };
+}
+
+/**
+ * 装配辅助：从 electron screen 构造 HUD 的 screen deps。
+ * 两层历史教训（2026-10-07 同日两次装机实测）：
+ * ① API 探测不得在装配期做——electron screen 是懒初始化代理，app ready 前访问它的
+ *   任何属性（含 typeof 探测）即抛 "The 'screen' module can't be used before the app
+ *   'ready' event"，而本函数在 main 模块顶层被调用（启动即炸）。探测必须延迟到
+ *   首次调用——HUD 只在收到光标帧时才调用，那时 app 必然已 ready。
+ * ② API 缺席时返回 undefined 而不是硬调——screenToDipPoint 在 Electron 34 起被移除
+ *   （41 已无），曾因无条件包装把控制器的 `?.`+`??` 降级路径吃掉，首个光标帧炸 main
+ *   uncaughtException（弹错误框并阻断退出）。返回 undefined 让控制器 fallback（原坐标
+ *   直用）生效——mac 上 CGEvent 屏幕点=quartz points≈Electron DIP，fallback 即正确值。
+ */
+export function resolveHudScreenDeps(
+  screenLike: CuaCursorHudDeps["screen"],
+): CuaCursorHudDeps["screen"] {
+  return {
+    getPrimaryDisplay: () => screenLike.getPrimaryDisplay(),
+    screenToDipPoint: (point: { x: number; y: number }) => {
+      const native = screenLike.screenToDipPoint;
+      return typeof native === "function" ? native.call(screenLike, point) : undefined;
+    },
+  };
 }
 
 /**
@@ -96,8 +122,16 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
   let disposed = false;
 
   const hideAll = () => {
-    if (cursorWindow && !cursorWindow.isDestroyed() && cursorWindow.isVisible()) cursorWindow.hide();
-    if (bannerWindow && !bannerWindow.isDestroyed() && bannerWindow.isVisible()) bannerWindow.hide();
+    // 每窗独立 try/hide：hide() 幂等，绝不用 isVisible() 前置守卫——panel 窗可见性
+    // 误报（isVisible false 而窗在屏）或单窗 hide 抛异常都不得留下"半隐藏"残局
+    // （2026-10-08 装机实测：任务停止后横幅常驻不消，根因即半执行）。
+    for (const win of [cursorWindow, bannerWindow]) {
+      try {
+        if (win && !win.isDestroyed()) win.hide();
+      } catch {
+        // 单窗隐藏失败不影响另一窗与后续收尾。
+      }
+    }
     setLens(false);
     // 会话静默：Esc 快捷键释放（不占系统资源）。
     if (escRegistered) {
@@ -113,7 +147,12 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
   const scheduleIdleHide = () => {
     if (idleTimer) clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-      if (!disposed) hideAll();
+      // 隐藏失败不得冒泡 main uncaughtException（与 handleFrame 丢帧同款理由）。
+      try {
+        if (!disposed) hideAll();
+      } catch {
+        // 尽力而为。
+      }
     }, CUA_CURSOR_HUD_IDLE_HIDE_MS);
     idleTimer.unref?.();
   };
@@ -290,6 +329,20 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
 
   const handleFrame = (frame: CuaCursorEventFrame) => {
     if (disposed) return;
+    // UDP 帧处理失败只能丢帧，绝不能冒泡成 main 进程 uncaughtException——特效/定位属于
+    // 可视化增强面，一次坏帧曾把退出流程炸停（2026-10-07 装机实测：错误弹窗阻断 quit）。
+    try {
+      handleFrameInner(frame);
+    } catch {
+      // 静默丢帧：HUD 无独立日志通道，帧源（koffi 执行层）自身有广播日志可查。
+    }
+  };
+
+  const handleFrameInner = (frame: CuaCursorEventFrame) => {
+    if (disposed) return;
+    // 帧一到达即武装空闲隐藏——必须先于一切可能抛异常的特效/定位/显示工作与 paused 早退，
+    // 否则"窗口已显、计时器没武装"会永久挂屏（2026-10-08 装机实测：横幅常驻不消）。
+    scheduleIdleHide();
     startInterventionPolling();
     // 用户正在操作：光标冻结在当前位置（帧不驱动动画/特效——动作层也有独立暂停面）。
     if (interventionState === "paused") return;
@@ -359,7 +412,6 @@ export function createCuaCursorHud(deps: CuaCursorHudDeps) {
         // 注册失败（其他 app 占用）不崩——退化为无 Esc（UI 停止按钮仍可用）。
       }
     }
-    scheduleIdleHide();
   };
   let escRegistered = false;
 

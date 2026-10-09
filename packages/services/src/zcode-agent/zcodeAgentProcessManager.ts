@@ -17,11 +17,13 @@ import {
 import {
   ZCODE_AGENT_RUNTIME,
   ZCODE_AGENT_PROVIDER,
-  ZCODE_RUNTIME_ENV_KEY,
   resolveWorkspaceKey,
+} from "@zcode/shared";
+import {
+  ZCODE_RUNTIME_ENV_KEY,
   resolveZCodeRuntimeEnv,
   sanitizeZCodeRuntimeEnv,
-} from "@zcode/shared";
+} from "@zcode/shared/runtime-env";
 import {
   findZCodeAgentRuntimeBinary,
   findZCodeAgentRuntimeNodeBundle,

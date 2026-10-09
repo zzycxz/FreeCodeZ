@@ -9,8 +9,10 @@ import { isOfficialMarketplaceId, ZCODE_OFFICIAL_PLUGIN_MARKETPLACE } from "@zco
 import {
   BUNDLED_OFFICIAL_PLUGIN_MARKETPLACE_MANIFEST,
   DEFAULT_PLUGIN_MARKETPLACES,
-  sanitizeZCodeRuntimeEnv,
 } from "@zcode/shared";
+import {
+  sanitizeZCodeRuntimeEnv,
+} from "@zcode/shared/runtime-env";
 import { loadPluginMcpServerDefinitions, resolvePluginMcpServers } from "./mcp.js";
 import {
   appendPluginSourceCleanupError,

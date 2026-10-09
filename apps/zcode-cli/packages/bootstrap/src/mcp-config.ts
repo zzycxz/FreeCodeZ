@@ -5,24 +5,32 @@ import type {
   McpStdioServerConfig,
 } from "@zcode/contracts";
 import {
-  getCapturedZCodeCuaBrokerCredentials,
   isZCodeCuaMcpCommand,
   isZCodeCuaMcpPackageArg,
-  ZCODE_CUA_BROKER_SOCKET_ENV_KEY,
-  ZCODE_CUA_NODE_REPL_HOST_ENV_KEY,
   ZCODE_CUA_OFFICIAL_PLUGIN_ID,
-  ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
   ZCODE_PLUGIN_ID_ENV_KEY,
 } from "@zcode/shared";
+import {
+  getCapturedZCodeCuaBrokerCredentials,
+  ZCODE_CUA_BROKER_SOCKET_ENV_KEY,
+  ZCODE_CUA_NODE_REPL_HOST_ENV_KEY,
+  ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
+} from "@zcode/shared/runtime-env";
 
-export { ZCODE_CUA_BROKER_SOCKET_ENV_KEY as ZCODE_CUA_BROKER_SOCKET_ENV } from "@zcode/shared";
+export {
+  ZCODE_CUA_BROKER_SOCKET_ENV_KEY as ZCODE_CUA_BROKER_SOCKET_ENV,
+} from "@zcode/shared/runtime-env";
 // CLI 入口会先清理 broker 凭据；shared node_repl 的可信配置随后从进程内捕获快照恢复它们。
+// R16.1（FC/ZCode 互独立）：env 兜底只认自家品牌化默认路径——宿主 ZCode 会话泄漏进来的
+// socket（如 /tmp/zcode-cua-<uid>/broker.sock）不注入任何 server，与 shared 捕获面同一条规则。
+import { mintBrokerSocketPath } from "@zcode/zcode-cua/broker/socketPath";
+
 function resolveZCodeCuaBrokerSocket(): string | undefined {
-  // captured 优先；运行时残留的 stale socket 不能覆盖可信快照。
-  return (
-    getCapturedZCodeCuaBrokerCredentials().socket ||
-    process.env[ZCODE_CUA_BROKER_SOCKET_ENV_KEY]?.trim()
-  );
+  const captured = getCapturedZCodeCuaBrokerCredentials().socket;
+  if (captured) return captured;
+  // 运行时残留的 stale socket 不能覆盖可信快照；外来 socket（归属不符 mint 自家路径）同样不采信。
+  const fallback = process.env[ZCODE_CUA_BROKER_SOCKET_ENV_KEY]?.trim();
+  return fallback && fallback === mintBrokerSocketPath() ? fallback : undefined;
 }
 
 function resolveZCodeCuaBrokerToken(): string | undefined {

@@ -1,4 +1,6 @@
-import { resolveZCodeRuntimeEnv } from "@zcode/shared";
+import {
+  resolveZCodeRuntimeEnv,
+} from "@zcode/shared/runtime-env";
 
 type EffectiveNodeEnv = "development" | "production";
 

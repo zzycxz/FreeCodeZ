@@ -140,7 +140,7 @@ export function createTuiSubmitPrompt(
       providerRegistryRuntime,
       sessionId,
       workingDirectory,
-    } = await prepareTuiAppRuntime(deps, version, request, processRuntime);
+    } = await prepareTuiAppRuntime(deps, request, processRuntime);
     const browserRuntime = createCliHeadlessBrowserRuntime({ browserExecutable, browserUse }, deps);
     let createdApp: Awaited<ReturnType<NonNullable<RunDependencies["createZCodeApp"]>>>;
     try {
@@ -150,11 +150,9 @@ export function createTuiSubmitPrompt(
         projectConfigPath: deps.projectConfigPath,
         providerRegistry: providerRegistryRuntime.runtime.registryService,
         configuredDefaultModelSelection,
-        ...(providerRegistryRuntime.providerRuntimeHeadersPort
-          ? {
-              providerRuntimeHeadersPort: providerRegistryRuntime.providerRuntimeHeadersPort,
-            }
-          : {}),
+        // providerRuntimeHeadersPort 的 standalone 构造器已随 OAuth/账号体系拆除删除，
+        // 进程运行时不再暴露该端口；此前的条件透传引用不存在的属性，因 cli 包 typecheck
+        // 不在门禁内而长期以类型错误状态潜行（2026-10-07 排查补删）。
         resume: sessionId !== undefined,
         runtimeConfig: {
           ...(modeState.override ? { mode: modeState.override } : {}),

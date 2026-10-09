@@ -112,7 +112,7 @@ export function PluginStoreListView({
     const titled: PersonalMarketplaceGroup[] = [...groups.entries()].map(
       ([marketplace, groupItems]) => ({
         marketplace,
-        title: resolveMarketplaceDisplayName(marketplace, marketplaces),
+        title: resolveMarketplaceDisplayName(marketplace, marketplaces, locale),
         items: groupItems.toSorted((left, right) =>
           resolveItemDisplayName(left, locale).localeCompare(
             resolveItemDisplayName(right, locale),

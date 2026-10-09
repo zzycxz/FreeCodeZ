@@ -5,7 +5,7 @@
    生成；更新快照后重新运行脚本生成本模块。禁止手改。 */
 export const BUNDLED_OFFICIAL_PLUGIN_MARKETPLACE_MANIFEST = {
   "name": "zcode-plugins-official",
-  "description": "Official ZCode plugins marketplace: built-in and community plugins for ZCode.",
+  "description": "Official FreeCodeZ plugins marketplace: built-in and community plugins for FreeCodeZ.",
   "plugins": [
     {
       "name": "cloudbase-skills",

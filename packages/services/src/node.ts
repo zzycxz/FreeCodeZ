@@ -433,18 +433,20 @@ import {
   type BrowserCommand,
   isZCodeCuaMcpCommand,
   isZCodeCuaMcpPackageArg,
-  isZCodeCuaInternalFeatureEnabled,
-  ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
   type ZCodeAutomation,
   type ZCodeAutomationRun,
-  getCapturedZCodeAgentTelemetryEnv,
-  ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
   ZAI_PROVIDER_ID,
   resolveDynamicWorkflowClientConfig,
   ZCODE_VERSION,
   ZCODE_ENV,
   buildRuntimeZCodeApiUrl,
 } from "@zcode/shared";
+import {
+  isZCodeCuaInternalFeatureEnabled,
+  ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
+  getCapturedZCodeAgentTelemetryEnv,
+  ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
+} from "@zcode/shared/runtime-env";
 
 interface ServiceWithDisposeAll {
   disposeAll: () => void;
@@ -1716,10 +1718,15 @@ export function createLocalServices(options: {
             screenRecording: report.screen_recording,
             screenCaptureProbeOk: false,
           };
-        } catch {
+        } catch (error) {
+          // R16.2（2026-10-07）：此处 helper 已过 ping 就绪（launchStandaloneCuaHelperForStatus
+          // 返回前轮询过），permission_status 再失败就不是"启动中"——沿用 starting up 文案会
+          // 诱导用户/模型无限等待一个不会就绪的服务（用户实测误诊案例之一）。如实带错误摘要。
           return {
             available: false,
-            reason: "FreeCodeZ Computer Use is starting up; retry in a moment.",
+            reason: `FreeCodeZ Computer Use helper did not answer a status probe (${
+              error instanceof Error ? error.message : String(error)
+            }); it stays unavailable until the next Computer Use use.`,
             idle: true,
           } satisfies { available: false; reason: string; idle: true };
         }

@@ -4,13 +4,15 @@ import { RemoteServiceAccess } from "@zcode/client";
 import {
   SERVICE_AUTHORITY_MODE_ENV,
   ZCODE_APP_VERSION_ENV,
-  ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
   ZCODE_DYNAMIC_WORKFLOW_MODE_ENV,
   formatLogPrefix,
+} from "@zcode/shared";
+import {
+  ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
   ZCODE_REMOTE_HTTP_PROXY_ENV_KEY,
   ZCODE_REMOTE_NO_PROXY_ENV_KEY,
   ZCODE_REMOTE_RUNTIME_NETWORK_AUTHORITY_ENV_KEY,
-} from "@zcode/shared";
+} from "@zcode/shared/runtime-env";
 import type { IRemoteBackend } from "./backend.js";
 import { wrapStdioStream } from "./stdio-socket.js";
 import { performHandshake } from "./handshake.js";

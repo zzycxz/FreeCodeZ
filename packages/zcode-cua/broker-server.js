@@ -4,7 +4,7 @@
 // 权限请求)按已接受限制 3 保留签名并 fail-closed,绝不静默降级。
 import { constants, accessSync, existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { access, copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { access, copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -14,6 +14,7 @@ import {
   DEV_HELPER_APP_NAME,
   HELPER_APP_NAME,
   HELPER_BUNDLE_ID,
+  HELPER_ENTRY_RELATIVE_PATH,
 } from "./broker-helper-constants.js";
 
 export const HELPER_ADDON_ENV = "ZCODE_CUA_HELPER_ADDON";
@@ -23,24 +24,52 @@ const UNAVAILABLE = "This Computer Use surface is unavailable in this build.";
 const UNAUTHORIZED = "This Computer Use surface is unavailable in this build";
 
 import { resolveExpectedCuaHelperBuildId } from "./producer/helper-build-id.js";
+// R19（mac Helper 自研产线）：宿主生命周期与真验签依赖。本模块（broker-server）是
+// buildHelperOpenArgs 的单一事实源，经参数注入 product-helper-host 以避免环依赖；
+// lipo/codesign 验签实现在 macos/helper-verifier.js（自 host 拆出，max-lines 惯例）。
+import { createMacProductHelperHost } from "./macos/product-helper-host.js";
+import { createDarwinVerifierDependencies } from "./macos/helper-verifier.js";
 
 function unavailableReject() {
   return Promise.reject(new CuaHelperError(UNAVAILABLE, { code: "not_authorized" }));
 }
 
-/** helper 启动参数(I5):`--socket <pipe> --parent-pid <pid>`,dev 可带 --exit-log。 */
+/**
+ * helper 启动参数(I5):`--socket <pipe> --parent-pid <pid>`,dev 可带 --exit-log。
+ * R19 全面复查补全两种消费形态：
+ * - 直接 spawn 形态（product-helper-host）：spec 只带 socketPath/parentPid/exitLogDir → 纯 helper argv，
+ *   入口脚本由 host 自行前置（spawn(exec, [entry, ...本 argv])）；
+ * - LaunchServices `open` 形态（node.ts 设置页 standalone 拉起）：spec 带 appPath → 输出
+ *   `[-a <app> --args <entry> <helper argv>]`。**entry 必须在场**：可执行体是 node 底座（SEA 废弃），
+ *   LaunchServices 不经 host 缺少人前置入口——缺了 node 把 `--socket` 当自身选项 `bad option` 即退
+ *   （2026-10-08 真机实证，设置页权限查询 5.1s/次的特征签名）。布局常量 HELPER_ENTRY_RELATIVE_PATH 单源。
+ *   （`/usr/bin/open` 的 CLI 形状；exitLogDir/exitLogPath 两种键名都收，前者目录后者文件，helper 侧两态兼容。）
+ */
 export function buildHelperOpenArgs(spec, launcherPid) {
-  const args = [];
+  const helperArgs = [];
   if (typeof spec?.socketPath === "string" && spec.socketPath) {
-    args.push("--socket", spec.socketPath);
+    helperArgs.push("--socket", spec.socketPath);
   }
   if (Number.isSafeInteger(launcherPid) && launcherPid > 0) {
-    args.push("--parent-pid", String(launcherPid));
+    helperArgs.push("--parent-pid", String(launcherPid));
   }
-  if (typeof spec?.exitLogDir === "string" && spec.exitLogDir) {
-    args.push("--exit-log", spec.exitLogDir);
+  const exitLog =
+    (typeof spec?.exitLogDir === "string" && spec.exitLogDir) ||
+    (typeof spec?.exitLogPath === "string" && spec.exitLogPath) ||
+    "";
+  if (exitLog) {
+    helperArgs.push("--exit-log", exitLog);
   }
-  return args;
+  if (typeof spec?.appPath === "string" && spec.appPath) {
+    return [
+      "-a",
+      spec.appPath,
+      "--args",
+      join(spec.appPath, HELPER_ENTRY_RELATIVE_PATH),
+      ...helperArgs,
+    ];
+  }
+  return helperArgs;
 }
 
 export function isCuaLocalDevelopmentRuntime(env, compiledLocalDevelopmentRuntime) {
@@ -57,11 +86,18 @@ export async function resolveHelperPermissionSubjectIdentity(_appPath) {
   });
 }
 
-export const defaultCuaHelperVerifierDependencies = {
-  readExecutableArchs: unavailableReject,
-  verifyCodeSignature: unavailableReject,
-  verifyTeamIdentifier: unavailableReject,
-};
+/**
+ * 验签依赖默认值：darwin=R19 真实现（lipo/codesign；adhoc 可过 verify，TeamIdentifier 仅
+ * env 钉扎时校验）；非 darwin 保持显式 unavailable（该面只有 mac Helper 安装路径会消费）。
+ */
+export const defaultCuaHelperVerifierDependencies =
+  process.platform === "darwin"
+    ? createDarwinVerifierDependencies()
+    : {
+        readExecutableArchs: unavailableReject,
+        verifyCodeSignature: unavailableReject,
+        verifyTeamIdentifier: unavailableReject,
+      };
 
 /**
  * Helper 安装/验签(R13 fail-closed):ensureInstalled 从 bundledAppPath 复制 Helper.app;
@@ -109,12 +145,25 @@ export function createCuaHelperInstaller(options = {}) {
       const target = join(installRoot, appDirName);
       try {
         await access(join(target, "Contents", "Info.plist"), constants.R_OK);
-        return target;
       } catch {
         // 不在则从内置副本安装(单层目录复制;mac Helper.app 是目录束)。
+        await mkdir(target, { recursive: true });
+        await copyDirectory(bundledAppPath, target);
+        return target;
       }
-      await mkdir(target, { recursive: true });
-      await copyDirectory(bundledAppPath, target);
+      // R19 全面复查补：升级新鲜度——已安装副本的 identity.buildId 与期望（编译期钉扎）
+      // 漂移即重装。TCC 授权按 bundle id+安装路径持有，重装不清授权；不比对则 app 每次
+      // 升级后 Helper 永远停在首装版本（宿主侧方法面/协议随之漂移）。dev 逃生口下不比对
+      //（buildId 为空或本地开发形态）。
+      const expectedBuildId = (options.expectedBuildId ?? buildId) || "";
+      if (expectedBuildId) {
+        const identity = await readBundleIdentityManifest(target);
+        if (identity?.buildId !== expectedBuildId) {
+          await rm(target, { recursive: true, force: true });
+          await mkdir(target, { recursive: true });
+          await copyDirectory(bundledAppPath, target);
+        }
+      }
       return target;
     },
     async verifyInstalled(appPath) {
@@ -178,9 +227,11 @@ async function copyDirectory(source, target) {
 }
 
 async function readBundleIdentityManifest(appPath) {
-  // Windows 面无需 Helper.app 身份清单;mac 面由产线生成 identity.json。
+  // Windows 面无需 Helper.app 身份清单;mac 面由产线生成 Contents/Resources/identity.json。
+  // （Contents/ 根只认 Info.plist/MacOS/Resources 等标准条目——束根或 Contents 根放杂项
+  // 都会让 codesign 报 unsealed contents/unsealed root，Resources/ 是唯一可签的家。）
   try {
-    const raw = await readFile(join(appPath, "identity.json"), "utf8");
+    const raw = await readFile(join(appPath, "Contents", "Resources", "identity.json"), "utf8");
     const parsed = JSON.parse(raw);
     return typeof parsed?.bundleId === "string" ? parsed : null;
   } catch {
@@ -396,8 +447,23 @@ export class CuaProductHelperWorkspaceRegistry {
   }
 }
 
-export function createProductCuaHelperHost(_options) {
-  return createUnavailableCuaHelperHost();
+// R19：darwin 委托真实现（安装→验签→spawn→健康 pid 对账；接口=本文件 .d.ts 的 CuaHelperHost）。
+// buildHelperOpenArgs 经参数注入保持单一事实源；未显式传 installer 时以本模块工厂构造
+// （node.ts 的 createDefaultCuaProductHelper 总是显式传 canonical installer）。
+export function createProductCuaHelperHost(options = {}) {
+  if (process.platform !== "darwin") {
+    return createUnavailableCuaHelperHost();
+  }
+  return createMacProductHelperHost({
+    ...options,
+    buildHelperOpenArgs,
+    helperInstaller:
+      options.helperInstaller ??
+      createCuaHelperInstaller({
+        env: options.env,
+        bundledAppPath: options.bundledHelperAppPath,
+      }),
+  });
 }
 
 function createUnavailableCuaHelperHost() {

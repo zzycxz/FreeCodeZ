@@ -15,6 +15,7 @@ import {
   type CuaPermissionDragPanel,
 } from "./cuaPermissionDragPanel.js";
 import { createSystemSettingsWindowWatcher } from "./cuaSystemSettingsWindowWatcher.js";
+import { ensureCuaPermissionEntries } from "./cuaPermissionEntries.js";
 
 const execFileAsync = promisify(execFile);
 const MACOS_SYSTEM_SETTINGS_BUNDLE_ID = "com.apple.systempreferences";
@@ -420,6 +421,22 @@ export function registerCuaPermissionIpcHandlers(options: {
     onboardingControllers
       .get(operationKey(senderId, operationId))
       ?.abort(new Error("CUA permission onboarding surface closed"));
+  });
+
+  // R21c（2026-10-09 用户裁决「TCC 条目由应用自身产生，不走手动 +/拖拽」）：设置页打开
+  // 电脑控制权限区即确保主应用 + FreeCodeZ Computer Use 的条目已自建。幂等（每进程一次）；
+  // 失败不阻断设置页（结果随响应带回，UI 不依赖）。
+  ipcMain.handle(PlatformChannels.EnsureCuaPermissionEntries, async () => {
+    try {
+      return await ensureCuaPermissionEntries({ logger: options.logger });
+    } catch (error) {
+      return {
+        ok: false,
+        attempted: true,
+        helperSpawned: false,
+        reason: error instanceof Error ? error.message : String(error),
+      };
+    }
   });
 
   ipcMain.handle(PlatformChannels.OpenCuaPermissionOnboarding, async (event, payload) => {

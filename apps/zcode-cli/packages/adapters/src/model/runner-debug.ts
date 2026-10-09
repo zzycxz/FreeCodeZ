@@ -10,7 +10,10 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { ModelTextResult } from "@zcode/contracts";
-import { ZCODE_RUNTIME_ENV_KEY, normalizeZCodeRuntimeEnv } from "@zcode/shared";
+import {
+  ZCODE_RUNTIME_ENV_KEY,
+  normalizeZCodeRuntimeEnv,
+} from "@zcode/shared/runtime-env";
 import { redactAnthropicRequestMetadata } from "./anthropic-request-metadata.js";
 import type { EnvRecord } from "./model-execution.js";
 import { sanitizeModelIODebugRecord } from "./runner-debug-redaction.js";

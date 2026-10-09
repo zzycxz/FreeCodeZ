@@ -377,3 +377,63 @@ export function probePermissions() {
   }
   return { accessibility, screenCapture, koffiAvailable: true };
 }
+
+/**
+ * 主动发起屏幕录制授权请求（CGRequestScreenCaptureAccess）。
+ * FreeCodeZ fork（R21，2026-10-08 用户裁决）：主应用必须在系统「屏幕录制」列表里有自己的
+ * 条目——Appshot 截屏主体是主应用，不自注册就永远无处授权。只在用户主动触发点调用；
+ * 权限状态已定时系统不再弹窗。失败不抛，调用方按返回值记日志、照常继续。
+ * loadBindings 仅测试注入用；缺省与 probePermissions 同源。
+ */
+export function requestScreenCaptureAccess(loadBindings = loadKoffiBindings) {
+  const bindings = loadBindings();
+  if (!bindings) {
+    return { granted: false, koffiAvailable: false };
+  }
+  try {
+    return { granted: Boolean(bindings.CGRequestScreenCaptureAccess()), koffiAvailable: true };
+  } catch {
+    return { granted: false, koffiAvailable: true };
+  }
+}
+
+/**
+ * 主动发起辅助功能（AX）授权注册：做一次真实 AX 读（system-wide 属性名表）。未信任时 macOS
+ * 按「首次 AX 使用」语义自动弹「想要控制这台电脑」并建 TCC 条目；已信任/已拒绝均零弹窗 no-op。
+ * 返回 granted=调用后 AXIsProcessTrusted。失败不抛，返回值供记日志。
+ * R21c（2026-10-09 崩溃报告 FreeCodeZ-2026-10-09-105124.ips）：曾用
+ * AXIsProcessTrustedWithOptions{prompt:true}＋CFDictionary 构造——字典经 koffi 在 Electron
+ * 主进程成为无效指针（AXIsProcessTrustedWithOptions→CFGetTypeID SIGSEGV，启动即崩；裸 node
+ * 同代码正常，属 Electron 上下文特异）。整条崩溃面移除：这里只用生产久经考验的 AX 读绑定。
+ * loadBindings 仅测试注入用；缺省与 probePermissions 同源。
+ */
+export function requestAccessibilityAccess(loadBindings = loadKoffiBindings) {
+  const bindings = loadBindings();
+  if (!bindings) {
+    return { granted: false, koffiAvailable: false };
+  }
+  let element;
+  let names;
+  try {
+    element = bindings.AXUIElementCreateSystemWide();
+    const out = [null];
+    // 真实 AX 读（out=[null] 惯用法，与观测面同款）：未信任即触发系统注册/弹窗；
+    // 错误码无关紧要——注册目的在调用当刻已达。
+    bindings.AXUIElementCopyAttributeNames(element, out);
+    names = out[0];
+    return { granted: Boolean(bindings.AXIsProcessTrusted()), koffiAvailable: true };
+  } catch {
+    return { granted: false, koffiAvailable: true };
+  } finally {
+    try {
+      if (names) bindings.CFRelease(names);
+    } catch {
+      // 释放失败不影响结果（短命对象，泄漏面可忽略）。
+    }
+    try {
+      if (element) bindings.CFRelease(element);
+    } catch {
+      // 同上。
+    }
+  }
+}

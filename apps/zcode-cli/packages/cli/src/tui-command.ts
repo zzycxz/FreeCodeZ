@@ -1,5 +1,7 @@
 import type { RunContext, GlobalOptions } from "@zcode/shared-types";
-import { resolveZCodeRuntimeEnv } from "@zcode/shared";
+import {
+  resolveZCodeRuntimeEnv,
+} from "@zcode/shared/runtime-env";
 import { createNodeClipboardImageReader } from "./clipboard-image.js";
 import { createNodeClipboardTextWriter } from "./clipboard-text.js";
 import { listSlashCommandSuggestions } from "./command-center.js";

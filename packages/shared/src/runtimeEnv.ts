@@ -26,6 +26,11 @@ export const ZCODE_CUA_DEV_MODE_ENV_KEY = "ZCODE_CUA_DEV_MODE";
 
 export type ZCodeRuntimeEnv = "development" | "production" | "test";
 
+// R16.1（FC/ZCode 互独立）：凭据归属校验用自家品牌化默认路径，与 zcode-cua broker 的
+// 固定命名同源（darwin /tmp/freecodez-cua-<uid>、linux ~/.freecodez/cua-broker、win32 契约管道名）。
+// 不用 resolveBrokerSocketPath：它会读 env 显式覆盖，而捕获面只该认父进程按默认约定注入的值。
+import { mintBrokerSocketPath } from "@zcode/zcode-cua/broker/socketPath";
+
 type EnvRecord = Record<string, string | undefined>;
 
 export function isCuaDevModeRequested(env: EnvRecord = process.env): boolean {
@@ -152,6 +157,10 @@ interface CapturedCuaBrokerCredentials {
 let capturedCuaBrokerCredentials: Readonly<CapturedCuaBrokerCredentials> | undefined;
 const capturedZCodeAgentTelemetryEnv: Record<string, string> = {};
 
+// R16.1：外来 socket 告警去重（每个路径只报一次；shared 刻意不依赖 services logger，
+// 与 warnLegacyZCodeEnvKeys 同款取舍——一次性 console.warn 供人排障）。
+const foreignCuaBrokerSocketWarned = new Set<string>();
+
 // CUA broker socket 会被上面的 sanitize 从子进程 env 中剔除（confused-deputy 防护 —— 不能让
 // 其它 MCP server / Bash / tool 子进程直接驱动已授权 Helper）。但 CLI 入口在 bootstrap
 // 解析全局 ~/.freecodez/cli/config.json 里的 `zcode-cua` server 之前就会先 sanitize process.env，导致
@@ -163,6 +172,25 @@ function captureZCodeCuaBrokerCredentials(env: Record<string, string | undefined
   const socket = env[ZCODE_CUA_BROKER_SOCKET_ENV_KEY]?.trim();
   const pluginAuthority = env[ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]?.trim();
   const refreshMarker = env["ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER"]?.trim();
+  // R16.1（FC/ZCode 互独立）：socket 键沿用官方名（ZCODE_CUA_PERMISSION_BROKER_SOCKET），
+  // 宿主 ZCode 会话的凭据若经 open 转发/终端直启泄漏进 FC 进程 env，会走到这里。外来
+  // socket 指向 ZCode 的 broker——一旦采信，FC 的 CUA 工具会连接并驱动 ZCode 已授权的
+  // Helper（跨产品 confused-deputy）。归属不符 → 整组拒收（成对与否都拒），绝不明知
+  // 外来仍放行。authority 键虽已品牌化异名挡住了"外来成组"，那是键名巧合不是结构保证，
+  // 本校验把独立性变成显式断言。win32 管道名同样品牌化（\\.\pipe\freecodez-cua-helper-，
+  // broker.js WINDOWS_NAMED_PIPE_PREFIX），外来官方管道会被下方比较一并拒收——旧注释称
+  // "与官方同契约无法按路径区分"已过时（2026-10-07 复核修正）。
+  if (socket && socket !== mintBrokerSocketPath()) {
+    capturedCuaBrokerCredentials = undefined;
+    if (!foreignCuaBrokerSocketWarned.has(socket)) {
+      foreignCuaBrokerSocketWarned.add(socket);
+      console.warn(
+        `[cua.broker] Rejected foreign broker credential socket "${socket}" ` +
+          `(expected "${mintBrokerSocketPath()}"); FreeCodeZ never consumes another app's Computer Use broker.`,
+      );
+    }
+    return;
+  }
   // 连接没有口令：socket + authority（config-provenance 随机数）同批出现才构成有效凭据组；
   // 半组说明上游注入不完整或正在轮换。
   if (socket && pluginAuthority) {

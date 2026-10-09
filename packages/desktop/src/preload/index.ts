@@ -659,6 +659,9 @@ contextBridge.exposeInMainWorld("zcode", {
   /** 打开 FreeCodeZ Computer Use 完整权限引导 */
   openCuaPermissionOnboarding: (options?: OpenCuaPermissionOnboardingOptions) =>
     ipcRenderer.invoke(PlatformChannels.OpenCuaPermissionOnboarding, options),
+  /** 确保 CUA 权限条目由应用自建（主应用 + helper 各自 AX/录屏；R21c） */
+  ensureCuaPermissionEntries: () =>
+    ipcRenderer.invoke(PlatformChannels.EnsureCuaPermissionEntries),
   /** 只取消当前 renderer 以 operationId 发起的 onboarding participant。 */
   cancelCuaPermissionOnboarding: (operationId: string) =>
     ipcRenderer.send(PlatformChannels.CancelCuaPermissionOnboarding, {

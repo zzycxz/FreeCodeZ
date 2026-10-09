@@ -1,12 +1,14 @@
 import { readFileSync } from "node:fs";
 import {
+  isLoopbackHost,
+} from "@zcode/shared";
+import {
   ZCODE_AGENT_CA_CERT_ENV_KEY,
   ZCODE_HTTP_PROXY_ENV_KEY,
   ZCODE_NO_PROXY_ENV_KEY,
   ZCODE_TOOL_ENV_PASSTHROUGH_ENV_KEY,
-  isLoopbackHost,
   readZCodeToolEnvPassthroughEnv,
-} from "@zcode/shared";
+} from "@zcode/shared/runtime-env";
 
 interface NetworkProxyOptions {
   env?: Record<string, string | undefined>;

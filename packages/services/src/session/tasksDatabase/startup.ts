@@ -37,7 +37,7 @@ export async function prepareTasksIndexStorage(
   report("checking");
   await mkdir(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
-  let failure: unknown;
+  let closeFailure: unknown;
   let migration: DatabaseMigrationFacts | undefined;
   try {
     db.exec("PRAGMA busy_timeout = 25");
@@ -77,7 +77,6 @@ export async function prepareTasksIndexStorage(
     // COMMIT 已成功，先发布事实；后续 close 失败不能把已提交误报为未提交。
     report("maintaining", migration);
   } catch (error) {
-    failure = error;
     // 失败事实随原异常交给 Worker，不倒退发布 checking/migrating，也不覆盖首因。
     if (migration && error && typeof error === "object") {
       try {
@@ -91,15 +90,20 @@ export async function prepareTasksIndexStorage(
     try {
       db.close();
     } catch (error) {
-      if (!failure) throw error;
+      // 修复 no-unsafe-finally（存量）：finally 内直接 throw 会吞掉 try/catch 的原始错误。
+      // 改为捕获后在 finally 结束点抛出——先有 failure 时该行不可达（原异常已在传播），
+      // close 独享失败时行为与旧 throw-from-finally 完全一致（同样跳过 markTasksStorageMigrated）。
+      closeFailure = error;
     }
   }
+  if (closeFailure !== undefined) throw closeFailure;
   markTasksStorageMigrated(path);
   const repos = [
     new TaskIndexRepo(path, LOCK_WAIT_MS),
     new AutomationRepo(path, LOCK_WAIT_MS),
   ];
   let preparationFailure: unknown;
+  let repoCloseFailure: unknown;
   try {
     // 这些是原本就在初始化时执行的修复，不创建新的迁移或改变已有事务边界。
     for (const repo of repos) await repo.ensureReady();
@@ -107,16 +111,17 @@ export async function prepareTasksIndexStorage(
     preparationFailure = error;
     throw error;
   } finally {
-    let closeFailure: unknown;
     for (const repo of repos) {
       try {
         repo.close({ throwOnError: true });
       } catch (error) {
-        closeFailure ??= error;
+        repoCloseFailure ??= error;
       }
     }
-    if (!preparationFailure && closeFailure) throw closeFailure;
   }
+  // 修复 no-unsafe-finally（存量）：finally 内 throw 会吞掉 ensureReady 的原始错误；改到
+  // finally 之后抛——preparationFailure 已在传播时此行不可达，行为与旧实现逐分支一致。
+  if (!preparationFailure && repoCloseFailure !== undefined) throw repoCloseFailure;
   markTasksStoragePrepared(path);
   report("ready", migration);
 }

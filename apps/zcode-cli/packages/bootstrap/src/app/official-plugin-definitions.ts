@@ -108,6 +108,13 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
       "../../node-repl-host",
       "../../../node-repl-host",
     ],
+    // 2026-10-07 包态实测（第五发包态盲区）：运行副本是 seed 缓存（rootPath 走
+    // scanOfficialCache），server.js 内联的 koffi-ax 用 createRequire(import.meta.url)
+    // 从缓存副本解析 require("koffi")——此前无此开关，node_modules 被 seed 过滤掉，
+    // MODULE_NOT_FOUND 被 try/catch 吞掉 → bindings=null → 电脑控制执行层静默消失
+    // （dev 态靠仓库根 hoisted node_modules 蒙对，只有包态炸）。与 computer-use 条目
+    // 的 runtimeTopLevelPaths 同义：node_modules 随 seed 携带，勿再置空。
+    runtimeTopLevelPaths: ["node_modules"],
     version: "0.6.0",
   },
   {

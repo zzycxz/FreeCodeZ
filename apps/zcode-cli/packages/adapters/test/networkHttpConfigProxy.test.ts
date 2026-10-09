@@ -5,7 +5,9 @@
 // 共用同一解析器，单一真源。
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ZCODE_HTTP_PROXY_ENV_KEY } from "@zcode/shared";
+import {
+  ZCODE_HTTP_PROXY_ENV_KEY,
+} from "@zcode/shared/runtime-env";
 import { resolveProxyForRequest, resolveWebFetchProxyForRequest } from "../src/network/http-config.js";
 
 test("loopback 目标无条件直连：显式 httpProxy 也不转发（B6）", () => {

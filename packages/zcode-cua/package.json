@@ -2,7 +2,7 @@
   "name": "@zcode/zcode-cua",
   "version": "0.6.3",
   "private": true,
-  "description": "API-compatible placeholder package for Computer Use. This build ships without Computer Use: every runtime surface reports unavailable and fails closed.",
+  "description": "FreeCodeZ Computer Use 执行栈：NDJSON broker 协议 + mac koffi 执行层 + FreeCodeZ Computer Use Helper（R19 产线）；.d.ts 契约与官方包兼容",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {

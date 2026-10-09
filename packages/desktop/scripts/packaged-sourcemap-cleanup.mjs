@@ -83,6 +83,9 @@ export async function cleanupPackagedSourcemaps({
   runTimedSync,
   runTimedAsync,
   replaceAppAsarFromStaging,
+  // 可选 staging 目录变换（在 sourcemap 清理后、repack 判定前执行）；返回 true 表示
+  // staging 有变化需触发 repack——2026-10-07 koffi 平台裁剪借此复用同一轮 extract/pack。
+  transformStagingDir,
   logger = console,
 }) {
   if (existsSync(appAsarPath)) {
@@ -94,7 +97,8 @@ export async function cleanupPackagedSourcemaps({
       );
       const stripSummary = stripSourceMappingUrlCommentsInDirectory(stagingDir);
       const mapSummary = removeSourceMapFilesInDirectory(stagingDir);
-      if (stripSummary.referencesRemoved > 0 || mapSummary.filesRemoved > 0) {
+      const transformChanged = transformStagingDir ? await transformStagingDir(stagingDir) : false;
+      if (stripSummary.referencesRemoved > 0 || mapSummary.filesRemoved > 0 || transformChanged) {
         logger.log(
           `[afterPack] stripped sourceMappingURL references=${stripSummary.referencesRemoved} files=${stripSummary.filesChanged} maps=${mapSummary.filesRemoved}`,
         );

@@ -15,7 +15,7 @@
     "prepare:desktop-runtime": "pnpm --filter @zcode/desktop prepare:runtime-assets",
     "dep:graph": "node scripts/dependency-graph.mjs",
     "dep:refs": "node scripts/dep-refs.mjs",
-    "verify:pre-push": "pnpm run typecheck && pnpm run lint && pnpm run i18n:check && pnpm run test && pnpm run architecture:check -- --changed",
+    "verify:pre-push": "pnpm run typecheck && pnpm -r --dir apps/zcode-cli run typecheck && pnpm run lint && pnpm run i18n:check && pnpm run test && pnpm run architecture:check -- --changed",
     "i18n:check": "node --import tsx scripts/check-i18n.mjs",
     "test": "node scripts/run-tests.mjs",
     "build": "pnpm -r build",

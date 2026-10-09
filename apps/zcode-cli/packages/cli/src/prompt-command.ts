@@ -199,12 +199,7 @@ export const runPrompt = async (
     if (prepareTelemetry) {
       shutdownTelemetry = deps.shutdownZCodeTelemetry ?? bootstrapModule?.shutdownZCodeTelemetry;
     }
-    const appEnv = prepareTelemetry
-      ? await prepareTelemetry(env, {
-          cliVersion: version,
-          productVersion: (env.FREECODEZ_APP_VERSION ?? env.ZCODE_APP_VERSION),
-        })
-      : env;
+    const appEnv = prepareTelemetry ? await prepareTelemetry(env) : env;
     const startProviderRegistryRuntime =
       deps.startProcessProviderRegistryRuntime ??
       bootstrapModule?.startProcessProviderRegistryRuntime;
@@ -217,7 +212,8 @@ export const runPrompt = async (
         ? {}
         : {
             standalone: {
-              ...createCliProviderRefreshReporter(ctx.stderr),
+              // createCliProviderRefreshReporter 展开已删（standalone 选项从不消费那两个
+              // 刷新观测回调，provider-node 事件链拆除后的死接线，2026-10-07 清理）。
               ...(deps.userConfigPath ? { legacyCliUserConfigFilePath: deps.userConfigPath } : {}),
             },
           },
@@ -233,11 +229,8 @@ export const runPrompt = async (
       permissionBroker: createHeadlessPermissionBroker(),
       providerRegistry: providerRegistryRuntime.runtime.registryService,
       configuredDefaultModelSelection: providerRegistryRuntime.configuredDefaultModelSelection,
-      ...(providerRegistryRuntime.providerRuntimeHeadersPort
-        ? {
-            providerRuntimeHeadersPort: providerRegistryRuntime.providerRuntimeHeadersPort,
-          }
-        : {}),
+      // providerRuntimeHeadersPort 随 OAuth/账号体系拆除已无构造器，进程运行时不暴露该
+      // 端口，headless 侧同步清理条件透传（与 tui-prompt-handler 同批）。
       resume: sessionId !== undefined,
       runtimeConfig: {
         ...(mode ? { mode } : {}),
@@ -651,4 +644,4 @@ function writeHeadlessWorkspaceHookTrustDiagnostic(
     ].join("\n") + "\n",
   );
 }
-import { createCliProviderRefreshReporter } from "./provider-runtime-env.js";
+

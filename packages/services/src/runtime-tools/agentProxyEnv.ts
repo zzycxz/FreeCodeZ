@@ -3,7 +3,7 @@ import {
   ZCODE_HTTP_PROXY_ENV_KEY,
   ZCODE_NO_PROXY_ENV_KEY,
   ZCODE_WORKSPACE_IDENTITY_ENV,
-} from "@zcode/shared";
+} from "@zcode/shared/runtime-env";
 
 // 把设置页的 HTTP 代理、No Proxy 和自定义 CA 翻译成 agent 子进程的环境变量补丁。
 // agent 是子进程，继承宿主 process.env；这里在 spawn 时把代理与证书注入进去，所以「下次启动 agent」生效。

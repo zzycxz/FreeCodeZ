@@ -6,8 +6,10 @@ import type { Locale } from "@zcode/shared";
 
 // FreeCodeZ fork:workflow 名与文案换名,与原版右键 workflow 并排共存(规格书 P1 §3#22)。
 const WORKFLOW_NAME = "Open in FreeCodeZ.workflow";
-// V2.2 R1:dev.zcode.app.* 锚点族保持官方值(helper preferredOwnerScore 以此评分,证据手册 §11-3)。
-const WORKFLOW_BUNDLE_ID = "dev.zcode.app.finder-open-workflow";
+// R20(2026-10-08 用户裁决「完全和 ZCode 独立」):Services 按 bundle id 去重,与 ZCode 的
+// workflow 共用 id 会互相遮蔽;改 app.freecodez.* 同族独立。原「preferredOwnerScore 评分」
+// 理由核查为误挂——评分仅存在于 Windows vendored helper(永不接触 macOS workflow)。
+const WORKFLOW_BUNDLE_ID = "app.freecodez.app.finder-open-workflow";
 const WORKFLOW_VERSION = "5";
 const SERVICES_MENU_LABELS: Record<Locale, string> = {
   "zh-CN": "在 FreeCodeZ 中打开",

@@ -64,9 +64,19 @@ export function renderBundledMarketplaceModule(snapshot) {
     return cleaned;
   });
 
+  // 品牌映射（2026-10-07，D3 显示面条款）：市场 name（=id）是契约面冻结不动；
+  // 市场级 description 属对外可见元数据，官方快照的 ZCode 文案按 H.3-2 同款原则
+  // 映射为 FreeCodeZ 文案（生成时映射，快照源头 official-snapshot.json 保持官方原样）。
+  const MARKETPLACE_DESCRIPTION_BRAND = new Map([
+    [
+      "Official ZCode plugins marketplace: built-in and community plugins for ZCode.",
+      "Official FreeCodeZ plugins marketplace: built-in and community plugins for FreeCodeZ.",
+    ],
+  ]);
+
   const manifest = {
     name: snapshot.name,
-    description: snapshot.description,
+    description: MARKETPLACE_DESCRIPTION_BRAND.get(snapshot.description) ?? snapshot.description,
     plugins,
   };
 

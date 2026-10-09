@@ -2,11 +2,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { BrokerError, callBrokerMethod, probeHelperHealth } from "../broker.js";
+import { HELPER_BUNDLE_ID } from "../broker-helper-constants.js";
 import { startMockHelper } from "./helpers/mock-helper.mjs";
 
 test("callBrokerMethod:authenticate 必为首请求,随后才是业务方法", async () => {
   const helper = await startMockHelper({
-    handlers: { broker_info: () => ({ pid: 123, authorization_subject: "dev.zcode.cua-helper" }) },
+    handlers: { broker_info: () => ({ pid: 123, authorization_subject: HELPER_BUNDLE_ID }) },
   });
   try {
     const info = await callBrokerMethod({ socketPath: helper.socketPath, method: "broker_info", params: {} });
@@ -19,11 +20,11 @@ test("callBrokerMethod:authenticate 必为首请求,随后才是业务方法", a
 
 test("probeHelperHealth:首次 broker_info 往返即认领,映射 bundleId/pid", async () => {
   const helper = await startMockHelper({
-    handlers: { broker_info: () => ({ pid: 7, authorization_subject: "dev.zcode.cua-helper" }) },
+    handlers: { broker_info: () => ({ pid: 7, authorization_subject: HELPER_BUNDLE_ID }) },
   });
   try {
     const health = await probeHelperHealth(helper.socketPath, { timeoutMs: 3000, perTryTimeoutMs: 1000 });
-    assert.deepEqual(health, { bundleId: "dev.zcode.cua-helper", pid: 7 });
+    assert.deepEqual(health, { bundleId: HELPER_BUNDLE_ID, pid: 7 });
   } finally {
     await helper.close();
   }

@@ -28,8 +28,10 @@ import {
   serializeLaunchMarks,
   type RemoteTarget,
   type WorkspacePurpose,
-  ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
 } from "@zcode/shared";
+import {
+  ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
+} from "@zcode/shared/runtime-env";
 import { getMainLaunchPartialMarks } from "./desktopLaunchMarks.js";
 import { BroadcastHub } from "./broadcastHub.js";
 import type { TaskRealtimeBus } from "./taskRealtimeBus.js";
@@ -237,7 +239,7 @@ export function spawnHostProcess(
       // macOS-only: the Computer Use Helper launcher runs inside this forked host utilityProcess, whose
       // code-signing identity is a nested Electron helper (not the main app's app.freecodez.app id).
       // Publish THIS (main Electron) process's pid — the launcher-pid mechanism is identity-agnostic
-      // and the Helper anchors on the dev.zcode.cua-helper bundle-id family — so helperLauncher passes
+      // and the Helper anchors on the app.freecodez.cua-helper bundle-id family (R20) — so helperLauncher passes
       // it as `--launcher-pid` and the Helper's peer verification succeeds instead of
       // health-timing out. Env-name mirror of services' LAUNCHER_PID_ENV. Not set on
       // Windows/Linux (CUA is macOS-only; nothing reads it there) to keep the host env pristine.

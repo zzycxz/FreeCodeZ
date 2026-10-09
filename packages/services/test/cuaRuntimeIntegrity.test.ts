@@ -19,6 +19,7 @@ import {
   ZCODE_CUA_BROKER_SOCKET_ENV_KEY,
   ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY,
 } from "../../shared/src/runtimeEnv.js";
+import { mintBrokerSocketPath } from "../../zcode-cua/broker-socket-path.js";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const vendoredHelper = join(
@@ -113,8 +114,11 @@ test("A11:entry 一字节篡改即 fail-closed(artifact-integrity-mismatch)", as
 
 test("A19:凭据组同批才有效,sanitize 剔除全部凭据键", () => {
   resetCapturedZCodeCuaBrokerCredentialsForTest();
+  // R16.1:捕获面只认自家 mint 路径(2026-10-07 起)——成组捕获用例必须用品牌化默认路径,
+  // 虚构值会被归属校验拒收(shared/test/cuaBrokerCredentialOwnership.test.ts A21 覆盖拒收面)。
+  const ownedSocket = mintBrokerSocketPath();
   const env = {
-    [ZCODE_CUA_BROKER_SOCKET_ENV_KEY]: "pipe-x",
+    [ZCODE_CUA_BROKER_SOCKET_ENV_KEY]: ownedSocket,
     [ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY]: "auth-1",
     ZCODE_CUA_PERMISSION_BROKER_TOKEN: "legacy-t",
     ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER: "marker-1",
@@ -127,7 +131,7 @@ test("A19:凭据组同批才有效,sanitize 剔除全部凭据键", () => {
   assert.equal(sanitized.ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER, undefined);
   assert.equal(sanitized.PATH, "keep-me");
   const captured = getCapturedZCodeCuaBrokerCredentials();
-  assert.equal(captured.socket, "pipe-x");
+  assert.equal(captured.socket, ownedSocket);
   assert.equal(captured.pluginAuthority, "auth-1");
   assert.equal(captured.refreshMarker, "marker-1");
 });
@@ -154,4 +158,18 @@ test("A19:tool-env-passthrough 不恢复凭据键(confused-deputy 双面剔除)"
   assert.equal(passthrough[ZCODE_CUA_BROKER_SOCKET_ENV_KEY], undefined);
   assert.equal(passthrough[ZCODE_CUA_PLUGIN_AUTHORITY_ENV_KEY], undefined);
   assert.equal(passthrough.ZCODE_CUA_PERMISSION_BROKER_REFRESH_MARKER, undefined);
+});
+
+// A23(R16.2,2026-10-07):权限探测失败文案如实——源级锚定(getStatus 的 catch 分支是
+// services/node.ts 内联对象方法,无独立导出;照 envRenameCompat 的源级锚定先例断言文案面)。
+test("A23:stable socket 上状态探测失败不得虚报 starting up", () => {
+  const source = readFileSync(join(repoRoot, "packages/services/src/node.ts"), "utf8");
+  assert.ok(
+    !source.includes("is starting up; retry in a moment"),
+    "stale 'starting up' reason must not come back (R16.2: it invites infinite waiting)",
+  );
+  assert.ok(
+    source.includes("did not answer a status probe"),
+    "failure reason must carry the honest probe-failure wording with error detail",
+  );
 });

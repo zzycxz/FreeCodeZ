@@ -4,7 +4,6 @@
 // 公开面仍从 tui-prompt-handler.ts 导出。
 import { loadBootstrapModule } from "./bootstrap-loader.js";
 import { loadCliDotenv } from "./env.js";
-import { createCliProviderRefreshReporter } from "./provider-runtime-env.js";
 import { resolveResumeSession } from "./resume.js";
 import type { CliResumeRequest, RunDependencies } from "./cli-types.js";
 
@@ -28,7 +27,6 @@ export const createTuiProcessRuntimeState = (): TuiProcessRuntimeState => ({
 // 品牌类型（SessionId）和 createZCodeApp 的联合签名收窄错。
 export async function prepareTuiAppRuntime(
   deps: RunDependencies,
-  version: string,
   request: CliResumeRequest,
   state: TuiProcessRuntimeState,
 ) {
@@ -55,12 +53,7 @@ export async function prepareTuiAppRuntime(
     state.shutdownTelemetry =
       deps.shutdownZCodeTelemetry ?? bootstrapModule?.shutdownZCodeTelemetry;
   }
-  const appEnv = prepareTelemetry
-    ? await prepareTelemetry(env, {
-        cliVersion: version,
-        productVersion: (env.FREECODEZ_APP_VERSION ?? env.ZCODE_APP_VERSION),
-      })
-    : env;
+  const appEnv = prepareTelemetry ? await prepareTelemetry(env) : env;
   const startProviderRegistryRuntime =
     deps.startProcessProviderRegistryRuntime ??
     bootstrapModule?.startProcessProviderRegistryRuntime;
@@ -73,7 +66,8 @@ export async function prepareTuiAppRuntime(
       ? {}
       : {
           standalone: {
-            ...createCliProviderRefreshReporter(),
+            // createCliProviderRefreshReporter 展开已删：standalone 选项从不消费那两个
+            // 刷新观测回调（provider-node 事件链拆除后的死接线，2026-10-07 清理）。
             ...(deps.userConfigPath ? { legacyCliUserConfigFilePath: deps.userConfigPath } : {}),
           },
         },

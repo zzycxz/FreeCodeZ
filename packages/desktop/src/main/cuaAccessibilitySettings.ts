@@ -5,10 +5,12 @@
 // 只打开对应设置页，Helper 进入 TCC 列表由用户从浮窗把 .app 拖进列表完成
 // （实测拖入后 auth_value 直接为 2，比弹窗少一步——弹窗只创建条目，仍需用户自己找到并勾选）。
 // 每 stage 的验签指纹不再交给 open(2) 前的终检，而是登记到会话上，由 dragstart 前的同步比对消费。
+// R21（2026-10-08 用户裁决）唯一例外：主应用在 screen_recording stage 走一次
+// CGRequestScreenCaptureAccess 自注册——Appshot 截屏主体是主应用，它不进「屏幕录制」列表
+// 就无处授权（用户验收：列表必须有 FreeCodeZ 行）；Helper 仍只走拖拽，本条不改变其语义。
 import { randomUUID } from "node:crypto";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { shell } from "electron";
 import type { CuaHelperInstallerOptions } from "@zcode/services/node";
 import {
   resolveHelperPermissionSubjectIdentity,
@@ -19,12 +21,21 @@ import type {
   CuaPermissionKind,
   PrepareCuaHelperPermissionDragResult,
 } from "@zcode/shared";
-import { createDesktopCuaHelperInstaller } from "./desktopCuaHelperInstaller.js";
+import { requestScreenCaptureAccessInProcess } from "@zcode/zcode-cua/macos";
+
+// electron 依赖惰性化（仓库惯例：模块 import 零副作用、electron 只在运行期触碰，
+// 见 cuaCursorHud 懒初始化先例）：onboarding 状态机要能在无 electron 的测试进程加载，
+// shell.openExternal 与 desktopCuaHelperInstaller（内部 import electron.app）都改为惰性导入。
 
 const MACOS_ACCESSIBILITY_SETTINGS_URL =
   "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";
 const MACOS_SCREEN_RECORDING_SETTINGS_URL =
   "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture";
+
+/** R21 缺省自注册实现：koffi 进程内 CGRequestScreenCaptureAccess，返回是否已获授权。 */
+function defaultRequestMainScreenRecordingAccess(): boolean {
+  return requestScreenCaptureAccessInProcess().granted;
+}
 
 interface OpenCuaAccessibilitySettingsOptions {
   initialPermission?: CuaPermissionKind;
@@ -43,6 +54,11 @@ interface OpenCuaAccessibilitySettingsOptions {
     error?: (...args: unknown[]) => void;
   };
   ensureHelperInstalled?: () => Promise<string>;
+  /**
+   * R21 主应用录屏自注册：screen_recording stage 打开设置页前请求一次，让用户落地设置页时
+   * 「屏幕录制」列表已有 FreeCodeZ 行。测试可注入；缺省 koffi 进程内真实现。失败不阻断引导。
+   */
+  requestMainScreenRecordingAccess?: () => boolean | Promise<boolean>;
   /** 测试或宿主显式注入；生产默认从 Electron Resources 解析随包 Helper。 */
   bundledHelperAppPath?: string;
   /** 每个 TCC stage 启动前重新执行完整安装验签；生产默认使用 installer.verifyInstalled。 */
@@ -436,8 +452,27 @@ class CuaPermissionOnboardingCoordinator {
         if (controller.signal.aborted) throw controller.signal.reason;
 
         const openSettingsUrl =
-          options.openSettingsUrl ?? ((url: string) => shell.openExternal(url));
+          options.openSettingsUrl ??
+          (async (url: string) => {
+            const { shell } = await import("electron");
+            await shell.openExternal(url);
+          });
         const openSettings = async () => {
+          // R21（2026-10-08 用户裁决「屏幕录制列表必须有 FreeCodeZ」）：打开设置页前让主应用
+          // 自注册录屏条目（CGRequestScreenCaptureAccess）。原设计只拖 helper，主应用永远进不了
+          // 「屏幕录制」列表（Appshot 截屏主体=主应用，无处授权）。请求失败不阻断引导（warn 后
+          // 照常打开设置页）；请求只创建条目，是否授权仍以用户勾选为准。
+          if (permission === "screen_recording") {
+            try {
+              await (options.requestMainScreenRecordingAccess ??
+                defaultRequestMainScreenRecordingAccess)();
+            } catch (error) {
+              options.logger?.warn(
+                "[cua-permission-onboarding] main app screen recording self-registration failed",
+                messageOf(error),
+              );
+            }
+          }
           await openSettingsUrl(settingsUrlForPermission(permission));
           if (!session.openedPermissions.includes(permission)) {
             session.openedPermissions.push(permission);
@@ -510,7 +545,7 @@ export async function openCuaPermissionOnboarding(
   const env = options.env ?? process.env;
   const defaultInstaller = options.ensureHelperInstalled
     ? null
-    : createDesktopCuaHelperInstaller({
+    : (await import("./desktopCuaHelperInstaller.js")).createDesktopCuaHelperInstaller({
         logger: toInstallerLogger(options.logger),
         env,
         bundledHelperAppPath: options.bundledHelperAppPath,
@@ -604,7 +639,7 @@ export async function prepareCuaHelperPermissionDrag(
   const env = options.env ?? process.env;
   const defaultInstaller = options.ensureHelperInstalled
     ? null
-    : createDesktopCuaHelperInstaller({
+    : (await import("./desktopCuaHelperInstaller.js")).createDesktopCuaHelperInstaller({
         logger: toInstallerLogger(options.logger),
         env,
         bundledHelperAppPath: options.bundledHelperAppPath,

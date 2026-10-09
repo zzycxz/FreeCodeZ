@@ -13,7 +13,11 @@
 // computer-use（zcode-cua-plugin）条目（vendored 于 apps/zcode-cli/dependencies/zcode-cua/plugin）：
 // 其 runtime 依赖 koffi/sharp 原生包，node_modules 按 carriedNodeModules 白名单随插件携带
 // （规格 docs/spec/computer-control-capability.md B1-2/B1-3）；R2 仅 desktop-local 提供，
-// stageOnRemote:false 不进远端资产。carriedNodeModules 仅在 win32 目标携带（原生二进制形态）。
+// stageOnRemote:false 不进远端资产。carriedNodeModules：win32 从 vendored 源携带（win32 二进制
+// 形态）；darwin/linux 从构建机 workspace 携带（desktop deps 装出目标平台二进制，R18「包内具备
+// 同等能力」）；koffi 仅 darwin 携带（win32 走 vendored helper addon、linux 无 AX 执行层）——
+// 三平台策略均在 prepare-agent-node-bundle.mjs 落地，afterPack verifyCuaPluginAssets 的 koffi
+// 断言与此同源（仅 darwin），win32 只断言 sharp 链与 helper 资产。
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 

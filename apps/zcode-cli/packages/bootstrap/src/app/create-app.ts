@@ -33,7 +33,12 @@ import {
   type ExecutionShellSelection,
   type MessageId,
 } from "@zcode/contracts";
-import { isRemoteWorkspaceIdentity, resolveZCodeRuntimeEnv } from "@zcode/shared";
+import {
+  isRemoteWorkspaceIdentity,
+} from "@zcode/shared";
+import {
+  resolveZCodeRuntimeEnv,
+} from "@zcode/shared/runtime-env";
 import {
   ZCODE_ATTACHMENT_FAULT_CODES,
   ZCodeAttachmentFaultError,

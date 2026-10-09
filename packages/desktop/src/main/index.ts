@@ -77,8 +77,9 @@ import { createBotRemoteWorkspaceReconnectExecutor } from "./botRemoteWorkspaceR
 import { markMainLaunchAppReady } from "./desktopLaunchMarks.js";
 import { createCuaPipFocusRouter, resolveCuaPipWindowKey } from "./cuaPipFocusRouter.js";
 import { resolveCuaControlHostEnv } from "./cuaControlSettings.js";
-import { createCuaCursorHud, type CuaCursorHud } from "./cuaCursorHud.js";
+import { createCuaCursorHud, resolveHudScreenDeps, type CuaCursorHud } from "./cuaCursorHud.js";
 import { startCuaAppshot } from "./cuaAppshot.js";
+import { ensureCuaPermissionEntries } from "./cuaPermissionEntries.js";
 import { createUpdateChecker, resolveManifestUrl } from "./updateChecker.js";
 import { BrowserWindow as HudBrowserWindow, globalShortcut, screen as HudScreen } from "electron";
 import { BroadcastHub } from "./broadcastHub.js";
@@ -618,10 +619,10 @@ const cuaCursorHud: CuaCursorHud | undefined =
   (process.env.FREECODEZ_CUA_CURSOR_HUD?.trim() || process.env.ZCODE_CUA_CURSOR_HUD?.trim()) !== "0"
     ? createCuaCursorHud({
         BrowserWindow: HudBrowserWindow,
-        screen: {
-          getPrimaryDisplay: () => HudScreen.getPrimaryDisplay(),
-          screenToDipPoint: (point) => HudScreen.screenToDipPoint(point),
-        },
+        // Electron 41 已移除 screenToDipPoint——resolveHudScreenDeps 运行时探测 API 缺席
+        // 即省略该键，走控制器 fallback（2026-10-07 装机实测：无条件包装曾把首个光标帧
+        // 炸成 main uncaughtException、错误弹窗阻断退出）。
+        screen: resolveHudScreenDeps(HudScreen),
         globalShortcut: {
           register: (accelerator, callback) => globalShortcut.register(accelerator, callback),
           unregister: (accelerator) => globalShortcut.unregister(accelerator),
@@ -1996,6 +1997,17 @@ app.whenReady().then(async () => {
 
   if (process.platform === "darwin" || process.platform === "win32") {
     app.clearRecentDocuments();
+  }
+
+  // R21b/R21c（2026-10-09 用户裁决「FreeCodeZ 要像 ZCode 一样主动要求权限」+「TCC 条目由
+  // 应用自身产生，不走手动 +/拖拽」）：启动期一次性自建全部权限条目——主应用 AX+录屏、
+  // FreeCodeZ Computer Use AX+录屏（helper 一次性请求模式拉起）。权限状态已定时各请求都是
+  // 零弹窗 no-op，只在装机后未定态弹一次；延迟发送不与启动争抢，失败不影响启动。设置页打开
+  // 电脑控制权限区时经 EnsureCuaPermissionEntries 幂等兜底。
+  if (process.platform === "darwin") {
+    setTimeout(() => {
+      void ensureCuaPermissionEntries({ logger }).catch(() => undefined);
+    }, 1500);
   }
 
   rebuildMenu();

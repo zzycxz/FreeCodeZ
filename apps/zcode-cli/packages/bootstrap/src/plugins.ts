@@ -49,7 +49,12 @@ import type {
   PluginStoreListing,
 } from "@zcode/contracts";
 import { ZCODE_OFFICIAL_PLUGIN_MARKETPLACE, isOfficialMarketplaceId } from "@zcode/contracts";
-import { ZCODE_CUA_OFFICIAL_PLUGIN_ID, isZCodeCuaInternalFeatureEnabled } from "@zcode/shared";
+import {
+  ZCODE_CUA_OFFICIAL_PLUGIN_ID,
+} from "@zcode/shared";
+import {
+  isZCodeCuaInternalFeatureEnabled,
+} from "@zcode/shared/runtime-env";
 import { resolveOfficialPluginRoots } from "./app/bundled-plugins.js";
 import {
   DEFAULT_ENABLED_OFFICIAL_PLUGIN_IDS,

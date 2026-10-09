@@ -17,9 +17,11 @@ import {
 } from "@zcode/zcode-cua/macos";
 import {
   createCuaCursorHud,
+  resolveHudScreenDeps,
   parseCursorEventFrame,
   cursorWindowPositionFor,
   CUA_CURSOR_HUD_UDP_PORT,
+  CUA_CURSOR_HUD_IDLE_HIDE_MS,
   CUA_LENS_AUTO_OFF_MS,
   type CuaCursorEventFrame,
   type CuaCursorHudWindowLike,
@@ -319,5 +321,167 @@ test("用户干预：paused 期间帧不驱动特效", () => {
   // loadBindings 返回 null → readUserMouseActivity 恒不活跃 → 不 paused
   const cursor = created[0];
   assert.ok(cursor);
+  hud.dispose();
+});
+
+// 2026-10-07 装机实测回归两连（同日）：①Electron 41 已移除 screen.screenToDipPoint，装配层
+// 曾用无条件箭头包装把可选降级吃掉——包装内部调 undefined，首个光标帧即炸 main；
+// ②typeof 探测又在装配期访问 screen 属性——electron screen 是懒初始化代理，app ready 前
+// 访问任何属性即抛 "The 'screen' module can't be used before the app 'ready' event"
+//（main 模块顶层装配 → 启动即炸）。探测必须延迟到首次调用。
+test("装配：API 缺席时调用返回 undefined（控制器 `??` fallback 生效）", () => {
+  const deps = resolveHudScreenDeps({
+    getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }),
+  });
+  assert.equal(deps.screenToDipPoint?.({ x: 10, y: 20 }), undefined, "缺席时返回 undefined 而非硬调");
+  assert.ok(typeof deps.getPrimaryDisplay() === "object");
+});
+
+test("装配：API 在场时透传换算（旧 Electron 兼容）", () => {
+  const deps = resolveHudScreenDeps({
+    getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }),
+    screenToDipPoint: (point: { x: number; y: number }) => ({ x: point.x * 2, y: point.y * 2 }),
+  });
+  assert.deepEqual(deps.screenToDipPoint?.({ x: 10, y: 20 }), { x: 20, y: 40 });
+});
+
+test("回归：装配期不得访问 screen 任何属性（electron ready 前的懒初始化代理一碰即抛）", () => {
+  // 模拟 app ready 前的 electron screen：属性访问即抛（typeof 探测也算访问）。
+  const preReadyScreen = new Proxy(
+    { getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }) },
+    {
+      get(target, prop, receiver) {
+        if (prop === "getPrimaryDisplay") return Reflect.get(target, prop, receiver);
+        throw new Error("The 'screen' module can't be used before the app 'ready' event");
+      },
+    },
+  ) as unknown as Parameters<typeof resolveHudScreenDeps>[0];
+  // 装配在 main 模块顶层执行——这里不抛即通过；属性访问推迟到调用（且异常被 handleFrame 兜底）。
+  const deps = resolveHudScreenDeps(preReadyScreen);
+  assert.equal(typeof deps.screenToDipPoint, "function");
+});
+
+test("回归：UDP 帧处理抛异常不得冒泡（丢帧不炸 main、不阻断退出）", () => {
+  const created: FakeHudWindow[] = [];
+  const explodingWindowClass = class {
+    constructor() {
+      const win = new FakeHudWindow();
+      // 定位即炸：模拟换算/窗操作异常面。
+      win.setPosition = () => {
+        throw new Error("synthetic frame-handler failure");
+      };
+      created.push(win);
+      return win;
+    }
+  };
+  const hud = createCuaCursorHud({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    BrowserWindow: explodingWindowClass as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    screen: {
+      getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
+    createUdpListener: () => ({ close() { undefined; } }),
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (hud.handleFrame as any)({ v: 1, kind: "point", x: 300, y: 400 });
+  hud.dispose();
+});
+
+// ── 回归（2026-10-08 装机实测：任务停止后 HUD 横幅常驻不消）────────────────
+// 根因两处：① hideAll 半执行（单窗 hide 抛异常中断后续行 / isVisible 误报 false
+// 跳过隐藏）留下"光标已隐、横幅挂屏"残局；② scheduleIdleHide 武装在帧尾，
+// 帧处理中途抛异常被丢帧兜底吞掉后"窗口已显、计时器没武装"，6 秒自隐永不来。
+// 三例分别钉死：每窗独立隐藏、hide 幂等无守卫、计时器先于一切抛异常面武装。
+
+test("回归：空闲隐藏单窗 hide 抛异常不得留半隐藏残局（横幅常驻 2026-10-08）", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const created: FakeHudWindow[] = [];
+  const hud = createCuaCursorHud({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    BrowserWindow: makeFakeBrowserWindowClass(created) as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    screen: {
+      getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
+    createUdpListener: () => ({ close() { undefined; } }),
+  });
+  hud.handleFrame({ v: 1, kind: "point", x: 300, y: 400 });
+  const cursorWindow = created[0];
+  const bannerWindow = created[1];
+  assert.ok(cursorWindow && bannerWindow);
+  assert.equal(cursorWindow.visible, true);
+  assert.equal(bannerWindow.visible, true);
+  cursorWindow.hide = () => {
+    throw new Error("synthetic hide failure");
+  };
+  t.mock.timers.tick(CUA_CURSOR_HUD_IDLE_HIDE_MS);
+  assert.equal(bannerWindow.visible, false, "第一窗 hide 抛异常也必须隐藏第二窗（每窗独立）");
+  hud.dispose();
+});
+
+test("回归：isVisible 误报 false 不得跳过 hide（2026-10-08 横幅常驻）", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const created: FakeHudWindow[] = [];
+  const hud = createCuaCursorHud({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    BrowserWindow: makeFakeBrowserWindowClass(created) as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    screen: {
+      getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
+    createUdpListener: () => ({ close() { undefined; } }),
+  });
+  hud.handleFrame({ v: 1, kind: "point", x: 300, y: 400 });
+  const bannerWindow = created[1];
+  assert.ok(bannerWindow);
+  assert.equal(bannerWindow.visible, true);
+  let hideCalls = 0;
+  bannerWindow.isVisible = () => false; // 误报：窗实际在屏（panel 窗可见性误报实测形态）
+  bannerWindow.hide = () => {
+    hideCalls += 1;
+    bannerWindow.visible = false;
+  };
+  t.mock.timers.tick(CUA_CURSOR_HUD_IDLE_HIDE_MS);
+  assert.equal(hideCalls, 1, "hide 幂等、无条件执行（不得被 isVisible 守卫跳过）");
+  assert.equal(bannerWindow.visible, false);
+  hud.dispose();
+});
+
+test("回归：显示链中途抛异常仍须武装空闲隐藏（计时器先于抛异常面）", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const created: FakeHudWindow[] = [];
+  const boomBannerClass = class {
+    constructor() {
+      const win = new FakeHudWindow();
+      // 第二个窗（横幅）show 即炸：模拟显示阶段窗销毁竞态，整帧被丢帧兜底吞掉。
+      if (created.length === 1) {
+        win.showInactive = () => {
+          throw new Error("synthetic show failure");
+        };
+      }
+      created.push(win);
+      return win;
+    }
+  };
+  const hud = createCuaCursorHud({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    BrowserWindow: boomBannerClass as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    screen: {
+      getPrimaryDisplay: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1055 } }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any,
+    createUdpListener: () => ({ close() { undefined; } }),
+  });
+  hud.handleFrame({ v: 1, kind: "point", x: 300, y: 400 });
+  const cursorWindow = created[0];
+  assert.ok(cursorWindow);
+  assert.equal(cursorWindow.visible, true, "光标窗已显（横幅 show 抛异常帧被吞）");
+  t.mock.timers.tick(CUA_CURSOR_HUD_IDLE_HIDE_MS);
+  assert.equal(cursorWindow.visible, false, "帧已到达→6 秒必隐（与显示/特效是否抛异常无关）");
   hud.dispose();
 });

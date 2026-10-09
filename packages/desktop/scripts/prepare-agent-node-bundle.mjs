@@ -11,7 +11,7 @@
 //
 // 远端（SSH/WSL/Docker）没有 Electron，仍走 prepare:remote-assets 的原生二进制，互不影响。
 
-import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, realpathSync, rmSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -106,41 +106,133 @@ const excludedOfficialPluginAssetNames = new Set([
   "__pycache__",
   "node_modules",
 ]);
-// CUA 插件的 node_modules 白名单（B1-3）：koffi/sharp 链是 runtime 依赖，整体过滤必丢；
-// 仅 win32 目标携带（vendored 原生二进制为 win32 形态）。
-const CUA_CARRIED_NODE_MODULE_NAMES = new Set([
-  "koffi",
-  "sharp",
-  "@img",
-  "semver",
-  "detect-libc",
-]);
+// CUA 插件的 node_modules 白名单（B1-3）：koffi/sharp 链是 runtime 依赖，整体过滤必丢，
+// 携带集=official-plugin-staging-list.mjs 的 carriedNodeModules。三平台各取所需
+// （2026-10-07 R18 推广，「打哪个平台带哪个平台的库」）：
+// - win32：vendored 源（本就是 win32_x64 单平台形态，SHA256SUMS 管理）；
+// - darwin/linux：构建机 workspace 源（hoisted 布局含全平台 optional 产物，复制后按
+//   目标平台+架构裁剪）。koffi 仅 darwin 携带——FC 的 koffi 执行层调 macOS AX API
+//   （koffi-ax.js），linux 无该框架、win32 走 vendored helper addon，带了对它们是死重。
+// semver/detect-libc 为纯 JS，各平台都从 vendored 源取。
+// 非 win32 目标下改从 workspace（构建机依赖根）解析的原生包。
+const WORKSPACE_NATIVE_CARRIES = new Set(["koffi", "sharp"]);
 
 function shouldCopyOfficialPluginAsset(sourcePath) {
   const name = basename(sourcePath);
   return !excludedOfficialPluginAssetNames.has(name) && !name.endsWith(".pyc");
 }
 
-function shouldCarryCuaNodeModule(sourcePath) {
-  const name = basename(sourcePath);
-  return CUA_CARRIED_NODE_MODULE_NAMES.has(name);
+// sharp 的平台二进制包（@img/sharp-darwin-arm64 等）：本仓 pnpm 为 hoisted 布局时在
+// node_modules/@img 顶层；防御性兜底走 sharp 实体的 .pnpm 邻域推导。
+function resolveWorkspaceImgSource(workspaceNodeModules) {
+  const topLevel = resolve(workspaceNodeModules, "@img");
+  if (existsSync(topLevel)) return topLevel;
+  const sharpReal = realpathSync(resolve(workspaceNodeModules, "sharp"));
+  return resolve(sharpReal, "..", "@img");
+}
+
+function carriedNodeModuleSource(name, sourceRoot) {
+  if (platform !== "win32" && WORKSPACE_NATIVE_CARRIES.has(name)) {
+    const workspaceNodeModules = resolve(repoRoot, "node_modules");
+    if (name === "@img") return resolveWorkspaceImgSource(workspaceNodeModules);
+    return resolve(workspaceNodeModules, ...name.split("/"));
+  }
+  return resolve(sourceRoot, "node_modules", ...name.split("/"));
+}
+
+// 平台差异携带集：koffi 仅 darwin（win32 有 vendored addon、linux 无 AX 执行层）。
+function carriedNodeModuleNames(plugin) {
+  if (platform === "darwin") return plugin.carriedNodeModules;
+  return plugin.carriedNodeModules.filter((name) => name !== "koffi");
+}
+
+// R18 瘦身：workspace 的 hoisted 布局把 @img/koffi 的全部平台二进制都装了（pnpm optional
+// 全平台产物），照单携带给单平台包带来 ~210MB 死重（libvips 每平台 15-19MB、koffi 每平台
+// ~2.2MB）。复制后按目标平台+架构裁剪：@img 只留 colour + sharp[-libvips]-<platform>-<arch>；
+// koffi 只留 build/koffi/<platform>_<arch>。win32 不经此函数（vendored 源本就是单平台形态）。
+// linux 的 musl 变体（Alpine 系 sharp-libvips-linuxmusl-*）暂不携带——glibc 主流发行版
+// 之外属后续按需项。
+function pruneCarriedNativeToTargetArch(targetNodeModules) {
+  if (platform === "win32") return;
+  const imgDir = resolve(targetNodeModules, "@img");
+  if (existsSync(imgDir)) {
+    const keep = new Set(["colour", `sharp-${platform}-${arch}`, `sharp-libvips-${platform}-${arch}`]);
+    for (const entry of readdirSync(imgDir)) {
+      if (!keep.has(entry)) rmSync(resolve(imgDir, entry), { recursive: true, force: true });
+    }
+  }
+  const koffiPlatforms = resolve(targetNodeModules, "koffi", "build", "koffi");
+  if (existsSync(koffiPlatforms)) {
+    const keepDir = `${platform}_${arch}`;
+    for (const entry of readdirSync(koffiPlatforms)) {
+      if (entry !== keepDir) rmSync(resolve(koffiPlatforms, entry), { recursive: true, force: true });
+    }
+  }
 }
 
 function stageCarriedNodeModules(plugin, sourceRoot, targetRoot) {
   // B1-3:白名单内的 node_modules 随 CUA 插件携带(koffi/sharp 链是 runtime 依赖);
-  // 仅 win32 目标携带(vendored 原生二进制为 win32 形态)。
-  if (!plugin.carriedNodeModules || platform !== "win32") return;
-  const sourceNodeModules = resolve(sourceRoot, "node_modules");
-  if (!existsSync(sourceNodeModules)) return;
+  // 三平台各取所需：win32=vendored 形态；darwin/linux=构建机 workspace 形态+按平台裁剪（R18）。
+  if (!plugin.carriedNodeModules) return;
+  if (platform !== "win32" && platform !== "darwin" && platform !== "linux") return;
   const targetNodeModules = resolve(targetRoot, "node_modules");
-  for (const name of plugin.carriedNodeModules) {
-    const from = resolve(sourceNodeModules, ...name.split("/"));
+  for (const name of carriedNodeModuleNames(plugin)) {
+    const from = carriedNodeModuleSource(name, sourceRoot);
     if (!existsSync(from)) continue;
     cpSync(from, resolve(targetNodeModules, ...name.split("/")), { recursive: true });
   }
-  if (!shouldCarryCuaNodeModule(resolve(targetNodeModules, "koffi"))) {
-    throw new Error(`[prepare:agent-bundle] missing carried node module: ${targetNodeModules}/koffi`);
+  pruneCarriedNativeToTargetArch(targetNodeModules);
+  // koffi 在位断言（B2 修复）：仅 darwin——唯一携带平台。必须 existsSync 查真实文件：
+  // 旧写法 !shouldCarryCuaNodeModule(<koffi 路径>) 只查 basename 是否在白名单（恒为
+  // "koffi"、恒在集合内），恒不触发；上游复制的 existsSync-continue 静默跳过时，出包缺
+  // koffi 执行层无人拦截（2026-10-07 实证：目录缺失时断言表达式仍求值 false）。
+  if (platform === "darwin") {
+    const stagedKoffiNative = resolve(
+      targetNodeModules,
+      "koffi",
+      "build",
+      "koffi",
+      `${platform}_${arch}`,
+      "koffi.node",
+    );
+    if (!existsSync(stagedKoffiNative)) {
+      throw new Error(`[prepare:agent-bundle] missing carried node module: ${stagedKoffiNative}`);
+    }
   }
+}
+
+// staged node-repl-host 的 node_modules 运行时（R18）。两件事：
+// ① darwin：server.ts captureComputerUseRuntimeFromEnvironment 的 koffi 进程内执行层
+//   （packages/zcode-cua/macos/koffi-ax require("koffi")）从 server.js 向上解析
+//   node_modules，二进制必须落在 node-repl-host/node_modules；
+// ② 各平台：node_repl 会话内模型代码 require("sharp") 做截图/缩放处理——官方 glm 的
+//   node-repl-host/node_modules 同构携带 sharp 链（@img/detect-libc/semver/sharp）。
+// win32 维持原状不带（CUA 走 vendored helper addon；sharp 链的 win 携带属后续按需项）。
+function stageNodeReplHostRuntime(targetRoot) {
+  if (platform === "win32") return;
+  const workspaceNodeModules = resolve(repoRoot, "node_modules");
+  const vendoredCuaNodeModules = resolve(
+    repoRoot,
+    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules",
+  );
+  const targetNodeModules = resolve(targetRoot, "node_modules");
+  const sources = [
+    ...(platform === "darwin"
+      ? [["koffi", resolve(workspaceNodeModules, "koffi")]]
+      : []),
+    ["sharp", resolve(workspaceNodeModules, "sharp")],
+    ["@img", resolveWorkspaceImgSource(workspaceNodeModules)],
+    ["semver", resolve(vendoredCuaNodeModules, "semver")],
+    ["detect-libc", resolve(vendoredCuaNodeModules, "detect-libc")],
+  ];
+  for (const [name, from] of sources) {
+    if (!existsSync(from)) {
+      throw new Error(`[prepare:agent-bundle] ${platform} node-repl-host carry missing: ${name} (${from})`);
+    }
+    cpSync(from, resolve(targetNodeModules, name), { recursive: true });
+  }
+  pruneCarriedNativeToTargetArch(targetNodeModules);
+  console.log(`[prepare:agent-bundle] staged ${platform} runtime node_modules for ${targetRoot}`);
 }
 const isBootstrapWithRemote = (process.env.FREECODEZ_BOOTSTRAP_WITH_REMOTE ?? process.env.ZCODE_BOOTSTRAP_WITH_REMOTE) === "1";
 
@@ -244,6 +336,10 @@ function stageOfficialPlugins() {
       });
     }
     stageCarriedNodeModules(plugin, sourceRoot, targetRoot);
+    // R18：node-repl-host 在 darwin/linux 下携带运行时（koffi 执行层+sharp 截图链，见函数注释）。
+    if (plugin.stagedPath === "packages/node-repl-host") {
+      stageNodeReplHostRuntime(targetRoot);
+    }
     for (const relativePath of plugin.requiredSeedPaths ?? []) {
       const stagedAssetPath = resolve(targetRoot, ...relativePath.split("/"));
       if (!existsSync(stagedAssetPath)) {

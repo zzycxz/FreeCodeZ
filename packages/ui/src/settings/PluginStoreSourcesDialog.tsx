@@ -83,7 +83,7 @@ export function PluginStoreSourcesDialog({
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-center gap-1.5">
                       <span className="truncate text-ui-base font-medium text-foreground">
-                        {resolveMarketplaceDisplayName(marketplace.id, [marketplace])}
+                        {resolveMarketplaceDisplayName(marketplace.id, [marketplace], locale)}
                       </span>
                     </div>
                     <div className="mt-0.5 truncate text-ui-base text-foreground-subtle">

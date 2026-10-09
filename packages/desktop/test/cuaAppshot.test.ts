@@ -188,3 +188,55 @@ test("设置面：设置键优先于 env；音效/路由透传", async () => {
   assert.equal(executed.length, 0, "设置 off 覆盖 env cmd");
   off.stop();
 });
+
+test("R21 录屏自注册：预检未授权 → 请求先于快照；已授权不请求", async () => {
+  const order: string[] = [];
+  const run = async (screenGranted: boolean) => {
+    const executed: string[] = [];
+    const controller = startCuaAppshot({
+      getFocusedWindow: () => ({
+        isDestroyed: () => false,
+        webContents: {
+          getURL: () => "file:///app/index.html",
+          executeJavaScript: async (code: string) => {
+            executed.push(code);
+            order.push("dispatch");
+          },
+        },
+      }),
+      env: { FREECODEZ_APPSHOT_HOTKEY: "cmd" },
+      platform: "darwin",
+      probeScreenCapture: () => screenGranted,
+      requestScreenCaptureAccess: () => {
+        order.push("request");
+      },
+      runSnapshot: async () => {
+        order.push("snapshot");
+        return {
+          ok: true as const,
+          app: { pid: 42, name: "Safari" },
+          windowId: 7,
+          capture: { path: "/tmp/appshot-7.png", bytes: 1024 },
+          axTree: { elementCount: 120 },
+        };
+      },
+      log: () => {},
+    });
+    controller.trigger();
+    for (let i = 0; i < 20 && executed.length === 0; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    controller.stop();
+    return executed;
+  };
+
+  order.length = 0;
+  await run(false);
+  assert.deepEqual(order.slice(0, 2), ["request", "snapshot"], "未授权：自注册请求先于截屏");
+
+  order.length = 0;
+  const executed = await run(true);
+  assert.equal(executed.length, 1, "已授权照常截屏派发");
+  assert.deepEqual(order.slice(0, 1), ["snapshot"], "已授权：不发自注册请求");
+  assert.ok(!order.includes("request"));
+});

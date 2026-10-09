@@ -649,6 +649,16 @@ export interface IPlatformService {
   openCuaPermissionOnboarding?(
     options?: OpenCuaPermissionOnboardingOptions,
   ): Promise<CuaAccessibilitySettingsResult>;
+  /**
+   * 确保 CUA 权限条目由应用自建（R21c：主应用 + FreeCodeZ Computer Use 各自 AX/录屏，
+   * 不走手动 +/拖拽）。幂等；Desktop only。
+   */
+  ensureCuaPermissionEntries?(): Promise<{
+    ok: boolean;
+    attempted: boolean;
+    helperSpawned: boolean;
+    reason?: string;
+  }>;
   /** 取消本 renderer 以 operationId 发起的 onboarding participant。Desktop only。 */
   cancelCuaPermissionOnboarding?(operationId: string): void;
   /**

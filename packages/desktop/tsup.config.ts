@@ -134,7 +134,13 @@ function createDevReadyMarkerHook(target: "main" | "host" | "preload"): string {
   // CLI 级 --onSuccess 在多 config watch 模式下会被每个子构建分别触发。
   // 之前 preload 先成功时就提前写入 ready 标记，Electron 仍会在 main/host 未完成时启动。
   // 这里改成每个 config 自己在成功后写独立 marker，让 dev 启动脚本能精确等待全部构建完成。
-  return `node scripts/write-dev-ready-marker.mjs ${target}`;
+  const marker = `node scripts/write-dev-ready-marker.mjs ${target}`;
+  // preload 产物 require 卫生断言（2026-10-07 白屏两连发兜底）：沙箱 preload 只许
+  // require("electron")，其余 require 加载期即炸 → 白屏。构建期拦截，不进包。
+  if (target === "preload") {
+    return `${marker} && node scripts/assert-preload-require-hygiene.mjs`;
+  }
+  return marker;
 }
 
 export default defineConfig([

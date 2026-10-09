@@ -4,7 +4,9 @@ import type { ConnectConfig } from "ssh2";
 import { createReadStream } from "node:fs";
 import { posix } from "node:path";
 import { Emitter } from "@zcode/rpc";
-import { resolveZCodeRuntimeEnv } from "@zcode/shared";
+import {
+  resolveZCodeRuntimeEnv,
+} from "@zcode/shared/runtime-env";
 import type {
   IRemoteBackend,
   RemoteDisconnectEvent,

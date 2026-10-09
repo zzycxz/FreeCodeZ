@@ -5,8 +5,8 @@
 // appshotSnapshot（前台窗截图 + AX 树）→ 聚焦窗口渲染进程派发
 // CustomEvent("freecodez:appshot-add-to-chat")，由聚焦 composer 的附件钩子消费
 //（与 whiteboard add-to-chat 同款聚焦门控）。截屏被 TCC 拒时仍注入 AX 摘要文本。
-import { appshotSnapshot } from "@zcode/zcode-cua/macos";
-import { createModifierDoubleTapWatcher } from "@zcode/zcode-cua/macos";
+import { appshotSnapshot, createModifierDoubleTapWatcher } from "@zcode/zcode-cua/macos";
+import { ensureMainScreenRecordingRegistration } from "./cuaScreenRecordingRegistration.js";
 
 export const APPSHOT_ADD_TO_CHAT_EVENT = "freecodez:appshot-add-to-chat";
 export const APPSHOT_HOTKEY_ENV = "FREECODEZ_APPSHOT_HOTKEY";
@@ -42,6 +42,9 @@ export interface CuaAppshotDeps {
   platform?: NodeJS.Platform;
   env?: Record<string, string | undefined>;
   runSnapshot?: typeof appshotSnapshot;
+  /** R21 录屏自注册：授权预检/请求（注入式；缺省 koffi 进程内真实现）。 */
+  probeScreenCapture?: () => boolean;
+  requestScreenCaptureAccess?: () => void;
   log?: (message: string, context?: Record<string, unknown>) => void;
 }
 
@@ -86,6 +89,15 @@ async function triggerAppshot(deps: CuaAppshotDeps) {
     return;
   }
   if (deps.getAppshotSettings?.().appshotSound !== false) deps.playSound?.();
+  // R21/R21b（2026-10-08/09 用户裁决「屏幕录制列表必须有 FreeCodeZ」）：Appshot 截屏主体是
+  // 主应用（spawn screencapture），不自注册就进不了系统「屏幕录制」列表、无处授权。截屏前
+  // 预检，未授权先请求（共享实现；权限状态已定时零弹窗、拒绝后不重弹）。请求失败不阻断
+  // 截屏——照常走快照，被拒时仍注入 AX 摘要。
+  ensureMainScreenRecordingRegistration({
+    probeScreenCapture: deps.probeScreenCapture,
+    requestScreenCaptureAccess: deps.requestScreenCaptureAccess,
+    log: deps.log,
+  });
   const snapshot = deps.runSnapshot
     ? await deps.runSnapshot()
     : await appshotSnapshot({ excludePids: [process.pid] });

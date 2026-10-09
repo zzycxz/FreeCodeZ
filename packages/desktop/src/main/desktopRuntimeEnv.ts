@@ -11,9 +11,7 @@ import {
   ZCODE_DYNAMIC_WORKFLOW_MODE_ENV,
   ZCODE_ENV,
   ZCODE_PRODUCT_FLAVOR,
-  ZCODE_RUNTIME_ENV_KEY,
   ZCODE_VERSION,
-  buildZCodeToolEnvPassthroughEnv,
   resolveRuntimeZCodeEndpointOrigin,
   readProductEndpointEnv,
   pickProductEndpointEnv,
@@ -21,10 +19,14 @@ import {
   resolveZaiOAuthClientId,
   resolveZaiOAuthOrigin,
   normalizeDynamicWorkflowMode,
+} from "@zcode/shared";
+import {
+  ZCODE_RUNTIME_ENV_KEY,
+  buildZCodeToolEnvPassthroughEnv,
   readZCodeAgentTelemetryEnv,
   sanitizeZCodeRuntimeEnv,
   type ZCodeRuntimeEnv,
-} from "@zcode/shared";
+} from "@zcode/shared/runtime-env";
 import { resolvePlatformKeyForPackagedApp } from "../../scripts/target-platform.mjs";
 import {
   getAppConfigDir,

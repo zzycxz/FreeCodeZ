@@ -291,6 +291,8 @@ export const PlatformChannels = {
   OpenExternalFile: "zcode:open-external-file",
   /** Renderer → Main：打开 FreeCodeZ Computer Use 权限引导 */
   OpenCuaPermissionOnboarding: "zcode:open-cua-permission-onboarding",
+  /** Renderer → Main：确保 CUA 权限条目由应用自建（主应用 + FreeCodeZ Computer Use，R21c） */
+  EnsureCuaPermissionEntries: "zcode:ensure-cua-permission-entries",
   /** Renderer → Main：取消当前 renderer 发起的一次权限引导 participant */
   CancelCuaPermissionOnboarding: "zcode:cancel-cua-permission-onboarding",
   /**
@@ -939,6 +941,10 @@ export interface PlatformChannelMap {
   [PlatformChannels.OpenCuaPermissionOnboarding]: {
     request: OpenCuaPermissionOnboardingOptions | undefined;
     response: CuaAccessibilitySettingsResult;
+  };
+  [PlatformChannels.EnsureCuaPermissionEntries]: {
+    request: undefined;
+    response: { ok: boolean; attempted: boolean; helperSpawned: boolean; reason?: string };
   };
   [PlatformChannels.PrepareCuaHelperPermissionDrag]: {
     request: undefined;

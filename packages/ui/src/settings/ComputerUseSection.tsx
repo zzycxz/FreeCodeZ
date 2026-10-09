@@ -121,6 +121,16 @@ export function ComputerUseSection({
     };
   }, [supportsLocalMacWorkspace, platform]);
 
+  // R21c（2026-10-09 用户裁决）：点开电脑控制权限页即让应用自建 TCC 条目（主应用 +
+  // FreeCodeZ Computer Use 各自 AX/录屏），不走手动 +/拖拽。主进程幂等（每进程一次）；
+  // 失败静默——页面继续走既有状态展示，不打扰用户。
+  useEffect(() => {
+    if (!supportsLocalMacWorkspace || typeof platform.ensureCuaPermissionEntries !== "function") {
+      return;
+    }
+    void platform.ensureCuaPermissionEntries?.().catch(() => undefined);
+  }, [supportsLocalMacWorkspace, platform]);
+
   const macOsBelowCuaFloor = osSupport?.kind === "macos-below-minimum";
 
   // 总开关 = zcode-cua 插件启用态（读自插件管理 store；切换即同步启用/禁用插件及其 MCP + skill）。

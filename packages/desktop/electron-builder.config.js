@@ -20,7 +20,12 @@ import {
   resolveDesktopArtifactSuffix,
   resolveDesktopProductIdentity,
 } from "./scripts/desktop-product-identity.mjs";
-import { verifyCuaPluginAssets } from "./scripts/koffi-package-assets.mjs";
+import { resolveCuaAssetsResourcesDir, verifyCuaPluginAssets } from "./scripts/koffi-package-assets.mjs";
+import {
+  applyMacAdhocSignIdentifiers,
+  discoverHelperBundleNames,
+  planMacAdhocSignIdentifiers,
+} from "./scripts/mac-sign-identifiers.mjs";
 const ELECTRON_BUILDER_ARCH = {
   1: "x64",
   3: "arm64",
@@ -61,6 +66,7 @@ import {
   findDesktopNativePackageViolations,
   createDesktopNativePackagePrunePatterns,
   parseAsarListWithPackState,
+  pruneKoffiToTargetPlatform,
 } from "./scripts/desktop-native-package-policy.mjs";
 import { replaceAppAsarFromStaging } from "./scripts/app-asar-repack.mjs";
 import {
@@ -378,6 +384,11 @@ async function injectHoistedRuntimeModulesIntoAsar(context) {
         mkdirSync(dirname(targetModulePath), { recursive: true });
         rmSync(targetModulePath, { force: true, recursive: true });
         cpSync(sourceModulePath, targetModulePath, { recursive: true });
+        // koffi 单包全平台预编译，注入复制绕过 files 裁剪模式——注入后按目标平台裁
+        //（2026-10-07 实测全平台集合经注入路径进 asar/unpacked 双份约 73MB）。
+        if (moduleName === "koffi") {
+          pruneKoffiToTargetPlatform(targetModulePath, targetPlatform.key);
+        }
       }
     });
 
@@ -404,6 +415,14 @@ async function stripPackagedSourcemapReferences(context) {
     runAsarCommand,
     runTimedSync,
     runTimedAsync,
+    // koffi 的 files 裁剪模式对 electron-builder 的 node_modules 收集不生效（production
+    // 依赖全平台整包进 asar，2026-10-07 实测 ~41MB×双份）——搭 sourcemap 清理的
+    // extract/pack 便车裁剪，零额外打包轮次。
+    transformStagingDir: (stagingDir) => {
+      const koffiDir = resolve(stagingDir, "node_modules", "koffi");
+      if (!existsSync(koffiDir)) return false;
+      return pruneKoffiToTargetPlatform(koffiDir, targetPlatform.key) > 0;
+    },
     replaceAppAsarFromStaging: ({ sourceDir, appAsarPath }) =>
       replaceAppAsarFromStaging({
         sourceDir,
@@ -434,6 +453,34 @@ function assertPackagedNodePtyPrebuild(context) {
   });
   if (!existsSync(targetBinaryPath))
     throw new Error(`node-pty 预编译产物缺失: ${targetBinaryPath}`);
+}
+
+// R21（2026-10-08 用户裁决「完全和 ZCode 独立」安装包面）：adhoc 打包路径钉签名标识——
+// electron-builder 不签名时（mac.identity=null）产物沿用 Electron 模板遗留标识
+// （Identifier=Electron / Electron Helper），与 app.freecodez.* 自报身份不符；签名标识是
+// TCC 责任进程归因与 Developer ID 迁移的锚点。Helpers 先签、主 app 最后（外层封内层，
+// 顺序不可反）；entitlements 与 builder 签名面一致。Developer ID 路径由 electron-builder
+// 签名阶段产出同值标识（官方产物实测），本步骤整体跳过。
+function pinMacAdhocSignIdentifiers(context) {
+  // afterPack 阶段 .app 已按 productName 重命名；framework.distMacOsAppName 是模板名
+  // （Electron.app，仅 afterExtract 改名前有效），必须按 productFilename 取位。
+  const appBundlePath = resolve(
+    context.appOutDir,
+    `${context.packager.appInfo.productFilename}.app`,
+  );
+  const productFilename = context.packager.appInfo.productFilename;
+  const steps = planMacAdhocSignIdentifiers({
+    appBundlePath,
+    helperBundleNames: discoverHelperBundleNames(
+      join(appBundlePath, "Contents", "Frameworks"),
+      productFilename,
+    ),
+    appId: desktopProductIdentity.appId,
+    productFilename,
+    entitlementsMain: resolve(desktopPackageRoot, "build", "entitlements.mac.plist"),
+    entitlementsInherit: resolve(desktopPackageRoot, "build", "entitlements.mac.inherit.plist"),
+  });
+  applyMacAdhocSignIdentifiers(steps);
 }
 
 /** @type {import("electron-builder").Configuration} */
@@ -551,12 +598,20 @@ export default {
     runTimedSync("afterPack:assertPackagedNodePtyPrebuild", () =>
       assertPackagedNodePtyPrebuild(context),
     );
-    if (actualWindowsTarget) {
-      // 电脑控制能力补位(B1-4/B1-5):插件原生运行时(koffi/sharp)与 helper manifest 哈希
-      // 校验挂入 afterPack,缺一即打包失败,防「装上即断」回流用户侧。
+    if (actualWindowsTarget || context.electronPlatformName === "darwin") {
+      // 电脑控制能力补位(B1-4/B1-5+R19):插件原生运行时(sharp;koffi 断言仅 darwin,与 R18 携带
+      // 策略同源)、helper 资产校验(win32: vendored manifest 哈希;darwin: cua-helper/.app 结构
+      // +identity.json bundleId+koffi.node)挂入 afterPack,缺一即打包失败,防「装上即断」回流用户侧。
+      // resources 目录按平台取位（R19 全面复查：抽成 koffi-package-assets 的纯函数并单测，
+      // 首版在 config 手写 win 布局校验 mac 报假缺失——afterPack:verifyCuaPluginAssets）。
+      const cuaResourcesDir = resolveCuaAssetsResourcesDir({
+        electronPlatformName: context.electronPlatformName,
+        appOutDir: context.appOutDir,
+        productFilename: context.packager.appInfo.productFilename,
+      });
       runTimedSync("afterPack:verifyCuaPluginAssets", () => {
         const errors = verifyCuaPluginAssets({
-          resourcesDir: resolve(context.appOutDir, "resources"),
+          resourcesDir: cuaResourcesDir,
           targetPlatform,
         });
         if (errors.length > 0) {
@@ -565,9 +620,15 @@ export default {
           );
         }
       });
+    }
+    if (actualWindowsTarget) {
       await runTimedAsync("afterPack:writeWindowsInstallManifest", () =>
         writeWindowsInstallManifest(context),
       );
+    }
+    // 必须在一切资源改写（asar 注入/sourcemap 清理）之后签名，签名封的是最终字节。
+    if (context.electronPlatformName === "darwin" && !shouldEnableMacSigning) {
+      runTimedSync("afterPack:pinMacAdhocSignIdentifiers", () => pinMacAdhocSignIdentifiers(context));
     }
   },
   extraResources: [
@@ -588,6 +649,15 @@ export default {
             // 只是不吸附，所以这里不做存在性断言。
             from: "resources/macos-window-bounds/zcode-window-bounds",
             to: "macos-window-bounds/zcode-window-bounds",
+          },
+          {
+            // R19（mac Helper 自研产线）：FreeCodeZ Computer Use.app 随包分发到
+            // resources/cua-helper/（desktopRuntimeEnv 的 ZCODE_CUA_BUNDLED_HELPER_APP_PATH 与
+            // services resolveBundledCuaHelperAppPath 按此路径解析）。产物由 prepare:cua-helper
+            // （scripts/build-cua-helper-app.mjs）生成于 dist-cua-helper；afterPack
+            // verifyCuaPluginAssets darwin 分支做在场断言（缺一即打包失败）。
+            from: "dist-cua-helper",
+            to: "cua-helper",
           },
         ]
       : []),
