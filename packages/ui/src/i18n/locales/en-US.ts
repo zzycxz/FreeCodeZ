@@ -156,8 +156,6 @@ const enUS: Record<string, string> = {
   "offPeak.chatCreated.queued": "Queued for idle-time compute",
   "offPeak.chatCreated.queuedAt": "#{position} in queue",
   "offPeak.chatCreated.open": "Go to idle-time tasks",
-  "settings.computerUse.disabledToast":
-    "Computer Use is disabled. Existing conversations require a FreeCodeZ restart to take effect.",
   "settings.modelProvider.connectionUnavailableNotice": "The current plan is unavailable.",
   "settings.modelProvider.switchConnection": "Switch to “{connection}”",
   "settings.modelProvider.connectionSuggestionStale":
@@ -773,10 +771,6 @@ const enUS: Record<string, string> = {
   "git.worktree.create": "Create",
   "git.worktree.created": "Created worktree: {path}",
   "git.worktree.failed": "Creation failed",
-  "settings.cuaControl.controlLabel": "Enable computer control (observation)",
-  "settings.cuaControl.description": "Let the agent read windows and the accessibility tree. Grant Screen Recording / Accessibility in System Settings; changes apply to sessions in new windows.",
-  "settings.cuaControl.actionsLabel": "Allow actions (click / type)",
-  "settings.cuaControl.actionsDescription": "The agent may move the mouse, click, and type; every action still asks for approval.",
   "settings.appshot.title": "Appshot",
   "settings.appshot.description": "Double-tap a modifier key to capture the frontmost window into the chat (Screen Recording permission required).",
   "settings.appshot.hotkey.off": "Off",
@@ -4358,13 +4352,8 @@ const enUS: Record<string, string> = {
   "chat.toolbar.mode.label": "Switch mode",
   // CUA composer entry button
   "chat.toolbar.computerUse.label": "Computer Use",
-  "chat.toolbar.computerUse.tooltip.idle":
-    "Computer Use is idle — it will start automatically on first use",
-  "chat.toolbar.computerUse.tooltip.starting": "Enabling Computer Use plugin…",
   "chat.toolbar.computerUse.tooltip.ready":
     "Computer Use ready — just describe what you want FreeCodeZ to do",
-  "chat.toolbar.computerUse.tooltip.permissionRequired":
-    "Missing macOS permissions — click to grant",
   "chat.toolbar.computerUse.tooltip.error":
     "Computer Use enablement failed. Please restart FreeCodeZ app and retry, or ask FreeCodeZ to investigate the logs",
   "chat.toolbar.computerUse.tooltip.sessionBusy":
@@ -5367,10 +5356,6 @@ const enUS: Record<string, string> = {
   "chat.permission.workflow.save.args.default": "Default",
   "chat.interactionOrigin.subagent": "Subagent",
   "chat.interactionOrigin.subagent.title": "Request from subagent: {agentType}",
-  "chat.cuaPermission.openAccessibility": "Open Accessibility Settings",
-  "chat.cuaPermission.openScreenRecording": "Open Screen Recording",
-  "chat.cuaPermission.opening": "Opening...",
-  "chat.cuaPermission.openFailed": "Could not open CUA permissions: {error}",
 
   // Elicitation
   "chat.elicitation.title": "Input required",

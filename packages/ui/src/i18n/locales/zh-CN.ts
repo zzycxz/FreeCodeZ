@@ -151,7 +151,6 @@ const zhCN: Record<string, string> = {
   "offPeak.nav.listUnavailable": "闲时任务列表加载失败，请刷新后重试",
   "offPeak.boundSession.hint": "任务将在该会话中执行；执行期间停止会话会取消任务。",
   "offPeak.chatCreated.boundHint": "将在本会话中运行",
-  "settings.computerUse.disabledToast": "电脑控制已关闭，已有对话需重启 FreeCodeZ 后生效。",
   "settings.modelProvider.connectionUnavailableNotice": "当前套餐已不可用。",
   "settings.modelProvider.switchConnection": "切换至「{connection}」",
   "settings.modelProvider.connectionSuggestionStale": "套餐状态已变化，请在模型设置中重新选择。",
@@ -723,10 +722,6 @@ const zhCN: Record<string, string> = {
   "git.worktree.create": "创建",
   "git.worktree.created": "已创建 worktree：{path}",
   "git.worktree.failed": "创建失败",
-  "settings.cuaControl.controlLabel": "启用电脑控制（观测）",
-  "settings.cuaControl.description": "让 AI 读取窗口与控件树。需在系统设置中授予「屏幕录制 / 辅助功能」权限；更改对新窗口的会话生效。",
-  "settings.cuaControl.actionsLabel": "允许操作（点击 / 输入）",
-  "settings.cuaControl.actionsDescription": "开启后 AI 可移动鼠标、点击与输入；每次操作仍会弹窗确认。",
   "settings.appshot.title": "一键喂屏（Appshot）",
   "settings.appshot.description": "双击修饰键截取前台窗口并喂入对话（截屏需在系统设置中授予屏幕录制权限）。",
   "settings.appshot.hotkey.off": "关闭",
@@ -4099,10 +4094,7 @@ const zhCN: Record<string, string> = {
   "chat.toolbar.mode.label": "切换模式",
   // CUA 输入框常驻入口按钮
   "chat.toolbar.computerUse.label": "电脑操作",
-  "chat.toolbar.computerUse.tooltip.idle": "电脑操作空闲——首次使用时自动启动",
-  "chat.toolbar.computerUse.tooltip.starting": "正在启用电脑操作插件…",
   "chat.toolbar.computerUse.tooltip.ready": "电脑操作已就绪 · 直接描述你想让 FreeCodeZ 做的事",
-  "chat.toolbar.computerUse.tooltip.permissionRequired": "缺少 macOS 权限，点击完成授权",
   "chat.toolbar.computerUse.tooltip.error":
     "电脑操作启用失败 · 重启 FreeCodeZ 应用后重试，或让 FreeCodeZ 排查日志",
   "chat.toolbar.computerUse.tooltip.sessionBusy":
@@ -5160,10 +5152,6 @@ const zhCN: Record<string, string> = {
   "chat.permission.workflow.save.args.default": "默认值",
   "chat.interactionOrigin.subagent": "子智能体",
   "chat.interactionOrigin.subagent.title": "来自子智能体：{agentType}",
-  "chat.cuaPermission.openAccessibility": "打开辅助功能设置",
-  "chat.cuaPermission.openScreenRecording": "打开屏幕录制设置",
-  "chat.cuaPermission.opening": "正在打开...",
-  "chat.cuaPermission.openFailed": "无法打开 CUA 权限引导：{error}",
 
   // 用户问答
   "chat.elicitation.title": "需要确认",
