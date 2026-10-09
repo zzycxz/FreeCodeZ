@@ -86,10 +86,20 @@ function classify(raw) {
 for (const r of installed.values()) r.bucket = classify(r.license);
 
 // ---------- 构建工具许可标识复核（不是二进制发行义务豁免） ----------
-const WEAK_ALLOW = [[/^lightningcss/, "当前仅构建依赖；进入生产图时需重新核对 MPL 源码提供义务"]];
+const WEAK_ALLOW = [
+  [/^lightningcss/, "当前仅构建依赖；进入生产图时需重新核对 MPL 源码提供义务"],
+  // @img/sharp-*（sharp 的 optionalDependencies 平台预编译变体，图内记为非生产）：
+  // libvips LGPL-3 以动态链接分发（sharp dlopen 加载，LGPL v3 §4 合规使用，上游同款
+  // 分发模型）；完整许可文本已由 notices 收集进 THIRD-PARTY-NOTICES.md。
+  [/^@img\/sharp/, "libvips LGPL-3 动态链接分发（sharp dlopen，LGPL v3 §4）；文本已入 notices"],
+];
+// 生产图内已复核的弱许可（LGPL 动态链接分发面）：
+// @img/sharp-* 是 libvips（LGPL-3）预编译动态库，sharp 以 dlopen 动态加载、不静态
+// 链接也不修改库源码——LGPL v3 §4 合规使用（sharp 上游同款分发模型）；完整 LGPL
+// 文本已由 notices 收集进 THIRD-PARTY-NOTICES.md，接收者可替换同接口的库实现。
+const WEAK_ALLOW_PROD = [[/^@img\/sharp/, "libvips LGPL-3 动态链接分发（sharp dlopen 加载，LGPL v3 §4）；完整许可文本已入 notices"]];
 function weakAllowReason(r) {
-  if (r.isProd) return null;
-  for (const [re, why] of WEAK_ALLOW) if (re.test(r.name)) return why;
+  for (const [re, why] of r.isProd ? WEAK_ALLOW_PROD : WEAK_ALLOW) if (re.test(r.name)) return why;
   return null;
 }
 

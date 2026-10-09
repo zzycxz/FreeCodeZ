@@ -443,12 +443,6 @@
     }
   },
   {
-    "package": "@ai-sdk/provider-utils@4.0.23",
-    "file": "third-party/upstream/b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529.txt",
-    "sha256": "b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529",
-    "source": "https://raw.githubusercontent.com/vercel/ai/@ai-sdk/provider-utils@4.0.23/LICENSE"
-  },
-  {
     "package": "exif-parser@0.1.12",
     "license": "MIT",
     "evidence": "The package does not declare a license field; its LICENSE.md contains the MIT grant and copyright notice."
@@ -457,5 +451,27 @@
     "package": "khroma@2.1.0",
     "license": "MIT",
     "evidence": "The package does not declare a license field; its license contains the MIT grant and copyright notice."
+  },
+  {
+    "package": "agent-base@6.0.2",
+    "license": "MIT",
+    "acceptedMissingNotice": {
+      "evidenceKind": "publisher-license-identifier-and-standard-terms",
+      "reviewEvidence": {
+        "checkedOn": "2026-10-09",
+        "result": "Version-pinned npm archive (agent-base-6.0.2.tgz) ships no standalone LICENSE; publisher license identifier is MIT and the README license section carries the same terms. The same-holder v7.1.4 archive in this lockfile ships the complete MIT text ('Copyright (c) 2013 Nathan Rajlich'). Upstream complete LICENSE fetch was blocked from this network (raw.githubusercontent unreachable); re-pin with a fetched file when network allows."
+      }
+    }
+  },
+  {
+    "package": "https-proxy-agent@5.0.1",
+    "license": "MIT",
+    "acceptedMissingNotice": {
+      "evidenceKind": "publisher-license-identifier-and-standard-terms",
+      "reviewEvidence": {
+        "checkedOn": "2026-10-09",
+        "result": "Version-pinned npm archive (https-proxy-agent-5.0.1.tgz) ships no standalone LICENSE; publisher license identifier is MIT and the README license section carries the same terms. The same-holder v9.0.0 archive in this lockfile ships the complete MIT text ('Copyright (c) 2013 Nathan Rajlich'). Upstream complete LICENSE fetch was blocked from this network; re-pin with a fetched file when network allows."
+      }
+    }
   }
 ]

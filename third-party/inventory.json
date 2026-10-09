@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "inputHashEncoding": "UTF-8 with CRLF normalized to LF; notice and source snapshot hashes remain byte-exact",
   "scope": "Production dependency union across current workspace projects, copied source/assets and native tools; not a per-installer SBOM or a certification of all licensing obligations.",
-  "noticesSha256": "9393f35d677d95d273dd7496fcd61045a9692722d3b660c233bd1f03c00d604d",
+  "noticesSha256": "924d1a6309cca02b6fb4fdb9f1d9add1fb5234a7446c18892d3ffe10cfee191f",
   "inputs": {
     ".agents/skills/agent-browser/references/authentication.md": "e2c3b0f4a1dc1368dee821f03c000d818a48421d09f3872525dddffe73f2112b",
     ".agents/skills/agent-browser/references/commands.md": "17522fc56d742663f47231ff06c4811abc87e12c7f78e11f94d253ddd540a909",
@@ -224,57 +224,14 @@
     ".agents/skills/react-best-practices/rules/server-parallel-nested-fetching.md": "4d9c44e579e1286013acf5cb5f65b04297d2b68909f44f8163804656514a78ff",
     ".agents/skills/react-best-practices/rules/server-serialization.md": "4d025c42043c56e6355196a2e885d168cdb15248d0797146c9db838a57b34946",
     ".agents/skills/react-best-practices/SKILL.md": "b7d246acb440bee224ab33614979a5b8debe5fdb13d0304967aa19358eb69d9f",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/libvips-42.dll": "9645c466adf9cb0a4f0f65439af0826bdff1a96988c35b16d7f94de9d7aa4d86",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/libvips-cpp-8.17.3.dll": "1c40d30678918255443fc9765d699b9330ad99924f6d58074ccfa080e3c3e85e",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/sharp-win32-x64.node": "872dfade8ec6f3247576fca443ee36968c7b72a89c4ac8e925f08fdd62323a34",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/LICENSE": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/package.json": "f94caf1239a3fa72c5da4a3a81f4410d517550159da15ad8eca1543324a0c3da",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/versions.json": "e823074bfa33ed7b1861b797dd3c60d7ef8c34cd2faa9a7d22ec32dd6d6ad8ad",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/detect-libc.js": "5de6a1c1abec8bba5ea1261cf819d83a73c92ebe72b879ae48c59ca12320a462",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/elf.js": "0e8820f00ee11d179d94894d4f97a6e87c34ab59e5dd4d3a571dfabcecf043af",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/filesystem.js": "5c98fb66b559d0b4fa82c7a3e39d9ab6840f022c4c73e6b1a73ac6d16ec13fd7",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/process.js": "f37dd0ead9f70b50c6f5529c600e1cdf076e3c3bc8e6b4a0a9820a8d65244628",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/LICENSE": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/package.json": "ee88e5b954fdf3a8480b1d01ef767d68d8ca2c6da269f58c5cf1c5550e9aa2a7",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/install/build.js": "37f7c9591d75dbc5fe734c5a196a46c355b3d7de5134260ba011efed8433a718",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/install/check.js": "31fd360ede9ff3e80d643faff6c4570d0b2b5c621dc421b6c4086dfe86ce981f",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/channel.js": "4a699621c111427f9f6b3b767764a292f6a358616de2866e0078475830420f42",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/colour.js": "024d2e9c04d50b492e91ae781da539c837fcaf40a585508c043356fdd9e69297",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/composite.js": "73f04ab765a11bfc72771dbd0a6324e8e34ea354d16108cc1277bba4e80dd523",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/constructor.js": "b38f3e7ceecc305a8f81f278bf9219cba966993b8c2d7cebafdb8e8d5005760c",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/index.js": "5e30578a16290fa0855c32fe3d544ce4f26c147de6bad69cffaf7bc416a2919a",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/input.js": "d88bdf5d807ef57ce8aa5d9be29bc7b9199974eac385bf559f19d5fc06bd632a",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/is.js": "7ecb71679b5b58e7ddf7e14fa697ff6a31bbe9ef107745170095031519e93463",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/libvips.js": "ae8cbc8008bf88f5100ca56729ed43d45cd88316e030dc2eed62e142f657cd79",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/operation.js": "01019d62cfb83c5f6192a65a4a97635214e5dc61da07c51be59b8216ba907a7a",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/output.js": "71cec9ac95f3db764ee4d2e26eec1deb16da63c47fdd352f6a41af4dbb0f1831",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/resize.js": "d85081a35bb1195ff6f057d2db4343adfe3241abccc7e277d13673a116fea1ad",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/sharp.js": "59e9436f1c62a58b8781acb3803e55114bada9984cc7c39b9291769155811cd3",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/utility.js": "ada1854f397f54ee09286094a4f4cd9a4d4af9f4ddbaae3b4f477edbd8c1fd14",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/LICENSE": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/package.json": "e6be69319929151be3aa240bf1485f25a3477cb6d2286f92510b9fceb3cbef26",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/binding.gyp": "dc753e7ef9a8b393e14ed6a6fa17baae89e6edb4f39740b1cc1e9d06cbd20478",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/common.cc": "9102e55ed0c5d3027fad3df16e751b5424265d32201568395958862ab3a3f6e1",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/common.h": "44940aefc7ec601e316dad5c3882041c56d6070f84cc2b2871f6236b75df5cb4",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/metadata.cc": "04366c98d90cf3415a50cb5f47a07c3a7f25ace2a67d603e72035807f99af33f",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/metadata.h": "bd50ae9c3e55d9ed5f8b3c4e09d9a79f496ef665b6c993ff1b2c7edecc32d03a",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/operations.cc": "db97d0ca7ec042279cf5b4331fdc19466c20318ca4bc52fda4e3fdc13781a8c2",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/operations.h": "80a4f350793f657c10769e2b4e82d3b103f5d4984dc27d10e592e14b8cc1b34b",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/pipeline.cc": "8fa9d1f70f46ea0f27f30203dfa1ebe8df8a5679b9d93a8f8dadf72dd1fa6e59",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/pipeline.h": "89f81e2d0308ed696a0f39099d42b7867b8ffb5fcd4969c7dbfb3e6778c0de23",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/sharp.cc": "9f407b50bb2d02e5eb711b769f05d3e6659028430e055c4271e5ab1593f5a257",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/stats.cc": "084df95f2cc863e522c35e5da31976e1dc4d370d40ab6d2a0b398763208af4ea",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/stats.h": "db854f0c3c4a0db1751021ed676413c6d5ca00becc08bdc13258b29047450b8c",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/utilities.cc": "7141d5bb1e7b1bca0fdd7d14c30b27b2a4b3f177441b04106e460e013cd061ed",
-    "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/utilities.h": "0b126ab63cf1aedf8e71e6cb8179899d3ef02c46419100e847b2ca4284b8901b",
     "apps/zcode-cli/package.json": "6c48017b05d8a7215c5bf7dea12f50edd1487bf5b8b22e11c21703d32e8f7742",
-    "apps/zcode-cli/packages/adapters/package.json": "da99aebdd4d463b7705a2a0febc12adb9ad7e792f74f4ba7c4e258b8bb6a13dc",
+    "apps/zcode-cli/packages/adapters/package.json": "50a060d7a2259814c1cc20267795a178d7ae9339e8f631bc926048a0a851f123",
     "apps/zcode-cli/packages/android-emulator-plugin/package.json": "ff715b80126b5d372cc6fdeeec42e2ba160493d4b05ef1c403d0e60fccbb9ebb",
     "apps/zcode-cli/packages/bootstrap/package.json": "0e175ac8b64cd5b478c15e6bf71fb3940c17ddb7f95fb7cbcdd426bb61ce5bef",
     "apps/zcode-cli/packages/browser-use-plugin/package.json": "b7ecf0a222844419da9a27c66f6bcc0e17bdbb2db187183133c4fb0932b3d59a",
     "apps/zcode-cli/packages/cli/package.json": "81a0c3dbdff4fb6598ac5b7336578de102c54eef914e06f0f3a65bc1b6e734b9",
     "apps/zcode-cli/packages/contracts/package.json": "7443f402f58df867ad5f776b2e94823d2b3bb235b16d0155f7a939ba181aa3ac",
-    "apps/zcode-cli/packages/core/package.json": "b3b3134d5ca6e12c9f9786850d7d0816636c40480faf60dfb1e44731cc6552e1",
+    "apps/zcode-cli/packages/core/package.json": "531cbf5f28c5d616657acb7475ca089b61ef2d63db1bf7979b47640f0c7bbcb3",
     "apps/zcode-cli/packages/core/src/tool/handlers/generated/bash-command-registry.ts": "60fa5acd9f5c357f4e51b1d1e944ee39da92680e4bc5e98dd708f1457fcf612b",
     "apps/zcode-cli/packages/debug/package.json": "16e6a402d995d3a56ed6e97665cd81f0dd22f03280350d5e0a70c14a2cc4b2ca",
     "apps/zcode-cli/packages/documents-plugin/package.json": "49d8a05b60c38c054a5050d7bb48b2d9c051139412c7feba5074a869a0e9a8b2",
@@ -282,7 +239,7 @@
     "apps/zcode-cli/packages/dynamic-workflow/package.json": "aac5891463ddeb419ff6f73fc95b7c407964b06f8aeff66b6a9ba4d999164f99",
     "apps/zcode-cli/packages/i18n/package.json": "025e4620d80f39cac3df06249866fcaed531615b6b8a4c4a727c4557066f7b1b",
     "apps/zcode-cli/packages/ios-simulator-plugin/package.json": "982a07175299246714da534a321a9e4ebde62c4561a2bd8def7a84395b987146",
-    "apps/zcode-cli/packages/node-repl-host/package.json": "1f593b58799ead7927275a71bcda496ad4861c491ae639b721830594171fa96b",
+    "apps/zcode-cli/packages/node-repl-host/package.json": "e628a30c970c05e4f9f3ed22851eebd767e40189ccc01c6de80162dfc3ae6210",
     "apps/zcode-cli/packages/pdf-plugin/package.json": "e24650553f14634109fd5ed849901ae199623c95368daaf40f301eb0851be84c",
     "apps/zcode-cli/packages/plugin-creator-plugin/package.json": "f1e80cecd4989b4a1f01f600f108a1b2701d1503e299fab1ccaaf7dac74e1f98",
     "apps/zcode-cli/packages/presentations-plugin/package.json": "c278f98233a8c3ffa36fe8ffbdd5e25c031b2a476ace08853575c211f6936c99",
@@ -296,9 +253,10 @@
     "apps/zcode-cli/packages/zcode-guide-plugin/package.json": "b6b6c4a0097496f5bf8848ad4fecea1c2e9f8a94d4a3b962217a74a6253deacf",
     "apps/zcode-cli/tools/prompt-trajectory/package.json": "7f161fc87f36691f01eb8c2034bd89cf28107da36db02bc20e76f059edd36af6",
     "apps/zcode-cli/tools/typescript/package.json": "23d7e50d2089d205ce3022c5bafbb6b3e31d000e41ac678a5934e0b72627cf3a",
-    "package.json": "2d9d6daaacb28f970fb661176c4df22d0f86b47f4b7a1ba31e91ce978d58ea4f",
+    "package.json": "5e0d3a6b822e3e52640fb938a4ac89c1f6f0949dac306442d741c2befb6920ae",
     "packages/client/package.json": "e76f441549130dc3e5e68072a36b6cb9044e19a6625f1e813f19a4def2b1b689",
-    "packages/desktop/package.json": "65efdf416f0219a06b3ccf297299736cf70ca9c6149188e59d685241a05d59f8",
+    "packages/computer-engine/package.json": "fdd5c33a3026f0cd6c2a669dca505166a4735483842c5e4f610cd1a9f472e0ed",
+    "packages/desktop/package.json": "951fb354420fa000012417d62c0595224a70336e4e2828575ad7917cd8367d3f",
     "packages/desktop/src/renderer/public/material-icons/3d.svg": "9527b849f0fba57ca7640e2717b3a19cb5f5e046712cbbd8b75d73af338c68fb",
     "packages/desktop/src/renderer/public/material-icons/abap.svg": "1335bd7eb9a0ed49deb622330d680c2e97731726a7a5eee8e4f46dc1e5db4de4",
     "packages/desktop/src/renderer/public/material-icons/abc.svg": "d1a68020e8f020ef29dca5f94dc8613b7ae8fb5b212d8b1cc23b0f975ac7acda",
@@ -1468,13 +1426,13 @@
     "packages/rpc/src/persistent-protocol.ts": "80609595b89188272d743e557502c6cad3858f828acae31c2ef64206bb3c8978",
     "packages/rpc/src/protocol.ts": "aafc0c098c75fcba4519fad2ecbee7e025d5d8a27c15c87e5ccb4ca6ce554670",
     "packages/rpc/src/proxy-channel.ts": "ec5b43e6a3a622a88a8aaa6af9cb37dbfe517932ee7f4a337019ec138bb2d513",
-    "packages/rpc/src/remote.ts": "a11e072d5df7e1c1ce64814a68f72afc081246b364f0da409b5c9d22bc815957",
+    "packages/rpc/src/remote.ts": "549ec0dd0ed88d7492358f5c4d9f69cda002a1bc132e47d0d937f192f5f5b277",
     "packages/rpc/src/serialization.ts": "e949418e1cd17cc863c147fc8d1ff15237e1b5f0cb8e3344fd2a9ccfae9d54e7",
-    "packages/server/package.json": "0a6119239c88af79bc766e3c023eb4437105a0d35b03ecca1137d1e688e60a90",
-    "packages/services/package.json": "a2acc114239fd4d716b07ebe2a0f709ba13985000b1969e6b3275adc3e8263c8",
-    "packages/shared/package.json": "ae3e80d0b906d3f73b4b66559fb441c282c03149899d6ca02307ddcebe4c3e81",
+    "packages/server/package.json": "a1d9911fa0473374b7d62b2852cdbeeb79191c9de36ee1f61e75124847fac7cf",
+    "packages/services/package.json": "3c34dc39d45c540ab6a7ac95ab220a829a81e8b01db27ca65c5bb195f8ced6e7",
+    "packages/shared/package.json": "177ec7bd3ee65707365fb512388fd7d9131148fc77e529d322db24d434d1cd63",
     "packages/shared/src/zcode-protocol-v4/wire-codec.ts": "ac2494a3acc795c809c94ee9393f50271a9c2a0fd33813459e5ab93842ceef75",
-    "packages/ui/package.json": "220e916077604008bb6ffea19d6bdf7148c4b09472bea251248a230ba3c69bf5",
+    "packages/ui/package.json": "46fac1dda5b47993d7445adde5c5bcbb41c3d2fbf14f14af48c8067d14fcf885",
     "packages/ui/src/components/ai-elements/agent.tsx": "830e7ea9e927de1524851337f1d35bda0e5690e3e4fa307fff854b60006b16c7",
     "packages/ui/src/components/ai-elements/artifact.tsx": "7d73f08864d6280ac86c77d32e56d0e702f8aa6208e5910820139d0fb08ce64c",
     "packages/ui/src/components/ai-elements/attachments.tsx": "7a847ce6c8ac9dc630481a82dd20a5e9e00949bf710a41fea1d32a18123011d8",
@@ -1536,7 +1494,7 @@
     "packages/ui/src/components/ui/command.tsx": "7c754bc80704163ce505d08d961a5a4b3e57107e7d53ea319483a896d448cbdb",
     "packages/ui/src/components/ui/context-menu.tsx": "3820461fd68ca7a345fc919ab356bdefbbead23abb3ac0f4e8d46898f7522a6f",
     "packages/ui/src/components/ui/dialog.tsx": "53dc10761bd894a5e86278d9354aac47920c81b4aab8b414b840af095f7c0b31",
-    "packages/ui/src/components/ui/diff-viewer.tsx": "f02208b316e6dc4043ed1794455422bc74cdd521285fcac5a2c0d589c2eb9af2",
+    "packages/ui/src/components/ui/diff-viewer.tsx": "e1df37160c18c75c394532759cb64d6baf380f9f4870d983f74da48b80062158",
     "packages/ui/src/components/ui/dropdown-menu.tsx": "34c5b79489756aa3467ec26d2b44587f3d47eafcb2cb16402686aac15e4debdb",
     "packages/ui/src/components/ui/flip-metric-value.tsx": "ce2d6cf063003e1023191b0fa4e3eb9b365e04a14eb0d498b897326600bf4071",
     "packages/ui/src/components/ui/GlmMonochromeIcon.tsx": "f1691224d23be4359e1a79bcd81b9dd5ee19c0177b3a4bf750332c620b98ae5c",
@@ -1566,9 +1524,9 @@
     "packages/ui/src/components/ui/tooltip.tsx": "301dbf3a6f8b1bc496f9bdc6fbc5fe6202ed373182897f39cd1ecd19b00fdfbe",
     "packages/ui/src/components/ui/usePdfZoomOverlay.ts": "c8c91b003ce2fded32c7a2369dc6eac43aa4b9dc9c830a0f5ceccb21d366b610",
     "packages/ui/src/components/ui/ZCodeAboutLogo.tsx": "1e5b7c2e8a9dc98a3c597cbe34122521319eaeb89825e4c41641e77715d1407a",
-    "packages/ui/src/lib/builtinSkillI18n.ts": "9640e8db6813244029e85b7569845cf2c098bd9b92dcb1d98befb3211280f7e4",
+    "packages/ui/src/lib/builtinSkillI18n.ts": "0a112d619a1fb5c3f5f431b9c3fd09957bad5da1822a49d91dfafa12f9350f2a",
     "packages/ui/src/styles.css": "22d5b58e44cdebdbe7154c418ee05fef6dde689e384f0dd590d4057739487be7",
-    "packages/web/package.json": "0810e762bf1d6641d5f73ab642b81953e183e53fd963a1d405ffc65b206e5ce6",
+    "packages/web/package.json": "ff211d562d2301281c02254e7d2b0f4893012dae4392cdef620d34a443440b70",
     "packages/web/public/material-icons/3d.svg": "9527b849f0fba57ca7640e2717b3a19cb5f5e046712cbbd8b75d73af338c68fb",
     "packages/web/public/material-icons/abap.svg": "1335bd7eb9a0ed49deb622330d680c2e97731726a7a5eee8e4f46dc1e5db4de4",
     "packages/web/public/material-icons/abc.svg": "d1a68020e8f020ef29dca5f94dc8613b7ae8fb5b212d8b1cc23b0f975ac7acda",
@@ -2715,16 +2673,13 @@
     "packages/web/public/material-icons/zeabur.svg": "8bb7c84934202e9b24842ddb1ca69d316b9d69f1a4f5ebc9bbcce78eb2cea1a7",
     "packages/web/public/material-icons/zig.svg": "37be0ce02cf471b18d86150b3c38e80caa7c16c49a15078e7db6f1f41788d101",
     "packages/web/public/material-icons/zip.svg": "dad79a45f756542d37abd422502ecfbea15720b92ea1c9d80ef0439ab6b9448a",
-    "packages/zcode-cua/package.json": "87f0fe859ffd7539d719bfd6ac4ae2884960ffa80ee29a7a562b52bc805f67c8",
     "packages/zcode-server-cli/package.json": "6e294c4409cb90863d85b2e3d60f92766b156ccee577ebfeaffcb85e94194004",
-    "patches/@ai-sdk__anthropic@3.0.81.patch": "d3a7c381eba7f5157f765a0528003af17cf84544911dfb7412c7800168e01c18",
-    "patches/@ai-sdk__openai-compatible@2.0.60.patch": "9632fe9d821b3dc20939ae509cc35b968d90d018bbd1d812390718898182a38b",
-    "pnpm-lock.yaml": "c640f3758f398eb3a5cc4d0786318e6529617b9d09009fcf6d5e1156defe3aa8",
+    "pnpm-lock.yaml": "96e5417c930745f068d50373b6534a87d7dca9f9a19819db7d08865460a00b89",
     "pnpm-workspace.yaml": "f18a18233e82cda1dc40be61bf2ad1bc99de25de63ad0be64bc652761a638372",
     "scripts/license-texts/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
     "scripts/native-search-tools-config.mjs": "281d368464f61363fa2d8ab74f416962fe730dd0a0572db5564475f876bb65aa",
     "scripts/remote-native-search-tools-config.mjs": "472322a66f84c7452f96aa9e16e9c4e0600f7c2588a03dc6bc869229161b1cb2",
-    "third-party/copied-components.json": "42f5bb2fae700001d76f44f3983d8c0005ad296684922862804e5059acbef45a",
+    "third-party/copied-components.json": "7b1ce705ffa67aa81f0417302872e25a7cb67ee13b2172ef7e0f91e22dec3622",
     "third-party/embedded-components.json": "9586ccca15897f56d4ca1d703dffe9e02880fedd766c1dff93f7ac1f52ea891a",
     "third-party/native-search/licenses/00373c9bf56a894b2ed67586596bc1e8b0630cabbaf1ab46c75fc754b6bcd1ce.txt": "00373c9bf56a894b2ed67586596bc1e8b0630cabbaf1ab46c75fc754b6bcd1ce",
     "third-party/native-search/licenses/01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f.txt": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
@@ -2841,7 +2796,7 @@
     "third-party/native-search/licenses/f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af.txt": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af",
     "third-party/native-search/licenses/f9c375a1be4a41f7b70301dd83c91cb89e41567478859b77eef375a52d782505.txt": "f9c375a1be4a41f7b70301dd83c91cb89e41567478859b77eef375a52d782505",
     "third-party/native-search/sources.json": "5a7b2d7abf5bd5f310712710cbbd0ca70dc9491e723cbf070b5c696fe155a962",
-    "third-party/npm-overrides.json": "6a882c6540d9babd0aa74cfa02100abc641382c80c24802694952ab05efa4aaf",
+    "third-party/npm-overrides.json": "a54c489ea0fb96911bcf5a96d7990f555ec52852694f13317476fd2fa63c784b",
     "third-party/runtime/node-22.16.0-LICENSE.txt": "1ae62e2015784ba438db7b04ebd33f3c4ff3efdb824c111c4ececd99945fd52d",
     "third-party/runtime/node-24.14.0-LICENSE.txt": "4573185d56580da2b890ba34a85a409257640f1c5632eade4300137266194d18",
     "third-party/runtime/sources.json": "b27bc8d81aeb71108e523602364ffbb6a1b19c2d5d47733fd43094b769006741",
@@ -2881,7 +2836,6 @@
     "third-party/upstream/5f787c1dee3c56547f09ccc2906ab5f5293c4d8dd6c8654e573216c38e908dbd.txt": "5f787c1dee3c56547f09ccc2906ab5f5293c4d8dd6c8654e573216c38e908dbd",
     "third-party/upstream/66aa9feab8bb39aceebd69f2a357015d57ceab486d3c7a19ff8d3d4110a6d101.txt": "66aa9feab8bb39aceebd69f2a357015d57ceab486d3c7a19ff8d3d4110a6d101",
     "third-party/upstream/6ae13df543a24b3fb18c25182cf4f084132f799ea9225410f7037888401b7469.txt": "6ae13df543a24b3fb18c25182cf4f084132f799ea9225410f7037888401b7469",
-    "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
     "third-party/upstream/75815e3bf6484201a3c3d17a1bbf10f2e8e3237f84df10a2357ea896db2a81d6.txt": "75815e3bf6484201a3c3d17a1bbf10f2e8e3237f84df10a2357ea896db2a81d6",
     "third-party/upstream/8405932022a556380c2d8c272eff154a923feb197233f348ce5f7334fb0a5ede.txt": "8405932022a556380c2d8c272eff154a923feb197233f348ce5f7334fb0a5ede",
     "third-party/upstream/8802fecf9da4367bc23bcf20b21cc143785fc6c92b152f3fa7fbe6ce08d344d6.txt": "8802fecf9da4367bc23bcf20b21cc143785fc6c92b152f3fa7fbe6ce08d344d6",
@@ -2898,7 +2852,6 @@
     "third-party/upstream/a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2.txt": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
     "third-party/upstream/af0d7d2cef91fc243cf4ad98570b03d1f26f5e0227cad0f5f4a7376e2feb3160.txt": "af0d7d2cef91fc243cf4ad98570b03d1f26f5e0227cad0f5f4a7376e2feb3160",
     "third-party/upstream/b1688598c3e32605b3973902a546225e0159349c05a0f74db67f76e08e116e65.txt": "b1688598c3e32605b3973902a546225e0159349c05a0f74db67f76e08e116e65",
-    "third-party/upstream/b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1.txt": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
     "third-party/upstream/b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529.txt": "b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529",
     "third-party/upstream/ba8f810f2455c2f08e2d56bb49b72f37fcf68f1f4fade38977cfd7372050ad64.txt": "ba8f810f2455c2f08e2d56bb49b72f37fcf68f1f4fade38977cfd7372050ad64",
     "third-party/upstream/bdb0a645ea18c60507d0368379b1ac5474b92255fcc2d115e07486a7672ba526.txt": "bdb0a645ea18c60507d0368379b1ac5474b92255fcc2d115e07486a7672ba526",
@@ -2946,18 +2899,6 @@
       ]
     },
     {
-      "name": "@ai-sdk/gateway",
-      "version": "3.0.96",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/vercel/ai.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529"
-        }
-      ]
-    },
-    {
       "name": "@ai-sdk/openai-compatible",
       "version": "2.0.60",
       "license": "Apache-2.0",
@@ -2977,22 +2918,6 @@
       "notices": [
         {
           "member": "LICENSE",
-          "sha256": "b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529"
-        }
-      ]
-    },
-    {
-      "name": "@ai-sdk/provider-utils",
-      "version": "4.0.23",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/vercel/ai.git",
-      "notices": [
-        {
-          "member": "src/to-json-schema/zod3-to-json-schema/LICENSE",
-          "sha256": "6dd0d97acd4d13f4608a0f530f0487e0ff20812888bd1803aecfaaa17ff0f849"
-        },
-        {
-          "member": "https://raw.githubusercontent.com/vercel/ai/@ai-sdk/provider-utils@4.0.23/LICENSE",
           "sha256": "b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529"
         }
       ]
@@ -3046,18 +2971,6 @@
       "version": "3.0.14",
       "license": "Apache-2.0",
       "repository": "https://github.com/vercel/ai",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529"
-        }
-      ]
-    },
-    {
-      "name": "@ai-sdk/provider",
-      "version": "3.0.8",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/vercel/ai.git",
       "notices": [
         {
           "member": "LICENSE",
@@ -4390,6 +4303,22 @@
       ]
     },
     {
+      "name": "@larksuiteoapi/node-sdk",
+      "version": "1.74.0",
+      "license": "MIT",
+      "repository": "https://github.com/larksuite/node-sdk.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "f9bfd5e309b1523a2dd3937b44f516e6018605eb05b35336485b0a34cbd9f373"
+        },
+        {
+          "member": "README.md (license section)",
+          "sha256": "d0de7064760700e47a0fdedd12ae4e027146e16e9cec0233505fe7c4ed5b3344"
+        }
+      ]
+    },
+    {
       "name": "@lexical/clipboard",
       "version": "0.42.0",
       "license": "MIT",
@@ -5165,6 +5094,114 @@
         {
           "member": "README.md (license section)",
           "sha256": "1a70b7436b85394d20ba1a0b5574002fc33b4619b9d1b62388ef74d79f9cf0de"
+        }
+      ]
+    },
+    {
+      "name": "@protobufjs/aspromise",
+      "version": "1.1.2",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dcodeIO/protobuf.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+        }
+      ]
+    },
+    {
+      "name": "@protobufjs/base64",
+      "version": "1.1.2",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dcodeIO/protobuf.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+        }
+      ]
+    },
+    {
+      "name": "@protobufjs/codegen",
+      "version": "2.0.5",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dcodeIO/protobuf.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+        }
+      ]
+    },
+    {
+      "name": "@protobufjs/eventemitter",
+      "version": "1.1.1",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dcodeIO/protobuf.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+        }
+      ]
+    },
+    {
+      "name": "@protobufjs/fetch",
+      "version": "1.1.1",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dcodeIO/protobuf.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+        }
+      ]
+    },
+    {
+      "name": "@protobufjs/float",
+      "version": "1.0.2",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dcodeIO/protobuf.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+        }
+      ]
+    },
+    {
+      "name": "@protobufjs/path",
+      "version": "1.1.2",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dcodeIO/protobuf.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+        }
+      ]
+    },
+    {
+      "name": "@protobufjs/pool",
+      "version": "1.1.0",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dcodeIO/protobuf.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
+        }
+      ]
+    },
+    {
+      "name": "@protobufjs/utf8",
+      "version": "1.1.2",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/protobufjs/protobuf.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
         }
       ]
     },
@@ -5978,18 +6015,6 @@
     },
     {
       "name": "@shikijs/core",
-      "version": "4.0.2",
-      "license": "MIT",
-      "repository": "git+https://github.com/shikijs/shiki.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "7a9d8d01038aeacf9e5bcdabbddf2a7815200dce9fc1118468cc553e00ae3eee"
-        }
-      ]
-    },
-    {
-      "name": "@shikijs/core",
       "version": "4.1.0",
       "license": "MIT",
       "repository": "git+https://github.com/shikijs/shiki.git",
@@ -6003,22 +6028,6 @@
     {
       "name": "@shikijs/engine-javascript",
       "version": "3.23.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/shikijs/shiki.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "7a9d8d01038aeacf9e5bcdabbddf2a7815200dce9fc1118468cc553e00ae3eee"
-        },
-        {
-          "member": "README.md (license section)",
-          "sha256": "daf005969aac8cb4283b3777361f0244f4cce898b9a983a60b7f0d9e96f559bf"
-        }
-      ]
-    },
-    {
-      "name": "@shikijs/engine-javascript",
-      "version": "4.0.2",
       "license": "MIT",
       "repository": "git+https://github.com/shikijs/shiki.git",
       "notices": [
@@ -6051,22 +6060,6 @@
     {
       "name": "@shikijs/engine-oniguruma",
       "version": "3.23.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/shikijs/shiki.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "7a9d8d01038aeacf9e5bcdabbddf2a7815200dce9fc1118468cc553e00ae3eee"
-        },
-        {
-          "member": "README.md (license section)",
-          "sha256": "daf005969aac8cb4283b3777361f0244f4cce898b9a983a60b7f0d9e96f559bf"
-        }
-      ]
-    },
-    {
-      "name": "@shikijs/engine-oniguruma",
-      "version": "4.0.2",
       "license": "MIT",
       "repository": "git+https://github.com/shikijs/shiki.git",
       "notices": [
@@ -6099,22 +6092,6 @@
     {
       "name": "@shikijs/langs",
       "version": "3.23.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/shikijs/shiki.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "7a9d8d01038aeacf9e5bcdabbddf2a7815200dce9fc1118468cc553e00ae3eee"
-        },
-        {
-          "member": "README.md (license section)",
-          "sha256": "daf005969aac8cb4283b3777361f0244f4cce898b9a983a60b7f0d9e96f559bf"
-        }
-      ]
-    },
-    {
-      "name": "@shikijs/langs",
-      "version": "4.0.2",
       "license": "MIT",
       "repository": "git+https://github.com/shikijs/shiki.git",
       "notices": [
@@ -6146,18 +6123,6 @@
     },
     {
       "name": "@shikijs/primitive",
-      "version": "4.0.2",
-      "license": "MIT",
-      "repository": "git+https://github.com/shikijs/shiki.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "7a9d8d01038aeacf9e5bcdabbddf2a7815200dce9fc1118468cc553e00ae3eee"
-        }
-      ]
-    },
-    {
-      "name": "@shikijs/primitive",
       "version": "4.1.0",
       "license": "MIT",
       "repository": "git+https://github.com/shikijs/shiki.git",
@@ -6171,22 +6136,6 @@
     {
       "name": "@shikijs/themes",
       "version": "3.23.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/shikijs/shiki.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "7a9d8d01038aeacf9e5bcdabbddf2a7815200dce9fc1118468cc553e00ae3eee"
-        },
-        {
-          "member": "README.md (license section)",
-          "sha256": "daf005969aac8cb4283b3777361f0244f4cce898b9a983a60b7f0d9e96f559bf"
-        }
-      ]
-    },
-    {
-      "name": "@shikijs/themes",
-      "version": "4.0.2",
       "license": "MIT",
       "repository": "git+https://github.com/shikijs/shiki.git",
       "notices": [
@@ -6235,22 +6184,6 @@
     {
       "name": "@shikijs/types",
       "version": "3.23.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/shikijs/shiki.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "7a9d8d01038aeacf9e5bcdabbddf2a7815200dce9fc1118468cc553e00ae3eee"
-        },
-        {
-          "member": "README.md (license section)",
-          "sha256": "daf005969aac8cb4283b3777361f0244f4cce898b9a983a60b7f0d9e96f559bf"
-        }
-      ]
-    },
-    {
-      "name": "@shikijs/types",
-      "version": "4.0.2",
       "license": "MIT",
       "repository": "git+https://github.com/shikijs/shiki.git",
       "notices": [
@@ -7182,18 +7115,6 @@
     },
     {
       "name": "@vercel/oidc",
-      "version": "3.1.0",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/vercel/vercel.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "b070d77bfb2c52a1dd6996de0ce5f64c49a0ca55c889b163a963ddf5cb001ee2"
-        }
-      ]
-    },
-    {
-      "name": "@vercel/oidc",
       "version": "3.2.0",
       "license": "Apache-2.0",
       "repository": "git+https://github.com/vercel/vercel.git",
@@ -7318,6 +7239,25 @@
     },
     {
       "name": "agent-base",
+      "version": "6.0.2",
+      "license": "MIT",
+      "repository": "git://github.com/TooTallNate/node-agent-base.git",
+      "acceptedMissingNotice": {
+        "evidenceKind": "publisher-license-identifier-and-standard-terms",
+        "reviewEvidence": {
+          "checkedOn": "2026-10-09",
+          "result": "Version-pinned npm archive (agent-base-6.0.2.tgz) ships no standalone LICENSE; publisher license identifier is MIT and the README license section carries the same terms. The same-holder v7.1.4 archive in this lockfile ships the complete MIT text ('Copyright (c) 2013 Nathan Rajlich'). Upstream complete LICENSE fetch was blocked from this network (raw.githubusercontent unreachable); re-pin with a fetched file when network allows."
+        }
+      },
+      "notices": [
+        {
+          "member": "README.md (license section)",
+          "sha256": "9392da8d1d2ccb224d60025fee4d6223ae0b863469fcd8c6b9461145723cf1c4"
+        }
+      ]
+    },
+    {
+      "name": "agent-base",
       "version": "7.1.4",
       "license": "MIT",
       "repository": "https://github.com/TooTallNate/proxy-agents.git",
@@ -7337,18 +7277,6 @@
         {
           "member": "LICENSE",
           "sha256": "8d8c55319c7729d57be811c747452636688d54f19701ee0752b6b15ad3771d9a"
-        }
-      ]
-    },
-    {
-      "name": "ai",
-      "version": "6.0.159",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/vercel/ai.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "b4f9adb7c568904834d0dd6cc98d16c390d21ca32fc17ae7a267715269bd5529"
         }
       ]
     },
@@ -7601,6 +7529,22 @@
       ]
     },
     {
+      "name": "axios",
+      "version": "1.20.0",
+      "license": "MIT",
+      "repository": "https://github.com/axios/axios.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "82761059eaedacb3356803aea8a170d8298609f91b14fc32ee1bfb40d690183c"
+        },
+        {
+          "member": "README.md (license section)",
+          "sha256": "8473eb9be53be85369a78427af60d82922bf44da8c3a16d6ebe643badd150f31"
+        }
+      ]
+    },
+    {
       "name": "bail",
       "version": "2.0.2",
       "license": "MIT",
@@ -7710,9 +7654,9 @@
     },
     {
       "name": "border-beam",
-      "version": "1.0.1",
+      "version": "1.4.1",
       "license": "MIT",
-      "repository": "git+https://github.com/Jakubantalik/border-beam.git",
+      "repository": "git+https://github.com/Jakubantalik/Libraries.dev.git",
       "notices": [
         {
           "member": "LICENSE",
@@ -10309,6 +10253,22 @@
       ]
     },
     {
+      "name": "form-data",
+      "version": "4.0.6",
+      "license": "MIT",
+      "repository": "git://github.com/form-data/form-data.git",
+      "notices": [
+        {
+          "member": "License",
+          "sha256": "e5b780d4f38d1d3328e3e53186c4e62d3fa149ea6f2bacd5de5ad0c30ac85343"
+        },
+        {
+          "member": "README.md (license section)",
+          "sha256": "8d4313d2ec98dee47b0c630ccfe5ca0b6e7c60e8d74cf460db5bcb271f908c14"
+        }
+      ]
+    },
+    {
       "name": "formdata-polyfill",
       "version": "4.0.10",
       "license": "MIT",
@@ -10643,6 +10603,18 @@
     {
       "name": "hasown",
       "version": "2.0.2",
+      "license": "MIT",
+      "repository": "git+https://github.com/inspect-js/hasOwn.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "bf9b0d665be2a689851eea667ca9f42066ea1d903b38349c51e6a44b2577680a"
+        }
+      ]
+    },
+    {
+      "name": "hasown",
+      "version": "2.0.4",
       "license": "MIT",
       "repository": "git+https://github.com/inspect-js/hasOwn.git",
       "notices": [
@@ -11005,6 +10977,25 @@
         {
           "member": "LICENSE",
           "sha256": "71368fd0f5b4129191e9afcd1e1ef2dc89a9090d3e4d80bbab92dafd032b3bef"
+        }
+      ]
+    },
+    {
+      "name": "https-proxy-agent",
+      "version": "5.0.1",
+      "license": "MIT",
+      "repository": "git://github.com/TooTallNate/node-https-proxy-agent.git",
+      "acceptedMissingNotice": {
+        "evidenceKind": "publisher-license-identifier-and-standard-terms",
+        "reviewEvidence": {
+          "checkedOn": "2026-10-09",
+          "result": "Version-pinned npm archive (https-proxy-agent-5.0.1.tgz) ships no standalone LICENSE; publisher license identifier is MIT and the README license section carries the same terms. The same-holder v9.0.0 archive in this lockfile ships the complete MIT text ('Copyright (c) 2013 Nathan Rajlich'). Upstream complete LICENSE fetch was blocked from this network; re-pin with a fetched file when network allows."
+        }
+      },
+      "notices": [
+        {
+          "member": "README.md (license section)",
+          "sha256": "58f4074efa400c8397add18c6561d0a17e4721e24bfd1b4d1e8ca764a8cb3eca"
         }
       ]
     },
@@ -12097,6 +12088,42 @@
       ]
     },
     {
+      "name": "lodash.identity",
+      "version": "3.0.0",
+      "license": "MIT",
+      "repository": "lodash/lodash",
+      "notices": [
+        {
+          "member": "LICENSE.txt",
+          "sha256": "2b61a34ef17beffb1e555efa8b46110d25398d47f2e88b2cacc46f8bd382c639"
+        }
+      ]
+    },
+    {
+      "name": "lodash.merge",
+      "version": "4.6.2",
+      "license": "MIT",
+      "repository": "lodash/lodash",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "f71e8ed126b46346494aad5486874cd8f0aafe95092ed67d2e3cb6110f939abc"
+        }
+      ]
+    },
+    {
+      "name": "lodash.pickby",
+      "version": "4.6.0",
+      "license": "MIT",
+      "repository": "lodash/lodash",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "ffd8b33b354585f4ce119f19c53728281e48a97b074491eb6bf6d5c5ff305272"
+        }
+      ]
+    },
+    {
       "name": "log-symbols",
       "version": "6.0.0",
       "license": "MIT",
@@ -12105,6 +12132,18 @@
         {
           "member": "license",
           "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        }
+      ]
+    },
+    {
+      "name": "long",
+      "version": "5.3.2",
+      "license": "Apache-2.0",
+      "repository": "https://github.com/dcodeIO/long.js.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
         }
       ]
     },
@@ -14593,6 +14632,22 @@
       ]
     },
     {
+      "name": "protobufjs",
+      "version": "7.6.6",
+      "license": "BSD-3-Clause",
+      "repository": "protobufjs/protobuf.js",
+      "notices": [
+        {
+          "member": "google/LICENSE",
+          "sha256": "4ab87e6e3c0c0b78e47c77d49ec10c048f8a519fb8062e6e3217e3e6e9b0c6e9"
+        },
+        {
+          "member": "LICENSE",
+          "sha256": "49d6a1c9a623784c61c6cb70f773f3457faceb1914a13c8560a9823b7631950c"
+        }
+      ]
+    },
+    {
       "name": "proxy-addr",
       "version": "2.0.7",
       "license": "MIT",
@@ -14921,6 +14976,18 @@
         {
           "member": "README.md (license section)",
           "sha256": "d82df31b416ee5c6b6e32ac3d5e5fac3a4f7940588cdf6f2b91935ed077849b9"
+        }
+      ]
+    },
+    {
+      "name": "react",
+      "version": "19.2.5",
+      "license": "MIT",
+      "repository": "https://github.com/facebook/react.git",
+      "notices": [
+        {
+          "member": "LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
         }
       ]
     },
@@ -15691,22 +15758,6 @@
     {
       "name": "shiki",
       "version": "3.23.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/shikijs/shiki.git",
-      "notices": [
-        {
-          "member": "LICENSE",
-          "sha256": "7a9d8d01038aeacf9e5bcdabbddf2a7815200dce9fc1118468cc553e00ae3eee"
-        },
-        {
-          "member": "README.md (license section)",
-          "sha256": "5664c680d8430d77e20c55742343ded09ac1f50d72f24eb5bd5e37ce95af1ae0"
-        }
-      ]
-    },
-    {
-      "name": "shiki",
-      "version": "4.0.2",
       "license": "MIT",
       "repository": "git+https://github.com/shikijs/shiki.git",
       "notices": [
@@ -18045,7 +18096,7 @@
         },
         {
           "file": "packages/ui/src/components/ui/diff-viewer.tsx",
-          "sha256": "f7c6e3c34a115a9be92fdcc8ebf04cf4ff1eacfeef224533aaff64358ed6d460"
+          "sha256": "e1df37160c18c75c394532759cb64d6baf380f9f4870d983f74da48b80062158"
         },
         {
           "file": "packages/ui/src/components/ui/dropdown-menu.tsx",
@@ -28379,7 +28430,7 @@
         },
         {
           "file": "packages/rpc/src/remote.ts",
-          "sha256": "4640eb07f0f36aba2cf1d0260be5bb12fcf8780e03e88405a52c033d1a4ba50f"
+          "sha256": "549ec0dd0ed88d7492358f5c4d9f69cda002a1bc132e47d0d937f192f5f5b277"
         },
         {
           "file": "packages/rpc/src/serialization.ts",
@@ -28424,7 +28475,7 @@
       "files": [
         {
           "file": "packages/ui/src/lib/builtinSkillI18n.ts",
-          "sha256": "ff16d6be2ba50f6740a2dbc292874afa046c57e5a43eff7f2cebc82179b53ccf"
+          "sha256": "0a112d619a1fb5c3f5f431b9c3fd09957bad5da1822a49d91dfafa12f9350f2a"
         },
         {
           "file": "apps/zcode-cli/packages/superpowers-plugin/LICENSE",
@@ -28749,240 +28800,9 @@
           "sha256": "4d025c42043c56e6355196a2e885d168cdb15248d0797146c9db838a57b34946"
         }
       ]
-    },
-    {
-      "id": "sharp",
-      "referenceRevision": "0.34.5",
-      "source": "https://www.npmjs.com/package/sharp/v/0.34.5",
-      "file": "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt",
-      "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
-      "importRevision": null,
-      "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
-      "roots": [
-        "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp"
-      ],
-      "scope": "Image metadata/resize runtime for Computer Use screenshot handling, carried in the computer-use plugin node_modules (koffi/sharp chain).",
-      "license": "Apache-2.0",
-      "files": [
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/LICENSE",
-          "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/install/build.js",
-          "sha256": "37f7c9591d75dbc5fe734c5a196a46c355b3d7de5134260ba011efed8433a718"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/install/check.js",
-          "sha256": "31fd360ede9ff3e80d643faff6c4570d0b2b5c621dc421b6c4086dfe86ce981f"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/channel.js",
-          "sha256": "4a699621c111427f9f6b3b767764a292f6a358616de2866e0078475830420f42"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/colour.js",
-          "sha256": "024d2e9c04d50b492e91ae781da539c837fcaf40a585508c043356fdd9e69297"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/composite.js",
-          "sha256": "73f04ab765a11bfc72771dbd0a6324e8e34ea354d16108cc1277bba4e80dd523"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/constructor.js",
-          "sha256": "b38f3e7ceecc305a8f81f278bf9219cba966993b8c2d7cebafdb8e8d5005760c"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/index.js",
-          "sha256": "5e30578a16290fa0855c32fe3d544ce4f26c147de6bad69cffaf7bc416a2919a"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/input.js",
-          "sha256": "d88bdf5d807ef57ce8aa5d9be29bc7b9199974eac385bf559f19d5fc06bd632a"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/is.js",
-          "sha256": "7ecb71679b5b58e7ddf7e14fa697ff6a31bbe9ef107745170095031519e93463"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/libvips.js",
-          "sha256": "ae8cbc8008bf88f5100ca56729ed43d45cd88316e030dc2eed62e142f657cd79"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/operation.js",
-          "sha256": "01019d62cfb83c5f6192a65a4a97635214e5dc61da07c51be59b8216ba907a7a"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/output.js",
-          "sha256": "71cec9ac95f3db764ee4d2e26eec1deb16da63c47fdd352f6a41af4dbb0f1831"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/resize.js",
-          "sha256": "d85081a35bb1195ff6f057d2db4343adfe3241abccc7e277d13673a116fea1ad"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/sharp.js",
-          "sha256": "59e9436f1c62a58b8781acb3803e55114bada9984cc7c39b9291769155811cd3"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/lib/utility.js",
-          "sha256": "ada1854f397f54ee09286094a4f4cd9a4d4af9f4ddbaae3b4f477edbd8c1fd14"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/package.json",
-          "sha256": "e6be69319929151be3aa240bf1485f25a3477cb6d2286f92510b9fceb3cbef26"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/binding.gyp",
-          "sha256": "dc753e7ef9a8b393e14ed6a6fa17baae89e6edb4f39740b1cc1e9d06cbd20478"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/common.cc",
-          "sha256": "9102e55ed0c5d3027fad3df16e751b5424265d32201568395958862ab3a3f6e1"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/common.h",
-          "sha256": "44940aefc7ec601e316dad5c3882041c56d6070f84cc2b2871f6236b75df5cb4"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/metadata.cc",
-          "sha256": "04366c98d90cf3415a50cb5f47a07c3a7f25ace2a67d603e72035807f99af33f"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/metadata.h",
-          "sha256": "bd50ae9c3e55d9ed5f8b3c4e09d9a79f496ef665b6c993ff1b2c7edecc32d03a"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/operations.cc",
-          "sha256": "db97d0ca7ec042279cf5b4331fdc19466c20318ca4bc52fda4e3fdc13781a8c2"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/operations.h",
-          "sha256": "80a4f350793f657c10769e2b4e82d3b103f5d4984dc27d10e592e14b8cc1b34b"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/pipeline.cc",
-          "sha256": "8fa9d1f70f46ea0f27f30203dfa1ebe8df8a5679b9d93a8f8dadf72dd1fa6e59"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/pipeline.h",
-          "sha256": "89f81e2d0308ed696a0f39099d42b7867b8ffb5fcd4969c7dbfb3e6778c0de23"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/sharp.cc",
-          "sha256": "9f407b50bb2d02e5eb711b769f05d3e6659028430e055c4271e5ab1593f5a257"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/stats.cc",
-          "sha256": "084df95f2cc863e522c35e5da31976e1dc4d370d40ab6d2a0b398763208af4ea"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/stats.h",
-          "sha256": "db854f0c3c4a0db1751021ed676413c6d5ca00becc08bdc13258b29047450b8c"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/utilities.cc",
-          "sha256": "7141d5bb1e7b1bca0fdd7d14c30b27b2a4b3f177441b04106e460e013cd061ed"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp/src/utilities.h",
-          "sha256": "0b126ab63cf1aedf8e71e6cb8179899d3ef02c46419100e847b2ca4284b8901b"
-        }
-      ]
-    },
-    {
-      "id": "sharp-win32-x64",
-      "referenceRevision": "0.34.5",
-      "source": "https://www.npmjs.com/package/sharp-win32-x64/v/0.34.5",
-      "file": "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt",
-      "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
-      "importRevision": null,
-      "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
-      "roots": [
-        "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64"
-      ],
-      "scope": "Windows x64 sharp prebuilt binary with statically linked libvips. The libvips portion is LGPL-3.0-or-later: corresponding source is available upstream (https://github.com/lovell/sharp-libvips), satisfying the source-availability obligation for this distribution.",
-      "license": "Apache-2.0 AND LGPL-3.0-or-later",
-      "files": [
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/LICENSE",
-          "sha256": "dc1f5d2d43c5531dfe0acaf4e950ea5dbe3e61e1850cf0e983bda7efc10d6693"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/libvips-42.dll",
-          "sha256": "91e758c17a6588e0d2126f6940721ac2f5db69b2c1bb4586d665bd3ec780d628"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/libvips-cpp-8.17.3.dll",
-          "sha256": "df59657cf70a54609bd79bf8e5021e283281f21eb77e0433734dcc7100da8b44"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/lib/sharp-win32-x64.node",
-          "sha256": "1154286b962070aacfedd5cf10166a22874af63692f6ce2c9156db35b2baa4c1"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/package.json",
-          "sha256": "3421485756b0a25573ee62e147a62908608e3014a2bfed64381473a22e9351d2"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64/versions.json",
-          "sha256": "e823074bfa33ed7b1861b797dd3c60d7ef8c34cd2faa9a7d22ec32dd6d6ad8ad"
-        }
-      ]
-    },
-    {
-      "id": "detect-libc",
-      "referenceRevision": "2.1.2",
-      "source": "https://www.npmjs.com/package/detect-libc/v/2.1.2",
-      "file": "third-party/upstream/b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1.txt",
-      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
-      "importRevision": null,
-      "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
-      "roots": [
-        "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc"
-      ],
-      "scope": "libc detection helper used by the sharp runtime, carried in the computer-use plugin node_modules.",
-      "license": "Apache-2.0",
-      "files": [
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/LICENSE",
-          "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/detect-libc.js",
-          "sha256": "5de6a1c1abec8bba5ea1261cf819d83a73c92ebe72b879ae48c59ca12320a462"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/elf.js",
-          "sha256": "0e8820f00ee11d179d94894d4f97a6e87c34ab59e5dd4d3a571dfabcecf043af"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/filesystem.js",
-          "sha256": "5c98fb66b559d0b4fa82c7a3e39d9ab6840f022c4c73e6b1a73ac6d16ec13fd7"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/lib/process.js",
-          "sha256": "f37dd0ead9f70b50c6f5529c600e1cdf076e3c3bc8e6b4a0a9820a8d65244628"
-        },
-        {
-          "file": "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc/package.json",
-          "sha256": "ee88e5b954fdf3a8480b1d01ef767d68d8ca2c6da269f58c5cf1c5550e9aa2a7"
-        }
-      ]
     }
   ],
-  "patches": [
-    {
-      "package": "@ai-sdk/openai-compatible@2.0.60",
-      "file": "patches/@ai-sdk__openai-compatible@2.0.60.patch",
-      "sha256": "9632fe9d821b3dc20939ae509cc35b968d90d018bbd1d812390718898182a38b"
-    },
-    {
-      "package": "@ai-sdk/anthropic@3.0.81",
-      "file": "patches/@ai-sdk__anthropic@3.0.81.patch",
-      "sha256": "d3a7c381eba7f5157f765a0528003af17cf84544911dfb7412c7800168e01c18"
-    }
-  ],
+  "patches": [],
   "exceptions": [
     {
       "package": "unsafe-pointer@0.2.0",
@@ -29183,6 +29003,28 @@
         "sourceRevision": "145140971e9d83ccac32265f24b1c55dea437896",
         "sourceTreeUrl": "https://api.github.com/repos/nteract/ansi-to-react/git/trees/145140971e9d83ccac32265f24b1c55dea437896?recursive=1",
         "upstreamLicenseFiles": []
+      }
+    },
+    {
+      "package": "agent-base@6.0.2",
+      "license": "MIT",
+      "acceptedMissingNotice": {
+        "evidenceKind": "publisher-license-identifier-and-standard-terms",
+        "reviewEvidence": {
+          "checkedOn": "2026-10-09",
+          "result": "Version-pinned npm archive (agent-base-6.0.2.tgz) ships no standalone LICENSE; publisher license identifier is MIT and the README license section carries the same terms. The same-holder v7.1.4 archive in this lockfile ships the complete MIT text ('Copyright (c) 2013 Nathan Rajlich'). Upstream complete LICENSE fetch was blocked from this network (raw.githubusercontent unreachable); re-pin with a fetched file when network allows."
+        }
+      }
+    },
+    {
+      "package": "https-proxy-agent@5.0.1",
+      "license": "MIT",
+      "acceptedMissingNotice": {
+        "evidenceKind": "publisher-license-identifier-and-standard-terms",
+        "reviewEvidence": {
+          "checkedOn": "2026-10-09",
+          "result": "Version-pinned npm archive (https-proxy-agent-5.0.1.tgz) ships no standalone LICENSE; publisher license identifier is MIT and the README license section carries the same terms. The same-holder v9.0.0 archive in this lockfile ships the complete MIT text ('Copyright (c) 2013 Nathan Rajlich'). Upstream complete LICENSE fetch was blocked from this network; re-pin with a fetched file when network allows."
+        }
       }
     }
   ],
@@ -29494,6 +29336,14 @@
     },
     {
       "id": "ansi-to-react@6.2.6",
+      "reason": "Original version-specific publisher copyright/license material remains incomplete."
+    },
+    {
+      "id": "agent-base@6.0.2",
+      "reason": "Original version-specific publisher copyright/license material remains incomplete."
+    },
+    {
+      "id": "https-proxy-agent@5.0.1",
       "reason": "Original version-specific publisher copyright/license material remains incomplete."
     },
     {

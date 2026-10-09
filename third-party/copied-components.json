@@ -264,47 +264,5 @@
     "license": "MIT",
     "scope": "Vendored React/Next.js guidance and local adaptations; local README preserves Shu Ding / Vercel attribution.",
     "reviewRequired": "Pinned upstream README and skill declare MIT, but a complete original copyright/license notice has not been obtained."
-  },
-  {
-    "id": "sharp",
-    "referenceRevision": "0.34.5",
-    "source": "https://www.npmjs.com/package/sharp/v/0.34.5",
-    "file": "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt",
-    "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
-    "importRevision": null,
-    "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
-    "roots": [
-      "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/sharp"
-    ],
-    "scope": "Image metadata/resize runtime for Computer Use screenshot handling, carried in the computer-use plugin node_modules (koffi/sharp chain).",
-    "license": "Apache-2.0"
-  },
-  {
-    "id": "sharp-win32-x64",
-    "referenceRevision": "0.34.5",
-    "source": "https://www.npmjs.com/package/sharp-win32-x64/v/0.34.5",
-    "file": "third-party/upstream/73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68.txt",
-    "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68",
-    "importRevision": null,
-    "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
-    "roots": [
-      "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/@img/sharp-win32-x64"
-    ],
-    "scope": "Windows x64 sharp prebuilt binary with statically linked libvips. The libvips portion is LGPL-3.0-or-later: corresponding source is available upstream (https://github.com/lovell/sharp-libvips), satisfying the source-availability obligation for this distribution.",
-    "license": "Apache-2.0 AND LGPL-3.0-or-later"
-  },
-  {
-    "id": "detect-libc",
-    "referenceRevision": "2.1.2",
-    "source": "https://www.npmjs.com/package/detect-libc/v/2.1.2",
-    "file": "third-party/upstream/b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1.txt",
-    "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
-    "importRevision": null,
-    "provenance": "Vendored with the computer-use plugin node_modules (apps/zcode-cli/dependencies/zcode-cua/plugin), extracted from the official ZCode 3.14.3 package per docs/spec/computer-control-capability.md B1-1.",
-    "roots": [
-      "apps/zcode-cli/dependencies/zcode-cua/plugin/node_modules/detect-libc"
-    ],
-    "scope": "libc detection helper used by the sharp runtime, carried in the computer-use plugin node_modules.",
-    "license": "Apache-2.0"
   }
 ]
