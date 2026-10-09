@@ -51,7 +51,7 @@ export type AppProcessMetric = {
  * reset would silently read back as uninstalled. Anchoring to the realm keeps one
  * instance per process however often the module registry is rebuilt.
  */
-const SLOT = Symbol.for('orca.host.appEnvironment')
+const SLOT = Symbol.for('freecodez.host.appEnvironment')
 
 type Slot = { [SLOT]?: AppEnvironment | null }
 

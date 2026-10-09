@@ -10,7 +10,7 @@ export function resolveMacOSComputerUseAppPath(): string | null {
   const packaged = [join(process.resourcesPath ?? '', 'FreeCodeZ Computer Use.app')]
   const dev = [
     join(process.cwd(), 'native/computer-use-macos/.build/release/FreeCodeZ Computer Use.app'),
-    resolve(__dirname, '../../native/computer-use-macos/.build/release/FreeCodeZ Computer Use.app')
+    resolve(import.meta.dirname, '../../native/computer-use-macos/.build/release/FreeCodeZ Computer Use.app')
   ]
   const candidates = process.resourcesPath ? [...packaged, ...dev] : dev
 

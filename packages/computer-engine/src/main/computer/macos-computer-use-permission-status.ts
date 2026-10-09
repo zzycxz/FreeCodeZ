@@ -35,13 +35,13 @@ async function getComputerUsePermissionStatusAsync(): Promise<ComputerUsePermiss
 
   const helperAppPath = resolveMacOSComputerUseAppPath()
   if (!helperAppPath) {
-    return createUnavailablePermissionStatus('Orca Computer Use.app was not found', null)
+    return createUnavailablePermissionStatus('FreeCodeZ Computer Use.app was not found', null)
   }
 
   const executablePath = resolveMacOSComputerUseExecutablePath()
   if (!executablePath) {
     return createUnavailablePermissionStatus(
-      `${helperAppPath}/Contents/MacOS/orca-computer-use-macos was not found`,
+      `${helperAppPath}/Contents/MacOS/freecodez-computer-use-macos was not found`,
       helperAppPath
     )
   }

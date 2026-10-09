@@ -43,7 +43,7 @@ export function computerUseErrorRecoveryData(
     case 'provider_incompatible':
       return recoverWith(
         'Run `orca computer capabilities --json` and verify the local provider supports the requested operation.',
-        'Update Orca or use a supported platform/provider path before retrying.'
+        'Update FreeCodeZ or use a supported platform/provider path before retrying.'
       )
     case 'unsupported_capability':
       return recoverWith(
