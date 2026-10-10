@@ -122,8 +122,8 @@ function closeExistingPermissionHelpers(): void {
   // Why: status probes use --permission-status-file and must not be killed
   // while setup helpers are being replaced.
   const setupHelperPatterns = [
-    'orca-computer-use-macos[[:space:]]+--permission([[:space:]]|$)',
-    'orca-computer-use-macos[[:space:]]+--permissions([[:space:]]|$)'
+    'freecodez-computer-use-macos[[:space:]]+--permission([[:space:]]|$)',
+    'freecodez-computer-use-macos[[:space:]]+--permissions([[:space:]]|$)'
   ]
   for (const pattern of setupHelperPatterns) {
     spawnSync('/usr/bin/pkill', ['-f', pattern], {

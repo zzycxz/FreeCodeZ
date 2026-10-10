@@ -85,12 +85,29 @@ export function ComputerUseSection({ isDesktop }: { isDesktop: boolean }) {
         control={
           <Switch
             checked={settings?.cuaControlEnabled === true}
-            onCheckedChange={(enabled) =>
+            onCheckedChange={(enabled) => {
               void save(
                 { cuaControlEnabled: enabled, ...(enabled ? {} : { cuaActionsEnabled: false }) },
                 "settings.computerUse.composerEntry.saveFailed",
-              )
-            }
+              );
+              // 首次开启电脑控制：自动触发权限引导（W-19 首次体验——
+              // 开总开关即弹 helper 授权引导，免用户再找权限行按钮）。
+              if (enabled && platformService.openComputerUsePermissionGuide) {
+                void (async () => {
+                  await refreshPermissions();
+                  const status = await platformService
+                    .computerUsePermissionStatus?.()
+                    .catch(() => null);
+                  const allGranted = status?.permissions.every(
+                    (entry) => entry.status === "granted",
+                  );
+                  if (!allGranted) {
+                    await platformService.openComputerUsePermissionGuide?.();
+                    await refreshPermissions();
+                  }
+                })();
+              }
+            }}
           />
         }
       />
