@@ -4,7 +4,7 @@
 // 产物：packages/computer-engine/native/computer-use-macos/.build/release/FreeCodeZ Computer Use.app
 // 身份：bundle id app.freecodez.computer-use（R20 族），LSUIElement + 双 usage description 保留。
 import { spawnSync } from "node:child_process";
-import { chmodSync, copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const pkgRoot = path.resolve(import.meta.dirname, "..");
@@ -42,6 +42,18 @@ function createHelperApp() {
   mkdirSync(path.join(appPath, "Contents", "Resources"), { recursive: true });
   copyFileSync(binaryPath, appExecutablePath);
   chmodSync(appExecutablePath, 0o755);
+  // 图标：复用主应用 icon（sips 转 icns）——TCC 授权列表显示品牌图标，
+  // 缺图标时列表里是空白占位（2026-10-10 装机实测）。
+  const iconSource = path.join(pkgRoot, "..", "desktop", "build", "icon.png");
+  const iconTarget = path.join(appPath, "Contents", "Resources", "AppIcon.icns");
+  if (existsSync(iconSource)) {
+    const iconResult = spawnSync("/usr/bin/sips", ["-s", "format", "icns", iconSource, "--out", iconTarget], {
+      stdio: "pipe",
+    });
+    if (iconResult.status !== 0) {
+      console.warn("[build-computer-macos] icon conversion failed (continuing without icon)");
+    }
+  }
   writeFileSync(path.join(appPath, "Contents", "Info.plist"), infoPlist(), "utf8");
   const signer = spawnSync("codesign", codesignArgs(signingIdentity, appPath), { stdio: "inherit" });
   if (signer.signal) {
@@ -108,6 +120,8 @@ function infoPlist() {
   <string>${escapePlist(bundleId)}</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundleName</key>
   <string>${escapePlist(displayName)}</string>
   <key>CFBundleDisplayName</key>
