@@ -93,6 +93,12 @@ export function createComputerBridgeGlobals(input: {
     });
   };
 
+  const dispose = async () => {
+    await harness?.stop();
+    harness = undefined;
+    sdk = undefined;
+  };
+
   return {
     [NODE_REPL_COMPUTER_BRIDGE_SYMBOL]: {
       assertAvailable,
@@ -102,11 +108,10 @@ export function createComputerBridgeGlobals(input: {
       ),
       sdk: ensureSdk,
       /** 进程收尾：sidecar SIGTERM（provider teardown 由 sidecar handler 承担）。 */
-      dispose: async () => {
-        await harness?.stop();
-        harness = undefined;
-        sdk = undefined;
-      },
+      dispose,
     },
+    // 模型面引导函数（与 Browser Use 的 setupBrowserRuntime 同构）：
+    // `const computer = await setupComputerUseRuntime();`——零 import，直接可调。
+    setupComputerUseRuntime: ensureSdk,
   };
 }

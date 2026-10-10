@@ -8,6 +8,19 @@ description: Drive desktop apps (macOS, Windows, Linux) to read and operate thei
 Operate desktop applications through accessibility APIs and screenshots. This skill
 teaches the discipline the engine expects; the tools themselves are self-describing.
 
+## Bootstrap（每个 js 调用开头）
+
+Computer Use 经 `mcp__node_repl__js` 工具驱动（JavaScript 作为 `code` 参数）。每次调用
+先引导再操作：
+
+```js
+const computer = await setupComputerUseRuntime();
+```
+
+引导函数由 node_repl host 注入（`injectedGlobals`），零 import 直接可调。
+
+引导后用 `computer.*` 方法操作（见下）。每个 `js` 调用都是新内核——每次调用都要重跑引导。
+
 ## Preconditions
 
 - The computer-use engine must be ready (`capabilities` succeeds). If it returns
@@ -19,8 +32,8 @@ teaches the discipline the engine expects; the tools themselves are self-describ
 
 ## Core Loop
 
-1. `list_apps` to find the target application (name, bundle id, pid).
-2. `get_app_state` on the chosen app to obtain the UI tree and (usually) a screenshot.
+1. `computer.listApps()` to find the target application (name, bundle id, pid).
+2. `computer.getAppState({ app })` on the chosen app to obtain the UI tree and (usually) a screenshot.
 3. Act on the state you just received: reference elements by their **index** from that
    tree, or by coordinates computed from that screenshot.
 4. After each action, read the returned verification, then `get_app_state` again
