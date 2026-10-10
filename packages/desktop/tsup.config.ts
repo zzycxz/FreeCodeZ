@@ -159,6 +159,10 @@ export default defineConfig([
       "@zcode/rpc",
       "@zcode/services",
       "@zcode/client",
+      // W-14 桥接：引擎（orca 拷源）必须内联进 main bundle——asar 排除所有
+      // @zcode/* 的 node_modules，运行时 import 裸包会 ERR_MODULE_NOT_FOUND。
+      // node-repl-host 侧已在自身 build.mjs 内联（esbuild bundle），此处补 desktop main。
+      "@zcode/computer-engine",
       // Provider Refactor 的 workspace 包导出 TypeScript 源码；Electron 生产运行时没有
       // TS loader，必须随 Desktop bundle 内联，不能留下指向 src/index.ts 的裸包引用。
       "@zcode/provider",
@@ -228,6 +232,10 @@ export default defineConfig([
       "@zcode/rpc",
       "@zcode/services",
       "@zcode/client",
+      // W-14 桥接：引擎（orca 拷源）必须内联进 main bundle——asar 排除所有
+      // @zcode/* 的 node_modules，运行时 import 裸包会 ERR_MODULE_NOT_FOUND。
+      // node-repl-host 侧已在自身 build.mjs 内联（esbuild bundle），此处补 desktop main。
+      "@zcode/computer-engine",
       "@zcode/provider",
       "@zcode/provider-node",
       // 与 main 同治：zod 内联，防止 host 运行时拿到 app.asar 里的 zod v3 实例。
