@@ -22,15 +22,27 @@ export interface SandboxViolationMatch {
 // 在大输出上既慢又脆，分级匹配稳得多。
 const WRITE_DENIED_KEYWORDS = /\b(EPERM|EACCES|permission denied|read-only file system|operation not permitted)\b/i;
 const SPAWN_DENIED_KEYWORDS = /\b(?:EPERM|EACCES)\b[^\n]*(?:spawn|exec)/i;
-const READ_DENIED_KEYWORDS = /(?:EACCES|EPERM)[^\n]*(?:readdir|EISDIR|open for read)/i;
+// EISDIR 不属于读拒绝：它是"把目录当文件操作"（如 cat 一个目录），并非沙箱
+// 权限拦截；误归因会让模型以为策略拒绝读、给出错误修正方向，故从锚点剔除。
+const READ_DENIED_KEYWORDS = /(?:EACCES|EPERM)[^\n]*(?:readdir|open for read)/i;
 const SANDBOX_EXEC_KEYWORDS = /sandbox-exec:/i;
 const NETWORK_DENIED_KEYWORDS = /(network is unreachable|connection refused by sandbox|sandbox denied network)/i;
 
-// 显式 path 字段优先（npm/pnpm/ESBuild 风格："... path /abs/path" 或 "path: /abs"）。
-const EXPLICIT_PATH_RE = /(?:^|\n)[^\n]*?\b(?:path|file|dest|target|filename)\b[:=]?\s+(\/[^\s'"`]+)/i;
+// 路径形态：POSIX 绝对路径（/…）或 Windows 盘符路径（C:\… / C:/…）。Windows
+// 沙箱（低完整级 MIC）的报错只含盘符路径，缺这半边时归因消息拿不到被拒路径。
+const POSIX_ABSOLUTE_PATH = "\\/[^\\s'\"`]+";
+const WINDOWS_DRIVE_PATH = "[A-Za-z]:[\\\\/][^\\s'\"`]+";
 
-/** 报错文本里第一个以 / 开头的 token（兜底）。 */
-const ABSOLUTE_PATH_RE = /(?:^|[\s'`(=])(\/[^\s'"`)]+)/;
+// 显式 path 字段优先（npm/pnpm/ESBuild 风格："... path /abs/path" 或 "path: /abs"）。
+const EXPLICIT_PATH_RE = new RegExp(
+  `(?:^|\\n)[^\\n]*?\\b(?:path|file|dest|target|filename)\\b[:=]?\\s+(${POSIX_ABSOLUTE_PATH}|${WINDOWS_DRIVE_PATH})`,
+  "i",
+);
+
+/** 报错文本里第一个绝对路径 token（兜底）。 */
+const ABSOLUTE_PATH_RE = new RegExp(
+  `(?:^|[\\s'\`(=])((${POSIX_ABSOLUTE_PATH})|(${WINDOWS_DRIVE_PATH}))`,
+);
 
 export function classifySandboxViolation(input: {
   stderr: string;
@@ -82,9 +94,18 @@ export function classifySandboxViolation(input: {
 
 function firstMatch(text: string, pattern: RegExp): string | undefined {
   const match = pattern.exec(text);
-  // 尾部常见标点（cp/ssh 风格 "path:"、逗号、句号）剥离后再校验绝对路径形态。
-  const trimmed = match?.[1]?.trim().replace(/^["']|["':,.]+$/g, "");
-  return trimmed && trimmed.startsWith("/") ? trimmed : undefined;
+  if (!match) return undefined;
+  // EXPLICIT_PATH_RE 单捕获组；ABSOLUTE_PATH_RE 用两个捕获组分别对应两种路径形态。
+  const raw = match[1] ?? match[2] ?? match[3];
+  // 尾部常见标点（cp/ssh 风格 "path:"、逗号、句号、括号包裹形态）剥离后再校验
+  // 绝对路径形态（路径形态统一后排除集不再含 ')'，在此补剥）。
+  const trimmed = raw?.trim().replace(/^["']|["':,.)]+$/g, "");
+  if (!trimmed) return undefined;
+  return isAbsoluteLikePath(trimmed) ? trimmed : undefined;
+}
+
+function isAbsoluteLikePath(value: string): boolean {
+  return value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value);
 }
 
 function buildModelGuidance(

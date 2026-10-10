@@ -91,8 +91,9 @@ test("bwrap wrap：argv 与 shell 模式统一抬进 bwrap；未启用/逃生原
     command: { args: [], cwdDialect: "posix" as const, file: "echo hi", shell: true },
   });
   if (shellWrapped.sandboxed) {
-    assert.equal(shellWrapped.command.args.at(-2), "/bin/bash");
-    assert.equal(shellWrapped.command.args.at(-1), "echo hi");
+    // 与 seatbelt 同因：必须以 `-- shell -c 命令文本` 收尾（缺 -c 时 bash 把
+    // 命令文本当脚本文件名执行，命令必败）。
+    assert.deepEqual(shellWrapped.command.args.slice(-3), ["/bin/bash", "-c", "echo hi"]);
   }
 
   const disabled = wrapCommandWithBwrap({ policy: undefined, command: argvCommand() });

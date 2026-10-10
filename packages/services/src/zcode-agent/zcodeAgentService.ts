@@ -880,6 +880,14 @@ interface CreateZCodeAgentServiceOptions extends Omit<
    */
   resolveDynamicWorkflowClientConfig?: () => Promise<DynamicWorkflowClientConfig | undefined>;
   /**
+   * 交互会话沙箱全局开关（规格书 R2"高级设置提供全局开关"）。会话级未显式声明
+   * sandboxEnabled（交互直连 / 手机远控 replayable / 历史导入）时以此为准；
+   * automation 派发链在 task adapter 侧显式传布尔（每条 automation 可选），不进此
+   * 回退。每次现读（非进程内缓存）：设置页改动后新会话立即生效。缺省不注入（Web/
+   * 纯 CLI 装配）= 永远关闭，与现状一致。
+   */
+  resolveInteractiveSandboxEnabled?: () => Promise<boolean>;
+  /**
    * browser-use 执行桥：把 agent 的 interaction/browserExecute 反向请求转发到 main
    * （WebContentsView+CDP）。desktop host 装配时注入；缺省（纯 CLI/远控无 main）则
    * browser 命令返回 backend_unavailable，不影响其它功能。
@@ -2730,6 +2738,24 @@ export function createZCodeAgentService(
     return dynamicWorkflowGate;
   }
 
+  /**
+   * 交互会话沙箱全局开关回退。只对 params.sandboxEnabled === undefined 生效：
+   * automation 派发链在 adapter 侧显式传布尔（未勾显式 false 抵御全局开），显式
+   * true/false 都原样保留。读取失败按关闭处理（fail-closed 到现状，不引入新失败）。
+   */
+  async function resolveInteractiveSandboxDefault(): Promise<boolean> {
+    const resolve = options?.resolveInteractiveSandboxEnabled;
+    if (!resolve) return false;
+    try {
+      return (await resolve()) === true;
+    } catch (error) {
+      logger.warn(undefined, "交互会话沙箱全局开关读取失败，按关闭处理", {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return false;
+    }
+  }
+
   async function buildConversationCommandEnvelope(
     params: ZCodeAgentConversationCommandParams,
   ): Promise<CommandEnvelope> {
@@ -2881,10 +2907,13 @@ export function createZCodeAgentService(
       const offPeakToolEnabled = isOffPeakToolSupported(params);
       // 灰度在 client 就绪时已判定，这里是进程内已解析 promise 的再次 await（不打远端）。
       const dynamicWorkflowEnabled = await resolveDynamicWorkflowGate();
+      // 交互会话全局沙箱回退：undefined（交互直连/远控/导入）时读全局开关；
+      // automation 链的显式 true/false 原样保留。
+      const sandboxEnabled = params.sandboxEnabled ?? (await resolveInteractiveSandboxDefault());
       try {
         const snapshot = await client.request(
           zcodeProtocolMethods.sessionCreate,
-          buildSessionCreateParams({ ...params, offPeakToolEnabled, dynamicWorkflowEnabled }),
+          buildSessionCreateParams({ ...params, sandboxEnabled, offPeakToolEnabled, dynamicWorkflowEnabled }),
           zcodeSessionStateSnapshotSchema,
           sessionTraceId ? { trace: { traceId: sessionTraceId } } : undefined,
         );
@@ -2925,7 +2954,7 @@ export function createZCodeAgentService(
         const snapshot = await client.request(
           zcodeProtocolMethods.sessionCreate,
           buildSessionCreateParams(
-            { ...params, offPeakToolEnabled, dynamicWorkflowEnabled },
+            { ...params, sandboxEnabled, offPeakToolEnabled, dynamicWorkflowEnabled },
             new Set(compatFields),
           ),
           zcodeSessionStateSnapshotSchema,
@@ -2985,6 +3014,8 @@ export function createZCodeAgentService(
       const offPeakToolEnabled = isOffPeakToolSupported(params);
       // 冷恢复同样按 Host 的灰度判定下发，否则恢复出来的会话会丢掉工作流工具簇。
       const dynamicWorkflowEnabled = await resolveDynamicWorkflowGate();
+      // 交互会话全局沙箱回退（与 createSession 同语义）：冷恢复不得丢全局开关防护。
+      const sandboxEnabled = params.sandboxEnabled ?? (await resolveInteractiveSandboxDefault());
       logger.info(cachedTraceId, "开始请求 ZCode Protocol session/resume", {
         mcpServerCount: getMcpServerCount(params),
         mcpServerNames: getMcpServerNames(params),
@@ -2996,7 +3027,7 @@ export function createZCodeAgentService(
       try {
         const snapshot = await client.request(
           zcodeProtocolMethods.sessionResume,
-          buildSessionResumeParams({ ...params, offPeakToolEnabled, dynamicWorkflowEnabled }),
+          buildSessionResumeParams({ ...params, sandboxEnabled, offPeakToolEnabled, dynamicWorkflowEnabled }),
           zcodeSessionStateSnapshotSchema,
         );
         const sessionTraceId = rememberSessionTrace(params, snapshot) ?? cachedTraceId;
@@ -3033,7 +3064,7 @@ export function createZCodeAgentService(
         const snapshot = await client.request(
           zcodeProtocolMethods.sessionResume,
           buildSessionResumeParams(
-            { ...params, offPeakToolEnabled, dynamicWorkflowEnabled },
+            { ...params, sandboxEnabled, offPeakToolEnabled, dynamicWorkflowEnabled },
             new Set(compatFields),
           ),
           zcodeSessionStateSnapshotSchema,

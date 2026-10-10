@@ -105,12 +105,14 @@ export function wrapCommandWithBwrap(input: {
   }
 
   const shellPath = typeof input.command.shell === "string" ? input.command.shell : "/bin/bash";
+  // 必须补 -c（与 seatbelt-exec 同因）：node spawn 的 shell 语义是 `shell -c <命令文本>`，
+  // 缺 -c 时 bash 会把命令文本当脚本文件名执行，命令必败，违反零新增失败红线。
   return {
     sandboxed: true,
     command: {
       ...input.command,
       file: bwrap,
-      args: [...sandboxArgs, "--", shellPath, input.command.file],
+      args: [...sandboxArgs, "--", shellPath, "-c", input.command.file],
       shell: false,
     },
   };

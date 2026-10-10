@@ -1149,7 +1149,9 @@ export function createZCodeTaskServiceAdapter(
       ...(mcpServers ? { mcpServers } : {}),
       ...(params.toolDenylist ? { toolDenylist: params.toolDenylist } : {}),
       // E-S4/A1 补齐：冷恢复不丢沙箱与审批超时（A1 的超时解析同 create 路径）。
-      ...(params.sandboxEnabled === true ? { sandboxEnabled: true } : {}),
+      // 显式布尔原样透传（automation 恢复链未勾=false 抵御全局回退）；undefined
+      // 交给 resumeSession 的全局开关回退（交互/远控冷恢复跟随高级设置）。
+      ...(params.sandboxEnabled !== undefined ? { sandboxEnabled: params.sandboxEnabled } : {}),
       ...(resolveAutomationPermissionTimeoutMs(params) !== undefined
         ? { permissionTimeoutMs: resolveAutomationPermissionTimeoutMs(params) }
         : {}),
@@ -1852,8 +1854,15 @@ export function createZCodeTaskServiceAdapter(
           ...(resolveAutomationPermissionTimeoutMs(params) !== undefined
             ? { permissionTimeoutMs: resolveAutomationPermissionTimeoutMs(params) }
             : {}),
-          // E-S3：automation 声明的沙箱开关随 session 创建透传（缺省不下发=off）。
-          ...(params.sandboxEnabled === true ? { sandboxEnabled: true } : {}),
+          // E-S3：沙箱开关透传。automation 派发（automationId 存在）显式传布尔——
+          // 未勾时显式 false 抵御 createSession 的全局开关回退（每条 automation 可选
+          // 语义不被全局开覆盖）；交互/远控链只在显式 true 时下发，undefined 交给
+          // createSession 的高级设置全局回退。
+          ...(params.automationId
+            ? { sandboxEnabled: params.sandboxEnabled === true }
+            : params.sandboxEnabled === true
+              ? { sandboxEnabled: true }
+              : {}),
           // replayable task facade 创建 session 时同样会启动 runtime；
           // 之前这里丢掉 mcpServers，导致手机远控路径和 desktop-continuous 的 MCP 行为不一致。
           mcpServers,
@@ -2279,6 +2288,14 @@ export function createZCodeTaskServiceAdapter(
         model,
         thoughtLevel,
         mcpServers: params.mcpServers,
+        // E-S4 声称的"resume 边界回传沙箱"此前断在这里：resumeTask 收到
+        // sandboxEnabled/automationId 却没透传给 resumeSnapshot，冷恢复会丢防护。
+        // automation 恢复链同样显式传布尔（未勾 false 抵御全局开关回退）。
+        ...(params.automationId
+          ? { automationId: params.automationId, sandboxEnabled: params.sandboxEnabled === true }
+          : params.sandboxEnabled === true
+            ? { sandboxEnabled: true }
+            : {}),
       });
       emitWorkspaceConfig(params, snapshot.settings);
       const snapshotMeta = await syncTaskIndexSnapshot(snapshot);

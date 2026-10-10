@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildWorkspaceWriteSeatbeltProfile } from "../src/exec/sandbox/seatbelt-profile.js";
@@ -47,14 +47,37 @@ test("sbpl：/tmp 族默认可写、尾斜杠归一、writableRoots 去重", () 
 test("sbpl：缺省 tmpDir 放行真实 os.tmpdir()（process.tmpdir 误写回归锚）", () => {
   // 原实现误写 process.tmpdir（运行时恒 undefined），守卫恒假导致永远只放行
   // "/tmp"，macOS per-user 临时目录（/var/folders/...）被漏——缺省路径必须以
-  // 真实 os.tmpdir() 为根（尾斜杠归一后比对）。
+  // 真实 os.tmpdir() 为根比对。seatbelt 按真实路径匹配，macOS 的 /var 是
+  // /private/var 的符号链接，故断言用 realpath 形态（与实现的 canonicalRoot 一致）。
   const profile = buildWorkspaceWriteSeatbeltProfile({ workspaceRoot: WORKSPACE });
-  const raw = tmpdir();
+  const raw = realpathSync(tmpdir());
   const expected = raw.length > 1 && raw.endsWith("/") ? raw.slice(0, -1) : raw;
   assert.ok(
     profile.includes(`(subpath "${expected}")`),
     `缺省 profile 应放行真实临时目录 ${expected}`,
   );
+});
+
+test("sbpl：workspaceRoot 经符号链接打开时 canonical 化（seatbelt 按真实路径匹配）", () => {
+  // 实测：profile 写 subpath "/tmp/x"（/tmp→/private/tmp 链接）时沙箱内写全拒
+  // （Operation not permitted），必须写真实路径 /private/tmp/x。realpath 化写入根，
+  // 否则符号链接路径下的 workspace 一开沙箱就 fail-dead。
+  const linkParent = mkdtempSync(join(realpathSync(tmpdir()), "sbx-symlink-"));
+  try {
+    const realDir = join(linkParent, "real");
+    mkdirSync(realDir);
+    symlinkSync(realDir, join(linkParent, "link"));
+    const profile = buildWorkspaceWriteSeatbeltProfile({
+      workspaceRoot: join(linkParent, "link"),
+    });
+    assert.ok(
+      profile.includes(`(subpath "${realDir}")`),
+      "workspaceRoot 应 realpath 化为真实目录",
+    );
+    assert.ok(!profile.includes(`(subpath "${join(linkParent, "link")}")`));
+  } finally {
+    rmSync(linkParent, { recursive: true, force: true });
+  }
 });
 
 test("0-9：凭据文件 deny 行存在且位于 (allow file-read*) 之后（seatbelt 后匹配胜出）", () => {
@@ -103,8 +126,9 @@ test("wrap：argv 与 shell 模式统一抬进 sandbox-exec；激活必须显式
     command: shellCommand,
   });
   assert.equal(shellWrapped.sandboxed, true);
-  assert.equal(shellWrapped.command.args.at(-2), "/bin/bash");
-  assert.equal(shellWrapped.command.args.at(-1), "echo hi");
+  // 必须以 `-- shell -c 命令文本` 收尾：node 的 shell 语义是 shell -c <文本>，
+  // 缺 -c 时 bash 会把命令文本当脚本文件名执行（实测 exit 127）。
+  assert.deepEqual(shellWrapped.command.args.slice(-3), ["/bin/bash", "-c", "echo hi"]);
 
   // 关键回归锚：Bash handler 的历史形态 {enabled:true, 无 mode}（遥测语义）不得激活
   // 沙箱——否则 mac 上普通命令被默认全量沙箱化，违反"默认 off"红线。
@@ -171,6 +195,17 @@ test("归因：EPERM 写拒绝提取路径，npm 缓存场景给出重定向指�
   const plainDeny = classifySandboxViolation({ stderr: "cp: /etc/hosts: Permission denied" });
   assert.equal(plainDeny?.category, "write-denied");
   assert.equal(plainDeny?.deniedPath, "/etc/hosts");
+
+  // Windows 低完整级（MIC）拒绝的报错只含盘符路径：提取器必须认 C:\ 形态，
+  // 否则归因消息缺被拒路径（Windows 集成链路实测场景）。
+  const winDeny = classifySandboxViolation({
+    stderr: 'npm error code EPERM\nnpm error path C:\\Users\\demo\\.npm\\_cacache\\tmp\\abc',
+  });
+  assert.equal(winDeny?.category, "write-denied");
+  assert.equal(winDeny?.deniedPath, "C:\\Users\\demo\\.npm\\_cacache\\tmp\\abc");
+
+  // EISDIR 是"把目录当文件操作"，不是沙箱读拒绝；不得误归因为 read-denied。
+  assert.equal(classifySandboxViolation({ stderr: "cat /some/dir: EISDIR" }), undefined);
 
   assert.equal(classifySandboxViolation({ stderr: "everything fine" }), undefined);
   assert.equal(classifySandboxViolation({ stderr: "" }), undefined);

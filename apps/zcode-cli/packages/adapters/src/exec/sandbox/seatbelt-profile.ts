@@ -11,6 +11,7 @@
 // 注意：sbpl 无注释语法；subpath 路径必须引号包裹且不带尾斜杠。
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { realpathSync } from "node:fs";
 
 export interface WorkspaceWriteSeatbeltInput {
   workspaceRoot: string;
@@ -43,6 +44,20 @@ function resolveCredentialDenyPath(env: Record<string, string | undefined>): str
   return join(resolvedBase, ".freecodez", "v2", "credentials.json");
 }
 
+/**
+ * seatbelt 的 subpath 按真实路径（内核 VFS 解析后）匹配：workspace 若经符号链接
+ * 打开（实测 /tmp/foo → /private/tmp/foo），profile 里写链接形态会导致沙箱内写
+ * 全部被拒（fail-dead，违反零新增失败红线）。写入前统一 realpath 化；路径不存在
+ * 时 realpath 抛错，保留原值（与现状一致，不引入新失败）。
+ */
+function canonicalRoot(root: string): string {
+  try {
+    return realpathSync(root);
+  } catch {
+    return root;
+  }
+}
+
 /** 生成 workspace-write 的 sbpl profile 字符串（操作集经本机 sandbox-exec 实测验证）。 */
 export function buildWorkspaceWriteSeatbeltProfile(
   input: WorkspaceWriteSeatbeltInput,
@@ -58,6 +73,7 @@ export function buildWorkspaceWriteSeatbeltProfile(
   ]
     .map((root) => root.trim())
     .filter((root) => root.length > 0)
+    .map(canonicalRoot)
     .map(sbplPath);
   // V9（升级实施手册）：全盘读 + 允许出网的组合下，沙箱内 `cat 凭据文件` 即可把密钥
   // 外传——只 deny credentials.json 这一个文件（不能 deny 整个数据目录：agent 的

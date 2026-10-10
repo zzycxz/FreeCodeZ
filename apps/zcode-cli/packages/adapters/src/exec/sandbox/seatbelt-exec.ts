@@ -69,12 +69,15 @@ export function wrapCommandWithSeatbelt(input: SeatbeltWrapInput): SeatbeltWrapR
 
   const shellPath =
     typeof input.command.shell === "string" ? input.command.shell : "/bin/bash";
+  // 必须补 -c：node spawn 的 shell 语义是 `shell -c <命令文本>`，缺 -c 时 bash 会把
+  // 命令文本当脚本文件名执行（实测 sandbox-exec -p p -- /bin/bash "echo hi" 报
+  // "No such file or directory" exit 127，命令必败，违反零新增失败红线）。
   return {
     sandboxed: true,
     command: {
       ...input.command,
       file: SANDBOX_EXEC_PATH,
-      args: ["-p", profile, "--", shellPath, input.command.file],
+      args: ["-p", profile, "--", shellPath, "-c", input.command.file],
       shell: false,
     },
   };
