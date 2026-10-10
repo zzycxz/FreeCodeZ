@@ -69,10 +69,7 @@ export function ComputerUseSection({ isDesktop }: { isDesktop: boolean }) {
         <SettingsRow
           label={intl.formatMessage({ id: "settings.computerUse.unsupported.title" })}
           description={intl.formatMessage({
-            id:
-              availability.reason === "remote"
-                ? "settings.computerUse.unsupported.remoteDescription"
-                : "settings.computerUse.unsupported.linuxDescription",
+            id: "settings.computerUse.unsupported.remoteDescription",
           })}
           control={<span />}
         />

@@ -12,9 +12,7 @@ export function resolveComputerUseAvailability(input: {
   if (!input.isDesktop) {
     return { supported: false, reason: "remote" };
   }
-  const platform = input.platform ?? "unknown";
-  if (platform === "darwin" || platform === "win32" || platform === "linux") {
-    return { supported: true };
-  }
-  return { supported: false, reason: "unsupported-platform" };
+  // D2 三平台硬性：本地桌面全支持（mac/win/linux 含 local-linux）——
+  // 旧的按 OS 枚举拒绝面已废（D2 裁定"三平台硬性"）。
+  return { supported: true };
 }

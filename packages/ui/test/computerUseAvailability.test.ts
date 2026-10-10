@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { resolveComputerUseAvailability } from "../src/lib/computerUseAvailability.js";
 
-test("本地桌面三平台支持（D2 含 linux），远程与未知平台不支持", () => {
+test("本地桌面全支持（D2 三平台硬性），远程不支持", () => {
   assert.deepStrictEqual(
     resolveComputerUseAvailability({ isDesktop: true, platform: "darwin" }),
     { supported: true },
@@ -20,8 +20,9 @@ test("本地桌面三平台支持（D2 含 linux），远程与未知平台不�
     supported: false,
     reason: "remote",
   });
+  // D2 三平台硬性后：本地桌面全支持（含未知 OS 枚举），仅远程不支持。
   assert.deepStrictEqual(
     resolveComputerUseAvailability({ isDesktop: true, platform: "freebsd" }),
-    { supported: false, reason: "unsupported-platform" },
+    { supported: true },
   );
 });
