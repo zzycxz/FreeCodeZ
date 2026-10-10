@@ -690,8 +690,30 @@ export default {
           },
         ]
       : []),
+    ...(targetPlatform.os === "win32"
+      ? [
+          {
+            // W-12 Windows provider：PowerShell UIA 运行时脚本（serve 模式 + one-shot 回退）。
+            // desktop-script-provider-paths 按 resources/computer-use-windows/ 解析。
+            from: resolve(
+              workspaceRoot,
+              "packages/computer-engine/native/computer-use-windows/runtime.ps1",
+            ),
+            to: "computer-use-windows/runtime.ps1",
+          },
+        ]
+      : []),
     ...(targetPlatform.os === "linux"
       ? [
+          {
+            // W-12 Linux provider：AT-SPI Python 运行时脚本（系统依赖见 SYSTEM-DEPENDENCIES.md）。
+            // desktop-script-provider-paths 按 resources/computer-use-linux/ 解析。
+            from: resolve(
+              workspaceRoot,
+              "packages/computer-engine/native/computer-use-linux/runtime.py",
+            ),
+            to: "computer-use-linux/runtime.py",
+          },
           {
             // AppImage 用户级 hicolor 图标安装使用真实 512x512 资源，避免目录标称尺寸和 PNG IHDR 不一致。
             from: "build/icons/512x512.png",

@@ -7,7 +7,11 @@ export function resolveMacOSComputerUseAppPath(): string | null {
     return override
   }
 
-  const packaged = [join(process.resourcesPath ?? '', 'FreeCodeZ Computer Use.app')]
+  // W-11 打包态布局：extraResources 放到 resources/cua-helper/FreeCodeZ Computer Use.app。
+  const packaged = [
+    join(process.resourcesPath ?? '', 'cua-helper', 'FreeCodeZ Computer Use.app'),
+    join(process.resourcesPath ?? '', 'FreeCodeZ Computer Use.app'),
+  ]
   const dev = [
     join(process.cwd(), 'native/computer-use-macos/.build/release/FreeCodeZ Computer Use.app'),
     resolve(import.meta.dirname, '../../native/computer-use-macos/.build/release/FreeCodeZ Computer Use.app')
