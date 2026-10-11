@@ -40,10 +40,14 @@ export async function listMcpServerStatuses(
 export function withComputerEngineEnv(
   env: Record<string, string | undefined>,
   input: { engineDistDir?: string; engineReady?: boolean } = {},
-): Record<string, string | undefined> {
-  if (input.engineReady !== true || !input.engineDistDir) return env;
+): Record<string, string> {
+  const base: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (value !== undefined) base[key] = value;
+  }
+  if (input.engineReady !== true || !input.engineDistDir) return base;
   return {
-    ...env,
+    ...base,
     FREECODEZ_CUA_ENGINE_SIDECAR: input.engineDistDir,
     FREECODEZ_CUA_ENGINE_READY: "1",
   };
