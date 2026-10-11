@@ -855,6 +855,23 @@ export function SettingsPage({
     },
     [updateSharedSettings],
   );
+  // 交互会话沙箱全局开关（沙箱规格书 R2）：只写 appSettings；新会话在 host 侧
+  // createSession/resumeSession 现读生效（无需重启，已在跑的会话不受影响）。
+  const handleSandboxEnabledChange = useCallback(
+    async (enabled: boolean) => {
+      await runSettingsActionAsync({
+        featureId: "settings.desktop",
+        action: "toggle_interactive_sandbox",
+        trigger: "switch",
+        operation: () => updateSharedSettings({ sandboxEnabled: enabled }),
+        completed: {
+          resultSource: "shared_settings",
+          stateAfter: enabled ? "enabled" : "disabled",
+        },
+      });
+    },
+    [updateSharedSettings],
+  );
   const handleDesktopChromiumHardwareAccelerationChange = useCallback(
     async (enabled: boolean) => {
       await runSettingsActionAsync({
@@ -1423,6 +1440,7 @@ export function SettingsPage({
                             notificationSoundEnabled={notificationSoundEnabled}
                             closeToTrayOnWindows={closeToTrayOnWindows}
                             keepAwakeWhileRunning={sharedSettings?.keepAwakeWhileRunning ?? false}
+                            sandboxEnabled={sharedSettings?.sandboxEnabled === true}
                             desktopChromiumHardwareAccelerationEnabled={
                               desktopChromiumHardwareAccelerationEnabled
                             }
@@ -1504,6 +1522,7 @@ export function SettingsPage({
                             }
                             onCloseToTrayOnWindowsChange={handleCloseToTrayOnWindowsChange}
                             onKeepAwakeWhileRunningChange={handleKeepAwakeWhileRunningChange}
+                            onSandboxEnabledChange={handleSandboxEnabledChange}
                             onDesktopChromiumHardwareAccelerationChange={
                               handleDesktopChromiumHardwareAccelerationChange
                             }

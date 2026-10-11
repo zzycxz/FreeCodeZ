@@ -458,6 +458,10 @@ const appSettingsObjectSchema = z.object({
   cuaControlEnabled: z.boolean().optional(),
   cuaActionsEnabled: z.boolean().optional(),
   computerUseComposerEntryHidden: z.boolean().optional(),
+  // 交互会话沙箱全局开关（沙箱规格书 R2"高级设置提供全局开关"）：缺省关。
+  // 仅对未显式声明沙箱的会话生效（交互直连/远控 replayable/冷恢复）；automation
+  // 派发按每条 automation 的可选开关，不被此全局值覆盖。
+  sandboxEnabled: z.boolean().optional(),
   taskAutoArchiveEnabled: z.boolean().default(false),
   taskAutoArchiveOlderThanDays: z.number().int().positive().max(365).default(7),
   closeToTrayOnWindows: z.boolean().default(true),
@@ -543,6 +547,8 @@ export const appSettingsPatchSchema = z.object({
   cuaControlEnabled: z.boolean().optional(),
   cuaActionsEnabled: z.boolean().optional(),
   computerUseComposerEntryHidden: z.boolean().optional(),
+  // 交互会话沙箱全局开关（patch schema 同步补齐——update 通道剥键同根因）。
+  sandboxEnabled: z.boolean().optional(),
   taskAutoArchiveEnabled: z.boolean().optional(),
   taskAutoArchiveOlderThanDays: z.number().int().positive().max(365).optional(),
   closeToTrayOnWindows: z.boolean().optional(),

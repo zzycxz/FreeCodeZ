@@ -279,6 +279,12 @@ export interface AppSettings {
   closeToTrayOnWindows?: boolean;
   /** 存在执行中的闲时任务时阻止系统闲置休眠（手动开关，防不了合盖）。 */
   keepAwakeWhileRunning?: boolean;
+  /**
+   * 交互会话沙箱全局开关（沙箱规格书 R2）：缺省关。仅对未显式声明沙箱的会话
+   * （交互直连/远控 replayable/冷恢复）生效；automation 派发按每条 automation 的
+   * 可选开关，不被此全局值覆盖。Windows 上 UI 禁用（真机集成验证通过前）。
+   */
+  sandboxEnabled?: boolean;
   /** Windows 关闭到托盘默认值是否已执行过一次性迁移；只用于设置迁移，不参与业务判断。 */
   closeToTrayOnWindowsMigrationInitialized?: boolean;
   /** 桌面端全局页面缩放档位；用于重启后恢复界面缩放，Web/手机端忽略。 */

@@ -82,6 +82,7 @@ export function GeneralSectionContent({
   zcodeInteractionBehavior,
   askUserQuestionAutoResolutionEnabled = true,
   modelIoFullRetentionEnabled = false,
+  sandboxEnabled = false,
   onDataBaseDirChange,
   onSelectDataBaseDir,
   onTerminalInheritSystemProfileChange = async () => {},
@@ -106,6 +107,7 @@ export function GeneralSectionContent({
   onZCodeInteractionBehaviorChange,
   onAskUserQuestionAutoResolutionEnabledChange = async () => {},
   onModelIoFullRetentionEnabledChange = async () => {},
+  onSandboxEnabledChange = async () => {},
   onOpenOnboardingDialog,
 }: {
   localePreference: LocalePreference;
@@ -145,6 +147,7 @@ export function GeneralSectionContent({
   zcodeInteractionBehavior: ZCodeInteractionBehavior;
   askUserQuestionAutoResolutionEnabled?: boolean;
   modelIoFullRetentionEnabled?: boolean;
+  sandboxEnabled?: boolean;
   onDataBaseDirChange: (dir: string) => Promise<void>;
   onSelectDataBaseDir: () => Promise<string | null>;
   onTerminalInheritSystemProfileChange: (enabled: boolean) => Promise<void>;
@@ -169,6 +172,7 @@ export function GeneralSectionContent({
   onZCodeInteractionBehaviorChange: (behavior: ZCodeInteractionBehavior) => Promise<void>;
   onAskUserQuestionAutoResolutionEnabledChange?: (enabled: boolean) => Promise<void>;
   onModelIoFullRetentionEnabledChange?: (enabled: boolean) => Promise<void>;
+  onSandboxEnabledChange?: (enabled: boolean) => Promise<void>;
   onOpenOnboardingDialog: () => void;
 }) {
   const { intl } = useZCodeIntl();
@@ -662,6 +666,28 @@ export function GeneralSectionContent({
                 checked={keepAwakeWhileRunning}
                 onCheckedChange={(checked) => {
                   void onKeepAwakeWhileRunningChange(checked);
+                }}
+              />
+            }
+          />
+        ) : null}
+        {isDesktop ? (
+          <SettingsRow
+            label={intl.formatMessage({ id: "settings.sandbox.toggleLabel" })}
+            description={intl.formatMessage({
+              id: isWindowsDesktop
+                ? "settings.sandbox.toggleDescriptionUnsupported"
+                : "settings.sandbox.toggleDescription",
+            })}
+            control={
+              <Switch
+                aria-label={intl.formatMessage({ id: "settings.sandbox.toggleLabel" })}
+                // Windows 真机集成验证通过前禁用（与自动化任务编辑页的沙箱开关同一
+                // 门控语义）；执行侧分发器另以 fail-open 兜底，禁用仅为不承诺未验证行为。
+                disabled={isWindowsDesktop}
+                checked={!isWindowsDesktop && sandboxEnabled}
+                onCheckedChange={(checked) => {
+                  void onSandboxEnabledChange(checked);
                 }}
               />
             }

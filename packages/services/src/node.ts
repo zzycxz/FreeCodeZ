@@ -721,6 +721,11 @@ export function createLocalServices(options: {
     // (ZCODE_DYNAMIC_WORKFLOW_MODE 可开,默认 disabled)——不再有平台侧远程翻转(规格书 P2 §4.5)。
     resolveDynamicWorkflowClientConfig: async () =>
       resolveDynamicWorkflowClientConfig({ remote: undefined, env: process.env }),
+    // 交互会话沙箱全局开关（沙箱规格书 R2）：每次现读高级设置，未显式声明沙箱的
+    // 会话（交互直连/远控 replayable/冷恢复）以此为准；automation 链的每任务开关
+    // 在 adapter 侧显式传值，不进此回退。平台可用性由执行侧分发器 fail-open 兜底。
+    resolveInteractiveSandboxEnabled: async () =>
+      (await settingService.get()).sandboxEnabled === true,
     commandResolver: options?.zcodeAgentCommandResolver,
     presentationSurface: resolveZCodeAgentPresentationSurface({
       runtimeSurface: options?.agentRuntimeContext?.runtimeSurface,

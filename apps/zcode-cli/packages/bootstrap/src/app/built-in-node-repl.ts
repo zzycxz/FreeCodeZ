@@ -1,5 +1,8 @@
 import type { McpServerConfig, PluginLoadOutcome } from "@zcode/contracts";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { createBundledMcpRuntimeConfig } from "./official-plugin-runtime.js";
+import { withComputerEngineEnv } from "../mcp-config.js";
 import {
   OFFICIAL_BROWSER_USE_PLUGIN_ID,
   OFFICIAL_NODE_REPL_HOST_PLUGIN_ID,
@@ -27,12 +30,30 @@ export function resolveBuiltInNodeReplMcpServers(input: {
   );
   if (!hostPackage) return {};
 
+  // W-14 桥接（S7 缝）：引擎 sidecar 产物目录注入 node_repl env。
+  // 打包态：hostPackage.rootPath 旁的 computer-engine-dist/；开发态：workspace 引擎包 dist。
+  // fail-closed：sidecar 不在场不注入（bridge 报显式错，绝不空 env 静默降级）。
+  const engineDistCandidates = [
+    resolve(hostPackage.rootPath, "..", "computer-engine-dist"),
+    resolve(input.workingDirectory, "..", "computer-engine", "dist"),
+    resolve(hostPackage.rootPath, "../../../../packages/computer-engine/dist"),
+  ];
+  const engineDistDir = engineDistCandidates.find((dir) =>
+    existsSync(join(dir, "computer-sidecar.js")),
+  );
+
   const nodeRepl = createBundledMcpRuntimeConfig({
     cwd: input.workingDirectory,
-    env: {
-      // 领域 root 各自注入，且只在对应能力启用时注入：宿主据此决定哪一半文档可用。
-      ZCODE_PLUGIN_ROOT: browserUsePackage.rootPath,
-    },
+    env: withComputerEngineEnv(
+      {
+        // 领域 root 各自注入，且只在对应能力启用时注入：宿主据此决定哪一半文档可用。
+        ZCODE_PLUGIN_ROOT: browserUsePackage.rootPath,
+      },
+      {
+        engineDistDir,
+        engineReady: engineDistDir !== undefined,
+      },
+    ),
     rootPath: hostPackage.rootPath,
     timeoutMs: 600_000,
   });

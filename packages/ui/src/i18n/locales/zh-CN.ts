@@ -1780,6 +1780,11 @@ const zhCN: Record<string, string> = {
   "settings.keepAwakeWhileRunning": "保持电脑运行",
   "settings.keepAwakeWhileRunningDescription":
     "打开后阻止系统因空闲进入休眠（仍可手动睡眠/合盖休眠）。桌面端全局生效。",
+  "settings.sandbox.toggleLabel": "沙箱隔离（交互会话）",
+  "settings.sandbox.toggleDescription":
+    "为交互会话的命令执行启用沙箱：全盘可读、仅工作区与临时目录可写，越界写入将被拦截并提示。仅对新会话生效；定时/机器人任务使用各自的沙箱开关。",
+  "settings.sandbox.toggleDescriptionUnsupported":
+    "当前平台（Windows）暂不支持沙箱隔离，开关不可用。",
   "settings.messageStreamShowReasoning": "显示思考过程",
   "settings.messageStreamShowReasoningDescription":
     "在消息流中展示完整的模型思考内容；关闭时每轮仍展示第一次思考。",
@@ -4095,10 +4100,6 @@ const zhCN: Record<string, string> = {
   // CUA 输入框常驻入口按钮
   "chat.toolbar.computerUse.label": "电脑操作",
   "chat.toolbar.computerUse.tooltip.ready": "电脑操作已就绪 · 直接描述你想让 FreeCodeZ 做的事",
-  "chat.toolbar.computerUse.tooltip.error":
-    "电脑操作启用失败 · 重启 FreeCodeZ 应用后重试，或让 FreeCodeZ 排查日志",
-  "chat.toolbar.computerUse.tooltip.sessionBusy":
-    "会话进行中，暂不能切换电脑操作；任务结束后可再试",
   "chat.toolbar.mode.description": "切换当前任务的权限/执行模式，例如默认、计划或接受编辑。",
   "chat.toolbar.thoughtLevel.label": "推理强度",
   "chat.toolbar.thoughtLevel.tooltip": "思考级别",

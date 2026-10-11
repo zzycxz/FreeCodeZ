@@ -1883,6 +1883,11 @@ const enUS: Record<string, string> = {
   "settings.keepAwakeWhileRunning": "Keep computer running",
   "settings.keepAwakeWhileRunningDescription":
     "Prevent the system from sleeping due to idle. You can still sleep manually or by closing the lid. Desktop only.",
+  "settings.sandbox.toggleLabel": "Sandbox isolation (interactive sessions)",
+  "settings.sandbox.toggleDescription":
+    "Sandbox command execution for interactive sessions: full read access, writes limited to the workspace and temp directories; denied writes are blocked with an explanation. Applies to new sessions only; scheduled and bot tasks use their own sandbox switches.",
+  "settings.sandbox.toggleDescriptionUnsupported":
+    "Sandbox isolation is not available on Windows yet; the switch is disabled.",
   "settings.messageStreamShowReasoning": "Show reasoning",
   "settings.messageStreamShowReasoningDescription":
     "Show full reasoning inside the message stream. When off, the first reasoning item in each turn remains visible.",
@@ -4354,10 +4359,6 @@ const enUS: Record<string, string> = {
   "chat.toolbar.computerUse.label": "Computer Use",
   "chat.toolbar.computerUse.tooltip.ready":
     "Computer Use ready — just describe what you want FreeCodeZ to do",
-  "chat.toolbar.computerUse.tooltip.error":
-    "Computer Use enablement failed. Please restart FreeCodeZ app and retry, or ask FreeCodeZ to investigate the logs",
-  "chat.toolbar.computerUse.tooltip.sessionBusy":
-    "A conversation is running. Computer Use can't be toggled right now — try again after it finishes.",
   "chat.toolbar.mode.description":
     "Switch the task's permission and execution mode, such as default, plan, or accept edits.",
   "chat.toolbar.thoughtLevel.label": "Reasoning effort",
