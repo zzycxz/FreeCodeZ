@@ -39,14 +39,35 @@ function resolveSidecarPath(): string | null {
     if (existsSync(fromEnv)) return fromEnv;
   }
   const here = dirname(fileURLToPath(import.meta.url));
-  // 布局两形态：开发态 src/ 在五层深处（src→node-repl-host→packages→zcode-cli→apps→根）；
-  // 打包态编译产物 dist/ 在三层深处（dist→node-repl-host→packages→根，包随 seed 布局）。
-  const candidates = [
+  // Electron Helper-as-node 下指向 app Resources；纯 node（CLI/测试面）为 undefined。
+  const resourcesPath = (process as typeof process & { resourcesPath?: string }).resourcesPath;
+  const candidates = sidecarCandidatePaths({ here, resourcesPath });
+  return candidates.find((candidate) => existsSync(candidate)) ?? null;
+}
+
+/** sidecar 候选路径（纯函数，测试直测）。三级布局：
+ * - 打包态（G1，2026-10-11 装机审计修复）：server 从插件缓存跑
+ *   （…/cache/freecodez/node-repl-host/<ver>/dist/mcp），相对候选全够不着——锚定
+ *   process.resourcesPath（node_repl 由 Electron Helper-as-node 拉起，resourcesPath
+ *   指向 app Resources，与 prepare-agent-node-bundle 的 glm/packages/computer-engine-dist
+ *   staging 布局对齐）。缓存换版本也不受影响（读 app 资产而非缓存副本）。
+ * - 打包 staging 布局（dist→node-repl-host→packages→根，包旁 computer-engine-dist）。
+ * - 开发态（src→node-repl-host→packages→zcode-cli→apps→根，或 dev 构建产物 dist/mcp
+ *   →上五层=apps→packages/computer-engine/dist）。 */
+export function sidecarCandidatePaths(input: {
+  here: string;
+  resourcesPath?: string | undefined;
+}): string[] {
+  const { here, resourcesPath } = input;
+  const packaged = resourcesPath
+    ? [join(resourcesPath, "glm", "packages", "computer-engine-dist", "computer-sidecar.js")]
+    : [];
+  return [
+    ...packaged,
     resolve(here, "../../computer-engine-dist/computer-sidecar.js"),
     resolve(here, "../../../../../packages/computer-engine/dist/computer-sidecar.js"),
     resolve(here, "../../../packages/computer-engine/dist/computer-sidecar.js"),
   ];
-  return candidates.find((candidate) => existsSync(candidate)) ?? null;
 }
 
 export function createComputerBridgeGlobals(input: {
@@ -80,12 +101,16 @@ export function createComputerBridgeGlobals(input: {
     const active = assertAvailable();
     return createSidecarHarness({ sidecarPath }).then((started) => {
       harness = started;
+      // G3：docs 随 sidecar 产物走（build-sidecar 拷 docs/app-instructions 进 dist）。
+      // SDK 已被 esbuild 内联进本 bundle，其模块相对根失效，由这里从真实产物目录推导。
+      const docsRoot = join(dirname(sidecarPath), "docs", "app-instructions");
       return createEngineSdk({
         transport: {
           request: (method: string, params?: Record<string, unknown>) =>
             started.request(method, params),
         },
         sessionId: active.sessionId,
+        ...(existsSync(docsRoot) ? { docsRoot } : {}),
       }).then((created) => {
         sdk = created;
         return created;
@@ -102,10 +127,16 @@ export function createComputerBridgeGlobals(input: {
   return {
     [NODE_REPL_COMPUTER_BRIDGE_SYMBOL]: {
       assertAvailable,
-      documentationRoot: resolve(
-        dirname(fileURLToPath(import.meta.url)),
-        "../../../../packages/computer-engine/docs",
-      ),
+      // G3：docs 根改为从解析到的 sidecar 产物目录惰性推导（bundle 后模块相对深度失效）。
+      get documentationRoot(): string {
+        const sidecarPath = resolveSidecarPath();
+        return sidecarPath
+          ? resolve(dirname(sidecarPath), "docs")
+          : resolve(
+              dirname(fileURLToPath(import.meta.url)),
+              "../../../../packages/computer-engine/docs",
+            );
+      },
       sdk: ensureSdk,
       /** 进程收尾：sidecar SIGTERM（provider teardown 由 sidecar handler 承担）。 */
       dispose,

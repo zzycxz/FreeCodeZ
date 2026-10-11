@@ -16,7 +16,7 @@ import {
   type CuaAppIdentity,
   type ListAppsEntry,
 } from "./cua-app-projection";
-import { loadAppInstructions } from "./app-instructions";
+import { loadAppInstructions, setAppInstructionsRoot } from "./app-instructions";
 import {
   createUserActivityReader,
   waitForUserQuiet,
@@ -53,6 +53,10 @@ export interface ComputerUseSdkOptions {
   activityGate?: Partial<UserActivityGateOptions>;
   /** W-28 HUD 帧出口：动作前发 point/down/up 帧、text 发 loading 帧（旁路可视化）。 */
   onInputEvent?: (event: unknown) => void;
+  /** G3（2026-10-11 装机审计）：app-instructions 资产根。SDK 被打进 node_repl server
+   * bundle 后源码相对深度失效，由桥面从解析到的 sidecar 产物目录推导传入
+   *（build-sidecar 会把 docs/app-instructions 拷进 dist 随产物走）。 */
+  docsRoot?: string;
 }
 
 /** typeText 单次上限（UTF-16 code units，G.1 拆分教学）。 */
@@ -75,6 +79,7 @@ export class ComputerUseSdk {
     this.readUserActivity = createUserActivityReader(options.readUserActivity);
     this.activityGate = options.activityGate ?? {};
     this.onInputEvent = options.onInputEvent;
+    if (options.docsRoot) setAppInstructionsRoot(options.docsRoot);
   }
 
   // ---- 探测面 ----

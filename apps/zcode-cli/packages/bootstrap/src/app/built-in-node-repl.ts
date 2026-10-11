@@ -10,6 +10,27 @@ import {
 
 const BUILT_IN_NODE_REPL_SERVER_NAME = "node_repl";
 
+/** 引擎 sidecar dist 目录候选（纯函数，测试直测）。顺序=优先级：
+ * ①打包态 app Resources 锚点（prepare-agent-node-bundle staging 布局）；
+ * ②打包 staging 布局：插件根旁 computer-engine-dist（包未入缓存时兜底）；
+ * ③开发态：workspace 同级引擎包 dist；
+ * ④开发态：插件根（workspace 包路径）上溯到仓库 packages/computer-engine/dist。 */
+export function computerEngineDistCandidates(input: {
+  pluginRootPath: string;
+  workingDirectory: string;
+  resourcesPath?: string | undefined;
+}): string[] {
+  const packaged = input.resourcesPath
+    ? [join(input.resourcesPath, "glm", "packages", "computer-engine-dist")]
+    : [];
+  return [
+    ...packaged,
+    resolve(input.pluginRootPath, "..", "computer-engine-dist"),
+    resolve(input.workingDirectory, "..", "computer-engine", "dist"),
+    resolve(input.pluginRootPath, "../../../../packages/computer-engine/dist"),
+  ];
+}
+
 /**
  * node_repl 是官方能力共用的宿主工具，不是任何插件 manifest 声明的 plugin MCP。产物由独立的
  * `node-repl-host` seed 单元携带（无 listing、不对用户露出）；Browser Use
@@ -31,16 +52,18 @@ export function resolveBuiltInNodeReplMcpServers(input: {
   if (!hostPackage) return {};
 
   // W-14 桥接（S7 缝）：引擎 sidecar 产物目录注入 node_repl env。
-  // 打包态：hostPackage.rootPath 旁的 computer-engine-dist/；开发态：workspace 引擎包 dist。
+  // 打包态首选 resourcesPath 锚点（G1，2026-10-11 装机审计修复）：插件 seed 后
+  // hostPackage.rootPath 是缓存路径（…/cache/freecodez/node-repl-host/<ver>），原先
+  // 「rootPath 旁的 computer-engine-dist」按 staging 布局算层级、在缓存布局下永远够不着；
+  // agent 由 Electron Helper-as-node 拉起，resourcesPath 指向 app Resources，与
+  // prepare-agent-node-bundle 的 glm/packages/computer-engine-dist staging 对齐，且随
+  // app 升级即时换血（不读缓存副本）。开发态：workspace 引擎包 dist / 包根上溯。
   // fail-closed：sidecar 不在场不注入（bridge 报显式错，绝不空 env 静默降级）。
-  const engineDistCandidates = [
-    resolve(hostPackage.rootPath, "..", "computer-engine-dist"),
-    resolve(input.workingDirectory, "..", "computer-engine", "dist"),
-    resolve(hostPackage.rootPath, "../../../../packages/computer-engine/dist"),
-  ];
-  const engineDistDir = engineDistCandidates.find((dir) =>
-    existsSync(join(dir, "computer-sidecar.js")),
-  );
+  const engineDistDir = computerEngineDistCandidates({
+    pluginRootPath: hostPackage.rootPath,
+    workingDirectory: input.workingDirectory,
+    resourcesPath: process.resourcesPath,
+  }).find((dir) => existsSync(join(dir, "computer-sidecar.js")));
 
   const nodeRepl = createBundledMcpRuntimeConfig({
     cwd: input.workingDirectory,

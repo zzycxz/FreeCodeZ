@@ -156,12 +156,19 @@ function stageNodeReplHostRuntime(targetRoot) {
   }
   pruneCarriedNativeToTargetArch(targetNodeModules);
 
-  // W-14：引擎 sidecar 产物随宿主 seed（bridge 按 ../../computer-engine-dist/ 相对发现）。
+  // W-14：引擎 sidecar 产物随宿主 seed（bridge/env 注入按 resourcesPath→glm/packages/
+  // computer-engine-dist 与 ../../computer-engine-dist/ 双锚点发现）。
+  // G3（2026-10-11 装机审计）：dist/docs（app-instructions 资产）一并 staging——
+  // SDK 运行时从 sidecar 产物目录推导 docs 根。
   const sidecarSource = resolve(repoRoot, "packages", "computer-engine", "dist", "computer-sidecar.js");
   if (existsSync(sidecarSource)) {
     const targetEngineDist = resolve(targetRoot, "..", "computer-engine-dist");
     mkdirSync(targetEngineDist, { recursive: true });
     copyFileSync(sidecarSource, join(targetEngineDist, "computer-sidecar.js"));
+    const docsSource = resolve(repoRoot, "packages", "computer-engine", "dist", "docs");
+    if (existsSync(docsSource)) {
+      cpSync(docsSource, join(targetEngineDist, "docs"), { recursive: true });
+    }
     console.log(`[prepare:agent-bundle] staged engine sidecar alongside ${targetRoot}`);
   } else {
     console.log(`[prepare:agent-bundle] engine sidecar not built (skip staging)`);
