@@ -1,3 +1,4 @@
+import "./zod-eager-init.js";
 import { Server } from "@modelcontextprotocol/server";
 import { type NodeReplRequestMeta, type NodeReplRunResult } from "@zcode/core/repl";
 import { installNodeReplProcessGuards, installNodeReplShutdownTriggers } from "./process-lifecycle.js";

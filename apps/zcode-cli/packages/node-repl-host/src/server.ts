@@ -1,3 +1,7 @@
+// 必须是第一个 import：zod classic 懒初始化时序修复（详见该文件头注释）——
+// 其模块体（含 esbuild 插入的 init_schemas2()）必须先于
+// @modelcontextprotocol/core auth chunk 的顶层 z.lazy(...) 调用求值。
+import "./zod-eager-init.js";
 import { resolve } from "node:path";
 import { isMainThread, parentPort, Worker, workerData } from "node:worker_threads";
 import { INVALID_PARAMS, Server, type Tool } from "@modelcontextprotocol/server";
