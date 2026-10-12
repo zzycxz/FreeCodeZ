@@ -106,6 +106,14 @@ export const officialPluginStagingList = [
     stagedPath: "packages/skill-creator-plugin",
   },
   {
+    // FreeCodeZ 电脑控制 skill 文档包（V1.17）：只带 skills/ 文档，无 runtime 构建；
+    // 引擎本体随 node-repl-host seed 旁挂（computer-engine-dist），见 prepare-agent-node-bundle。
+    packageName: "@zcode/computer-use-plugin",
+    relativePath: "apps/zcode-cli/packages/computer-use-plugin",
+    requiresRuntime: false,
+    stagedPath: "packages/computer-use-plugin",
+  },
+  {
     packageName: "@zcode/zcode-guide-plugin",
     relativePath: "apps/zcode-cli/packages/zcode-guide-plugin",
     requiresRuntime: false,

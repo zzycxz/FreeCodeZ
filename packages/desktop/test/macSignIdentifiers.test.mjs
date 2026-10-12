@@ -77,14 +77,19 @@ test("applyMacAdhocSignIdentifiers：argv 形状与顺序、失败上抛", () =>
     entitlementsMain: "/e1",
     entitlementsInherit: "/e2",
   });
-  const count = applyMacAdhocSignIdentifiers(steps, (args) => {
-    calls.push(args);
-  });
+  const count = applyMacAdhocSignIdentifiers(
+    steps,
+    (args) => {
+      calls.push(args);
+    },
+    // V1.19：显式注入签名身份（命名证书），断言与钥匙串解析解耦。
+    "FreeCodeZ Dev Signing",
+  );
   assert.equal(count, 2);
   assert.deepEqual(calls[0], [
     "--force",
     "--sign",
-    "-",
+    "FreeCodeZ Dev Signing",
     "--entitlements",
     "/e2",
     "--identifier",
@@ -94,7 +99,7 @@ test("applyMacAdhocSignIdentifiers：argv 形状与顺序、失败上抛", () =>
   assert.deepEqual(calls[1], [
     "--force",
     "--sign",
-    "-",
+    "FreeCodeZ Dev Signing",
     "--entitlements",
     "/e1",
     "--identifier",
@@ -104,9 +109,31 @@ test("applyMacAdhocSignIdentifiers：argv 形状与顺序、失败上抛", () =>
   assert.throws(
     () => applyMacAdhocSignIdentifiers(steps, () => {
       throw new Error("codesign blew up");
-    }),
+    }, "FreeCodeZ Dev Signing"),
     /codesign blew up/,
   );
+});
+
+test("resolveMacSigningIdentity：env > 自签名命名证书 > Apple Development > adhoc 兜底", async () => {
+  const { resolveMacSigningIdentity } = await import("../scripts/mac-sign-identifiers.mjs");
+  const list = [
+    '  1) 0000 "Apple Development: dev@example.com (ABC)"',
+    '  2) 1111 "FreeCodeZ Dev Signing"',
+  ].join("\n");
+  assert.equal(resolveMacSigningIdentity(list), "FreeCodeZ Dev Signing");
+  assert.equal(
+    resolveMacSigningIdentity('  1) 0000 "Apple Development: dev@example.com (ABC)"'),
+    "Apple Development: dev@example.com (ABC)",
+  );
+  assert.equal(resolveMacSigningIdentity("0 valid identities found"), "-");
+  const previous = process.env.FREECODEZ_SIGN_IDENTITY;
+  try {
+    process.env.FREECODEZ_SIGN_IDENTITY = "Explicit Identity";
+    assert.equal(resolveMacSigningIdentity(""), "Explicit Identity");
+  } finally {
+    if (previous === undefined) delete process.env.FREECODEZ_SIGN_IDENTITY;
+    else process.env.FREECODEZ_SIGN_IDENTITY = previous;
+  }
 });
 
 test("discoverHelperBundleNames：只取产品族 Helper*.app，缺失目录返回空", () => {

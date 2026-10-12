@@ -45,16 +45,24 @@ export const V4ComposerCuaEntry = memo(function V4ComposerCuaEntry(
       description={intl.formatMessage({ id: "chat.toolbar.computerUse.tooltip.ready" })}
     >
       <Button
+        type="button"
         variant="ghost"
-        size="icon-sm"
+        size="default"
         data-testid={TID_V4_COMPOSER_CUA_ENTRY}
         aria-label={intl.formatMessage({ id: "chat.toolbar.computerUse.label" })}
         onClick={() => {
           // 打开电脑控制设置区：权限引导/状态面/动作门所在地。
           setPendingSettingsSectionIntent("computerUse");
         }}
+        className="rounded-lg px-1.5 text-ui-base text-[var(--color-foreground-subtle)]"
       >
-        <MonitorCogIcon className="size-4" />
+        {/* 有字样芯片（V1.17 D）：icon+文字与邻居触发器同款；窄 composer 退化为仅图标。 */}
+        <span className="inline-flex items-center gap-1" aria-hidden>
+          <MonitorCogIcon className="size-3.5" />
+          <span className="@max-[480px]/composer:hidden">
+            {intl.formatMessage({ id: "chat.toolbar.computerUse.label" })}
+          </span>
+        </span>
       </Button>
     </ControlHintTooltip>
   );

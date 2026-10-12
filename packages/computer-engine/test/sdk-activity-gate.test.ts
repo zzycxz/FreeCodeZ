@@ -57,4 +57,41 @@ describe("SDK 用户活动闸集成（W-26）", () => {
     await sdk2.paste({ target: { app: "Finder" }, text: "x" });
     assert.deepStrictEqual(c2, ["pasteText"], "检测器缺席时动作面恒放行");
   });
+
+  it("hotkey 公开面（V1.18）：和弦直达引擎 hotkey 方法并套活动闸", async () => {
+    const { transport, calls } = countingTransport();
+    const sdk = new ComputerUseSdk({
+      transport,
+      sessionId: "s",
+      platform: "darwin",
+      readUserActivity: () => ({ userActive: false, lastMoveMs: 9_000 }),
+      activityGate: { thresholdMs: 800, pollMs: 1, maxWaitMs: 5 },
+    });
+    await sdk.hotkey({ target: { app: "Finder" }, key: "CmdOrCtrl+S" });
+    assert.deepStrictEqual(calls, ["hotkey"]);
+  });
+
+  it("动作层设置门（V1.19 P1）：actionsEnabled=false 拒动作面不触达引擎，观测面豁免", async () => {
+    const { transport, calls } = countingTransport();
+    const sdk = new ComputerUseSdk({
+      transport,
+      sessionId: "s",
+      platform: "darwin",
+      actionsEnabled: false,
+    });
+    // 观测面豁免（「只能看不能动」）。
+    await sdk.listApps();
+    await sdk.getAppState({ app: "Finder" });
+    await assert.rejects(
+      sdk.leftClick({ target: { app: "Finder" }, element: { kind: "element", index: 1 } }),
+      (error: unknown) =>
+        error instanceof ComputerUseSdkError && error.sdkCode === "actions_disabled",
+    );
+    await assert.rejects(
+      sdk.type({ target: { app: "Finder" }, text: "x" }),
+      (error: unknown) =>
+        error instanceof ComputerUseSdkError && error.sdkCode === "actions_disabled",
+    );
+    assert.deepStrictEqual(calls, ["listApps", "getAppState"], "被拒动作不得触达引擎");
+  });
 });

@@ -40,10 +40,12 @@ function isToolCallRow(row: AssistantWorkRow): row is ToolCallRow {
 }
 
 function isOfficialCuaToolCallRow(row: AssistantWorkRow): boolean {
-  return (
-    isToolCallRow(row) &&
-    OFFICIAL_CUA_TOOL_PREFIXES.some((prefix) => row.toolName.startsWith(prefix))
-  );
+  if (!isToolCallRow(row)) return false;
+  if (OFFICIAL_CUA_TOOL_PREFIXES.some((prefix) => row.toolName.startsWith(prefix))) return true;
+  // V1.19 P4（W-30/S6 重建）：新架构下 CUA 在 js 工具内跑（无独立工具名）——
+  // 桥经 freecodez/nodeReplCuaApp 上报真实应用身份、行装配盖 row.cuaApp 后，
+  // 携带 cuaApp 的 js 行同样入组（browser-only 的 js 行不带该字段，不误入）。
+  return row.toolName === "mcp__node_repl__js" && row.cuaApp !== undefined;
 }
 
 function buildCuaGroup(

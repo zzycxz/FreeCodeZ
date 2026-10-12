@@ -36,18 +36,28 @@ export async function listMcpServerStatuses(
  * W-14 桥接（S7 缝）：node_repl 的引擎面 env 注入。自有键名（R7：不留 ZCODE_* 回退）。
  * fail-closed：sidecar 产物不在场（引擎未构建/未随 seed 携带）→ 不注入任何键，
  * bridge 侧显式报"engine sidecar is not built"——绝不空凭据静默降级。
+ * 生效链门（V1.17）：桌面设置总开关关（controlEnabled === false）→ 注入 FREECODEZ_CUA_DISABLED，
+ * bridge 显式报"设置关闭"——产品开关拒绝与产物缺失是两种失败面，分开报。
  */
 export function withComputerEngineEnv(
   env: Record<string, string | undefined>,
-  input: { engineDistDir?: string; engineReady?: boolean } = {},
+  input: { engineDistDir?: string; engineReady?: boolean; controlEnabled?: boolean; actionsEnabled?: boolean } = {},
 ): Record<string, string> {
   const base: Record<string, string> = {};
   for (const [key, value] of Object.entries(env)) {
     if (value !== undefined) base[key] = value;
   }
-  if (input.engineReady !== true || !input.engineDistDir) return base;
+  if (input.controlEnabled === false) {
+    return { ...base, FREECODEZ_CUA_DISABLED: "1" };
+  }
+  // 动作层门（V1.19 P1）：总开关开+动作关=注入 FREECODEZ_CUA_ACTIONS=0，
+  // SDK 动作面拒 actions_disabled、观测面豁免。
+  const actionsGate: Record<string, string> =
+    input.actionsEnabled === false ? { FREECODEZ_CUA_ACTIONS: "0" } : {};
+  if (input.engineReady !== true || !input.engineDistDir) return { ...base, ...actionsGate };
   return {
     ...base,
+    ...actionsGate,
     FREECODEZ_CUA_ENGINE_SIDECAR: input.engineDistDir,
     FREECODEZ_CUA_ENGINE_READY: "1",
   };

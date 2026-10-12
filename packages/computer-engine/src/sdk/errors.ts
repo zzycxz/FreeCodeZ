@@ -21,7 +21,8 @@ export type SdkErrorCode =
   | "control_stopped"
   | "controller_busy"
   | "cancelled"
-  | "user_active";
+  | "user_active"
+  | "actions_disabled";
 
 export type RetryClass = "reobserve" | "never" | "retry";
 

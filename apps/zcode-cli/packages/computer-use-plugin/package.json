@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@zcode/computer-use-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Built-in computer-use skills for the FreeCodeZ Computer Use engine (docs-only; engine lives in packages/computer-engine, runtime host in node-repl-host)."
+}

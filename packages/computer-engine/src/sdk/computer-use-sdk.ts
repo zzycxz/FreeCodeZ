@@ -1,8 +1,11 @@
+/* eslint-disable max-lines -- SDK 单类集中编排（探测/动作/缺口组合/会话层四段），
+V1.18 hotkey 与 V1.19 动作门增量后过 400 行；按 Root.tsx 先例豁免，拆分待 P 批次统一。 */
 // FreeCodeZ W-14：新薄 SDK + 桥接（附录 G.1 编排实施；FC 自有 API 面，不与任何第三方
 // SDK 逐字同构——G.0-2）。会话命名空间（G.0-4）：sessionId 贯穿 observe/action 的
 // session 参数，多会话快照缓存隔离。G.3 划分：快照缓存/scale/verification/剪贴板/
 // blockedApps 在引擎；闩锁/租约/拆分教学/跨应用预检在本层。
 import { ComputerControlGate } from "../host/control-latch";
+import { computerUseErrorRecoveryData } from "../shared/computer-use-error-recovery";
 import {
   cursorEventsForClick,
   cursorEventsForDrag,
@@ -57,6 +60,14 @@ export interface ComputerUseSdkOptions {
    * bundle 后源码相对深度失效，由桥面从解析到的 sidecar 产物目录推导传入
    *（build-sidecar 会把 docs/app-instructions 拷进 dist 随产物走）。 */
   docsRoot?: string;
+  /** V1.19 P1：动作层设置门（cuaActionsEnabled）。false 时动作面拒 actions_disabled、
+   * 观测面（capabilities/listApps/listWindows/getAppState）豁免——语义=「只能看不能动」。
+   * 缺省 true：headless CLI 无此 env 不设门（同 FREECODEZ_CUA_CONTROL_ENABLED 先例）。 */
+  actionsEnabled?: boolean;
+  /** V1.19 P4（W-30/S6 重建）：观测目标应用身份上报——身份由真实引擎快照解析
+   *（listApps 缓存→getAppState 目标解析，防模型自报伪造），桥接会话据此盖
+   * toolCallRow.cuaApp（UI 分组/App 图标）。旁路：异常不折断观测本体。 */
+  onCuaApp?: (app: CuaAppIdentity) => void;
 }
 
 /** typeText 单次上限（UTF-16 code units，G.1 拆分教学）。 */
@@ -70,6 +81,9 @@ export class ComputerUseSdk {
   private readonly readUserActivity: UserActivityReader;
   private readonly activityGate: Partial<UserActivityGateOptions>;
   private readonly onInputEvent: ((event: unknown) => void) | undefined;
+  private readonly actionsEnabled: boolean;
+  private readonly onCuaApp: ((app: CuaAppIdentity) => void) | undefined;
+  private lastReportedCuaAppPid: number | undefined;
 
   constructor(options: ComputerUseSdkOptions) {
     this.transport = options.transport;
@@ -79,6 +93,8 @@ export class ComputerUseSdk {
     this.readUserActivity = createUserActivityReader(options.readUserActivity);
     this.activityGate = options.activityGate ?? {};
     this.onInputEvent = options.onInputEvent;
+    this.actionsEnabled = options.actionsEnabled !== false;
+    this.onCuaApp = options.onCuaApp;
     if (options.docsRoot) setAppInstructionsRoot(options.docsRoot);
   }
 
@@ -107,6 +123,39 @@ export class ComputerUseSdk {
       : undefined;
   }
 
+  /** V1.19 P4：观测目标应用身份上报（真实快照解析，防自报伪造；同 pid 去重）。 */
+  private maybeReportCuaApp(appInput: unknown): void {
+    if (!this.onCuaApp) return;
+    const identity = this.resolveCuaAppIdentityForInput(appInput);
+    if (!identity || this.lastReportedCuaAppPid === identity.pid) return;
+    this.lastReportedCuaAppPid = identity.pid;
+    try {
+      this.onCuaApp(identity);
+    } catch {
+      // 上报旁路：不折断观测本体。
+    }
+  }
+
+  /** 字符串目标（新 API 面 app: string）的身份解析——投影的 wire 形状解析器
+   *（cua-app-projection）只认旧 app_ref 对象，纯字符串从未适配（W-30 潜伏缺口，
+   * V1.19 P4 补）：pid: 前缀精确命中 → bundleId 唯一命中 → 名字唯一命中
+   *（多命中不上报，同投影保守语义：不猜测）。 */
+  private resolveCuaAppIdentityForInput(appInput: unknown): CuaAppIdentity | undefined {
+    if (typeof appInput !== "string" || !this.lastCuaAppSnapshot) {
+      return this.cuaAppFor(appInput);
+    }
+    const trimmed = appInput.trim();
+    if (!trimmed) return undefined;
+    if (trimmed.startsWith("pid:")) {
+      const pid = Number(trimmed.slice(4));
+      return Number.isInteger(pid) && pid > 0 ? this.lastCuaAppSnapshot.get(pid) : undefined;
+    }
+    const byBundle = [...this.lastCuaAppSnapshot.values()].filter((app) => app.bundleId === trimmed);
+    if (byBundle.length === 1) return byBundle[0];
+    const byName = [...this.lastCuaAppSnapshot.values()].filter((app) => app.name === trimmed);
+    return byName.length === 1 ? byName[0] : undefined;
+  }
+
   async listWindows(target: { app: string }): Promise<unknown> {
     return this.call("listWindows", { app: target.app, session: this.sessionId });
   }
@@ -118,11 +167,16 @@ export class ComputerUseSdk {
       ...this.targetParams(target),
       noScreenshot: target.includeScreenshot === false ? true : undefined,
     });
+    // V1.19 P5（R7/A15）：敏感字段树行值脱敏——getAppState 是模型读树的唯一入口，
+    // readElement 复用本结果同享。截图像素不在此面（A15 文本面）。
+    const redacted = redactAppStateTreeText(result);
     // W-27：命中应用要点随结果注入（G.1 app-instructions 注入点）。
     const instructions = loadAppInstructions({ name: target.app });
-    return instructions !== undefined && result && typeof result === "object"
-      ? { ...(result as Record<string, unknown>), appInstructions: instructions }
-      : result;
+    // V1.19 P4：观测目标身份上报（listApps 先行则可解析；同 app 去重）。
+    this.maybeReportCuaApp(target.app);
+    return instructions !== undefined && redacted && typeof redacted === "object"
+      ? { ...(redacted as Record<string, unknown>), appInstructions: instructions }
+      : redacted;
   }
 
   // ---- 动作面 ----
@@ -275,6 +329,16 @@ export class ComputerUseSdk {
     return results.length === 1 ? results[0] : results;
   }
 
+  /** 修饰键和弦（V1.18 取长补短补面）：单修饰键+单键（CmdOrCtrl+S）。
+   * v1 SKILL 虚指了 hotkey 方法而 SDK 未暴露——引擎 15 方法本含 hotkey，这里补公开面。 */
+  async hotkey(input: { target: AppTarget; key: string }): Promise<unknown> {
+    emitCursorEvents(this.onInputEvent, cursorEventsForKey({ key: input.key }));
+    return this.call("hotkey", {
+      ...this.targetParams(input.target),
+      key: input.key,
+    });
+  }
+
   // ---- W-31 方法缺口组合实现（D8：组合优先，语义化待上游 PR）----
 
   /** element_focus：聚焦元素不点击（D8 组合实现——引擎无原生 focus；click 的 AX
@@ -424,6 +488,15 @@ export class ComputerUseSdk {
 
   private async call(method: string, params: Record<string, unknown>): Promise<unknown> {
     this.gate.assertMethodAllowed(method);
+    // V1.19 P1：动作层设置门——动作面拒 actions_disabled（观测面豁免=「只能看不能动」），
+    // 先于活动闸与引擎调用，不触达 sidecar。
+    if (!this.actionsEnabled && !ComputerUseSdk.OBSERVE_METHODS.has(method)) {
+      throw new ComputerUseSdkError(
+        { sdkCode: "actions_disabled", retry: "never", possiblySent: false },
+        "Computer actions are turned off in FreeCodeZ settings (observation still works). " +
+          "Tell the user to enable 允许操作 in Settings → 计算机控制 and start a new session.",
+      );
+    }
     if (!ComputerUseSdk.OBSERVE_METHODS.has(method)) {
       const quiet = await waitForUserQuiet(this.readUserActivity, this.activityGate);
       if (!quiet.ok) {
@@ -450,13 +523,51 @@ export class ComputerUseSdk {
     const code = response?.error?.code;
     const message = response?.error?.message ?? `engine error in ${method}`;
     const mapping: SdkErrorMapping = mapEngineError(code ?? "invalid_argument", message);
-    throw new ComputerUseSdkError(mapping, message, code);
+    // V1.19 P2：恢复剧本随错误信封下发（orca CLI 句已改写为本 API 面）——
+    // 模型在 js 异常文本里直接看到下一步指导，不必查表。
+    const recovery = computerUseErrorRecoveryData(code ?? "", message);
+    const recoveryText = recovery
+      ? `\nRecovery:\n${recovery.nextSteps.map((step) => `- ${step}`).join("\n")}`
+      : "";
+    throw new ComputerUseSdkError(mapping, message + recoveryText, code);
   }
 }
 
+/** V1.19 P5（R7/A15）：敏感字段脱敏启发——角色/名称命中密码族词的树行，其值段
+ *（Value:/Text: 起）替换为 [redacted]；名称保留供模型定位元素。边界：placeholder
+ * 是提示非机密；值段吞到行尾（保守过脱，敏感行上的后续段一并遮蔽——安全优先）；
+ * 像素截图不在文本面。 */
+const SENSITIVE_FIELD_PATTERN =
+  /(secure|password|passwd|passcode|密码|密钥|口令|secret|api[_ -]?key|token|pin\b)/i;
+
+export function redactTreeText(treeText: string): string {
+  if (!SENSITIVE_FIELD_PATTERN.test(treeText)) return treeText;
+  return treeText
+    .split("\n")
+    .map((line) => {
+      if (!SENSITIVE_FIELD_PATTERN.test(line)) return line;
+      return line
+        .replace(/(,\s*Value: )[^\n]*/gi, "$1[redacted]")
+        .replace(/(,\s*Text: )[^\n]*/gi, "$1[redacted]");
+    })
+    .join("\n");
+}
+
+function redactAppStateTreeText(result: unknown): unknown {
+  if (!result || typeof result !== "object") return result;
+  const record = result as { snapshot?: { treeText?: unknown } };
+  const snapshot = record.snapshot;
+  if (!snapshot || typeof snapshot !== "object") return result;
+  const { treeText } = snapshot as { treeText?: unknown };
+  if (typeof treeText !== "string") return result;
+  return {
+    ...record,
+    snapshot: { ...snapshot, treeText: redactTreeText(treeText) },
+  };
+}
+
 /** listApps 结果条目提取（apps 数组或裸数组两种 wire 形状）。 */
-function extractAppEntries(result: unknown): ListAppsEntry[] | undefined {
-  if (Array.isArray(result)) return result as ListAppsEntry[];
+function extractAppEntries(result: unknown): ListAppsEntry[] | undefined {  if (Array.isArray(result)) return result as ListAppsEntry[];
   const record = result as { apps?: unknown } | null;
   if (Array.isArray(record?.apps)) return record.apps as ListAppsEntry[];
   return undefined;

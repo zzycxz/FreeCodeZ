@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // FreeCodeZ A4 三平台冒烟脚本：fork sidecar → capabilities/listApps/getAppState/click
 // 逐项返回结构化信封。在目标平台真机上运行（macOS/Linux/Windows 各跑一次）。
-// 用法：node --import tsx scripts/platform-smoke.mjs [--sidecar <path>] [--helper <path>]
+// 用法：node --import tsx scripts/platform-smoke.mjs [--sidecar <path>] [--helper <path>] [--actions]
 // 输出：逐方法 ok/error + 平台 supports 真值摘要 + A4 判定。
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -12,6 +12,9 @@ const pkgRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv;
 const sidecarFlag = args.indexOf("--sidecar");
 const helperFlag = args.indexOf("--helper");
+// V1.19 P6：--actions 追加动作面验收段（TextEdit 一站式：setValue/hotkey/typeText/
+// pressKey/pasteText/scroll + 终树验证；需 TCC 已授）。
+const actionsFlag = args.indexOf("--actions") >= 0;
 
 const sidecarPath = sidecarFlag >= 0
   ? args[sidecarFlag + 1]
@@ -96,6 +99,63 @@ async function main() {
       app: "com.apple.finder",
       elementIndex: 0,
     }));
+
+    // ---- V1.19 P6：动作面验收 harness（--actions）----
+    // 背景：引擎 13 方法中 8 个动作方法从未真机执行（A4 只冒烟了 5 个观测+click）。
+    // 本段用 TextEdit 一站式覆盖 setValue/hotkey/typeText/pressKey/pasteText/scroll
+    //（performSecondaryAction/drag 留金样与专项用例）。需要 TCC 已授（否则各步
+    // permission_denied 如实记录）。win/linux VM 冒烟时换对应应用与启动命令。
+    if (actionsFlag) {
+      const act = (method, response) => {
+        const entry = {
+          method,
+          ok: response.ok === true,
+          code: response.ok ? undefined : response.error?.code,
+        };
+        results.methods.push(entry);
+        if (!entry.ok && entry.code !== "permission_denied") results.verdict = "FAIL";
+        return response;
+      };
+      execFileSync("open", ["-a", "TextEdit"]);
+      await new Promise((r) => setTimeout(r, 2500));
+      const st = act("actions.getAppState", await harness.request("getAppState", {
+        app: "TextEdit",
+        noScreenshot: true,
+      }));
+      const tree = st.ok ? st.result?.snapshot?.treeText ?? "" : "";
+      const areaLine = tree
+        .split("\n")
+        .find((line) => /text( entry)? area|AXTextArea/i.test(line) && !/placeholder/i.test(line));
+      const areaIndex = areaLine?.match(/\[(\d+)\]/)?.[1] ?? areaLine?.match(/^\s*(\d+)\s/)?.[1];
+      if (areaIndex === undefined) {
+        results.methods.push({
+          method: "actions.harness",
+          ok: false,
+          code: "text_area_not_found",
+          message: areaLine?.slice(0, 120),
+        });
+        results.verdict = "FAIL";
+      } else {
+        const idx = Number(areaIndex);
+        act("setValue", await harness.request("setValue", { app: "TextEdit", elementIndex: idx, value: "smoke" }));
+        act("hotkey", await harness.request("hotkey", { app: "TextEdit", key: "CmdOrCtrl+A" }));
+        act("typeText", await harness.request("typeText", { app: "TextEdit", text: "V1.19" }));
+        act("pressKey", await harness.request("pressKey", { app: "TextEdit", key: "Return" }));
+        act("pasteText", await harness.request("pasteText", { app: "TextEdit", text: "pasted" }));
+        act("scroll", await harness.request("scroll", {
+          app: "TextEdit", elementIndex: idx, direction: "down", amount: 30,
+        }));
+        const final = await harness.request("getAppState", { app: "TextEdit", noScreenshot: true });
+        const finalTree = final.ok ? final.result?.snapshot?.treeText ?? "" : "";
+        const verified = finalTree.includes("V1.19") && finalTree.includes("pasted");
+        results.methods.push({
+          method: "actions.verify",
+          ok: verified,
+          code: verified ? undefined : "final_tree_missing_expected_text",
+        });
+        if (!verified) results.verdict = "FAIL";
+      }
+    }
   } finally {
     await harness.stop();
   }

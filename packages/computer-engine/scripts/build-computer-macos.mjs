@@ -77,24 +77,29 @@ function codesignArgs(identity, targetPath) {
 
 function resolveSigningIdentity() {
   const explicitIdentity =
-    process.env.FREECODEZ_COMPUTER_MACOS_SIGN_IDENTITY ?? process.env.CSC_NAME;
+    process.env.FREECODEZ_SIGN_IDENTITY ??
+    process.env.FREECODEZ_COMPUTER_MACOS_SIGN_IDENTITY ??
+    process.env.CSC_NAME;
   if (explicitIdentity) {
     return explicitIdentity;
   }
-  const identities = spawnSync("security", ["find-identity", "-v", "-p", "codesigning"], {
+  // 不带 -v：自签名命名证书在 -v（valid only）视图会被滤掉，而它正是 V1.19 首选身份。
+  const identities = spawnSync("security", ["find-identity", "-p", "codesigning"], {
     encoding: "utf8",
   });
   if (identities.status !== 0 || !identities.stdout) {
     return "-";
   }
+  // V1.19：自签名命名证书优先（DR 锚定证书，TCC 跨重装稳定）；开发路径再退 Apple Development。
+  const namedMatch = identities.stdout.match(/"([^"]*FreeCodeZ Dev Signing[^"]*)"/);
   const developmentMatch = identities.stdout.match(/"([^"]*Apple Development:[^"]+)"/);
-  if (process.env.FREECODEZ_MAC_RELEASE !== "1" && developmentMatch) {
-    return developmentMatch[1];
+  if (process.env.FREECODEZ_MAC_RELEASE !== "1" && (namedMatch || developmentMatch)) {
+    return (namedMatch ?? developmentMatch)[1];
   }
   const releaseMatch =
     identities.stdout.match(/"([^"]*Developer ID Application:[^"]+)"/) ??
     identities.stdout.match(/"([^"]*Apple Distribution:[^"]+)"/);
-  return releaseMatch?.[1] ?? developmentMatch?.[1] ?? "-";
+  return releaseMatch?.[1] ?? namedMatch?.[1] ?? developmentMatch?.[1] ?? "-";
 }
 
 function run(command, args) {

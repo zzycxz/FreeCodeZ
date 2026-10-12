@@ -12,6 +12,13 @@ export const ZCODE_AGENT_CA_CERT_ENV_KEY = "FREECODEZ_AGENT_CA_CERT";
 export const ZCODE_TOOL_ENV_PASSTHROUGH_ENV_KEY = "FREECODEZ_TOOL_ENV_PASSTHROUGH_JSON";
 /** Desktop Main 将服务端裁决的单功能灰度结果传给 Local/Remote Host。 */
 export const ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV = "FREECODEZ_DESKTOP_CONTEXT_PROMPT_ENABLED";
+/** 电脑控制生效链门（规格书 V1.17）：Desktop 在 agent spawn 时把设置总开关
+ * cuaControlEnabled 显式下发（"1"/"0"）；headless CLI 无此 env=不设门。
+ * bootstrap 据此向 node_repl 注入 FREECODEZ_CUA_DISABLED，bridge 显式拒。 */
+export const FREECODEZ_CUA_CONTROL_ENABLED_ENV = "FREECODEZ_CUA_CONTROL_ENABLED";
+/** 动作层开关（V1.19 P1）：cuaActionsEnabled 同链下发；bootstrap 透传
+ * FREECODEZ_CUA_ACTIONS=0 → SDK 动作面拒 actions_disabled（观测面豁免）。 */
+export const FREECODEZ_CUA_ACTIONS_ENABLED_ENV = "FREECODEZ_CUA_ACTIONS_ENABLED";
 
 export type ZCodeRuntimeEnv = "development" | "production" | "test";
 

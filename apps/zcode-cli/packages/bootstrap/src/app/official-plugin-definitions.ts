@@ -20,6 +20,8 @@ export interface OfficialPluginListingSeed {
 
 const OFFICIAL_BROWSER_USE_PLUGIN_NAME = "browser-use";
 export const OFFICIAL_BROWSER_USE_PLUGIN_ID = `${OFFICIAL_BROWSER_USE_PLUGIN_NAME}@${FREECODEZ_PLUGIN_MARKETPLACE}`;
+const OFFICIAL_COMPUTER_USE_PLUGIN_NAME = "computer-use";
+export const OFFICIAL_COMPUTER_USE_PLUGIN_ID = `${OFFICIAL_COMPUTER_USE_PLUGIN_NAME}@${FREECODEZ_PLUGIN_MARKETPLACE}`;
 /**
  * node_repl 宿主。它不是面向用户的插件：没有 skill、没有 listing、不进市场，唯一职责是
  * 携带 `dist/mcp/server.js` 这个 Browser Use 与 Computer Use 共用的运行时产物。
@@ -309,6 +311,33 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
     // 内容对齐上游 0.3.0 语义（单文件 dynamic-workflows SKILL），版本沿 fork 自有
     // 序列继续演进；技能按小方案留在 zcode-guide，不建 bundled-skills 出包链。
     version: "0.3.0",
+  },
+  {
+    // FreeCodeZ 电脑控制（规格书 V1.17，W-15 分发载体）：只携带 skill 文档，引擎本体在
+    // packages/computer-engine、运行时宿主在 node-repl-host seed 单元。defaultEnabled: true
+    // 让引导语句（setupComputerUseRuntime）常驻模型面；引擎是否真可用由桌面设置总开关
+    // cuaControlEnabled 经生效链门控（desktop → agent env → bootstrap → bridge fail-closed），
+    // skill 可见 ≠ 引擎可写，两者同键一致（设置开=芯片现+引擎通，设置关=芯片隐+引擎显式拒）。
+    defaultEnabled: true,
+    listing: {
+      displayName_i18n: { "zh-CN": "电脑操作", "en-US": "Computer Use" },
+      description_i18n: {
+        "zh-CN": "内置电脑控制技能：读取应用界面树与截图后进行点击、键入、滚动、拖拽与校验，直接操作本机桌面应用。",
+        "en-US":
+          "Built-in desktop control: read UI trees and screenshots, then click, type, scroll, drag, and verify actions on your computer's desktop apps.",
+      },
+      category: "productivity",
+      author: { name: "FreeCodeZ" },
+    },
+    name: "computer-use",
+    requiredSeedPaths: ["skills/computer-use/SKILL.md"],
+    rootCandidates: [
+      "packages/computer-use-plugin",
+      "../computer-use-plugin",
+      "../../computer-use-plugin",
+      "../../../computer-use-plugin",
+    ],
+    version: "0.1.0",
   },
 ];
 

@@ -5,6 +5,7 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createSocket, type Socket } from "node:dgram";
 import type { NodeReplRequestMeta } from "@zcode/core/repl";
 import {
   createEngineSdk,
@@ -70,6 +71,34 @@ export function sidecarCandidatePaths(input: {
   ];
 }
 
+/** W-28/P3（V1.19）：光标 HUD 帧出口——SDK 输入事件旁路单播到本机 HUD 监听
+ * （desktop cuaCursorHud 绑 127.0.0.1:53717；FREECODEZ_CUA_CURSOR_BROADCAST_PORT 可覆盖）。
+ * 惰性建 socket；发送失败静默吞（可视化旁路不折断动作本体，同 emitCursorEvents 口径）。 */
+export function createCursorHudBroadcaster(
+  env: NodeJS.ProcessEnv = process.env,
+): { emit(event: unknown): void; close(): void } {
+  const port = Number(env.FREECODEZ_CUA_CURSOR_BROADCAST_PORT) || 53717;
+  let socket: Socket | undefined;
+  return {
+    emit(event: unknown) {
+      try {
+        socket ??= createSocket("udp4");
+        socket.send(JSON.stringify(event), port, "127.0.0.1");
+      } catch {
+        // 旁路可视化：发送失败不影响动作。
+      }
+    },
+    close() {
+      try {
+        socket?.close();
+      } catch {
+        // 双 close 防御。
+      }
+      socket = undefined;
+    },
+  };
+}
+
 export function createComputerBridgeGlobals(input: {
   generation: number;
   getActiveCall: () => ActiveComputerCall | undefined;
@@ -77,6 +106,8 @@ export function createComputerBridgeGlobals(input: {
 }): Record<PropertyKey, unknown> {
   let harness: SidecarHarness | undefined;
   let sdk: unknown;
+  // W-28/P3：HUD 帧广播器随桥生命周期（dispose 收口关 socket）。
+  const cursorHud = createCursorHudBroadcaster();
 
   const assertAvailable = (): ActiveComputerCall => {
     const active = input.getActiveCall();
@@ -91,6 +122,14 @@ export function createComputerBridgeGlobals(input: {
 
   const ensureSdk = (): Promise<unknown> => {
     assertAvailable();
+    // 生效链门（V1.17）：桌面设置总开关关 → bootstrap 注入 FREECODEZ_CUA_DISABLED。
+    // 显式产品开关拒绝优先于产物检查——报「设置关闭」而不是「引擎未构建」，
+    // 模型才能把正确的处置转告用户（去设置开启），而不是误判为装机缺陷。
+    if (process.env.FREECODEZ_CUA_DISABLED === "1") {
+      throw new Error(
+        "Computer use is turned off in FreeCodeZ settings. Do not retry; tell the user to enable 电脑操作 (Computer Use) in Settings → 计算机控制 and start a new session.",
+      );
+    }
     if (sdk) return Promise.resolve(sdk);
     const sidecarPath = resolveSidecarPath();
     if (!sidecarPath) {
@@ -110,6 +149,16 @@ export function createComputerBridgeGlobals(input: {
             started.request(method, params),
         },
         sessionId: active.sessionId,
+        // 动作层设置门（V1.19 P1）：bootstrap 注入 FREECODEZ_CUA_ACTIONS=0 → SDK 拒
+        // 动作面（actions_disabled）、观测面豁免。缺省不设门（headless CLI）。
+        actionsEnabled: process.env.FREECODEZ_CUA_ACTIONS !== "0",
+        // 光标 HUD 帧出口（V1.19 P3）：SDK 输入事件旁路单播 127.0.0.1:53717。
+        onInputEvent: (event: unknown) => cursorHud.emit(event),
+        // 观测目标身份上报（V1.19 P4，W-30/S6 重建）：真实引擎快照解析（防自报伪造），
+        // 经 responseMeta 下行（_meta 通道）→ 行装配盖 toolCallRow.cuaApp → UI 分组/图标。
+        onCuaApp: (app: { pid: number; name: string; bundleId?: string }) => {
+          input.session().mergeResponseMeta({ "freecodez/nodeReplCuaApp": app });
+        },
         ...(existsSync(docsRoot) ? { docsRoot } : {}),
       }).then((created) => {
         sdk = created;
@@ -120,6 +169,7 @@ export function createComputerBridgeGlobals(input: {
 
   const dispose = async () => {
     await harness?.stop();
+    cursorHud.close();
     harness = undefined;
     sdk = undefined;
   };

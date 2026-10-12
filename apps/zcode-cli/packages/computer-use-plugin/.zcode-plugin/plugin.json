@@ -1,0 +1,8 @@
+{
+  "name": "computer-use",
+  "version": "0.1.0",
+  "description": "Built-in desktop control guidance for the FreeCodeZ Computer Use engine: read UI state via accessibility trees and screenshots, then click, type, scroll, drag, and verify — with sparse-index discipline and honest failure reporting.",
+  "author": { "name": "FreeCodeZ" },
+  "license": "MIT",
+  "skills": "skills"
+}

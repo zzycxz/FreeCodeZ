@@ -382,6 +382,8 @@ import {
 } from "@zcode/shared";
 import {
   getCapturedZCodeAgentTelemetryEnv,
+  FREECODEZ_CUA_ACTIONS_ENABLED_ENV,
+  FREECODEZ_CUA_CONTROL_ENABLED_ENV,
   ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV,
 } from "@zcode/shared/runtime-env";
 
@@ -772,6 +774,12 @@ export function createLocalServices(options: {
         // 把 host 解析出的权威 origin（含 settings 覆盖）下发给 agent，否则 agent 侧只按
         // env 推导，test env + 自定义端点时两侧信任判定的输入分叉、官方 MCP 整体 fail closed。
         ...buildAgentEndpointOriginEnv(await resolveCurrentZCodeEndpointOrigin()),
+        // 电脑控制生效链门（规格书 V1.17）：桌面设置总开关随 spawn 显式下发，
+        // bootstrap 据此门控 node_repl computer 桥（fail-closed）。桌面态两态都显式注入
+        //（开="1" 关="0"）；headless CLI 不走此注入=无 env=不设门。
+        [FREECODEZ_CUA_CONTROL_ENABLED_ENV]: settings.cuaControlEnabled === true ? "1" : "0",
+        // 动作层开关（V1.19 P1）：同一管线，语义=总开关开+动作关时「只能看不能动」。
+        [FREECODEZ_CUA_ACTIONS_ENABLED_ENV]: settings.cuaActionsEnabled === true ? "1" : "0",
         // FreeCodeZ fork(P3 §3.2):Agent 遥测 spawn env 注入已删(恒空)。
         ...createNodeProviderRuntimePathEnv({
           // Built-in Active 路径按当前 Endpoint 隔离，不能通过同步的固定路径

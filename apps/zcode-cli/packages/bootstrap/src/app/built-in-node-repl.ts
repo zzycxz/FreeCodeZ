@@ -3,8 +3,10 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { createBundledMcpRuntimeConfig } from "./official-plugin-runtime.js";
 import { withComputerEngineEnv } from "../mcp-config.js";
+import { FREECODEZ_CUA_ACTIONS_ENABLED_ENV, FREECODEZ_CUA_CONTROL_ENABLED_ENV } from "@zcode/shared/runtime-env";
 import {
   OFFICIAL_BROWSER_USE_PLUGIN_ID,
+  OFFICIAL_COMPUTER_USE_PLUGIN_ID,
   OFFICIAL_NODE_REPL_HOST_PLUGIN_ID,
 } from "./official-plugin-definitions.js";
 
@@ -40,10 +42,15 @@ export function resolveBuiltInNodeReplMcpServers(input: {
   pluginOutcome: Pick<PluginLoadOutcome, "plugins">;
   workingDirectory: string;
 }): Record<string, McpServerConfig> {
+  // 注册门禁（V1.17 修正）：Browser Use 或 Computer Use 任一启用即注册宿主——
+  // definitions 注释的既定语义，原实现只看 browser-use 侧，漏接 computer-use。
   const browserUsePackage = input.pluginOutcome.plugins.find(
     (plugin) => plugin.id === OFFICIAL_BROWSER_USE_PLUGIN_ID && plugin.enabled,
   );
-  if (!browserUsePackage) return {};
+  const computerUsePackage = input.pluginOutcome.plugins.find(
+    (plugin) => plugin.id === OFFICIAL_COMPUTER_USE_PLUGIN_ID && plugin.enabled,
+  );
+  if (!browserUsePackage && !computerUsePackage) return {};
   // 宿主自己不参与启用判断：它没有 skill、不对用户露出，缺失就意味着没有宿主可跑，
   // 必须安全地不注册，而不是回退到某个插件包里的旧产物。
   const hostPackage = input.pluginOutcome.plugins.find(
@@ -65,16 +72,26 @@ export function resolveBuiltInNodeReplMcpServers(input: {
     resourcesPath: process.resourcesPath,
   }).find((dir) => existsSync(join(dir, "computer-sidecar.js")));
 
+  // 生效链门（V1.17）：桌面设置总开关随 agent spawn env 下发（FREECODEZ_CUA_CONTROL_ENABLED，
+  // 同 ZCODE_DESKTOP_CONTEXT_PROMPT_ENABLED_ENV 先例）。显式 "0"=桌面设置关 → 注入
+  // FREECODEZ_CUA_DISABLED 让 bridge 显式拒；headless CLI（无此 env）不设门。
+  const controlEnabled = process.env[FREECODEZ_CUA_CONTROL_ENABLED_ENV]?.trim() !== "0";
+  // 动作层门（V1.19 P1）：同一管线，动作关 → 注入 FREECODEZ_CUA_ACTIONS=0（SDK 拒动作、放观测）。
+  const actionsEnabled = process.env[FREECODEZ_CUA_ACTIONS_ENABLED_ENV]?.trim() !== "0";
+
   const nodeRepl = createBundledMcpRuntimeConfig({
     cwd: input.workingDirectory,
     env: withComputerEngineEnv(
       {
         // 领域 root 各自注入，且只在对应能力启用时注入：宿主据此决定哪一半文档可用。
-        ZCODE_PLUGIN_ROOT: browserUsePackage.rootPath,
+        // computer-use 的文档根走 sidecar 产物目录推导（G3），不经插件 root。
+        ...(browserUsePackage ? { ZCODE_PLUGIN_ROOT: browserUsePackage.rootPath } : {}),
       },
       {
         engineDistDir,
         engineReady: engineDistDir !== undefined,
+        controlEnabled,
+        actionsEnabled,
       },
     ),
     rootPath: hostPackage.rootPath,

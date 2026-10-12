@@ -69,8 +69,37 @@ export function planMacAdhocSignIdentifiers({
   return steps;
 }
 
-/** 执行签名计划；runCommand 注入用（测试），缺省 spawnSync 原生 codesign。 */
-export function applyMacAdhocSignIdentifiers(steps, runCommand) {
+/**
+ * 签名身份解析（V1.19 自签名命名证书策略）：adhoc 签名每次重编译换 cdhash，TCC
+ * 授权随重装作废；命名证书的 Designated Requirement 锚定证书、跨重装稳定。
+ * 顺序：显式 FREECODEZ_SIGN_IDENTITY → 钥匙串自签名命名证书 → Apple Development →
+ * adhoc 兜底（CI/无证书机器不受影响）。identityList 注入用（测试）。
+ */
+export function resolveMacSigningIdentity(identityList) {
+  const explicit = process.env.FREECODEZ_SIGN_IDENTITY?.trim();
+  if (explicit) return explicit;
+  const list =
+    identityList ??
+    (() => {
+      const result = spawnSync("security", ["find-identity", "-p", "codesigning"], {
+        encoding: "utf8",
+      });
+      return result.status === 0 ? result.stdout : "";
+    })();
+  return (
+    list.match(/"([^"]*FreeCodeZ Dev Signing[^"]*)"/)?.[1] ??
+    list.match(/"([^"]*Apple Development:[^"]*)"/)?.[1] ??
+    "-"
+  );
+}
+
+/** 执行签名计划；runCommand 注入用（测试），缺省 spawnSync 原生 codesign。
+ * 签名身份按 resolveMacSigningIdentity 解析（命名证书优先，adhoc 仅兜底）。 */
+export function applyMacAdhocSignIdentifiers(
+  steps,
+  runCommand,
+  signIdentity = resolveMacSigningIdentity(),
+) {
   const run =
     runCommand ??
     ((args) => {
@@ -85,9 +114,9 @@ export function applyMacAdhocSignIdentifiers(steps, runCommand) {
     run([
       "--force",
       "--sign",
-      "-",
-      "--entitlements",
-      step.entitlements,
+      signIdentity,
+      // entitlements 缺席时沿旧容忍语义不带该对（嵌套 helper 旧路径允许无 entitlements 签）。
+      ...(step.entitlements ? ["--entitlements", step.entitlements] : []),
       "--identifier",
       step.identifier,
       step.targetPath,
