@@ -116,16 +116,16 @@ async function main() {
         if (!entry.ok && entry.code !== "permission_denied") results.verdict = "FAIL";
         return response;
       };
-      execFileSync("open", ["-a", "TextEdit"]);
+      execFileSync("open", ["-b", "com.apple.TextEdit"]);  // bundleId：app 名本地化（文本编辑）坑
       await new Promise((r) => setTimeout(r, 2500));
       const st = act("actions.getAppState", await harness.request("getAppState", {
-        app: "TextEdit",
+        app: "com.apple.TextEdit",
         noScreenshot: true,
       }));
       const tree = st.ok ? st.result?.snapshot?.treeText ?? "" : "";
       const areaLine = tree
         .split("\n")
-        .find((line) => /text( entry)? area|AXTextArea/i.test(line) && !/placeholder/i.test(line));
+        .find((line) => /text( entry)? area|AXTextArea|文本(输入)?区/i.test(line) && !/placeholder|占位/i.test(line));  // role 渲染本地化坑
       const areaIndex = areaLine?.match(/\[(\d+)\]/)?.[1] ?? areaLine?.match(/^\s*(\d+)\s/)?.[1];
       if (areaIndex === undefined) {
         results.methods.push({
@@ -137,15 +137,15 @@ async function main() {
         results.verdict = "FAIL";
       } else {
         const idx = Number(areaIndex);
-        act("setValue", await harness.request("setValue", { app: "TextEdit", elementIndex: idx, value: "smoke" }));
-        act("hotkey", await harness.request("hotkey", { app: "TextEdit", key: "CmdOrCtrl+A" }));
-        act("typeText", await harness.request("typeText", { app: "TextEdit", text: "V1.19" }));
-        act("pressKey", await harness.request("pressKey", { app: "TextEdit", key: "Return" }));
-        act("pasteText", await harness.request("pasteText", { app: "TextEdit", text: "pasted" }));
+        act("setValue", await harness.request("setValue", { app: "com.apple.TextEdit", elementIndex: idx, value: "smoke" }));
+        act("hotkey", await harness.request("hotkey", { app: "com.apple.TextEdit", key: "CmdOrCtrl+A" }));
+        act("typeText", await harness.request("typeText", { app: "com.apple.TextEdit", text: "V1.19" }));
+        act("pressKey", await harness.request("pressKey", { app: "com.apple.TextEdit", key: "Return" }));
+        act("pasteText", await harness.request("pasteText", { app: "com.apple.TextEdit", text: "pasted" }));
         act("scroll", await harness.request("scroll", {
-          app: "TextEdit", elementIndex: idx, direction: "down", amount: 30,
+          app: "com.apple.TextEdit", elementIndex: idx, direction: "down", amount: 30,
         }));
-        const final = await harness.request("getAppState", { app: "TextEdit", noScreenshot: true });
+        const final = await harness.request("getAppState", { app: "com.apple.TextEdit", noScreenshot: true });
         const finalTree = final.ok ? final.result?.snapshot?.treeText ?? "" : "";
         const verified = finalTree.includes("V1.19") && finalTree.includes("pasted");
         results.methods.push({

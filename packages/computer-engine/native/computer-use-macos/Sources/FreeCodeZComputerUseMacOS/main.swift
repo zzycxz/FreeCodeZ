@@ -2459,7 +2459,13 @@ private struct WindowCapture {
     }
 
     private static func captureImage(windowId: CGWindowID, bounds: CGRect) -> CapturedImage? {
-        if ProcessInfo.processInfo.environment["FREECODEZ_COMPUTER_USE_SCK_SCREENSHOTS"] == "1",
+        // V1.21 P7（2026-10-12 装机审计）：SCK 转正为主路径。根因：CGWindowListCreateImage
+        // 自 macOS 15 起废弃，运行时无视 .optionIncludingWindow 窗口隔离、退化为区域合成
+        //（被遮挡窗口会抓到最上层浮窗内容——实测 FreeCodeZ 窗口截图返回 Orca 设置窗）。
+        // 正确语义=SCContentFilter(desktopIndependentWindow:)。FREECODEZ_COMPUTER_USE_SCK_SCREENSHOTS=0
+        // 可强制回退旧 CG 路径（仅限老系统/对照排障）。
+        let forceCG = ProcessInfo.processInfo.environment["FREECODEZ_COMPUTER_USE_SCK_SCREENSHOTS"] == "0"
+        if !forceCG, #available(macOS 14.0, *),
            let image = captureImageWithScreenCaptureKit(windowId: windowId, bounds: bounds) {
             return CapturedImage(image: image, engine: "screenCaptureKit")
         }
@@ -2470,23 +2476,40 @@ private struct WindowCapture {
     }
 
     private static func captureImageWithScreenCaptureKit(windowId: CGWindowID, bounds: CGRect) -> CGImage? {
-        try? BlockingAsync.run(timeout: 3) {
-            let content = try await SCShareableContent.current
-            guard let window = content.windows.first(where: { $0.windowID == windowId }) else {
-                return nil
+        // SCContentFilter 初始化要求主线程 CGS 上下文（Task.detached 后台线程会
+        // CGS_REQUIRE_INIT 崩溃——实测）；用 @MainActor 任务 + 信号量桥接，
+        // 带 3 秒超时防主线程忙时悬挂（超时回落 CG 兜底，不阻塞观测链）。
+        let semaphore = DispatchSemaphore(value: 0)
+        let box = AsyncBox<CGImage>()
+        Task { @MainActor in
+            defer { semaphore.signal() }
+            do {
+                let content = try await SCShareableContent.current
+                guard let window = content.windows.first(where: { $0.windowID == windowId }) else {
+                    NSLog("[cua-sck] window \(windowId) not found in SCShareableContent (\(content.windows.count) windows)")
+                    return
+                }
+                let filter = SCContentFilter(desktopIndependentWindow: window)
+                let configuration = SCStreamConfiguration()
+                let scale = NSScreen.screens.first(where: { $0.frame.intersects(bounds) })?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+                configuration.width = size_t(max(1, Int((bounds.width * scale).rounded(.up))))
+                configuration.height = size_t(max(1, Int((bounds.height * scale).rounded(.up))))
+                configuration.scalesToFit = true
+                configuration.preservesAspectRatio = true
+                configuration.showsCursor = false
+                configuration.ignoreShadowsSingleWindow = true
+                configuration.ignoreGlobalClipSingleWindow = true
+                box.result = .success(try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration))
+            } catch {
+                NSLog("[cua-sck] capture failed for window \(windowId): \(error)")
+                box.result = .failure(error)
             }
-            let filter = SCContentFilter(desktopIndependentWindow: window)
-            let configuration = SCStreamConfiguration()
-            let scale = NSScreen.screens.first(where: { $0.frame.intersects(bounds) })?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
-            configuration.width = size_t(max(1, Int((bounds.width * scale).rounded(.up))))
-            configuration.height = size_t(max(1, Int((bounds.height * scale).rounded(.up))))
-            configuration.scalesToFit = true
-            configuration.preservesAspectRatio = true
-            configuration.showsCursor = false
-            configuration.ignoreShadowsSingleWindow = true
-            configuration.ignoreGlobalClipSingleWindow = true
-            return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
         }
+        if semaphore.wait(timeout: .now() + 3) == .timedOut {
+            NSLog("[cua-sck] capture timed out for window \(windowId)")
+            return nil
+        }
+        return try? box.result?.get()
     }
 }
 
