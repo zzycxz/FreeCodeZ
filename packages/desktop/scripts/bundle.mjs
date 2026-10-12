@@ -23,6 +23,7 @@ import {
   runCommandAndReadStdout,
 } from "../../../scripts/spawn-command.mjs";
 import { resolveIntranetDepsBaseUrl } from "../../../scripts/intranetDefaults.mjs";
+import { unlockSigningKeychain } from "../../../scripts/mac-signing-keychain.mjs";
 
 const desktopRoot = resolve(import.meta.dirname, "..");
 const workspaceRoot = resolve(desktopRoot, "../..");
@@ -465,6 +466,11 @@ function shouldRetryElectronBuilderFailure(output) {
 async function runElectronBuilderWithRetry(args, envPatch) {
   const retryEnvPatch = { ...envPatch };
   let didFallbackElectronBuilderMirror = false;
+
+  // 签名前解锁专用钥匙串（fcz-sign，空口令）：electron-builder 自身签名阶段与
+  // afterPack 重签链都会用命名证书私钥，锁定态下 codesign 弹 GUI 口令窗会让
+  // electron-builder 静默挂起（失败不阻断，见 mac-signing-keychain.mjs）。
+  unlockSigningKeychain();
 
   for (let attempt = 1; attempt <= electronBuilderRetryCount; attempt += 1) {
     console.log(

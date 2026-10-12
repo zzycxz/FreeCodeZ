@@ -23,6 +23,13 @@ export declare function sidecarCandidatePaths(input: {
     here: string;
     resourcesPath?: string | undefined;
 }): string[];
+/** W-28/P3（V1.19）：光标 HUD 帧出口——SDK 输入事件旁路单播到本机 HUD 监听
+ * （desktop cuaCursorHud 绑 127.0.0.1:53717；FREECODEZ_CUA_CURSOR_BROADCAST_PORT 可覆盖）。
+ * 惰性建 socket；发送失败静默吞（可视化旁路不折断动作本体，同 emitCursorEvents 口径）。 */
+export declare function createCursorHudBroadcaster(env?: NodeJS.ProcessEnv): {
+    emit(event: unknown): void;
+    close(): void;
+};
 export declare function createComputerBridgeGlobals(input: {
     generation: number;
     getActiveCall: () => ActiveComputerCall | undefined;

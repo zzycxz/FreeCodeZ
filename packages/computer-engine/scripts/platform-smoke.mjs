@@ -4,7 +4,8 @@
 // 用法：node --import tsx scripts/platform-smoke.mjs [--sidecar <path>] [--helper <path>] [--actions]
 // 输出：逐方法 ok/error + 平台 supports 真值摘要 + A4 判定。
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -116,7 +117,23 @@ async function main() {
         if (!entry.ok && entry.code !== "permission_denied") results.verdict = "FAIL";
         return response;
       };
-      execFileSync("open", ["-b", "com.apple.TextEdit"]);  // bundleId：app 名本地化（文本编辑）坑
+      // V1.21 复验坑：本机 TextEdit 启动偏好=打开现有文稿，open -b 只弹"打开"对话框
+      //（树里全是最近使用/共享侧栏，text_area_not_found）；且上轮冒烟留下的未保存文档
+      // 会让下次启动停在旧状态。先无保存关全部文档+退出清状态，再带临时文件启动——
+      // 必得带"文本输入区 (settable)"的文档窗口。win/linux VM 冒烟时换对应应用与启动命令。
+      try {
+        execFileSync("osascript", [
+          "-e",
+          'tell application "TextEdit" to close every document saving no',
+          "-e",
+          'tell application "TextEdit" to quit',
+        ]);
+      } catch {
+        // TextEdit 未运行时 osascript 非零退出——清状态是尽力而为。
+      }
+      const smokeDocPath = join(tmpdir(), "fcz-cua-smoke.txt");
+      writeFileSync(smokeDocPath, "", "utf8");
+      execFileSync("open", ["-b", "com.apple.TextEdit", smokeDocPath]);  // bundleId：app 名本地化（文本编辑）坑
       await new Promise((r) => setTimeout(r, 2500));
       const st = act("actions.getAppState", await harness.request("getAppState", {
         app: "com.apple.TextEdit",

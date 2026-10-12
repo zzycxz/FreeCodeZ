@@ -82,7 +82,14 @@ function resolveBashPermissionCapability(
   // 一句话关沙箱（plan/build 也会被静默放行）。该参数置真即强制用户审批（alwaysAsk 压过
   // yolo 直通与只读直通，见 PermissionService.checkAlwaysAsk）；批准后按原请求执行（沙箱关闭
   // 仅本条生效），拒绝则本条不执行——模型去掉该参数重试即走正常判定（沙箱内或常规审批）。
-  if (readBooleanProperty(input, "dangerouslyDisableSandbox")) {
+  // 2026-10-11（沙箱规格书头部④）：门只在会话沙箱真开启时成立——沙箱显式关闭（全局开关关/
+  // automation 未勾）的会话里该参数是空操作（执行层 wrap.ts 本就不包装），无"关沙箱"可审批，
+  // 弹框是为不存在的事请求许可。仅 sandboxEnabled === false 显式跳过；undefined=未知保守
+  // 触发（fail-closed，0-2 防护语义在未知上下文不放松）。
+  if (
+    readBooleanProperty(input, "dangerouslyDisableSandbox") &&
+    context?.sandboxEnabled !== false
+  ) {
     return {
       alwaysAsk: true,
       destructive: false,

@@ -136,6 +136,31 @@ test("resolveMacSigningIdentity：env > 自签名命名证书 > Apple Developmen
   }
 });
 
+test("unlockSigningKeychain：空口令解锁 fcz-sign 专用钥匙串，失败静默不阻断", async () => {
+  const { unlockSigningKeychain, SIGNING_KEYCHAIN_PATH } = await import(
+    "../../../scripts/mac-signing-keychain.mjs"
+  );
+  assert.match(SIGNING_KEYCHAIN_PATH, /fcz-sign\.keychain-db$/);
+  // 成功路径：argv 为空口令 unlock-keychain，返回 runner 结果。
+  const seen = [];
+  assert.equal(
+    unlockSigningKeychain((args) => {
+      seen.push(args);
+      return true;
+    }),
+    true,
+  );
+  assert.deepEqual(seen, [["unlock-keychain", "-p", "", SIGNING_KEYCHAIN_PATH]]);
+  // 解锁失败与 runner 抛错都静默返回 false，签名流程不被打断。
+  assert.equal(unlockSigningKeychain(() => false), false);
+  assert.equal(
+    unlockSigningKeychain(() => {
+      throw new Error("security missing");
+    }),
+    false,
+  );
+});
+
 test("discoverHelperBundleNames：只取产品族 Helper*.app，缺失目录返回空", () => {
   const frameworksDir = mkdtempSync(join(tmpdir(), "mac-sign-test-"));
   try {

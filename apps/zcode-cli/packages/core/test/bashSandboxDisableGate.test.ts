@@ -3,20 +3,27 @@
 // 修复后该参数置真即 alwaysAsk：压过 yolo 直通与只读直通；携带该参数的调用不吃任何
 // allow 规则（会话免确认按命令文本授予，注入可夹带）；deny/ask 规则照常生效。
 // 不带该参数的既有行为（yolo 放行/只读放行/会话规则）零变化。
+// 2026-10-11（沙箱规格书头部④）：门只在会话沙箱真开启时成立——sandboxEnabled === false
+//（全局开关关/automation 未勾）的会话里参数是空操作，不触发 alwaysAsk、allow 规则照常
+// 命中；未知上下文（无 sandboxEnabled 字段，下方既有用例即此形态）保守触发（fail-closed）。
 import assert from "node:assert/strict";
 import test from "node:test";
 import { PermissionService } from "../src/permission/service.js";
 import { bashToolEntry } from "../src/tool/handlers/bash.js";
-import { resolveRuntimePermissionCapability } from "../src/tool/executor/permission-capability.js";
+import {
+  resolveRuntimePermissionCapability,
+  resolveRuntimePermissionContext,
+} from "../src/tool/executor/permission-capability.js";
 import { resolveBashPermissionRulePolicy } from "../src/tool/handlers/bash-command-permission-policy.js";
 import type { PermissionContext } from "../src/permission/service.js";
 import type { PermissionRuleValue } from "@zcode/contracts";
+import type { ToolExecutorDeps } from "../src/tool/executor/types.js";
 
 function check(
   service: PermissionService,
   input: Record<string, unknown>,
   mode: "yolo" | "build" | "plan",
-  options?: { planEnabled?: boolean; projectRules?: PermissionRuleValue[] },
+  options?: { planEnabled?: boolean; projectRules?: PermissionRuleValue[]; sandboxEnabled?: boolean },
 ) {
   const context: PermissionContext = {
     toolName: "Bash",
@@ -25,13 +32,17 @@ function check(
     mode,
     ...(options?.planEnabled !== undefined ? { planEnabled: options.planEnabled } : {}),
   };
+  const capabilityContext = {
+    workingDirectory: "/repo",
+    ...(options?.sandboxEnabled !== undefined ? { sandboxEnabled: options.sandboxEnabled } : {}),
+  };
   return service.checkPermission(
     context,
-    resolveRuntimePermissionCapability(bashToolEntry, input, { workingDirectory: "/repo" }),
+    resolveRuntimePermissionCapability(bashToolEntry, input, capabilityContext),
     options?.projectRules
       ? ({ version: 1, allow: options.projectRules } as const)
       : null,
-    resolveBashPermissionRulePolicy(input, { workingDirectory: "/repo" }),
+    resolveBashPermissionRulePolicy(input, capabilityContext),
   );
 }
 
@@ -118,4 +129,92 @@ test("能力解析：dangerouslyDisableSandbox 非 true 值不触发门", () => 
     check(service, { command: "ls /", dangerouslyDisableSandbox: false }, "yolo").decision,
     "allow",
   );
+});
+
+test("沙箱关闭会话：携带关沙箱参数不再触发 alwaysAsk（yolo 放行，用户实测场景）", () => {
+  const service = new PermissionService();
+  // 全局沙箱开关关闭 + 模型保险起见带参（如 launchctl submit）：参数是空操作，
+  // 无"关沙箱"可审批——按普通命令走 yolo 直通，不弹框。
+  const result = check(
+    service,
+    { command: "launchctl submit -l demo /usr/bin/true", dangerouslyDisableSandbox: true },
+    "yolo",
+    { sandboxEnabled: false },
+  );
+  assert.equal(result.decision, "allow");
+  assert.equal(result.ruleId, "mode.yolo");
+});
+
+test("沙箱关闭会话：带参与不带参行为逐字一致（build 只读放行/非只读 ask）", () => {
+  const service = new PermissionService();
+  const readonlyWithFlag = check(
+    service,
+    { command: "ls /", dangerouslyDisableSandbox: true },
+    "build",
+    { sandboxEnabled: false },
+  );
+  assert.equal(readonlyWithFlag.ruleId, "mode.build.readOnly");
+  // 非只读命令：带参（沙箱关）与不带参的判定逐字一致——参数不改变任何权限语义。
+  const flagged = check(
+    service,
+    { command: "cargo build", dangerouslyDisableSandbox: true },
+    "build",
+    { sandboxEnabled: false },
+  );
+  const unflagged = check(service, { command: "cargo build" }, "build", { sandboxEnabled: false });
+  assert.equal(flagged.decision, unflagged.decision);
+  assert.equal(flagged.ruleId, unflagged.ruleId);
+});
+
+test("沙箱关闭会话：allow 规则恢复命中（防夹带抑制不生效）", () => {
+  const service = new PermissionService();
+  const result = check(
+    service,
+    { command: "cargo build", dangerouslyDisableSandbox: true },
+    "build",
+    {
+      sandboxEnabled: false,
+      projectRules: [{ toolName: "Bash", ruleContent: "cargo build" }],
+    },
+  );
+  assert.equal(result.decision, "allow");
+  assert.equal(result.ruleId, "rule.project.allow");
+});
+
+test("沙箱开启会话：门照常触发（既有防护零变化）", () => {
+  const service = new PermissionService();
+  const result = check(
+    service,
+    { command: "cargo build", dangerouslyDisableSandbox: true },
+    "yolo",
+    { sandboxEnabled: true },
+  );
+  assert.equal(result.decision, "ask");
+  assert.equal(result.ruleId, "tool.alwaysAsk");
+});
+
+test("能力解析：未知上下文（无 sandboxEnabled 字段）保守触发（fail-closed）", () => {
+  const capability = resolveRuntimePermissionCapability(
+    bashToolEntry,
+    { command: "ls /", dangerouslyDisableSandbox: true },
+    { workingDirectory: "/repo" },
+  );
+  assert.equal(capability.alwaysAsk, true);
+});
+
+test("上下文投影：resolveRuntimePermissionContext 从 deps 填充沙箱事实", () => {
+  const baseDeps = {
+    getWorkingDirectory: () => "/repo",
+    getWorkspaceRoot: () => "/repo",
+  } as ToolExecutorDeps;
+  assert.equal(
+    resolveRuntimePermissionContext({ ...baseDeps, sandboxEnabled: true }).sandboxEnabled,
+    true,
+  );
+  assert.equal(
+    resolveRuntimePermissionContext({ ...baseDeps, sandboxEnabled: false }).sandboxEnabled,
+    false,
+  );
+  // deps 缺省（未显式声明沙箱）= 关闭事实，投影为显式 false——下游门按空操作跳过。
+  assert.equal(resolveRuntimePermissionContext(baseDeps).sandboxEnabled, false);
 });

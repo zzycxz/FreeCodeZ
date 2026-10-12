@@ -417,6 +417,12 @@ export interface ToolRuntimePermissionCapabilityContext {
   runtimeScope?: ToolRuntimeScope;
   workingDirectory?: string;
   workspaceRoot?: string;
+  /**
+   * 会话级沙箱事实（runtime config 的只读投影，resolveRuntimePermissionContext 填充）。
+   * 语义：false=会话沙箱显式关闭（执行层无沙箱可关）；undefined=未知，消费方须保守
+   * 处理（按沙箱可能在生效对待，见 Bash 的 dangerouslyDisableSandbox alwaysAsk 门）。
+   */
+  sandboxEnabled?: boolean;
 }
 
 export interface ToolExecutionModelContext {

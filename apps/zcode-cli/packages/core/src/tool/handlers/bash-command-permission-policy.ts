@@ -92,7 +92,9 @@ export function resolveBashPermissionRulePolicy(
   // 0-2（升级实施手册）：携带 dangerouslyDisableSandbox 的调用不吃任何 allow 规则（会话免确认/
   // 项目 allow）——规则是按命令文本授予的，提示注入可在已被放行的命令上夹带关沙箱参数绕过
   // alwaysAsk 门（checkAlwaysAsk 的 session.allow 命中即放行）。deny/ask 规则照常生效。
-  if (isDangerouslyDisableSandboxInput(input)) {
+  // 2026-10-11（沙箱规格书头部④）：与 alwaysAsk 门同条件——沙箱显式关闭的会话里该参数是
+  // 空操作、无门可绕，allow 规则照常命中；undefined=未知保守抑制（fail-closed）。
+  if (isDangerouslyDisableSandboxInput(input) && context?.sandboxEnabled !== false) {
     return {
       ...policy,
       evaluateRules(behavior, rules) {

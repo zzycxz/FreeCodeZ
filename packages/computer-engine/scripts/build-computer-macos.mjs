@@ -6,6 +6,7 @@
 import { spawnSync } from "node:child_process";
 import { chmodSync, copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { unlockSigningKeychain } from "../../../scripts/mac-signing-keychain.mjs";
 
 const pkgRoot = path.resolve(import.meta.dirname, "..");
 const packagePath = path.join(pkgRoot, "native", "computer-use-macos");
@@ -55,6 +56,9 @@ function createHelperApp() {
     }
   }
   writeFileSync(path.join(appPath, "Contents", "Info.plist"), infoPlist(), "utf8");
+  // 签名前解锁专用钥匙串：命名证书私钥在 fcz-sign（空口令）里，锁定态下 codesign
+  // 会弹 GUI 口令窗打断构建（失败不阻断，见 mac-signing-keychain.mjs）。
+  unlockSigningKeychain();
   const signer = spawnSync("codesign", codesignArgs(signingIdentity, appPath), { stdio: "inherit" });
   if (signer.signal) {
     process.kill(process.pid, signer.signal);

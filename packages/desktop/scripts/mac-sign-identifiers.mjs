@@ -9,6 +9,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { unlockSigningKeychain } from "../../../scripts/mac-signing-keychain.mjs";
 
 const CODESIGN_PATH = "/usr/bin/codesign";
 
@@ -100,6 +101,9 @@ export function applyMacAdhocSignIdentifiers(
   runCommand,
   signIdentity = resolveMacSigningIdentity(),
 ) {
+  // 签名前解锁专用钥匙串：命名证书私钥在 fcz-sign（空口令）里，锁定态下 codesign
+  // 会弹 GUI 口令窗打断打包（失败不阻断，见 mac-signing-keychain.mjs）。
+  unlockSigningKeychain();
   const run =
     runCommand ??
     ((args) => {

@@ -1231,6 +1231,32 @@ private func currentSyntheticClickRecipient(
     }
 }
 
+
+/// V1.21 P8 终版：CG z-order 顶层窗口=合成点击落点真值。AX systemwide 焦点链
+///（kAXFocusedApplication/AXWindowNumber/AXFocusedWindow）对 Electron/Chromium
+/// 不可靠（实测：前台时 focusedApp 属性返回 absent）——坐标点击栅栏改以此为准：
+/// 顶层 layer-0 窗属目标 pid → .focused(该窗)；属他人 → .unavailable（fail-closed）。
+private func cgTopmostRecipient(
+    targetPID: pid_t,
+    targetCandidates: () -> [WindowCandidate]
+) -> SyntheticMouseClickDelivery.RecipientObservation {
+    guard let infos = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+        return .unavailable
+    }
+    for info in infos {
+        guard let layer = info[kCGWindowLayer as String] as? Int, layer == 0 else { continue }
+        guard let pid = info[kCGWindowOwnerPID as String] as? pid_t,
+              let number = info[kCGWindowNumber as String] as? NSNumber else {
+            return .unavailable
+        }
+        if pid == targetPID {
+            return .focused(syntheticClickRecipient(pid: pid, windowId: CGWindowID(number.uint32Value)))
+        }
+        return .unavailable
+    }
+    return .unavailable
+}
+
 private func focusedSyntheticClickRecipient(
     targetPID: pid_t,
     targetCandidates: () -> [WindowCandidate]
@@ -1240,22 +1266,36 @@ private func focusedSyntheticClickRecipient(
     switch copyElementProbe(systemWide, kAXFocusedApplicationAttribute as String) {
     case let .value(value):
         focusedApp = value
-    case .absent:
-        return .dismissed
-    case .unavailable:
+    case .absent, .unavailable:
+        // V1.21 P8：AX systemwide 焦点链对 Electron/Chromium 不可靠（实测前台时
+        // focusedApp 属性返回 absent/unavailable）——旧逻辑此处直接 dismissed/unavailable
+        // 使坐标点击栅栏必失败，兜底转 CG z-order 判定。
+        return cgTopmostRecipient(targetPID: targetPID, targetCandidates: targetCandidates)
+    }
+    guard let ownerPID = pidAttribute(focusedApp) else {
         return .unavailable
     }
-    guard let ownerPID = pidAttribute(focusedApp) else { return .unavailable }
 
     let focusedWindow: AXUIElement
     switch copyElementProbe(focusedApp, kAXFocusedWindowAttribute as String) {
     case let .value(value):
         focusedWindow = value
-    case .absent:
-        guard ownerPID == targetPID else { return .unavailable }
+    case .absent, .unavailable:
+        // V1.21 P8：焦点应用是目标但 AXFocusedWindow 缺省或读取失败（Electron/Chromium
+        // 常态——旧逻辑 .absent→.dismissed/.unavailable→unavailable 使坐标点击栅栏必失败）。
+        // 兜底：唯一可见窗直接采纳，否则取最顶层（score 最高）候选；合成点击语义=命中
+        // 该应用最顶层窗。ownerPID 非目标仍 fail-closed。
+        guard ownerPID == targetPID else {
+            return .unavailable
+        }
+        let visible = targetCandidates().filter { $0.layer == 0 }
+        if visible.count == 1, let only = visible.first {
+            return .focused(syntheticClickRecipient(pid: ownerPID, windowId: only.windowId))
+        }
+        if let best = visible.max(by: { $0.score < $1.score }) {
+            return .focused(syntheticClickRecipient(pid: ownerPID, windowId: best.windowId))
+        }
         return .dismissed
-    case .unavailable:
-        return .unavailable
     }
 
     if let windowId = windowNumber(focusedWindow) {
@@ -1269,7 +1309,18 @@ private func focusedSyntheticClickRecipient(
               windowFramesMatch($0.bounds, frame)
             }
           )
-    else { return .unavailable }
+    else {
+        // V1.21 P8 兜底二：AX 帧缺失/不匹配（Electron 的 AX 帧与 CG bounds 口径差）——
+        // 同上按唯一可见窗/最顶层候选采纳。
+        let visible = targetCandidates().filter { $0.layer == 0 }
+        if visible.count == 1, let only = visible.first {
+            return .focused(syntheticClickRecipient(pid: ownerPID, windowId: only.windowId))
+        }
+        if let best = visible.max(by: { $0.score < $1.score }) {
+            return .focused(syntheticClickRecipient(pid: ownerPID, windowId: best.windowId))
+        }
+        return .unavailable
+    }
     return .focused(syntheticClickRecipient(pid: ownerPID, windowId: candidate.windowId))
 }
 

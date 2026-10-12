@@ -43,5 +43,6 @@ export function resolveRuntimePermissionContext(
     runtimeScope: deps.runtimeScope,
     workingDirectory: deps.getWorkingDirectory(),
     workspaceRoot: deps.getWorkspaceRoot(),
+    sandboxEnabled: deps.sandboxEnabled === true,
   };
 }
