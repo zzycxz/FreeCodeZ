@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- Electron Builder config keeps related packaging hooks together so build order stays explicit. */
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -480,6 +480,25 @@ function pinMacAdhocSignIdentifiers(context) {
     entitlementsMain: resolve(desktopPackageRoot, "build", "entitlements.mac.plist"),
     entitlementsInherit: resolve(desktopPackageRoot, "build", "entitlements.mac.inherit.plist"),
   });
+
+  // V1.19 补段：Frameworks 下全部模板框架（Electron/Mantle/ReactiveObjC/Squirrel）
+  // 遗留 adhoc 签名——主 app 换命名证书后 --verify --deep 报封缄不一致（mixed
+  // signature 显形）。框架无 entitlements 需求，排 Helper 族之后、主 app 之前
+  //（外层最后封内层）。.asar.unpacked 内未签名 .node 在非 hardened 运行时下按
+  // 数据封缄（Developer ID 分发路径由 electron-builder 原生签名全量收口）。
+  const frameworksDir = join(appBundlePath, "Contents", "Frameworks");
+  if (existsSync(frameworksDir)) {
+    const mainStep = steps.pop();
+    for (const entry of readdirSync(frameworksDir)) {
+      if (!entry.endsWith(".framework")) continue;
+      steps.push({
+        targetPath: join(frameworksDir, entry),
+        identifier: `${desktopProductIdentity.appId}.${entry.replace(/\.framework$/, "").replace(/[^A-Za-z0-9.-]/g, "")}`,
+      });
+    }
+    steps.push(mainStep);
+    console.log(`[afterPack] ${steps.length - 1} nested targets queued before main app (named identity)`);
+  }
 
   // 坑4（W-11 helper 产线）：嵌套 FreeCodeZ Computer Use.app 在 Resources/cua-helper/——
   // build 期已以 app.freecodez.computer-use 身份签名（build-computer-macos.mjs），
