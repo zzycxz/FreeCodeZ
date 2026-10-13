@@ -2937,6 +2937,9 @@ export class ProductProjection {
       status: success ? "success" : "error",
       output: buildToolOutput(payload.result, toolCallId),
       ...(display ? { display } : {}),
+      // P4b：js 行携带的 CUA 目标应用身份落 row——UI conversationCuaGroups 以
+      // cuaApp 为分组键把 mcp__node_repl__js 行聚成电脑操作卡组。
+      ...(payload.result.cuaApp ? { cuaApp: payload.result.cuaApp } : {}),
       endedAt: this.ms(event),
     };
     if (!success) {

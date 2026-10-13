@@ -9,6 +9,7 @@ import {
   type ToolSideEffectScope,
   type ToolExecutionTelemetry,
   type SkillTelemetryMetadata,
+  type ToolResultCuaAppIdentity,
   type TraceContext,
   type TurnId,
 } from "@zcode/contracts";
@@ -58,6 +59,7 @@ export async function emitToolCallResult(
   display: ToolResultDisplayPayload | undefined,
   perf: ToolExecutionTelemetry | undefined,
   skillMetadata: SkillTelemetryMetadata | undefined,
+  cuaApp: ToolResultCuaAppIdentity | undefined,
 ): Promise<void> {
   await deps.emitEvent({
     id: crypto.randomUUID() as any,
@@ -72,6 +74,7 @@ export async function emitToolCallResult(
       ...(skillMetadata ? { skillMetadata } : {}),
       result: {
         success: true,
+        ...(cuaApp ? { cuaApp } : {}),
         content: serialization.content,
         display,
         perf,

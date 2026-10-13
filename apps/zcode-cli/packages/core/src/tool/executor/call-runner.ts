@@ -13,7 +13,7 @@ import {
   normalizeToolExecutionInput,
   prepareInitialToolExecutionInput,
 } from "../input-normalization.js";
-import type { SkillTelemetryMetadata } from "@zcode/contracts";
+import type { SkillTelemetryMetadata, ToolResultCuaAppIdentity } from "@zcode/contracts";
 import type { ToolExecutionContext, ToolExecutionResult } from "../types.js";
 import type { ToolEntry } from "../types.js";
 import type { BackgroundTaskTracker } from "./background-tasks.js";
@@ -487,6 +487,11 @@ async function executeToolCallImpl(
     const display = createToolResultDisplay(canonicalToolCall.name, output, {
       mcp: entry.metadata.mcpPresentation,
     });
+    // P4b：node-repl 桥把 CUA 目标应用身份放 responseMeta["freecodez/nodeReplCuaApp"]
+    // （computer-bridge onCuaApp → mergeResponseMeta）。这里在读 display 的同段把它
+    // 提到事件载荷，供投影给 ToolCallRow.cuaApp（UI 电脑操作卡分组键）。非 js 工具
+    // 与 browser-only js 行不带该 meta，保持 undefined 不误标。
+    const cuaApp = readToolResultCuaApp(output);
     const perf = mergeToolExecutionTelemetry(readToolExecutionTelemetry(output), {
       permissionWaitMs,
       // totalMs 是用户感知的工具生命周期：registry lookup、校验、Hook、权限等待、
@@ -524,6 +529,7 @@ async function executeToolCallImpl(
       display,
       perf,
       skillTelemetryMetadata,
+      cuaApp,
     );
 
     await backgroundTasks.trackBackgroundTask(canonicalToolCall, output, traceContext, turnId);
@@ -661,4 +667,26 @@ function appendPreToolAdditionalContextsToErrorResult(
     ...result,
     modelContent: [baseModelContent, formatHookAdditionalContexts(additionalContexts)].join("\n\n"),
   };
+}
+
+/**
+ * P4b：从工具返回值提取 CUA 目标应用身份（node-repl 桥的
+ * responseMeta["freecodez/nodeReplCuaApp"]）。形状校验对齐 shared
+ * cuaAppIdentitySchema（pid 正整数/name 非空≤256/bundleId 可选≤512）；
+ * 不合法一律丢弃返回 undefined——身份字段宁缺勿错，错值会让 UI 把
+ * 无关 js 行误分进电脑操作卡组。
+ */
+export function readToolResultCuaApp(output: unknown): ToolResultCuaAppIdentity | undefined {
+  if (typeof output !== "object" || output === null) return undefined;
+  const meta = (output as { responseMeta?: unknown }).responseMeta;
+  if (typeof meta !== "object" || meta === null) return undefined;
+  const app = (meta as Record<string, unknown>)["freecodez/nodeReplCuaApp"];
+  if (typeof app !== "object" || app === null) return undefined;
+  const { pid, name, bundleId } = app as Record<string, unknown>;
+  if (typeof pid !== "number" || !Number.isInteger(pid) || pid <= 0) return undefined;
+  if (typeof name !== "string" || name.trim().length === 0 || name.length > 256) return undefined;
+  if (bundleId !== undefined && (typeof bundleId !== "string" || bundleId.length > 512)) {
+    return undefined;
+  }
+  return { pid, name: name.trim(), ...(bundleId !== undefined ? { bundleId } : {}) };
 }

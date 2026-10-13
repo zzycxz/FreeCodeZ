@@ -1069,6 +1069,13 @@ export interface ToolCallPayload {
   input: unknown;
 }
 
+/** CUA 目标应用身份（pid/显示名/可选 bundle id），对齐 shared cuaAppIdentitySchema。 */
+export interface ToolResultCuaAppIdentity {
+  pid: number;
+  name: string;
+  bundleId?: string;
+}
+
 export interface ToolResultPayload {
   success: boolean;
   content: string;
@@ -1079,6 +1086,12 @@ export interface ToolResultPayload {
   originalBytes?: number;
   returnedBytes?: number;
   budgetStrategy?: string;
+  /**
+   * P4b（orca 合并后补线）：node-repl 桥经 freecodez/nodeReplCuaApp 上报的 CUA 目标
+   * 应用身份。携带该字段的 mcp__node_repl__js 行会被 UI 分组为电脑操作卡
+   * （conversationCuaGroups）；形状对齐 shared cuaAppIdentitySchema（rows.ts）。
+   */
+  cuaApp?: ToolResultCuaAppIdentity;
   artifactPath?: string;
 }
 
