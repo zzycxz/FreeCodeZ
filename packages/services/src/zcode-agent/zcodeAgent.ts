@@ -7,6 +7,7 @@ import type { ZCodeAutomation, ZCodeAutomationRun } from "@zcode/shared";
 import type {
   ZCodeStorageStartupState,
   ZCodeDeliveryKind,
+  ZCodeSessionContentProfile,
   ZCodeAgentMcpServer,
   ZCodeBackgroundTurnAttribution,
   TraceId,
@@ -242,6 +243,8 @@ export interface ZCodeAgentReadSessionParams extends ZCodeAgentSessionTarget {
   afterSeq?: number;
   /** 被动索引/观察者只能读取现有 runtime，禁止为了读快照拉起 session。 */
   runtimePolicy?: ZCodeAgentRuntimePolicy;
+  // U2-3b（移植自 ZCode 3.15.1）：index 档=CLI 出口削重，供任务索引回源减载。
+  contentProfile?: ZCodeSessionContentProfile;
 }
 
 export interface ZCodeAgentReadSessionMessagesParams extends ZCodeAgentSessionTarget {

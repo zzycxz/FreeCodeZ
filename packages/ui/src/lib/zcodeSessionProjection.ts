@@ -39,6 +39,13 @@ const ZCODE_AGENT_MODE_OPTIONS = [
     description: "Inspect the code and present a plan before editing.",
   },
   {
+    // U2-1（移植自 ZCode 3.15.1，上游 mode.label.glm.guarded=自主模式/"Ask when there's risk"）：
+    // yolo 语义 + 危险命令执行前单次确认（规则引擎见 CLI dangerous-command-policy）。
+    id: "guarded",
+    name: "Autonomous mode",
+    description: "Runs like full access but asks once before explicitly dangerous commands.",
+  },
+  {
     id: "yolo",
     name: "Full access",
     description: "Edit and run commands with fewer confirmations.",

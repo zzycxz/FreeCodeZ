@@ -9,6 +9,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.js";
 import { useZCodeIntl } from "@/i18n/index.js";
 import { StorageSection } from "./storage/StorageSection.js";
+import { NetworkSection, type NetworkCaptureBridge } from "./network/NetworkSection.js";
 import { UNSAMPLED_PLACEHOLDER, UsageGroup, UsageMeter } from "./resourceUsageParts.js";
 import {
   clampPercent,
@@ -24,17 +25,20 @@ export interface ResourceManagerAppProps {
   setSamplingActive?: (active: boolean) => void;
   /** 存储管理桥（window.resourceManager.storage）；缺省时「存储」tab 显示接口不可用 */
   storage?: StorageManagementBridge;
+  /** U2-6 网络捕获桥（window.resourceManager.network）；缺省时「网络」tab 显示不可用 */
+  network?: NetworkCaptureBridge;
   refreshIntervalMs?: number;
   /** 初始 tab，默认 CPU */
   initialTab?: ResourceManagerTab;
 }
 
-export type ResourceManagerTab = "cpu" | "memory" | "storage";
-const RESOURCE_MANAGER_TABS: ResourceManagerTab[] = ["cpu", "memory", "storage"];
+export type ResourceManagerTab = "cpu" | "memory" | "storage" | "network";
+const RESOURCE_MANAGER_TABS: ResourceManagerTab[] = ["cpu", "memory", "storage", "network"];
 const TAB_LABEL_IDS: Record<ResourceManagerTab, string> = {
   cpu: "resourceManager.cpu",
   memory: "resourceManager.memory",
   storage: "resourceManager.storage",
+  network: "resourceManager.network",
 };
 
 const DEFAULT_REFRESH_INTERVAL_MS = 1_000;
@@ -52,6 +56,7 @@ export function ResourceManagerApp({
   getSnapshot,
   setSamplingActive,
   storage,
+  network,
   refreshIntervalMs = DEFAULT_REFRESH_INTERVAL_MS,
   initialTab = "cpu",
 }: ResourceManagerAppProps) {
@@ -149,6 +154,8 @@ export function ResourceManagerApp({
       <div className="min-h-0 flex-1 overflow-auto bg-background-alt p-4">
         {tab === "storage" ? (
           <StorageSection bridge={storage} active={tab === "storage"} />
+        ) : tab === "network" ? (
+          <NetworkSection network={network} />
         ) : (
           <UsageTabContent
             metric={tab}

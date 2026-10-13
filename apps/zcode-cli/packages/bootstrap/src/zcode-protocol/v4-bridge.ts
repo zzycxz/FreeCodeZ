@@ -129,7 +129,8 @@ function sessionUsageSeedFromRuntimeContextUsage(
   };
 }
 
-const STABLE_FORK_MODES = new Set<CollaborationMode>(["plan", "build", "edit", "yolo", "auto"]);
+// guarded=自主模式（U2-1）：fork 继承面同步接受。
+const STABLE_FORK_MODES = new Set<CollaborationMode>(["plan", "build", "edit", "yolo", "guarded", "auto"]);
 
 function stableForkMode(value: string, fallback: CollaborationMode): CollaborationMode {
   return STABLE_FORK_MODES.has(value as CollaborationMode)

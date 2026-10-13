@@ -209,8 +209,9 @@ export const commandPayloadSchemas = {
   }),
   // additive（冻结面按黄金测试背书演进）：agent 协作模式切换。
   // 值域 = core CollaborationMode 的可切换子集（auto 非用户可切，不进 UI 命令面）。
+  // guarded=自主模式（U2-1 移植上游 3.15.1）。
   switchCollaborationMode: z.object({
-    mode: z.enum(["build", "edit", "plan", "yolo"]),
+    mode: z.enum(["build", "edit", "plan", "yolo", "guarded"]),
   }),
   setFollowupMode: z.object({ mode: z.enum(["queue", "guide"]) }),
   pauseGoal: z.object({}),

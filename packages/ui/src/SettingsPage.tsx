@@ -273,6 +273,19 @@ export function SettingsPage({
   const isLinuxDesktop = Boolean(isDesktop && !isMacDesktop && !isWindowsDesktop);
   const usesInlineWindowControls = Boolean(isWindowsDesktop || isLinuxDesktop);
   const platform = usePlatform();
+  // U3-4（移植自 ZCode 3.15.1）：linux 关窗驻留能力（GetCloseToTrayCapability）。
+  const [closeToTrayCapability, setCloseToTrayCapability] = useState<{
+    supported: boolean;
+    gnomeLikeWithoutTray: boolean;
+  } | null>(null);
+  useEffect(() => {
+    if (!isLinuxDesktop) return;
+    void platform
+      .getCloseToTrayCapability?.()
+      .then(setCloseToTrayCapability)
+      .catch(() => setCloseToTrayCapability({ supported: false, gnomeLikeWithoutTray: false }));
+  }, [isLinuxDesktop, platform]);
+
   const [activeSection, setActiveSection] = useState<SettingsSectionId>(() => {
     const initialSection = consumeInitialSettingsSection("general");
     const visibleInitialSection = resolveSettingsSectionForPlatform(
@@ -1507,6 +1520,8 @@ export function SettingsPage({
                               handleTaskAutoArchiveOlderThanDaysChange
                             }
                             onCloseToTrayOnWindowsChange={handleCloseToTrayOnWindowsChange}
+                            isLinuxDesktop={isLinuxDesktop}
+                            closeToTrayCapability={closeToTrayCapability}
                             onKeepAwakeWhileRunningChange={handleKeepAwakeWhileRunningChange}
                             onDesktopChromiumHardwareAccelerationChange={
                               handleDesktopChromiumHardwareAccelerationChange

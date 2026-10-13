@@ -11,7 +11,7 @@ const modelStreamSchema = z.object({
 });
 
 const permissionSchema = z.object({
-  mode: z.enum(["plan", "build", "edit", "yolo", "auto"]).optional(),
+  mode: z.enum(["plan", "build", "edit", "yolo", "guarded", "auto"]).optional(),
   allowedTools: z.array(z.string()).optional(),
   disallowedTools: z.array(z.string()).optional(),
   autoApproveHighRisk: z.boolean().optional(),

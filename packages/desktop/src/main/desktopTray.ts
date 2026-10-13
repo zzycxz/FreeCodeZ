@@ -13,9 +13,20 @@ let desktopTray: Tray | null = null;
 let rebuildDesktopTrayContextMenu: (() => void) | null = null;
 
 function resolveDesktopTrayIconPath() {
+  // U3-4（移植自 ZCode 3.15.1）：linux 用 png（StatusNotifier 托盘不吃 ico）；win 仍用 ico。
+  if (process.platform === "linux") {
+    return app.isPackaged
+      ? join(process.resourcesPath, "icon.png")
+      : join(import.meta.dirname, "../../build/icons/512x512.png");
+  }
   return app.isPackaged
     ? join(process.resourcesPath, "tray_icon.ico")
     : join(import.meta.dirname, "../../build/icon.ico");
+}
+
+/** U3-4：托盘就绪判定（关窗驻留前提，上游 resolveCloseToTraySupported 的 ready 位）。 */
+export function isDesktopTrayReady(): boolean {
+  return desktopTray !== null && !desktopTray.isDestroyed();
 }
 
 export function createWindowsDesktopTray(options: {
@@ -25,7 +36,8 @@ export function createWindowsDesktopTray(options: {
   quitApp: () => void;
   logger: { warn: (...args: unknown[]) => void };
 }) {
-  if (process.platform !== "win32") {
+  // U3-4：创建面从 win32 扩展到 linux（上游同款；能力探测在 index 侧把关）。
+  if (process.platform !== "win32" && process.platform !== "linux") {
     return null;
   }
 

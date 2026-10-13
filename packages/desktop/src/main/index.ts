@@ -22,6 +22,10 @@ import {
 } from "./localMediaPreviewProtocol.js";
 import { createDesktopBrowserScreenshotSurfaceCoordinator } from "./browserView/browserScreenshotSurfaceCoordinatorWiring.js";
 import { EMBEDDED_BROWSER_PARTITION } from "./browserDataManager.js";
+import {
+  applyEmbeddedBrowserPermissionPolicy,
+  createEmbeddedBrowserSitePermissionStore,
+} from "./embeddedBrowserPermissionPolicy.js";
 import { EmbeddedBrowserJavaScriptDialogController } from "./embeddedBrowserJavaScriptDialog.js";
 import {
   browserOperationResetsResizeBaseline,
@@ -39,6 +43,7 @@ import {
   session,
   shell as electronShell,
   webContents,
+  desktopCapturer,
 } from "electron";
 import type { UtilityProcess as ElectronUtilityProcess } from "electron";
 import { spawn } from "node:child_process";
@@ -66,6 +71,9 @@ import {
   ZCODE_VERSION,
   buildZCodeEndpointUrls,
   resolveZCodeEndpointOrigin,
+  embeddedBrowserPermissionResolutionSchema,
+  embeddedBrowserResetSitePermissionPayloadSchema,
+  embeddedBrowserSetSitePermissionPayloadSchema,
   type UpdateStatePayload,
   HostMessageTypes,
   type LoadCliMcpFromUserDirectoryRequest,
@@ -81,6 +89,12 @@ import { createCuaCursorHud, resolveHudScreenDeps, type CuaCursorHud } from "./c
 import { startCuaAppshot } from "./cuaAppshot.js";
 import { ensureCuaPermissionEntries } from "./cuaPermissionEntries.js";
 import { createUpdateChecker, resolveManifestUrl } from "./updateChecker.js";
+import { setDynamicWorkflowUserModeSetting } from "./desktopRuntimeEnv.js";
+import {
+  createPluginSandboxGateway,
+  registerPluginSandboxScheme,
+  setDefaultPluginSandboxGateway,
+} from "./pluginSandboxProtocol.js";
 import { BrowserWindow as HudBrowserWindow, globalShortcut, screen as HudScreen } from "electron";
 import { BroadcastHub } from "./broadcastHub.js";
 
@@ -132,7 +146,8 @@ import { applyAppIcon } from "./desktopWindowChrome.js";
 import { resolveWindowsAppUserModelIdForFlavor } from "../../scripts/desktop-product-identity.mjs";
 import type { DesktopWindowSize } from "./desktopWindowSize.js";
 import { maybeWarnArchitectureMismatch } from "./desktopArchitectureGuard.js";
-import { createWindowsDesktopTray, updateWindowsDesktopTrayMenu } from "./desktopTray.js";
+import { createWindowsDesktopTray, isDesktopTrayReady, updateWindowsDesktopTrayMenu } from "./desktopTray.js";
+import { createCloseToTrayCapabilityMonitor } from "./desktopTrayCapability.js";
 import { createWindowsCuaOperationIndicator } from "./windowsCuaOperationIndicator.js";
 import {
   configureDockMenu,
@@ -212,6 +227,8 @@ import {
 import { mainMemoryDiagnosticsRegistry } from "./mainMemoryDiagnostics.js";
 
 registerLocalMediaPreviewScheme(protocol);
+// U3-0（移植自 ZCode 3.15.1）：plugin-sandbox 特权协议——app ready 前注册（standard+secure）。
+registerPluginSandboxScheme(protocol);
 const localMediaPreviewPathRegistry = createLocalMediaPreviewPathRegistry();
 
 // e2e 由 Chromedriver 管理远程调试端口；如果这里继续固定到 9229，
@@ -237,7 +254,12 @@ if (!shouldUseElectronDefaultUserDataPath) {
 process.title = runtimeApplicationName;
 
 process.on("unhandledRejection", (reason) => {
-  logger.error("unhandledRejection:", reason);
+  // Error 直接进 JSON 序列化会得到 {}（message/stack 都在不可枚举属性上），
+  // 线上日志只剩空对象无法排障（2026-10-13 启动诊断实测），必须显式取 stack/message。
+  logger.error(
+    "unhandledRejection:",
+    reason instanceof Error ? (reason.stack ?? reason.message) : String(reason),
+  );
 });
 
 const iconPath =
@@ -256,6 +278,8 @@ const linuxDesktopIntegrationIconPath =
     : iconPath;
 let currentApplicationLocale: Locale = DEFAULT_LOCALE;
 let closeToTrayOnWindows = true;
+// U3-4（移植自 ZCode 3.15.1）：linux 关窗驻留能力监视器（10s 缓存；darwin/win 不探测）。
+const closeToTrayCapabilityMonitor = createCloseToTrayCapabilityMonitor();
 // keep-awake：全局开关 keepAwakeWhileRunning。打开后主进程持有
 // powerSaveBlocker("prevent-app-suspension")，阻止系统闲置休眠（防不了合盖/手动睡眠）。
 // 不再绑定闲时任务活跃计数——设置页「常规」与 Automations 入口镜像同一配置。
@@ -1014,6 +1038,11 @@ function syncCloseToTrayOnWindows(value: unknown) {
 function syncImmediateAppSettings(patch: Partial<AppSettings>) {
   syncCloseToTrayOnWindows(patch.closeToTrayOnWindows);
 
+  if (patch.dynamicWorkflowMode !== undefined) {
+    // U2-5：用户切档即时生效到后续 Host spawn（常驻 Host 不热切，见 desktopRuntimeEnv 注释）。
+    setDynamicWorkflowUserModeSetting(patch.dynamicWorkflowMode);
+  }
+
   if (typeof patch.keepAwakeWhileRunning === "boolean") {
     keepAwakeWhileRunning = patch.keepAwakeWhileRunning;
     reconcileKeepAwakeBlocker();
@@ -1742,6 +1771,7 @@ function createWindowInstance(startupBootstrap: StartupWindowBootstrap = {}) {
         forceQuit: forceQuitRef.current,
         explicitQuitRequested: explicitQuitRef.current,
         closeToTrayOnWindows,
+        closeToTraySupported: isDesktopTrayReady() && closeToTrayCapabilityMonitor.getSync()?.supported === true,
         isLastWindow: getMainApplicationWindows().length === 1,
         label,
         logger,
@@ -1922,6 +1952,8 @@ app.whenReady().then(async () => {
   let bootstrapSettings: AppSettings | undefined;
   try {
     bootstrapSettings = await mainSettingService.get();
+    // U2-5：dynamicWorkflowMode 用户设置在 Host env 决策前注入（设置优先，env 兜底）。
+    setDynamicWorkflowUserModeSetting(bootstrapSettings.dynamicWorkflowMode);
     if (bootstrapSettings.dataBaseDir) {
       setDataBaseDir(bootstrapSettings.dataBaseDir);
     }
@@ -1990,6 +2022,113 @@ app.whenReady().then(async () => {
     logger.warn("[desktop-network] Chromium network policy bootstrap failed:", error);
   }
 
+  // U2-4（移植自 ZCode 3.15.1，上游 main@≈527158 挂载于网络策略之后）：内置浏览器
+  // 站点权限完整体系——持久站点设置 → 本次运行 session-allow → 询问卡（20s 超时=拒）
+  // → default-deny；usb/hid/serial 与屏幕共享走专用询问。失败仅告警不阻断启动
+  // （与上方网络策略同款兜底；spec docs/spec/upstream-port-3.15.1-u2.md U2-4）。
+  try {
+    // U3-0（移植自 ZCode 3.15.1）：plugin-sandbox 网关——registry/配额/内容重发布。
+    // U3-2 的 host 桥接注册（registerApp/openInstance）与 IPC 在其消费方批次接线。
+    const pluginSandboxGateway = createPluginSandboxGateway({ protocol, logger });
+    pluginSandboxGateway.install();
+    setDefaultPluginSandboxGateway(pluginSandboxGateway);
+    // U3-0 基础 sink：壳页上行消息落 debug 日志（U3-2 换成 host MCP client 路由）。
+    ipcMain.on(PlatformChannels.PluginSandboxHostMessage, (event, payload: unknown) => {
+      logger.debug("[plugin-sandbox] host message", {
+        senderId: event.sender.id,
+        payload,
+      });
+    });
+    const sitePermissionStorePath = join(
+      app.getPath("userData"),
+      "embedded-browser-site-permissions.json",
+    );
+    const sitePermissions = createEmbeddedBrowserSitePermissionStore(sitePermissionStorePath);
+    void sitePermissions.load().catch((error) => {
+      logger.warn("[embedded-browser-permission] 站点权限表加载失败（按空表继续）:", error);
+    });
+    const listPromptTargets = () =>
+      BrowserWindow.getAllWindows()
+        .filter((win) => !win.isDestroyed())
+        .map((win) => win.webContents);
+    const permissionPolicy = applyEmbeddedBrowserPermissionPolicy(
+      session.fromPartition(EMBEDDED_BROWSER_PARTITION),
+      {
+        store: sitePermissions.store,
+        dispatchPrompt: (prompt) => {
+          for (const target of listPromptTargets()) {
+            target.send(PlatformChannels.EmbeddedBrowserPermissionPrompt, prompt);
+          }
+        },
+        listPromptTargets,
+        listScreenSources: async () =>
+          (
+            await desktopCapturer.getSources({
+              types: ["screen", "window"],
+              fetchWindowIcons: false,
+            })
+          ).map((source) => ({ id: String(source.id), name: source.name })),
+        logger,
+      },
+    );
+    ipcMain.handle(PlatformChannels.GetEmbeddedBrowserSitePermissions, () =>
+      sitePermissions.store.all(),
+    );
+    ipcMain.handle(
+      PlatformChannels.SetEmbeddedBrowserSitePermission,
+      (_event, payload: unknown) => {
+        const parsed = embeddedBrowserSetSitePermissionPayloadSchema.safeParse(payload);
+        if (!parsed.success) return false;
+        if (parsed.data.value === null) {
+          // permission="__all__"：整站重置（管理面板「重置站点权限」入口）。
+          if (parsed.data.permission === "__all__") {
+            for (const permission of Object.keys(
+              sitePermissions.store.all()[parsed.data.origin] ?? {},
+            )) {
+              sitePermissions.store.reset(parsed.data.origin, permission);
+            }
+          } else {
+            sitePermissions.store.reset(parsed.data.origin, parsed.data.permission);
+          }
+        } else {
+          sitePermissions.store.set(parsed.data.origin, parsed.data.permission, parsed.data.value);
+        }
+        return true;
+      },
+    );
+    ipcMain.handle(PlatformChannels.ClearEmbeddedBrowserSitePermissions, () => {
+      sitePermissions.store.clear();
+      return true;
+    });
+    ipcMain.handle(
+      PlatformChannels.ResetEmbeddedBrowserSitePermission,
+      (_event, payload: unknown) => {
+        const parsed = embeddedBrowserResetSitePermissionPayloadSchema.safeParse(payload);
+        if (!parsed.success) return false;
+        sitePermissions.store.reset(parsed.data.origin, parsed.data.permission);
+        return true;
+      },
+    );
+    ipcMain.handle(PlatformChannels.GetCloseToTrayCapability, () =>
+      closeToTrayCapabilityMonitor.getSync() ??
+      // 缓存过期即重探（设置页打开时点；上游 GetCloseToTrayCapability 同义）。
+      { supported: isDesktopTrayReady(), gnomeLikeWithoutTray: false },
+    );
+    ipcMain.handle(
+      PlatformChannels.ResolveEmbeddedBrowserPermissionPrompt,
+      (_event, payload: unknown) => {
+        const parsed = embeddedBrowserPermissionResolutionSchema.safeParse(payload);
+        return parsed.success ? permissionPolicy.resolvePrompt(parsed.data) : false;
+      },
+    );
+  } catch (error) {
+    // 同上：Error 序列化为 {} 会把真正的失败原因吞掉，这里取 stack 保证可排障。
+    logger.warn(
+      "[embedded-browser-permission] 策略安装失败（存在默认放行风险）:",
+      error instanceof Error ? (error.stack ?? error.message) : String(error),
+    );
+  }
+
   await hydratePendingPostUpdateReleaseNotes(mainSettingService);
   logWindowsBundledRuntimeIntegrityDiagnostic();
 
@@ -2019,17 +2158,44 @@ app.whenReady().then(async () => {
       ),
     () => showCurrentWindowFromDock(primaryWindowCoordinator),
   );
-  createWindowsDesktopTray({
-    getLocale: () => currentApplicationLocale,
-    showCurrentWindow: () =>
-      primaryWindowCoordinator.ensurePrimaryWindow("tray-show-current-window"),
-    executeDesktopCommand: executeDesktopCommandForApp,
-    quitApp: () => {
-      markExplicitQuit("tray-quit");
-      app.quit();
-    },
-    logger,
-  });
+  if (process.platform === "linux") {
+    // U3-4（上游 ensureLinuxDesktopTray）：linux 托盘待能力确认后异步创建；
+    // 失败仅告警（无 StatusNotifierWatcher 的环境无托盘可建）。
+    void closeToTrayCapabilityMonitor
+      .refresh()
+      .then((capability) => {
+        if (!capability.supported) {
+          logger.info("[desktop-tray] linux tray capability absent; skipping tray creation");
+          return;
+        }
+        createWindowsDesktopTray({
+          getLocale: () => currentApplicationLocale,
+          showCurrentWindow: () =>
+            primaryWindowCoordinator.ensurePrimaryWindow("tray-show-current-window"),
+          executeDesktopCommand: executeDesktopCommandForApp,
+          quitApp: () => {
+            markExplicitQuit("tray-quit");
+            app.quit();
+          },
+          logger,
+        });
+      })
+      .catch((error) => {
+        logger.warn("[desktop-tray] linux tray capability probe failed", error);
+      });
+  } else {
+    createWindowsDesktopTray({
+      getLocale: () => currentApplicationLocale,
+      showCurrentWindow: () =>
+        primaryWindowCoordinator.ensurePrimaryWindow("tray-show-current-window"),
+      executeDesktopCommand: executeDesktopCommandForApp,
+      quitApp: () => {
+        markExplicitQuit("tray-quit");
+        app.quit();
+      },
+      logger,
+    });
+  }
 
   registerPlatformIpcHandlers({
     fetchHelpConfig: readHelpConfig,

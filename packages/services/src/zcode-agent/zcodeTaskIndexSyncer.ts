@@ -514,6 +514,9 @@ export function createZCodeTaskIndexSyncer(
       const snapshot = await agentService.readSession({
         ...target,
         runtimePolicy: "existing-only",
+        // U2-3b（移植自 ZCode 3.15.1）：索引回源走 index 档——CLI 出口削掉
+        // reasoning/data:/tool 重载荷，列表/索引只需结构与正文。
+        contentProfile: "index",
       });
       // 回源收敛是状态/正文同步，不涉及 pin/archive/unread 归属（task_status_changed）。
       await syncSnapshotAndBroadcast(snapshot, {

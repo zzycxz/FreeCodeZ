@@ -70,6 +70,9 @@ export {
   normalizeZCodeProductFlavor,
 } from "./env.js";
 export * from "./errors.js";
+export * from "./embedded-browser-permissions.js";
+export * from "./network-capture.js";
+export * from "./plugin-sandbox.js";
 export type { SessionCreateSource } from "./sessionCreateSource.js";
 export { resolveSafeEndpointHostname } from "./endpointHostname.js";
 export * from "./rendererActionTrace.js";
@@ -218,6 +221,7 @@ export type {
   TaskNotificationPayload,
   UpdateCheckResultPayload,
   UpdateStatePayload,
+  WindowControlsOverlayReadyPayload,
   WSLDistro,
   ZCodeStdioTapDevState,
 } from "./platform.js";

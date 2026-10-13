@@ -25,7 +25,8 @@ export type TuiSessionMetadata = Pick<
   "locale" | "model" | "theme" | "thoughtLevel" | "modelOptions" | "effortOptions" | "loginRequired"
 >;
 
-export type TuiSwitchableMode = Extract<CollaborationMode, "plan" | "build" | "edit" | "yolo">;
+// U2-1：guarded=自主模式（与 app-mode.ts 的 TUI_SWITCHABLE_MODES 同值域）。
+export type TuiSwitchableMode = Extract<CollaborationMode, "plan" | "build" | "edit" | "guarded" | "yolo">;
 
 export type TuiSetModeResult = {
   mode: CollaborationMode;

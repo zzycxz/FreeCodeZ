@@ -459,7 +459,13 @@ function resolveDynamicWorkflowModeHostEnv(options: {
   inheritedValue: string | undefined;
   isPackaged: boolean;
   isPreview: boolean;
+  /** U2-5（移植自 ZCode 3.15.1 dynamicWorkflowMode 用户设置）：设置键优先，env 兜底。 */
+  userMode: string | undefined;
 }): Record<string, string> {
+  {
+    const userMode = normalizeDynamicWorkflowMode(options.userMode);
+    if (userMode) return { [ZCODE_DYNAMIC_WORKFLOW_MODE_ENV]: userMode };
+  }
   if (!options.isPackaged) {
     const mode = normalizeDynamicWorkflowMode(options.inheritedValue);
     return mode ? { [ZCODE_DYNAMIC_WORKFLOW_MODE_ENV]: mode } : {};
@@ -468,6 +474,14 @@ function resolveDynamicWorkflowModeHostEnv(options: {
     return { [ZCODE_DYNAMIC_WORKFLOW_MODE_ENV]: "alwaysOn" };
   }
   return {};
+}
+
+// U2-5（移植自 ZCode 3.15.1 dynamicWorkflowMode 用户设置）：Main 在 bootstrap 与设置
+// 同步两个时机注入；Host env 为 spawn 期注入，变更对新 spawn 的 Host/定时调度生效。
+let dynamicWorkflowUserModeSetting: string | undefined;
+
+export function setDynamicWorkflowUserModeSetting(mode: string | undefined): void {
+  dynamicWorkflowUserModeSetting = normalizeDynamicWorkflowMode(mode);
 }
 
 export function buildHostProcessEnv(hostProcessLocalEnv: Record<string, string>) {
@@ -530,6 +544,7 @@ export function buildHostProcessEnv(hostProcessLocalEnv: Record<string, string>)
     inheritedValue: rawInheritedEnv[ZCODE_DYNAMIC_WORKFLOW_MODE_ENV],
     isPackaged: packagedDesktop,
     isPreview: isPreviewPackagedRuntime,
+    userMode: dynamicWorkflowUserModeSetting,
   });
   // 三层里有两层不写这个键，空对象无法覆盖 inheritedEnv，所以先无条件删掉继承值再按决策 spread 回去。
   // 少了这一行，production 包和 dev 的非法取值都会原样穿透到 Host。

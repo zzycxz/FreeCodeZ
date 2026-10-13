@@ -114,7 +114,8 @@ export interface RunDependencies extends PluginsCommandOverrides {
   shutdownZCodeTelemetry?: typeof shutdownZCodeTelemetry;
 }
 
-export type CliPermissionMode = "build" | "plan" | "edit" | "yolo";
+// U2-1：guarded=自主模式（上游 CLI headless /mode 同款）。
+export type CliPermissionMode = "build" | "plan" | "edit" | "guarded" | "yolo";
 export type CliRuntimeMode = CliPermissionMode | "auto";
 
 export interface CliModeState {

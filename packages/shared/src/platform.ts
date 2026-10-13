@@ -14,6 +14,12 @@ import type {
 } from "./mcp.js";
 import type { OAuthStateRegistration } from "./oauth.js";
 import type { AppSettings, Locale } from "./protocol.js";
+import type {
+  EmbeddedBrowserPermissionPrompt,
+  EmbeddedBrowserPermissionResolution,
+  EmbeddedBrowserResetSitePermissionPayload,
+  EmbeddedBrowserSetSitePermissionPayload,
+} from "./embedded-browser-permissions.js";
 import type { ArmsCustomEventPayload, RendererTelemetryEventPayload } from "./telemetry.js";
 import type {
   RendererActionTraceBatchV1,
@@ -644,6 +650,19 @@ export interface IPlatformService {
 
   /** 使用系统默认应用打开本地文件；普通 Web 平台返回 unsupported。 */
   openExternalFile?(path: string): Promise<{ success: boolean; error?: string }>;
+
+  /** U2-4（移植自 ZCode 3.15.1）：内置浏览器站点权限（Desktop preload 实现；Web/手机可省略）。 */
+  onEmbeddedBrowserPermissionPrompt?(
+    callback: (prompt: EmbeddedBrowserPermissionPrompt) => void,
+  ): () => void;
+  resolveEmbeddedBrowserPermissionPrompt?(resolution: EmbeddedBrowserPermissionResolution): Promise<boolean>;
+  getEmbeddedBrowserSitePermissions?(): Promise<Record<string, Record<string, "allow" | "deny">>>;
+  setEmbeddedBrowserSitePermission?(payload: EmbeddedBrowserSetSitePermissionPayload): Promise<boolean>;
+  clearEmbeddedBrowserSitePermissions?(): Promise<boolean>;
+  resetEmbeddedBrowserSitePermission?(payload: EmbeddedBrowserResetSitePermissionPayload): Promise<boolean>;
+
+  /** U3-4（移植自 ZCode 3.15.1）：linux 关窗驻留能力探测（Desktop preload 实现）。 */
+  getCloseToTrayCapability?(): Promise<{ supported: boolean; gnomeLikeWithoutTray: boolean }>;
 
   /** 打开 FreeCodeZ Computer Use 的完整权限引导。Desktop only。 */
   openCuaPermissionOnboarding?(

@@ -112,12 +112,17 @@ function WorkflowSavedSourceBadge({ saved }: { saved: WorkflowSavedSource }) {
 export function WorkflowPermissionBlock({
   request,
   workspacePath,
+  onConcurrencyAdjustmentChange,
 }: {
   request: ZCodePermissionRequest;
   /** 会话模型清单的作用域（PermissionDialog 给）：只用来把 provider id 换成 provider 名。 */
   workspacePath?: string;
+  /** U2-5 创建前调参：并发上限调整回调。undefined=默认不调整；null=不设上限；数字=自定义。 */
+  onConcurrencyAdjustmentChange?: (adjustment: number | null | undefined) => void;
 }) {
   const { intl } = useZCodeIntl();
+  const [concurrencyMode, setConcurrencyMode] = useState<"default" | "none" | "custom">("default");
+  const [customLimit, setCustomLimit] = useState(4);
 
   // v4 ask 的 raw 就是工具入参（product-projection 的 detail: payload.input），
   // 与聊天卡片共用 create-workflow.tsx 的读取规则，避免两处对同一入参各自解析。
@@ -175,6 +180,14 @@ export function WorkflowPermissionBlock({
   useEffect(() => {
     setScriptOpen(!hasGraph);
   }, [hasGraph, request.requestId]);
+
+  // U2-5：调参态同样按请求重置——上一次确认窗里调的并发不能泄漏到下一个工作流。
+  useEffect(() => {
+    setConcurrencyMode("default");
+    setCustomLimit(4);
+    onConcurrencyAdjustmentChange?.(undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在换请求时重置（回调由父级 memo）
+  }, [request.requestId]);
 
   const fallbackName = intl.formatMessage({ id: "chat.toolCall.workflow.fallbackName" });
   const title = intl.formatMessage({
@@ -246,6 +259,67 @@ export function WorkflowPermissionBlock({
           )}
         </p>
       )}
+
+      {/* U2-5（移植自 ZCode 3.15.1 创建前调参，上游 chat.permission.workflow.settings.limit.*）：
+          起跑前改并发——默认（不调整）/不设上限/自定义 N。调整随 allow 应答经
+          inputAdjustments 并回载荷（decision=modify），Deny/Refine 不携带。 */}
+      {onConcurrencyAdjustmentChange ? (
+        <div
+          className="flex flex-wrap items-center gap-2"
+          data-testid="workflow-permission-tuning"
+        >
+          <span className="text-ui-xs text-foreground-subtlest">
+            {intl.formatMessage({ id: "chat.permission.workflow.settings.limit.label" })}
+            {maxConcurrency === undefined
+              ? null
+              : ` ${intl.formatMessage(
+                  { id: "chat.permission.workflow.settings.limit.was" },
+                  { value: String(maxConcurrency) },
+                )}`}
+          </span>
+          <div className="flex items-center gap-1">
+            {(
+              [
+                ["default", "chat.permission.workflow.settings.limit.default"],
+                ["none", "chat.permission.workflow.settings.limit.none"],
+                ["custom", "chat.permission.workflow.settings.limit.custom"],
+              ] as const
+            ).map(([modeKey, labelId]) => (
+              <button
+                key={modeKey}
+                type="button"
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-ui-xs transition-colors",
+                  concurrencyMode === modeKey
+                    ? "bg-selected text-foreground"
+                    : "text-foreground-subtle hover:bg-hover",
+                )}
+                onClick={() => {
+                  setConcurrencyMode(modeKey);
+                  onConcurrencyAdjustmentChange(
+                    modeKey === "none" ? null : modeKey === "custom" ? customLimit : undefined,
+                  );
+                }}
+              >
+                {intl.formatMessage({ id: labelId })}
+              </button>
+            ))}
+            {concurrencyMode === "custom" ? (
+              <input
+                type="number"
+                min={1}
+                value={customLimit}
+                className="h-6 w-16 rounded border bg-transparent px-1 text-ui-xs"
+                onChange={(event) => {
+                  const next = Math.max(1, Math.floor(Number(event.target.value) || 1));
+                  setCustomLimit(next);
+                  onConcurrencyAdjustmentChange(next);
+                }}
+              />
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {/* 子代理模型：与并发上限同族，紧跟其后——两行都是「用户给这次 run 定下的条件」，
           而这一条更该说出口：批准的是让这些子代理跑在另一个模型上。主代理不受影响。 */}

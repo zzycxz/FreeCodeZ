@@ -42,6 +42,7 @@ import {
 } from "@zcode/contracts";
 import {
   DEFAULT_ZCODE_MODEL_CONTEXT_BUDGET_STRATEGY,
+  elideSessionSnapshotForIndex,
   ZCODE_SESSION_RUNTIME_PREFERENCES_REQUEST_TIMEOUT_MS,
   zcodeProtocolErrorCodes,
   zcodeProtocolMethods,
@@ -1845,10 +1846,13 @@ export async function readSession(context: ZCodeProtocolAgentServerContext, rawP
     operation: "session_read",
   });
   record.deliveryKind = params.deliveryKind ?? record.deliveryKind;
-  return await snapshot(context, record, undefined, {
+  const result = await snapshot(context, record, undefined, {
     messageLimit: params.messageLimit,
     modelAvailability: "current",
   });
+  // U2-3b（移植自 ZCode 3.15.1）：index 档出口削重——列表/索引回源不需要重载荷
+  // （reasoning/data:/tool 载荷剥空），解析在出口单点完成，full 档不受影响。
+  return params.contentProfile === "index" ? elideSessionSnapshotForIndex(result) : result;
 }
 
 /**

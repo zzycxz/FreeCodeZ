@@ -185,7 +185,8 @@ export const hostInitLocalMessageSchema = z.object({
   feedbackApiBase: z.string().url().optional(),
   workspacePath: nonEmptyStringSchema.optional(),
   workspaceIdentity: nonEmptyStringSchema.optional(),
-  agentWarmupTargets: z.array(hostAgentWarmupTargetSchema).max(3).optional(),
+  // .max 与 desktop STARTUP_AGENT_WARMUP_LIMIT 同值（U1-3：3.15.1 上游 3→1，消除多工作区启动卡顿）。
+  agentWarmupTargets: z.array(hostAgentWarmupTargetSchema).max(1).optional(),
   agentSpawnFallbackCwd: nonEmptyStringSchema.optional(),
   zcodeBuiltinProviderConfigFilePath: nonEmptyStringSchema,
   runtimeProcessEnvPatch: z

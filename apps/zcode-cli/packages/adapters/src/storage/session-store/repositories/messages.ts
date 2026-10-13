@@ -8,7 +8,11 @@ import type {
   SessionId,
   SessionStorePort,
 } from "@zcode/contracts";
-import { decodeMessageRow, decodePartRow, partCreatedAt } from "../codecs.js";
+import {
+  decodeMessageRowTolerant,
+  decodePartRowTolerant,
+  partCreatedAt,
+} from "../codecs.js";
 import { encodeJson } from "../json.js";
 import type { MessageRow, PartRow } from "../rows.js";
 import { touchSession } from "./sessions.js";
@@ -244,16 +248,19 @@ export async function messages(
   const partsByMessage = new Map<string, MessagePart[]>();
 
   for (const row of partRows) {
-    const part = decodePartRow(row);
+    // U2-3c：磁盘坏行跳过（undefined=JSON 损坏），不让一行损坏炸掉整个会话读取。
+    const part = decodePartRowTolerant(row);
+    if (part === undefined) continue;
     const list = partsByMessage.get(row.message_id) ?? [];
     list.push(part);
     partsByMessage.set(row.message_id, list);
   }
 
-  return messageRows.map((row) => ({
-    info: decodeMessageRow(row),
-    parts: partsByMessage.get(row.id) ?? [],
-  }));
+  return messageRows.flatMap((row) => {
+    const info = decodeMessageRowTolerant(row);
+    // 消息体本身损坏则整条丢弃（其 parts 也一并缺失）：坏行缺失可接受。
+    return info === undefined ? [] : [{ info, parts: partsByMessage.get(row.id) ?? [] }];
+  });
 }
 
 export async function messageWithParts(
@@ -274,8 +281,13 @@ export async function messageWithParts(
       `,
     )
     .all(input.messageID, input.sessionID) as unknown as PartRow[];
+  const info = decodeMessageRowTolerant(messageRow);
+  if (!messageRow || info === undefined) return null;
   return {
-    info: decodeMessageRow(messageRow),
-    parts: partRows.map(decodePartRow),
+    info,
+    parts: partRows.flatMap((row) => {
+      const part = decodePartRowTolerant(row);
+      return part === undefined ? [] : [part];
+    }),
   };
 }

@@ -28,6 +28,7 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog.js";
 import { usePlatform } from "@/hooks/usePlatform.js";
 import { useProviderSettingsView } from "@/hooks/useProviderSettingsView.js";
 import { useSettings } from "@/hooks/useSettingService.js";
+import { DynamicWorkflowSettingsBlock } from "@/settings/DynamicWorkflowSettingsBlock.js";
 import { logger } from "@/logger.js";
 import {
   useAutomationManagementStore,
@@ -1522,6 +1523,9 @@ export function AutomationsSection({
   return (
     <div data-automations-content className={cn(SETTINGS_FRAME_CONTENT_CLASSNAME, "flex flex-col")}>
       {pageHeader}
+
+      {/* U2-5（移植自 ZCode 3.15.1 dynamicWorkflowMode 用户设置）：动态工作流三态开关。 */}
+      <DynamicWorkflowSettingsBlock />
 
       {/* Tab：Scheduled 常驻；Idle 仅在灰度命中或有闲时存量时出现，不再提供 All 混排视图。
          有任务时右上对齐创建（4866-1735）；空态创建入口在大卡内（4889-2013），不重复顶栏按钮。 */}

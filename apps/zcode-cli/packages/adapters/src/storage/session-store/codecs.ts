@@ -87,6 +87,28 @@ export function decodeMessageRow(row: MessageRow): MessageInfo {
   } as MessageInfo;
 }
 
+// U2-3c（坏行隔离；上游 3.15.1 会话加载加固的可见目标，实现为本树自研——见
+// docs/spec/upstream-port-3.15.1-u2.md U2-3c）：decode*Row 的 JSON.parse 裸奔，
+// 一行磁盘损坏会让整个会话读取抛错=「会话打不开」。容错包装把损坏行的失败
+// 收敛为 undefined（调用方跳过该行），坏行缺失可接受、整会话打不开不可接受。
+function parseJsonRowTolerant(raw: string): unknown | undefined {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
+export function decodeMessageRowTolerant(row: MessageRow): MessageInfo | undefined {
+  const data = parseJsonRowTolerant(row.data);
+  if (data === undefined) return undefined;
+  return {
+    ...decodeStoredMessage(data),
+    id: row.id as MessageId,
+    sessionID: row.session_id as SessionId,
+  } as MessageInfo;
+}
+
 function decodeStoredMessage(value: unknown): Record<string, unknown> {
   if (!isRecord(value)) return {};
   if (value.role === "user") {
@@ -115,6 +137,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function decodePartRow(row: PartRow): MessagePart {
   return {
     ...decodeStoredPart(JSON.parse(row.data) as unknown),
+    id: row.id as PartId,
+    sessionID: row.session_id as SessionId,
+    messageID: row.message_id as MessageId,
+  } as MessagePart;
+}
+
+export function decodePartRowTolerant(row: PartRow): MessagePart | undefined {
+  const data = parseJsonRowTolerant(row.data);
+  if (data === undefined) return undefined;
+  return {
+    ...decodeStoredPart(data),
     id: row.id as PartId,
     sessionID: row.session_id as SessionId,
     messageID: row.message_id as MessageId,
@@ -157,6 +190,24 @@ function decodeTimelineSelection(value: unknown) {
 
 export function decodeSessionEntryRow(row: SessionEntryRow): SessionEntryInfo {
   const rawData = JSON.parse(row.data) as unknown;
+  return {
+    id: row.id,
+    sessionID: row.session_id as SessionId,
+    type: row.type as SessionEntryType | string,
+    time: {
+      created: row.time_created,
+      updated: row.time_updated,
+    },
+    data:
+      row.type === SESSION_ENTRY_MODEL_SELECTION
+        ? decodeStoredSessionModelSelection(rawData)
+        : rawData,
+  };
+}
+
+export function decodeSessionEntryRowTolerant(row: SessionEntryRow): SessionEntryInfo | undefined {
+  const rawData = parseJsonRowTolerant(row.data);
+  if (rawData === undefined) return undefined;
   return {
     id: row.id,
     sessionID: row.session_id as SessionId,

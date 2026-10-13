@@ -1679,6 +1679,9 @@ export const zcodeSessionReadParamsSchema = z
     deliveryKind: zcodeDeliveryKindSchema.optional(),
     messageLimit: z.number().int().positive().optional(),
     afterSeq: z.number().int().nonnegative().optional(),
+    // U2-3b（移植自 ZCode 3.15.1）：index 档=出口削重（reasoning/data:/tool 载荷剥空），
+    // 供任务索引回源减载；full 档省略即默认。`.strict()` 下不加会拒收带该参数的请求。
+    contentProfile: z.enum(["full", "index"]).optional(),
   })
   .strict();
 export type ZCodeSessionReadParams = z.infer<typeof zcodeSessionReadParamsSchema>;
@@ -3409,7 +3412,8 @@ export const zcodeAutomationProtocolSchema = z
     cronExpr: nonEmptyString,
     prompt: nonEmptyString,
     modelSelection: modelSelectionSchema.optional(),
-    mode: zcodeTaskModeSchema.optional(),
+    // 上游语义：automation=无人值守四档，不进 guarded（自主模式是交互场景档）。
+    mode: z.enum(["build", "edit", "plan", "yolo"]).optional(),
     // E-S3：本任务以 workspace-write 沙箱执行（默认关，缺省字段兼容旧端）。
     sandboxEnabled: z.boolean().optional(),
     targetTaskId: nonEmptyString.optional(),
@@ -3779,3 +3783,6 @@ export * from "../localTtft.js";
 
 // 桌面本地 TTFT 的严格事实合同；检查点不能替代实际内容帧。
 export { localTtftFactsSchema } from "../localTtft.js";
+
+// U2-3b：session/read 的 index 档出口削重（对照上游 elide 三函数重建）。
+export * from "./session-index-elide.js";

@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- 桌面平台 IPC 集中装配，拆散会让权限边界更难审计；行数随平台能力增长。 */
+import { fileURLToPath } from "node:url";
 import { BrowserWindow, dialog, ipcMain, nativeTheme, shell } from "electron";
 import { readZCodeStdioTapDevState } from "@zcode/services/node";
 import {
@@ -31,13 +32,17 @@ import {
   getResourceUsageSnapshot,
   setResourceUsageSamplingActive,
 } from "./resourceManagerWindow.js";
+import {
+  clearNetworkCapture,
+  getNetworkCaptureSnapshot,
+} from "./resourceManagerNetwork.js";
 import { registerResourceManagerStorageIpc } from "./resourceManagerStorage.js";
 import { applyWindowsTitleBarTheme, getWindowOverlayTheme } from "./desktopWindowChrome.js";
 import { syncWindowControlsOverlayForZoomLevel } from "./desktopWindowButtonPosition.js";
 import { resolveDesktopZoomLevelFromFactor } from "./desktopZoom.js";
 import { resolveDesktopWindowChromeState } from "./desktopWindowChromeState.js";
 import { handleWindowUnreadCountSync } from "./desktopWindowLifecycle.js";
-import { captureWindowScreenshot, openPathInFileManager } from "./desktopMainIpcHelpers.js";
+import { captureWindowScreenshot, openPathInDefaultApp, openPathInFileManager } from "./desktopMainIpcHelpers.js";
 import { registerCuaPermissionIpcHandlers } from "./desktopCuaPermissionIpc.js";
 import {
   registerDesktopBrowserIpcHandlers,
@@ -175,6 +180,13 @@ export function registerPlatformIpcHandlers(options: {
   ipcMain.handle(PlatformChannels.GetResourceUsageSnapshot, (event) =>
     getResourceUsageSnapshot(event.sender.id),
   );
+  // U2-6：网络捕获快照/清空（仅资源管理器窗口自身可调，鉴权与资源采样同款）。
+  ipcMain.handle(PlatformChannels.GetNetworkCaptureSnapshot, (event) =>
+    getNetworkCaptureSnapshot(event.sender.id),
+  );
+  ipcMain.handle(PlatformChannels.ClearNetworkCapture, (event) =>
+    clearNetworkCapture(event.sender.id),
+  );
   ipcMain.on(PlatformChannels.SetResourceUsageSamplingActive, (event, active: unknown) => {
     if (typeof active === "boolean") setResourceUsageSamplingActive(event.sender.id, active);
   });
@@ -189,6 +201,21 @@ export function registerPlatformIpcHandlers(options: {
   ipcMain.on(PlatformChannels.OpenExternal, (_event, url: unknown) => {
     if (typeof url !== "string") return;
     const normalized = url.trim();
+    // U1-1（移植自 ZCode 3.15.1，上游 main@≈709424）：file:// 链接直接交给 openExternal
+    // 在 Windows 上不可靠（ShellExecute 不接受 file URL），且此处 http(s) 白名单会把它
+    // 静默吞掉——工具栏「在默认浏览器中打开」对本地站点永远无效。改为 fileURLToPath 转
+    // 本地路径后走 openPath（normalize+realpath+shell.openPath），与 OpenExternalFile
+    // 同一条出路径；http(s) 白名单不放宽。
+    if (/^file:\/\//iu.test(normalized)) {
+      let filePath: string;
+      try {
+        filePath = fileURLToPath(normalized);
+      } catch {
+        return;
+      }
+      void openPathInDefaultApp(filePath, options.logger);
+      return;
+    }
     if (!/^https?:\/\//iu.test(normalized)) return;
     void shell.openExternal(normalized);
   });
@@ -324,6 +351,14 @@ export function registerPlatformIpcHandlers(options: {
 
   ipcMain.handle(PlatformChannels.OpenInFileManager, async (_event, rawPath: string) =>
     openPathInFileManager(rawPath, options.logger),
+  );
+
+  // U1-1（恢复注册）：本通道的 main handler 曾随 desktopMainIpcRemote.ts 在 8ccf9b9c 被
+  // 掏成 no-op 一并删除，preload 发送端还在（本地预览卡点「打开」必 reject 成「打开失败」）。
+  // 原文恢复自 git 8ccf9b9c~1 desktopMainIpcRemote.ts:309-311，挂回平台 IPC 集中装配处；
+  // openPathInDefaultApp（helpers）此前因此成为死代码，现复命。
+  ipcMain.handle(PlatformChannels.OpenExternalFile, async (_event, rawPath: string) =>
+    openPathInDefaultApp(rawPath, options.logger),
   );
 
   registerCuaPermissionIpcHandlers({
