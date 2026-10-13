@@ -571,3 +571,13 @@ export class TopicWireFrameAssembler<F> {
     };
   }
 }
+
+// U2-3a（移植自 ZCode 3.14.3 上游语义，上游 renderer Su 守卫的 shared 侧对应物）：
+// zod 帧校验失败是唯一被判定为「内容坏」的故障码——内容坏时自动重试/继续 resync
+// 无意义，store 层据此把恢复终态升级为 fault.subscription.contentRejected。
+// 其余故障码（超时/超限/校验和等）属链路问题，不升级。
+export const CONTENT_ASSEMBLY_FAULT_REASON = "proto.frameAssemblyInvalidPayload" as const;
+
+export function isContentAssemblyFaultReason(reasonCode: string | undefined): boolean {
+  return reasonCode === CONTENT_ASSEMBLY_FAULT_REASON;
+}

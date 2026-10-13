@@ -230,9 +230,6 @@ function normalizeCronAutomationMode(
     case "yolo":
     case "build":
       return mode;
-    case "auto":
-    case "autoEdit":
-      return "build";
     default: {
       const exhaustiveMode: never = mode;
       return exhaustiveMode;

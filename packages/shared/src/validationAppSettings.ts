@@ -465,7 +465,12 @@ const appSettingsObjectSchema = z.object({
   taskAutoArchiveEnabled: z.boolean().default(false),
   taskAutoArchiveOlderThanDays: z.number().int().positive().max(365).default(7),
   closeToTrayOnWindows: z.boolean().default(true),
+  // U2-5（移植自 ZCode 3.15.1 dynamicWorkflowMode 用户设置）：禁用/按命令启用/始终开启；
+  // 缺省=未设置，回落既有 env 灰度语义（Main 是唯一决策者，见 desktopRuntimeEnv）。
+  dynamicWorkflowMode: z.enum(["disabled", "onDemand", "alwaysOn"]).optional(),
   closeToTrayOnWindowsMigrationInitialized: z.boolean().default(true),
+  // U3-4：linux 迁移键，缺省 false——bootstrap 一次性写 true 后不再触发。
+  closeToTrayLinuxMigrationInitialized: z.boolean().default(false),
   keepAwakeWhileRunning: z.boolean().default(false),
   desktopZoomLevel: desktopZoomLevelSchema.optional(),
   desktopWindowSize: desktopWindowSizeSchema.optional(),
@@ -554,6 +559,7 @@ export const appSettingsPatchSchema = z.object({
   closeToTrayOnWindows: z.boolean().optional(),
   keepAwakeWhileRunning: z.boolean().optional(),
   closeToTrayOnWindowsMigrationInitialized: z.boolean().optional(),
+  closeToTrayLinuxMigrationInitialized: z.boolean().optional(),
   desktopZoomLevel: desktopZoomLevelSchema.optional(),
   desktopWindowSize: desktopWindowSizeSchema.optional(),
   webRemoteControlExternalRelayDevice: webRemoteControlExternalRelayDeviceSchema.optional(),

@@ -95,6 +95,8 @@ export function GeneralSectionContent({
   onTaskAutoArchiveEnabledChange,
   onTaskAutoArchiveOlderThanDaysChange,
   onCloseToTrayOnWindowsChange,
+  isLinuxDesktop,
+  closeToTrayCapability,
   onKeepAwakeWhileRunningChange = async () => {},
   onDesktopChromiumHardwareAccelerationChange = async () => {},
   onReceivePreviewUpdatesChange,
@@ -132,6 +134,9 @@ export function GeneralSectionContent({
   defaultHomeDir: string;
   isDesktop?: boolean;
   isWindowsDesktop?: boolean;
+  /** U3-4（移植自 ZCode 3.15.1）：linux 关窗驻留能力（SettingsPage 探测传入）。 */
+  isLinuxDesktop?: boolean;
+  closeToTrayCapability?: { supported: boolean; gnomeLikeWithoutTray: boolean } | null;
   showIntegratedTerminalShell?: boolean;
   platform?: IPlatformService;
   setLocalePreference: (locale: LocalePreference) => void;
@@ -636,15 +641,28 @@ export function GeneralSectionContent({
             />
           }
         />
-        {isWindowsDesktop ? (
+        {/* U3-4（移植自 ZCode 3.15.1）：win 既有行 + linux 扩展（能力不足时禁用并按
+            GNOME/无托盘分文案提示）；darwin 不渲染。 */}
+        {isWindowsDesktop || isLinuxDesktop ? (
           <SettingsRow
-            label={intl.formatMessage({ id: "settings.closeToTrayOnWindows" })}
+            label={intl.formatMessage({
+              id: isWindowsDesktop
+                ? "settings.closeToTrayOnWindows"
+                : "settings.closeToTrayLinux",
+            })}
             description={intl.formatMessage({
-              id: "settings.closeToTrayOnWindowsDescription",
+              id: isWindowsDesktop
+                ? "settings.closeToTrayOnWindowsDescription"
+                : closeToTrayCapability?.supported === false
+                  ? closeToTrayCapability.gnomeLikeWithoutTray
+                    ? "settings.closeToTrayGnomeHint"
+                    : "settings.closeToTrayUnsupportedDescription"
+                  : "settings.closeToTrayLinuxDescription",
             })}
             control={
               <Switch
                 checked={closeToTrayOnWindows}
+                disabled={isLinuxDesktop && closeToTrayCapability?.supported === false}
                 onCheckedChange={(checked) => {
                   void onCloseToTrayOnWindowsChange(checked);
                 }}

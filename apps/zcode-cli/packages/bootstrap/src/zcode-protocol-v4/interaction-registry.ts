@@ -25,6 +25,9 @@ export type V4InteractionAnswer = {
   // content 直传旧 userInput response 的 content 语义（多题答案/注解无损）。
   action?: "accept" | "decline" | "cancel";
   content?: Record<string, unknown>;
+  // U2-5（与 shared command.ts resolveInteraction answer 同步）：allow 应答携带的载荷
+  // 改写（创建前调参）；broker 按 decision=modify 并回原 input。
+  inputAdjustments?: Record<string, unknown>;
 };
 
 const ASK_USER_QUESTION_HIDDEN_GRACE_MS = 60_000;

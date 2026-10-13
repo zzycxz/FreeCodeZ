@@ -5,7 +5,7 @@ import {
   type SessionEntryType,
   type SessionId,
 } from "@zcode/contracts";
-import { decodeSessionEntryRow } from "../codecs.js";
+import { decodeSessionEntryRowTolerant } from "../codecs.js";
 import { encodeJson } from "../json.js";
 import type { SessionEntryRow } from "../rows.js";
 import { touchSession } from "./sessions.js";
@@ -75,5 +75,10 @@ export function sessionEntries(
         )
         .all(input.sessionID);
 
-  return (rows as unknown as SessionEntryRow[]).map(decodeSessionEntryRow);
+  // U2-3c：坏行跳过——session_entry 喂给恢复链路（含 awaitingInitial 之前的状态恢复），
+  // 一行损坏不能让整个条目读取抛错。
+  return (rows as unknown as SessionEntryRow[]).flatMap((row) => {
+    const entry = decodeSessionEntryRowTolerant(row);
+    return entry === undefined ? [] : [entry];
+  });
 }

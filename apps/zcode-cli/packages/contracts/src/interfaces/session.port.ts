@@ -29,7 +29,7 @@ import type { ModelSelection } from "../model/model.js";
 // Collaboration Mode and Risk Level
 // -----------------------------------------------
 
-export type CollaborationMode = "plan" | "build" | "edit" | "yolo" | "auto";
+export type CollaborationMode = "plan" | "build" | "edit" | "yolo" | "guarded" | "auto";
 export type SessionStatus = "idle" | "running" | "waiting" | "paused" | "completed" | "error";
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 export type InputDelivery = "auto" | "start_turn" | "steer_active_turn";
@@ -288,8 +288,8 @@ export interface TurnInputIntentMetadata {
   text?: string;
   /** Admission 时固定；Queue/Guide 后续不得重新读取 Composer 或 Session 最新选择。 */
   modelSelection?: ModelSelection;
-  /** 与本次用户 Submission 一起固定的协作模式。 */
-  mode?: "build" | "edit" | "plan" | "yolo";
+  /** 与本次用户 Submission 一起固定的协作模式（guarded=自主模式，U2-1）。 */
+  mode?: "build" | "edit" | "plan" | "yolo" | "guarded";
   admissionSeq: number;
   admittedAt: number;
   requestedDelivery: "auto" | "startNow" | "queue" | "guide";

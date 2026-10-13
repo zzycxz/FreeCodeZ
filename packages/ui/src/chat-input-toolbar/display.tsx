@@ -200,7 +200,8 @@ function getConfigOptionEntryDescription(
 }
 
 function isHighPermissionModeValue(value: unknown): boolean {
-  return value === "yolo";
+  // U2-1：guarded（自主模式）与 yolo 同族高权限形态（上游语义=yolo+危险命令单次确认）。
+  return value === "yolo" || value === "guarded";
 }
 
 export function resolveModeOptionIcon(value: unknown): LucideIcon {

@@ -18,6 +18,7 @@ import { isPreapprovedWorkflowDraftWrite } from "./workflow-draft-path.js";
 import { applyPermissionUpdates } from "../tool/executor/permission-rules.js";
 import { isWebFetchPreapprovedUrl } from "../tool/webfetch-preapproved.js";
 import { findCatastrophicBashCommand } from "../tool/bash-catastrophic-policy.js";
+import { matchDangerousCommand } from "../tool/dangerous-command-policy.js";
 import type { ToolPermissionRulePolicy } from "../tool/types.js";
 
 // -----------------------------------------------
@@ -130,7 +131,10 @@ export class PermissionService {
     }
 
     const planEnabled = context.planEnabled ?? context.mode === "plan";
-    if (context.mode === "yolo" && !planEnabled) {
+    // U2-1（移植自 ZCode 3.15.1）：guarded（自主模式）与 yolo 共享放行分支——上游决策
+    // 顺序=灾难地板 deny > guarded 危险规则 ask > yolo/guarded 放行。guarded 仅对 Bash
+    // 增加一道静态规则引擎的单次确认；未命中规则时完全等同 yolo。
+    if ((context.mode === "yolo" || context.mode === "guarded") && !planEnabled) {
       // D1 灾难形态地板：yolo 全放行的唯一例外。bots 建任务被强制锁死在 yolo
       // （taskBridge §6.9），一条公网聊天消息即可驱动无限制执行；此处只拦灾难
       // 形态（格式化/裸设备写/删根删家/关机），正常命令零影响、零新增弹窗。
@@ -146,6 +150,14 @@ export class PermissionService {
               "rule.catastrophicFloor",
               catastrophic.reason,
             );
+          }
+          // U2-1（上游决策点 zcode.cjs@≈5210104）：guarded 下危险规则命中 → 单次确认
+          // （approvalMode user-once 由 ask 面板承载；「始终允许相同命令」按 ruleId 落规则）。
+          if (context.mode === "guarded") {
+            const dangerous = matchDangerousCommand(command);
+            if (dangerous.status === "matched") {
+              return this.ask(context, capability, dangerous.ruleId, dangerous.reason);
+            }
           }
         }
       }

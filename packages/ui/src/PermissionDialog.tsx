@@ -427,7 +427,13 @@ export function PermissionDialog({
   request: ZCodePermissionRequest;
   responding?: boolean;
   responseError?: string;
-  onRespond: (requestId: string, option: ZCodePermissionOption, feedback?: string) => void;
+  onRespond: (
+    requestId: string,
+    option: ZCodePermissionOption,
+    feedback?: string,
+    /** U2-5 创建前调参：allow 应答携带的载荷改写（仅工作流确认卡产出到并发上限）。 */
+    inputAdjustments?: Record<string, unknown>,
+  ) => void;
   workspacePath: string;
   provider?: ZCodeProvider;
 }) {
@@ -546,6 +552,14 @@ export function PermissionDialog({
     [selectableCount],
   );
 
+  // U2-5 创建前调参：并发上限调整（工作流块回写）；随 allow 选项应答并入载荷。
+  const [concurrencyAdjustment, setConcurrencyAdjustment] = useState<number | null | undefined>(
+    undefined,
+  );
+  useEffect(() => {
+    setConcurrencyAdjustment(undefined);
+  }, [request.requestId]);
+
   const respondWithOption = useCallback(
     (option: ZCodePermissionOption) => {
       if (responding) return;
@@ -555,9 +569,14 @@ export function PermissionDialog({
       // 模型收不到 workflow_refine_feedback 的升级递送。
       const trimmedFeedback =
         !refineOption && selectedKind.startsWith("reject") ? feedback.trim() : "";
-      onRespond(request.requestId, option, trimmedFeedback || undefined);
+      // U2-5：仅 allow 语义选项携带调参（deny/refine 的改写无意义，broker 侧同样忽略）。
+      const inputAdjustments =
+        concurrencyAdjustment !== undefined && selectedKind.startsWith("allow")
+          ? { max_concurrency: concurrencyAdjustment }
+          : undefined;
+      onRespond(request.requestId, option, trimmedFeedback || undefined, inputAdjustments);
     },
-    [feedback, onRespond, refineOption, request.requestId, responding],
+    [concurrencyAdjustment, feedback, onRespond, refineOption, request.requestId, responding],
   );
 
   const submitFeedback = useCallback(() => {
@@ -708,7 +727,11 @@ export function PermissionDialog({
             ) : shouldUseWorkflowBlock ? (
               // CLI 侧的 reason 是给协议诊断用的（"createWorkflow.runConfirmation: ..."），
               // 这里刻意不渲染 displayReason：块内的本地化标题才是给用户看的那句问句。
-              <WorkflowPermissionBlock request={request} workspacePath={workspacePath} />
+              <WorkflowPermissionBlock
+                request={request}
+                workspacePath={workspacePath}
+                onConcurrencyAdjustmentChange={setConcurrencyAdjustment}
+              />
             ) : shouldUseSaveWorkflowBlock ? (
               // 同上：保存 gate 的问句（保存 / 覆盖两句）由块自己给出，不复用协议 reason。
               <SaveWorkflowPermissionBlock request={request} />

@@ -92,7 +92,7 @@ async function requestPermission(
     // v4 answer → ZCodePermissionResponse：optionId 语义来自 v4 reducer 合成的
     // allowOnce/allowAlways/deny（见 product-projection onPermissionRequested）。
     (answer) => {
-      const response = v4AnswerToPermissionResponse(answer, permissionOptions, request.toolName);
+      const response = v4AnswerToPermissionResponse(answer, permissionOptions, request.toolName, request.input);
       return response.decision === "deny" && answer.freeText?.trim()
         ? { ...response, preserveReasonFormatting: true }
         : response;
@@ -148,6 +148,7 @@ function v4AnswerToPermissionResponse(
   answer: V4InteractionAnswer,
   permissionOptions: ZCodePermissionOption[],
   toolName: string,
+  requestInput: unknown,
 ): ZCodePermissionResponse & {
   reasonSource?: PermissionBrokerResult["reasonSource"];
   sessionPermissionUpdates?: PermissionBrokerResult["sessionPermissionUpdates"];
@@ -168,6 +169,26 @@ function v4AnswerToPermissionResponse(
   if (exact) {
     if (exact.kind === "deny") {
       return { decision: "deny", reason: buildPermissionDeniedContent(answer.freeText) };
+    }
+    // U2-5（移植自 ZCode 3.15.1 创建前调参）：allow 应答携带调参 → decision=modify，
+    // 改写并入原 input（工作流确认卡在起跑前把 max_concurrency/subagent_model 并回载荷）。
+    if (
+      (exact.kind === "allow_once" || exact.kind === "allow_always" || exact.kind === SESSION_ALLOW_PERMISSION_OPTION_KIND) &&
+      answer.inputAdjustments &&
+      Object.keys(answer.inputAdjustments).length > 0
+    ) {
+      const baseInput = isRecord(requestInput) ? requestInput : {};
+      return {
+        decision: "modify",
+        modifiedInput: { ...baseInput, ...answer.inputAdjustments },
+        reason: "Approved with adjusted settings",
+        ...(exact.kind === SESSION_ALLOW_PERMISSION_OPTION_KIND
+          ? { sessionPermissionUpdates: buildSessionPermissionUpdates(toolName) }
+          : {}),
+      } as ZCodePermissionResponse & {
+        reasonSource?: PermissionBrokerResult["reasonSource"];
+        sessionPermissionUpdates?: PermissionBrokerResult["sessionPermissionUpdates"];
+      };
     }
     // 会话免确认：会话语义在这里合成，而不是放进
     // option.response——wire 上 zcodePermissionUpdateSchema 是 strict，旧桌面多一个字段就丢事件。

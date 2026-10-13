@@ -69,7 +69,8 @@ export const zcodePermissionResponseSchema = z
   })
   .strict();
 export type ZCodePermissionResponse = z.infer<typeof zcodePermissionResponseSchema>;
-export const zcodeSessionModeSchema = z.enum(["plan", "build", "edit", "yolo", "auto"]);
+// guarded=自主模式（U2-1）：会话模式回放面同步接受。
+export const zcodeSessionModeSchema = z.enum(["plan", "build", "edit", "yolo", "guarded", "auto"]);
 export const zcodeSessionStatusSchema = z.enum([
   "idle",
   "running",

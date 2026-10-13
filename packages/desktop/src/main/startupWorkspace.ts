@@ -37,7 +37,10 @@ export interface StartupWorkspaceWarmupTarget {
   workspaceIdentity?: string;
 }
 
-const STARTUP_AGENT_WARMUP_LIMIT = 3;
+// U1-3（移植自 ZCode 3.15.1，上游 main@≈354716）：冷启动并发预热多个 workspace 的 agent
+// 子进程会造成启动卡顿（更新日志「修复多个工作区同时启动时可能卡顿」），上游把预热目标
+// 3 收敛为 1——只预热当前激活的 workspace；shared 侧 agentWarmupTargets 校验 .max() 同值。
+const STARTUP_AGENT_WARMUP_LIMIT = 1;
 
 export interface StartupWindowBootstrap {
   restoreSession?: boolean;
@@ -71,7 +74,8 @@ function resolvePersistedActiveSession(
   return sessions[activeIndex];
 }
 
-function resolveStartupAgentWarmupTargets(
+// 导出仅为测试锚定（U1-3 预热上限不变量的直接断言点）；唯一调用方仍是本文件 bootstrap 解析。
+export function resolveStartupAgentWarmupTargets(
   settings: Pick<ReturnType<typeof appSettingsSchema.parse>, "recentProjects">,
   activeTarget: StartupWorkspaceWarmupTarget,
 ): StartupWorkspaceWarmupTarget[] {
@@ -145,9 +149,9 @@ export async function resolveStartupWindowBootstrap({
     const activeSession =
       localActiveSessionIndex == null ? undefined : sessions[localActiveSessionIndex];
     if (activeSession?.kind === "local") {
-      // 被动 sessions-index 全量恢复不能再启动全部 workspace，但只预热当前一个又让
-      // 用户在最近项目间切换重新承担完整冷启动。Main 在唯一启动边界固定选出最近 3 个，
-      // Host 仍走原 initializeWorkspace 路径；失败不继续扫描第 4 个补位。
+      // 被动 sessions-index 全量恢复不能启动全部 workspace；预热目标=当前激活的 1 个
+      // （U1-3：上游 3.15.1 把「最近 3 个」收敛为 1 个，消除多 agent 并发拉起的启动卡顿）。
+      // Host 仍走原 initializeWorkspace 路径；切换其它 workspace 按需冷启动。
       const agentWarmupTargets = resolveStartupAgentWarmupTargets(settings, {
         workspacePath: activeSession.workspacePath,
       });

@@ -8,6 +8,14 @@ import type {
   SaveCliMcpToUserDirectoryRequest,
 } from "./index.js";
 import type { OAuthStateRegistration } from "./oauth.js";
+import type {
+  EmbeddedBrowserPermissionPrompt,
+  EmbeddedBrowserPermissionResolution,
+  EmbeddedBrowserResetSitePermissionPayload,
+  EmbeddedBrowserSetSitePermissionPayload,
+  EmbeddedBrowserSitePermissionsFile,
+} from "./embedded-browser-permissions.js";
+import type { NetworkCaptureSnapshot } from "./network-capture.js";
 import type { AppSettings, Locale } from "./protocol.js";
 import type { StorageCleanRequest, StorageCleanResult, StorageUsageSnapshot } from "./storage.js";
 import type {
@@ -436,6 +444,26 @@ export const PlatformChannels = {
   SyncWebRemoteControlWorkspaces: "zcode:sync-web-remote-control-workspaces",
   /** Renderer → Main：同步当前窗口里远控可展示的 task 快照 */
   SyncWebRemoteControlTasks: "zcode:sync-web-remote-control-tasks",
+  /** Renderer → Main：读取嵌入式浏览器站点权限表（管理面板数据源） */
+  GetEmbeddedBrowserSitePermissions: "zcode:get-embedded-browser-site-permissions",
+  /** Renderer → Main：写/删单条站点权限（value=null 删除；permission="__all__" 整站清空） */
+  SetEmbeddedBrowserSitePermission: "zcode:set-embedded-browser-site-permission",
+  /** Renderer → Main：清空全部站点权限 */
+  ClearEmbeddedBrowserSitePermissions: "zcode:clear-embedded-browser-site-permissions",
+  /** Renderer → Main：重置单站单权限 */
+  ResetEmbeddedBrowserSitePermission: "zcode:reset-embedded-browser-site-permission",
+  /** Renderer → Main：站点权限询问卡应答（requestId + 动作） */
+  ResolveEmbeddedBrowserPermissionPrompt: "zcode:resolve-embedded-browser-permission-prompt",
+  /** Main → Renderer：站点权限询问卡推送（renderer 按 guestWebContentsId 归 tab） */
+  EmbeddedBrowserPermissionPrompt: "zcode:embedded-browser-permission-prompt",
+  /** Renderer → Main：资源管理器「网络」页抓取快照（window-scoped captureId） */
+  GetNetworkCaptureSnapshot: "zcode:get-network-capture-snapshot",
+  /** Renderer → Main：清空网络抓取（captureId 全局轮换） */
+  ClearNetworkCapture: "zcode:clear-network-capture",
+  /** Renderer → Main：托盘能力探测（Linux GNOME 判定；mac/win 恒支持） */
+  GetCloseToTrayCapability: "zcode:get-close-to-tray-capability",
+  /** Renderer → Main：插件沙箱壳页上行消息（U3-0 基础 sink；U3-2 换 host MCP 路由） */
+  PluginSandboxHostMessage: "zcode:plugin-sandbox-host-message",
 } as const;
 
 export type PlatformChannelName = (typeof PlatformChannels)[keyof typeof PlatformChannels];
@@ -1087,6 +1115,46 @@ export interface PlatformChannelMap {
       handled: boolean;
       value?: boolean;
     };
+  };
+  [PlatformChannels.GetEmbeddedBrowserSitePermissions]: {
+    request: void;
+    response: EmbeddedBrowserSitePermissionsFile["entries"];
+  };
+  [PlatformChannels.SetEmbeddedBrowserSitePermission]: {
+    request: EmbeddedBrowserSetSitePermissionPayload;
+    response: boolean;
+  };
+  [PlatformChannels.ClearEmbeddedBrowserSitePermissions]: {
+    request: void;
+    response: boolean;
+  };
+  [PlatformChannels.ResetEmbeddedBrowserSitePermission]: {
+    request: EmbeddedBrowserResetSitePermissionPayload;
+    response: boolean;
+  };
+  [PlatformChannels.ResolveEmbeddedBrowserPermissionPrompt]: {
+    request: EmbeddedBrowserPermissionResolution;
+    response: boolean;
+  };
+  [PlatformChannels.EmbeddedBrowserPermissionPrompt]: {
+    request: EmbeddedBrowserPermissionPrompt;
+    response: void;
+  };
+  [PlatformChannels.GetNetworkCaptureSnapshot]: {
+    request: void;
+    response: NetworkCaptureSnapshot;
+  };
+  [PlatformChannels.ClearNetworkCapture]: {
+    request: void;
+    response: boolean;
+  };
+  [PlatformChannels.GetCloseToTrayCapability]: {
+    request: void;
+    response: { supported: boolean; gnomeLikeWithoutTray: boolean };
+  };
+  [PlatformChannels.PluginSandboxHostMessage]: {
+    request: unknown;
+    response: void;
   };
   [PlatformChannels.UpdateReady]: {
     request: string;

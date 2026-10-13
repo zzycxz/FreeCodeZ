@@ -18,6 +18,7 @@ import {
   PlatformChannels,
 } from "@zcode/shared";
 import { loadWindow, type WindowBootstrapOptions } from "./desktopHostProcess.js";
+import { isRegisteredPluginSandboxSrc } from "./pluginSandboxProtocol.js";
 import {
   buildWindowsTitleBarOverlayForZoomLevel,
   hasCustomWindowsControls,
@@ -55,6 +56,7 @@ const embeddedBrowserJavaScriptDialogPreloadPath = join(
 );
 // Coding Plan 官网页专用 preload：挂 window.zcodeBridge 供官网回传购买完成信号。
 const codingPlanWebviewPreloadPath = join(import.meta.dirname, "../preload/codingPlanWebview.cjs");
+const pluginSandboxPreloadPath = join(import.meta.dirname, "../preload/pluginSandbox.cjs");
 
 /**
  * 判断 webview 是否加载 Coding Plan 官网购买页（/coding-plan?...&embedded=app）。
@@ -651,6 +653,20 @@ export function createBrowserWindow(options: {
     // Coding Plan 官网页例外：它需要 window.zcodeBridge 回传购买完成信号，
     // 改用专用 preload（codingPlanWebview.ts），其余 webview 保持原生 Dialog 桥。
     const targetUrl = params.src ?? "about:blank";
+    // U3-0（移植自 ZCode 3.15.1 plugin-sandbox）：沙箱 webview 分流——专用 preload、
+    // 保持 sandbox/contextIsolation、不放开 popup（外链走桥接 openExternal）、
+    // 不进内嵌浏览器 URL 白名单与 coding-plan guest 链。
+    if (isRegisteredPluginSandboxSrc(targetUrl)) {
+      webPreferences.preload = pluginSandboxPreloadPath;
+      webPreferences.contextIsolation = true;
+      webPreferences.nodeIntegration = false;
+      webPreferences.sandbox = true;
+      delete params.preload;
+      delete params.nodeintegration;
+      delete params.disablewebsecurity;
+      delete params.allowpopups;
+      return;
+    }
     const isCodingPlanWebview = isCodingPlanEmbeddedWebviewSrc(targetUrl);
     webPreferences.preload = isCodingPlanWebview
       ? codingPlanWebviewPreloadPath

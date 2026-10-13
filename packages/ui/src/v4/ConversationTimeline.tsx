@@ -14,6 +14,7 @@ import {
   type TouchEvent as ReactTouchEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
+import { flushSync } from "react-dom";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDownIcon } from "lucide-react";
 import { TID_V4_TIMELINE, TID_V4_TIMELINE_BOTTOM } from "@zcode/shared";
@@ -453,10 +454,16 @@ function ConversationTimelineImpl({
   const stableContentWidthRef = useRef<number | null>(null);
   const contentWidthResizeActiveRef = useRef(false);
   const contentWidthResizeSettleTimerRef = useRef<number | null>(null);
+  // U2-2（移植自 ZCode 3.15.1）：贴底态 resize 当帧批量重测期间置位，令
+  // shouldAdjustScrollPositionOnItemSizeChange 的补偿全禁——逐行补偿会在 flushSync
+  // 批量入账时与单次贴底打架，正是「窗口缩放滚动跳动」的病灶。
+  const resizeFlushSuppressedRef = useRef(false);
+  const [, setResizeFlushEpoch] = useState(0);
   const isContentWidthChanging = useCallback(() => {
     const currentContentWidth = virtualHistoryRef.current?.clientWidth ?? null;
     const stableContentWidth = stableContentWidthRef.current;
     return (
+      resizeFlushSuppressedRef.current ||
       contentWidthResizeActiveRef.current ||
       (currentContentWidth !== null &&
         stableContentWidth !== null &&
@@ -1056,41 +1063,128 @@ function ConversationTimelineImpl({
     syncTurnNavigatorViewport,
   ]);
 
+  // U2-2（移植自 ZCode 3.15.1，上游 renderer styles@≈3425900-3428500）：滚动跳动修复。
+  // 与旧实现的差异：①滚动容器高度变化也纳入观察（旧版只看内容列宽度，纵向缩放不触发）；
+  // ②贴底态走当帧同步收敛——摘观察→禁逐行补偿→一次收集全部已渲染行真实高度→flushSync
+  // 批量 resizeItem→单次贴底（rAF 后重挂观察）；旧版「去抖 settle 后才贴底」会让重排
+  // 中间态可见。非贴底且仅宽度变化时保留 120ms 去抖（CONTENT_WIDTH_RESIZE_SETTLE_MS）。
   useLayoutEffect(() => {
     const contentColumn = virtualHistoryRef.current;
     if (!contentColumn || typeof ResizeObserver === "undefined") return;
 
     stableContentWidthRef.current = contentColumn.clientWidth;
+    let lastViewportHeight = scrollRef.current?.clientHeight ?? 0;
+    let observerReattachFrame: number | null = null;
+    let disposed = false;
+
     const observer = new ResizeObserver(() => {
       const nextWidth = contentColumn.clientWidth;
-      if (nextWidth === stableContentWidthRef.current) return;
+      const scrollElement = scrollRef.current;
+      if (!scrollElement) return;
+      const viewportHeightChanged = lastViewportHeight !== scrollElement.clientHeight;
+      lastViewportHeight = scrollElement.clientHeight;
+      if (nextWidth === stableContentWidthRef.current && !viewportHeightChanged) return;
 
-      // 宽度变化会让虚拟行分批重新测高；逐行补偿或逐批追底都会
-      // 连续改写 scrollTop。resize 期间暂停两者，稳定后只执行一次最终贴底。
-      contentWidthResizeActiveRef.current = true;
-      if (contentWidthResizeSettleTimerRef.current !== null) {
-        window.clearTimeout(contentWidthResizeSettleTimerRef.current);
-      }
-      contentWidthResizeSettleTimerRef.current = window.setTimeout(() => {
+      // resize 期间 scroll 事件可能缺席，先按当前度量重推贴底判定（上游同款）。
+      markProgrammaticScroll();
+      commitFollowing(
+        reconcileFollowingForContentAnchor({
+          following: followingRef.current,
+          metrics: {
+            scrollTop: scrollElement.scrollTop,
+            viewportHeight: scrollElement.clientHeight,
+            contentHeight: scrollElement.scrollHeight,
+          },
+          lastObservedScrollTop: lastObservedScrollTopRef.current,
+        }),
+      );
+
+      if (followingRef.current) {
+        if (contentWidthResizeSettleTimerRef.current !== null) {
+          window.clearTimeout(contentWidthResizeSettleTimerRef.current);
+          contentWidthResizeSettleTimerRef.current = null;
+        }
+        observer.unobserve(contentColumn);
+        resizeFlushSuppressedRef.current = true;
+        try {
+          const measuredRows = Array.from(
+            contentColumn.querySelectorAll(":scope > [data-index]"),
+            (row) => ({
+              index: Number(row.getAttribute("data-index")),
+              height: measureElement(row, undefined),
+            }),
+          );
+          flushSync(() => {
+            for (const row of measuredRows) {
+              virtualizer.resizeItem(row.index, row.height);
+            }
+            setResizeFlushEpoch((epoch) => epoch + 1);
+          });
+        } finally {
+          resizeFlushSuppressedRef.current = false;
+          if (observerReattachFrame !== null) {
+            window.cancelAnimationFrame(observerReattachFrame);
+          }
+          if (!disposed) {
+            observerReattachFrame = window.requestAnimationFrame(() => {
+              observerReattachFrame = null;
+              observer.observe(contentColumn);
+            });
+          }
+        }
+        if (disposed) return;
         stableContentWidthRef.current = contentColumn.clientWidth;
         contentWidthResizeActiveRef.current = false;
-        contentWidthResizeSettleTimerRef.current = null;
-        if (followingRef.current) {
+        // 用户明确滚离（wheel/touch 意图仍在 TTL 内）时不强行拽回。
+        if (followingRef.current && getActiveUserScrollIntent() !== "awayFromBottom") {
           scrollToBottom();
         }
-      }, CONTENT_WIDTH_RESIZE_SETTLE_MS);
+        return;
+      }
+
+      if (nextWidth !== stableContentWidthRef.current) {
+        // 宽度变化会让虚拟行分批重新测高；逐行补偿或逐批追底都会
+        // 连续改写 scrollTop。resize 期间暂停两者，稳定后只执行一次最终贴底。
+        contentWidthResizeActiveRef.current = true;
+        if (contentWidthResizeSettleTimerRef.current !== null) {
+          window.clearTimeout(contentWidthResizeSettleTimerRef.current);
+        }
+        contentWidthResizeSettleTimerRef.current = window.setTimeout(() => {
+          stableContentWidthRef.current = contentColumn.clientWidth;
+          contentWidthResizeActiveRef.current = false;
+          contentWidthResizeSettleTimerRef.current = null;
+          if (followingRef.current) {
+            scrollToBottom();
+          }
+        }, CONTENT_WIDTH_RESIZE_SETTLE_MS);
+      }
     });
     observer.observe(contentColumn);
+    const scrollElementAtMount = scrollRef.current;
+    if (scrollElementAtMount) observer.observe(scrollElementAtMount);
 
     return () => {
+      disposed = true;
       observer.disconnect();
+      if (observerReattachFrame !== null) {
+        window.cancelAnimationFrame(observerReattachFrame);
+        observerReattachFrame = null;
+      }
       if (contentWidthResizeSettleTimerRef.current !== null) {
         window.clearTimeout(contentWidthResizeSettleTimerRef.current);
         contentWidthResizeSettleTimerRef.current = null;
       }
       contentWidthResizeActiveRef.current = false;
     };
-  }, [renderUnits.length === 0, scrollToBottom]);
+  }, [
+    commitFollowing,
+    getActiveUserScrollIntent,
+    markProgrammaticScroll,
+    measureElement,
+    renderUnits.length === 0,
+    scrollToBottom,
+    virtualizer,
+  ]);
 
   useLayoutEffect(() => {
     const element = liveTailRef.current;

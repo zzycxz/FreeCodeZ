@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数智中枢 · 接入中心与新增界面 · 2026-10-11</title>
+<style>
+  :root{
+    --bg:#141416; --panel:#1c1c20; --sidebar:#19191d; --card:#232329; --card-hover:#2a2a31;
+    --border:#33333c; --border-soft:#2a2a32; --text:#e8e8ec; --text-dim:#9b9ba6;
+    --brand:#5b6cff; --brand-soft:#3d47a8; --icon-blue:#4f8ef7; --green:#30a46c; --amber:#f5a623;
+    --red:#e5484d; --purple:#8e6cf0; --bubble-me:#3d47a8; --bubble-them:#2a2a31;
+    --radius:12px; --radius-s:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Helvetica Neue",sans-serif;padding:36px 40px;line-height:1.5}
+  h1{font-size:22px;margin-bottom:6px}
+  .sub{color:var(--text-dim);font-size:13px;margin-bottom:28px}
+  section{margin-bottom:44px}
+  .sec-title{font-size:15px;font-weight:600;margin-bottom:4px}
+  .sec-note{font-size:12px;color:var(--text-dim);margin-bottom:14px}
+  .tag{display:inline-block;font-size:10px;padding:1px 8px;border-radius:99px;vertical-align:2px;margin-left:8px;font-weight:400}
+  .tag.new{background:rgba(91,108,255,.18);color:#9aa6ff;border:1px solid rgba(91,108,255,.4)}
+  .tag.old{background:rgba(155,155,166,.12);color:var(--text-dim);border:1px solid var(--border-soft)}
+  .frame{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .row{display:flex;gap:14px;flex-wrap:wrap}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;width:292px;transition:background .15s}
+  .card:hover{background:var(--card-hover)}
+  .card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .app-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .app-name{font-size:14px;font-weight:600}
+  .app-type{font-size:11px;color:var(--text-dim)}
+  .dot{width:9px;height:9px;border-radius:50%;margin-left:auto;flex-shrink:0}
+  .dot.g{background:var(--green);box-shadow:0 0 6px rgba(48,164,108,.6)}
+  .dot.y{background:var(--amber)}
+  .dot.r{background:var(--red)}
+  .badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:5px;background:rgba(79,142,247,.14);color:var(--icon-blue);border:1px solid rgba(79,142,247,.35);margin-right:5px}
+  .badge.t0{background:rgba(142,108,240,.15);color:var(--purple);border-color:rgba(142,108,240,.4)}
+  .l0{display:flex;align-items:center;gap:6px;font-size:11px;margin:9px 0;padding:7px 9px;border-radius:var(--radius-s);background:rgba(155,155,166,.07);border:1px solid var(--border-soft)}
+  .l0.ok{color:#7fd0a5}.l0.warn{color:#f2c069}.l0.na{color:var(--text-dim)}
+  .pack{border-top:1px dashed var(--border-soft);margin-top:10px;padding-top:10px;font-size:11px;color:var(--text-dim)}
+  .btn{display:inline-block;font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;border:1px solid transparent;margin-top:8px}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.ghost{background:transparent;color:var(--text-dim);border-color:var(--border)}
+  .grp{font-size:12px;color:var(--text-dim);margin:16px 0 10px;display:flex;align-items:center;gap:8px}
+  .grp::after{content:"";flex:1;height:1px;background:var(--border-soft)}
+  .tools{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .tool{font-size:10px;font-family:ui-monospace,Menlo,monospace;background:rgba(91,108,255,.12);color:#9aa6ff;border:1px solid rgba(91,108,255,.3);padding:2px 7px;border-radius:5px}
+  /* 铃铛审批卡 */
+  .bell{width:340px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .bell-head{padding:10px 14px;font-size:12px;font-weight:600;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;gap:8px}
+  .bell-body{padding:14px}
+  .approval-title{font-size:13px;font-weight:600;margin-bottom:8px}
+  .approval-msg{background:var(--bubble-them);border:1px solid var(--border-soft);border-radius:8px;padding:9px 11px;font-size:12px;margin-bottom:10px}
+  .strict{font-size:11px;color:#f2c069;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);border-radius:6px;padding:5px 9px;margin-bottom:10px}
+  .tiers{display:flex;gap:5px;margin-bottom:10px}
+  .tier{flex:1;text-align:center;font-size:10px;padding:5px 0;border-radius:6px;border:1px solid var(--border);color:var(--text-dim)}
+  .tier.active{background:rgba(245,166,35,.16);color:#f2c069;border-color:rgba(245,166,35,.5)}
+  .bell-actions{display:flex;gap:8px}
+  /* 占用告知条 */
+  .occupy{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(245,166,35,.14),rgba(245,166,35,.05));border:1px solid rgba(245,166,35,.4);border-radius:var(--radius);padding:12px 16px;font-size:13px}
+  .pulse{width:10px;height:10px;border-radius:50%;background:var(--amber);animation:pulse 1.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  /* 子任务状态 */
+  .task-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border-soft);font-size:12px}
+  .st{font-size:10px;padding:2px 8px;border-radius:99px}
+  .st.run{background:rgba(48,164,108,.15);color:#7fd0a5}
+  .st.unv{background:rgba(155,155,166,.15);color:var(--text-dim)}
+  .st.exit{background:rgba(229,72,77,.15);color:#f09397}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#9aa6ff}
+</style>
+</head>
+<body>
+<h1>数智中枢 · 接入中心与新增界面</h1>
+<div class="sub">2026-10-11 · 配套 spec：ai-hub-access-platform v2.0 · 沿用《数智中枢全界面 2026-10-06》视觉令牌 · 标 <span class="tag new">新增</span> 为本 spec 新增界面元素，<span class="tag old">既有</span> 已在 9 屏设计稿</div>
+
+<!-- ① 接入中心 -->
+<section>
+  <div class="sec-title">① 接入中心 · 两组分区 + L0 可用性标签<span class="tag new">新增</span></div>
+  <div class="sec-note">入口：数智员工管理中心 → 接入页。按介质组 / 智能体组两分区；每卡片 = 一个目标 × 健康灯 × 通道徽标 × L0 标签 × 操作包状态（spec §7/§9-C5）</div>
+  <div class="frame">
+    <div class="grp">📱 介质组 · IM / 通信</div>
+    <div class="row">
+      <div class="card">
+        <div class="card-head">
+          <div class="app-icon" style="background:rgba(48,164,108,.18)">💬</div>
+          <div><div class="app-name">移动办公</div><div class="app-type">中国移动 · IM</div></div>
+          <div class="dot g" title="在线"></div>
+        </div>
+        <div><span class="badge">T1 解密读</span><span class="badge">T2 注入</span><span class="badge">T3 DOM</span></div>
+        <div class="l0 warn">⚠ 基础接入：视觉模式（受限）· 空闲窗运行</div>
+        <div class="pack">操作包 <b style="color:var(--text)">moa-pack v1.0</b> 已安装 · 9 个工具
+          <div class="tools"><span class="tool">moa_send_message</span><span class="tool">moa_search_contact</span><span class="tool">moa_read_history</span><span class="tool">+6</span></div>
+          <span class="btn ghost">卸载</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="app-icon" style="background:rgba(79,142,247,.18)">🐦</div>
+          <div><div class="app-name">飞书</div><div class="app-type">Lark · IM / 协作</div></div>
+          <div class="dot y" title="该重扫"></div>
+        </div>
+        <div><span class="badge">API/MCP 主路</span><span class="badge">T3 AX 兜底</span></div>
+        <div class="l0 ok">✓ 基础接入：语义档（AX）· 已实测</div>
+        <div class="pack">操作包未安装 · 主路需自建组织凭据
+          <div><span class="btn primary">安装飞书连接器</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="grp">🤖 智能体组 · 可派任务的 worker</div>
+    <div class="row">
+      <div class="card">
+        <div class="card-head">
+          <div class="app-icon" style="background:rgba(142,108,240,.18)">✨</div>
+          <div><div class="app-name">MobileWork 办公智能体</div><div class="app-type">OpenWork 底座 · 数字员工</div></div>
+          <div class="dot y" title="待登录"></div>
+        </div>
+        <div><span class="badge t0">T0 官方控制面</span><span class="badge">语义动作 API</span></div>
+        <div class="l0 warn">⏳ 待登录 · 登录后可派任务给内置数字员工</div>
+        <div class="pack">操作包 <b style="color:var(--text)">mw-pack v0.9</b> 已安装 · 5 个工具
+          <div class="tools"><span class="tool">mw_create_task</span><span class="tool">mw_send</span><span class="tool">mw_read_transcript</span><span class="tool">+2</span></div>
+          <span class="btn ghost">卸载</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="app-icon" style="background:rgba(91,108,255,.18)">⌨️</div>
+          <div><div class="app-name">OpenCode</div><div class="app-type">CLI 编码智能体 · 1.4.6</div></div>
+          <div class="dot g" title="在线"></div>
+        </div>
+        <div><span class="badge">API 正门 · serve</span><span class="badge">ACP 候升级</span></div>
+        <div class="l0 ok">✓ 会话闭环已验证 · 模型 jiutian/glm-5.1</div>
+        <div class="pack">操作包 <b style="color:var(--text)">oc-pack v1.0</b> 已安装 · 6 个工具
+          <div class="tools"><span class="tool">oc_session_new</span><span class="tool">oc_prompt</span><span class="tool">oc_transcript</span><span class="tool">+3</span></div>
+          <span class="btn ghost">卸载</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ② 安装流程 -->
+<section>
+  <div class="sec-title">② 操作包安装 · 零登录货架 → sha256 校验 → 工具面落位<span class="tag new">新增</span></div>
+  <div class="sec-note">插件中心零登录（spec §5-2）；安装时做完整性校验（§5-4）；装完工具面出现并可授权员工（§4）</div>
+  <div class="frame">
+    <div class="row">
+      <div class="card" style="width:250px">
+        <div class="app-name" style="margin-bottom:8px">📦 moa-pack v1.0</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">来源：FreeCodeZ 官方 · Apache-2.0</div>
+        <div style="height:6px;border-radius:99px;background:var(--border-soft);overflow:hidden"><div style="width:72%;height:100%;background:var(--brand)"></div></div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px">下载 72% → 即将校验 <code>sha256</code></div>
+      </div>
+      <div class="card" style="width:250px">
+        <div class="app-name" style="margin-bottom:8px">✅ 安装完成</div>
+        <div style="font-size:11px;color:#7fd0a5">sha256 校验通过 · 已注册进连接器注册表</div>
+        <div class="tools"><span class="tool">moa_send_message</span><span class="tool">moa_search_contact</span><span class="tool">moa_get_identity</span></div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:8px">已出现在员工配置页「能力」分区</div>
+      </div>
+      <div class="card" style="width:250px">
+        <div class="app-name" style="margin-bottom:8px">🚫 校验失败</div>
+        <div style="font-size:11px;color:#f09397">sha256 不匹配 · 已拒绝安装</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px">fail-closed，不降级不静默（R7 口径）</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ③ 四档授权 -->
+<section>
+  <div class="sec-title">③ 员工能力分区 · 四档授权选择<span class="tag old">既有</span><span class="tag new">工具面按操作包动态出现</span></div>
+  <div class="sec-note">员工「小艾」的能力配置片段：勾选工具面 + 每连接选授权档（细则=主规格 R6）</div>
+  <div class="frame" style="max-width:560px">
+    <div class="task-row"><input type="checkbox" checked> <span class="tool">moa_send_message</span> <span style="color:var(--text-dim)">经移动办公替你发声</span></div>
+    <div class="task-row"><input type="checkbox" checked> <span class="tool">mw_create_task</span> <span style="color:var(--text-dim)">派任务给 MobileWork 数字员工</span></div>
+    <div class="task-row"><input type="checkbox"> <span class="tool">oc_prompt</span> <span style="color:var(--text-dim)">OpenCode 会话</span></div>
+    <div style="padding:12px 14px 2px">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">移动办公外发授权档位</div>
+      <div class="tiers">
+        <div class="tier active">T2 动作确认</div><div class="tier">T1 用户接管</div><div class="tier">T3 预授权</div><div class="tier">T4 免确认</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ④ 铃铛审批 -->
+<section>
+  <div class="sec-title">④ 铃铛审批卡 · 介质组严档外发<span class="tag old">既有四档审批卡</span></div>
+  <div class="sec-note">外发=以用户身份发声 → 默认严档必审；审批超时转草稿不丢稿（R22）</div>
+  <div class="bell">
+    <div class="bell-head">🔔 工作项 · 待决策 <span style="margin-left:auto;color:var(--text-dim)">1</span></div>
+    <div class="bell-body">
+      <div class="approval-title">小艾 请求发送消息</div>
+      <div class="approval-msg">给「联系人A」：<br>「您好，周报已汇总完毕，请查收附件。」</div>
+      <div class="strict">⚠ 经移动办公 · 以你的身份发声 · 已按严档拦截</div>
+      <div class="bell-actions"><span class="btn primary">批准发送</span><span class="btn ghost">改稿</span><span class="btn ghost">拒绝</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑤ 占用告知 + 子任务状态 -->
+<section>
+  <div class="sec-title">⑤ 运行时告知 · 视觉档占用条 + 子任务三值状态<span class="tag new">新增</span></div>
+  <div class="sec-note">视觉档 L0 运行时的空闲窗占用告知（spec §3）；子任务存活恒三值，失联≠失败（§4 纪律 4）</div>
+  <div class="frame">
+    <div class="occupy" style="margin-bottom:16px">
+      <div class="pulse"></div>
+      正在替你操作 <b>移动办公</b>（视觉模式 · 空闲窗）——请勿移动鼠标，预计 12 秒 · <span style="color:var(--text-dim);cursor:pointer">取消</span>
+    </div>
+    <div style="max-width:560px;border:1px solid var(--border-soft);border-radius:var(--radius-s)">
+      <div class="task-row"><span class="st run">● 运行中</span> MobileWork · 生成 10 月运营周报 <span style="margin-left:auto;color:var(--text-dim)">2m30s</span></div>
+      <div class="task-row"><span class="st unv">○ 无法确认</span> OpenCode · 重构 utils 目录 <span style="margin-left:auto;color:var(--text-dim)">宿主失联 · 等待重连（不判失败）</span></div>
+      <div class="task-row"><span class="st exit">■ 已退出</span> OpenCode · 依赖升级检查 <span style="margin-left:auto;color:var(--text-dim)">完成 · 回执已归档</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="sub" style="margin-top:8px">与《界面设计稿-数智中枢全界面-2026-10-06.html》9 屏配套阅读 · 本页仅画 spec v2.0 新增面</div>
+</body>
+</html>

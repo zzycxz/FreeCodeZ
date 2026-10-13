@@ -655,6 +655,23 @@ contextBridge.exposeInMainWorld("zcode", {
   openInFileManager: (path: string) => ipcRenderer.invoke(PlatformChannels.OpenInFileManager, path),
   /** 使用系统默认应用打开本地文件 */
   openExternalFile: (path: string) => ipcRenderer.invoke(PlatformChannels.OpenExternalFile, path),
+  // U2-4（移植自 ZCode 3.15.1）：内置浏览器站点权限六桥
+  onEmbeddedBrowserPermissionPrompt: (callback: (prompt: unknown) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, prompt: unknown): void => callback(prompt);
+    ipcRenderer.on(PlatformChannels.EmbeddedBrowserPermissionPrompt, listener);
+    return () =>
+      ipcRenderer.removeListener(PlatformChannels.EmbeddedBrowserPermissionPrompt, listener);
+  },
+  resolveEmbeddedBrowserPermissionPrompt: (resolution: unknown) =>
+    ipcRenderer.invoke(PlatformChannels.ResolveEmbeddedBrowserPermissionPrompt, resolution),
+  getEmbeddedBrowserSitePermissions: () =>
+    ipcRenderer.invoke(PlatformChannels.GetEmbeddedBrowserSitePermissions, undefined),
+  setEmbeddedBrowserSitePermission: (payload: unknown) =>
+    ipcRenderer.invoke(PlatformChannels.SetEmbeddedBrowserSitePermission, payload),
+  clearEmbeddedBrowserSitePermissions: () =>
+    ipcRenderer.invoke(PlatformChannels.ClearEmbeddedBrowserSitePermissions, undefined),
+  resetEmbeddedBrowserSitePermission: (payload: unknown) =>
+    ipcRenderer.invoke(PlatformChannels.ResetEmbeddedBrowserSitePermission, payload),
   /** 电脑控制权限状态探测（W-19） */
   computerUsePermissionStatus: () =>
     ipcRenderer.invoke(PlatformChannels.ComputerUsePermissionStatus),

@@ -237,6 +237,8 @@ export interface ResourceUsageSnapshot {
 export interface AppSettings {
   /** 当前 App/Host 不再显示提交前体验套餐推荐；不改变任何入口的模型选择。 */
   startPlanRecommendationDismissed?: boolean;
+  /** U2-5（移植自 ZCode 3.15.1 dynamicWorkflowMode 用户设置）：动态工作流三态；缺省走 env 灰度。 */
+  dynamicWorkflowMode?: "disabled" | "onDemand" | "alwaysOn";
   recentProjects: string[]; // 最近项目列表，最多保留 10 个
   locale: Locale; // 界面语言
   /**
@@ -277,6 +279,8 @@ export interface AppSettings {
   taskAutoArchiveOlderThanDays?: number;
   /** Windows 桌面端关闭窗口时隐藏到托盘；其它平台忽略 */
   closeToTrayOnWindows?: boolean;
+  /** U3-4（移植自 ZCode 3.15.1）：linux 一次性迁移标记（默认关一次防旧 win 键误开）。 */
+  closeToTrayLinuxMigrationInitialized?: boolean;
   /** 存在执行中的闲时任务时阻止系统闲置休眠（手动开关，防不了合盖）。 */
   keepAwakeWhileRunning?: boolean;
   /**

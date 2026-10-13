@@ -1,5 +1,5 @@
 /* oxlint-disable eslint(max-lines) -- UnifiedBrowserView 集中维护稳定 webview 的导航、事件和 guest 生命周期；横向滚动链已下沉独立 hook。 */
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type {
   BrowserViewScreenshotSurfacePreparePayload,
   EmbeddedBrowserViewportPreference,
@@ -10,6 +10,7 @@ import { useWebElementPicker } from "@/hooks/useWebElementPicker.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { logger } from "@/logger.js";
 import { BrowserToolbar } from "@/EmbeddedBrowserPaneParts.js";
+import { EmbeddedBrowserPermissionOverlay } from "@/browser-use/EmbeddedBrowserPermissionOverlay.js";
 import { BrowserViewportSurface } from "@/browser-use/BrowserViewportSurface.js";
 import { BrowserViewportToolbar } from "@/browser-use/BrowserViewportToolbar.js";
 import { useBrowserResizeOperationWarning } from "@/browser-use/useBrowserResizeOperationWarning.js";
@@ -989,6 +990,13 @@ export function UnifiedBrowserView({
     void rebuildBrowserGuest(lastRestorableUrlRef.current, "manual-retry");
   }, [rebuildBrowserGuest]);
 
+  // U2-4：权限询问卡按 guest webContentsId 归 tab；origin 供管理面板定标题。
+  const webviewGuestContentsId = useMemo(() => {
+    if (!webview) return undefined;
+    const id = safeWebviewCall(() => webview.getWebContentsId(), 0);
+    return id > 0 ? id : undefined;
+  }, [webview]);
+
   // 加载失败只是这次导航被拒，guest 本身还活着：重走 openUrl 即可，不必重建 guest。
   const handleRetryLoad = useCallback(() => {
     const retryUrl = lastRestorableUrlRef.current ?? browserState.currentUrl;
@@ -1021,9 +1029,14 @@ export function UnifiedBrowserView({
       }
       className={cn(
         isVisible || shouldComposeSurface ? "flex" : "hidden",
-        "h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-background",
+        "relative h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-background",
       )}
     >
+      <EmbeddedBrowserPermissionOverlay
+        guestWebContentsId={webviewGuestContentsId}
+        currentOrigin={resolveOriginFromUrl(browserState.currentUrl)}
+        formatMessage={intl.formatMessage}
+      />
       <BrowserToolbar
         addressValue={addressValue}
         browserState={browserState}
@@ -1074,4 +1087,15 @@ export function UnifiedBrowserView({
       />
     </div>
   );
+}
+
+/** U2-4：从当前 URL 提取 origin（空/非法 → undefined，管理面板显示占位）。 */
+function resolveOriginFromUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.origin : undefined;
+  } catch {
+    return undefined;
+  }
 }

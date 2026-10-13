@@ -3,6 +3,7 @@
 // snapshot 帧全量替换；delta 帧仅在区间衔接（frame.fromSeq === watermark）时 apply，
 // 断档不猜、不缓存补偿——重订阅交由服务端裁决续传或全量（与 ConversationProjectionStore 同策略）。
 import {
+  isContentAssemblyFaultReason,
   PROTOCOL_V4_LIMITS,
   type SessionSummary,
   type SessionsIndexTopicFrame,
@@ -159,6 +160,9 @@ export class SessionsIndexStore {
     forceSnapshot: boolean;
     postRecoveryGapPending: boolean;
     frameDeadline: ReturnType<typeof setTimeout> | null;
+    // U2-3a（移植自 ZCode 3.14.3 上游语义）：内容坏触发的恢复，终态升级 contentRejected
+    // 且停自动重试（与 conversation 版唯一差异——索引列表重试同样无意义）。
+    contentFault: boolean;
   } | null = null;
   private status: SessionsIndexStoreStatus = "idle";
   private generation = 0;
@@ -212,7 +216,7 @@ export class SessionsIndexStore {
       this.frameUnsub = transport.onFrame((frame, context) => this.handleFrame(frame, context));
       this.faultUnsub = transport.onAssemblyFault((fault) => {
         if (fault.subscriptionId === this.subscriptionId) {
-          this.handleAssemblyFault(fault.subscriptionId, fault.deliveryKind);
+          this.handleAssemblyFault(fault.subscriptionId, fault.deliveryKind, fault.reasonCode);
         }
       });
       if (transport.onRuntimeLifecycle) {
@@ -381,7 +385,11 @@ export class SessionsIndexStore {
     if (deliveryKind === "recovery") this.markRecoveryFrameSeen();
   }
 
-  private handleAssemblyFault(subscriptionId: string, deliveryKind?: TopicFrameDeliveryKind): void {
+  private handleAssemblyFault(
+    subscriptionId: string,
+    deliveryKind?: TopicFrameDeliveryKind,
+    reasonCode?: string,
+  ): void {
     if (subscriptionId !== this.subscriptionId) return;
     if (
       this.awaitingInitial?.subscriptionId === subscriptionId &&
@@ -393,17 +401,27 @@ export class SessionsIndexStore {
       this.recovery.postRecoveryGapPending ||= this.recovery.validFrameSeen;
       return;
     }
+    // U2-3a（上游 Su 守卫）：内容坏故障走专用恢复意图，终态升级 contentRejected。
+    if (isContentAssemblyFaultReason(reasonCode)) {
+      this.requestRecovery(true, { contentFault: true });
+      return;
+    }
     this.requestRecovery(
       deliveryKind === "recovery" || (deliveryKind === undefined && this.recovery !== null),
     );
   }
 
-  private requestRecovery(recoveryEvent = false): void {
+  private requestRecovery(
+    recoveryEvent = false,
+    options: { contentFault?: boolean } = {},
+  ): void {
     const transport = this.transport;
     const subscriptionId = this.subscriptionId;
     if (this.closed || !transport || !subscriptionId) return;
     const existing = this.recovery;
     if (existing) {
+      // 粘性置位（同 conversation 版）。
+      if (options.contentFault) existing.contentFault = true;
       if (!recoveryEvent) return;
       if (existing.forceSnapshot) {
         this.failRecovery("fault.subscription.recoveryFailed");
@@ -427,6 +445,7 @@ export class SessionsIndexStore {
       forceSnapshot: false,
       postRecoveryGapPending: false,
       frameDeadline: null,
+      contentFault: options.contentFault === true,
     };
     this.recovery = recovery;
     this.issueRecovery(recovery, false);
@@ -517,7 +536,11 @@ export class SessionsIndexStore {
       recovery.frameDeadline = null;
       if (this.closed || this.recovery !== recovery || recovery.validFrameSeen) return;
       if (!recovery.forceSnapshot) this.issueRecovery(recovery, true);
-      else this.failRecovery("fault.subscription.recoveryFrameTimedOut");
+      // U2-3a：帧超时属链路问题，不升级 contentRejected。
+      else
+        this.failRecovery("fault.subscription.recoveryFrameTimedOut", {
+          contentEligible: false,
+        });
     }, PROTOCOL_V4_LIMITS.logicalFrameAssemblyTimeoutMs);
   }
 
@@ -544,8 +567,40 @@ export class SessionsIndexStore {
     this.errorRecoveryRetryTimer = null;
   }
 
-  private failRecovery(reasonCode: string): void {
+  private failRecovery(
+    reasonCode: string,
+    options: { contentEligible?: boolean } = {},
+  ): void {
+    // U2-3a（移植自上游 index 版语义）：内容坏终态升级 contentRejected 且停自动重试
+    // （scheduleRetry=false）——内容问题重试同样失败，停在错误态等用户干预。
+    const effectiveReason =
+      this.recovery?.contentFault && options.contentEligible !== false
+        ? "fault.subscription.contentRejected"
+        : reasonCode;
+    if (effectiveReason !== reasonCode) {
+      this.failWithoutScheduleRecovery(effectiveReason);
+      return;
+    }
     this.failAndScheduleRecovery(reasonCode);
+  }
+
+  /** contentRejected 专用终态：与 failAndScheduleRecovery 同套清理，但不排退避重试。 */
+  private failWithoutScheduleRecovery(reasonCode: string): void {
+    const transport = this.transport;
+    const previousSubscriptionId = this.subscriptionId;
+    this.discardRecovery();
+    this.subscriptionId = null;
+    this.awaitingInitial = null;
+    this.subscriptionHasAppliedBase = false;
+    this.state = EMPTY_SESSIONS_INDEX_STATE;
+    this.cachedList = null;
+    this.status = "error";
+    logger.warn(`[v4-sessions-index] recovery fail-closed (no-retry): ${reasonCode}`);
+    if (transport && previousSubscriptionId) {
+      void unsubscribeIgnoringFailure(transport, previousSubscriptionId);
+    }
+    this.clearErrorRecoveryRetry();
+    this.emit();
   }
 
   /**

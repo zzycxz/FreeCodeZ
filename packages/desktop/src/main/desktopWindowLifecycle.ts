@@ -369,6 +369,8 @@ export function handleDesktopWindowCloseRequest(options: {
   forceQuit: boolean;
   explicitQuitRequested?: boolean;
   closeToTrayOnWindows?: boolean;
+  /** U3-4（移植自 ZCode 3.15.1）：linux 关窗驻留要求探测确认托盘能力（win32 忽略）。 */
+  closeToTraySupported?: boolean;
   isLastWindow: boolean;
   label: string;
   logger: { info: (...args: unknown[]) => void };
@@ -377,12 +379,11 @@ export function handleDesktopWindowCloseRequest(options: {
   requestQuit: () => void;
   hideWindow?: () => void;
 }) {
-  if (
-    options.platform === "win32" &&
-    options.closeToTrayOnWindows &&
-    !options.forceQuit &&
-    !options.explicitQuitRequested
-  ) {
+  const closeToTrayEnabled =
+    options.closeToTrayOnWindows === true &&
+    (options.platform === "win32" ||
+      (options.platform === "linux" && options.closeToTraySupported === true));
+  if (closeToTrayEnabled && !options.forceQuit && !options.explicitQuitRequested) {
     options.logger.info(`[createWindow] window close hidden to tray (${options.label})`);
     options.hideWindow?.();
     return true;

@@ -1,4 +1,5 @@
-import { app, BrowserWindow, webContents as electronWebContents } from "electron";
+/* eslint-disable max-lines -- 资源管理器窗口集中承载采样/存储/网络观测三面生命周期，拆散会让 window-scoped 约束跨文件传递。 */
+import { app, BrowserWindow, session, webContents as electronWebContents } from "electron";
 import type { UtilityProcess as ElectronUtilityProcess } from "electron";
 import os from "node:os";
 import { join } from "node:path";
@@ -15,6 +16,11 @@ import {
   type ZCodeProvider,
 } from "@zcode/shared";
 import { logger } from "./logger.js";
+import {
+  observeResourceManagerNetworkWindow,
+  stopResourceManagerNetwork,
+} from "./resourceManagerNetwork.js";
+import { EMBEDDED_BROWSER_PARTITION } from "./browserDataManager.js";
 import { normalizeElectronCpuToMachinePercent } from "./electronCpuNormalization.js";
 import type { ChromiumProcessRolePids } from "./processResourceRoleClassifier.js";
 import { buildAuxiliaryRendererName } from "./resourceManagerProcessNames.js";
@@ -283,10 +289,20 @@ export function openResourceManager(): void {
 
   instance.on("closed", () => {
     stopResourceUsageSampling();
+    stopResourceManagerNetwork();
     instance = null;
   });
   instance.webContents.on("render-process-gone", stopResourceUsageSampling);
   instance.webContents.on("destroyed", stopResourceUsageSampling);
+  // U2-6：网络采集与窗口同生命周期（开窗点亮，关窗/崩溃停并清零）。
+  // 内置浏览器 partition 的非 guest 出网一并入观测面（<webview> guest 流量仍被排除）。
+  observeResourceManagerNetworkWindow(
+    instance,
+    () => {
+      // host/CLI 转发控制消息在 stage 2 接线（见 spec U2-6）；本阶段仅 main/renderer 源。
+    },
+    session.fromPartition(EMBEDDED_BROWSER_PARTITION),
+  );
 
   logger.info("[resource-manager] window opened");
 }

@@ -11,6 +11,8 @@ const MODE_DESCRIPTIONS: Record<TuiSwitchableMode, string> = {
   build: "Ask before each file changes.",
   edit: "Edit selected files or relevant workspace files automatically.",
   plan: "Inspect the code and present a plan before editing.",
+  // U2-1（移植自 ZCode 3.15.1 /mode 列表）：自主模式=yolo 语义+危险命令单次确认。
+  guarded: "Autonomous mode, asks once before dangerous commands.",
   yolo: "Edit and run commands with fewer confirmations.",
 };
 

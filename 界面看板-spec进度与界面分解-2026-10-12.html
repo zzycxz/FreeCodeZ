@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreeCodeZ · spec v2.1 执行看板（进度 × 界面分解 · 人工检查）</title>
+<style>
+:root{
+  --bg:#f8f8f8; --panel:#ffffff; --sidebar:#f0f0f0; --card:#ffffff;
+  --border:rgba(13,13,13,.1); --border-h:rgba(13,13,13,.15);
+  --surface:rgba(13,13,13,.03); --hover:rgba(13,13,13,.05);
+  --fg:#1f1f1f; --dim:#737373; --faint:#a3a3a3;
+  --brand:#0f0f10; --brand-h:#3a3a3c;
+  --accent:#ebf4ff; --blue:#2563eb; --green:#16a34a; --amber:#d97706; --red:#dc2626; --purple:#7c3aed;
+  --r:8px; --rs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#e2e2e4;color:var(--fg);font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;font-size:13px;display:flex;align-items:center;justify-content:center;overflow:auto}
+button{font-family:inherit;cursor:pointer}
+.ic{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.ic13{width:13px;height:13px}.ic16{width:16px;height:16px}
+#win{width:96vw;min-height:92vh;background:var(--bg);border-radius:10px;box-shadow:0 24px 70px rgba(0,0,0,.35);border:1px solid rgba(13,13,13,.2);margin:3vh 0;overflow:hidden}
+#titlebar{height:38px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px}
+.tl{display:flex;gap:7px}.tl i{width:12px;height:12px;border-radius:50%;display:block}
+.tl i:nth-child(1){background:#ff5f57}.tl i:nth-child(2){background:#febc2e}.tl i:nth-child(3){background:#28c840}
+#title{font-size:12px;font-weight:600;margin-left:8px}
+#title small{color:var(--dim);font-weight:400}
+.spacer{flex:1}
+.btn{height:28px;display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:0 10px;border-radius:8px;border:1px solid transparent;transition:background .12s}
+.btn.primary{background:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-h)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--border)}
+.btn.ghost:hover{background:var(--hover)}
+#content{display:flex;min-height:calc(92vh - 38px)}
+/* 左列：里程碑 */
+#mileCol{width:288px;background:var(--sidebar);border-right:1px solid var(--border);padding:16px 14px;flex-shrink:0;overflow-y:auto}
+.overall{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;margin-bottom:14px}
+.overall .t{font-size:11px;color:var(--dim);margin-bottom:6px}
+.pbar{height:7px;border-radius:99px;background:var(--surface);overflow:hidden}
+.pbar>div{height:100%;background:var(--green);transition:width .3s}
+.pnum{font-size:19px;font-weight:700;margin-top:7px}
+.pnum small{font-size:11px;color:var(--dim);font-weight:400}
+.mile{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:11px 12px;margin-bottom:9px;cursor:pointer;transition:border-color .12s}
+.mile:hover{border-color:var(--border-h)}
+.mile.on{outline:2px solid var(--accent)}
+.mile-h{display:flex;align-items:center;gap:7px}
+.mile-h b{font-size:12.5px}
+.mdate{margin-left:auto;font-size:10px;color:var(--dim);display:flex;align-items:center;gap:3px}
+.mile .pbar{margin-top:8px}
+.mile .sub{font-size:10.5px;color:var(--dim);margin-top:5px}
+/* 主区 */
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#tabs{display:flex;gap:2px;padding:12px 18px 0;border-bottom:1px solid var(--border);background:var(--panel)}
+.tab{height:30px;display:flex;align-items:center;gap:6px;font-size:12.5px;padding:0 14px;border-radius:8px 8px 0 0;color:var(--dim);border:1px solid transparent;border-bottom:none;cursor:pointer}
+.tab.on{background:var(--bg);color:var(--fg);font-weight:600;border-color:var(--border)}
+#view{flex:1;overflow-y:auto;padding:18px 22px}
+.hint{font-size:11px;color:var(--dim);margin-bottom:14px;display:flex;gap:6px;align-items:center}
+/* 状态徽章 */
+.st{height:20px;display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:0 9px;border-radius:99px;border:1px solid var(--border);color:var(--dim);cursor:pointer;user-select:none;white-space:nowrap}
+.st.todo{background:var(--surface);color:var(--dim)}
+.st.pass{background:#ecfdf3;color:#15803d;border-color:#bbf7d0}
+.st.fail{background:#fef2f2;color:var(--red);border-color:#fecaca}
+.st.done2{background:var(--accent);color:var(--blue);border-color:#d4e6ff}
+.st.frozen{background:var(--surface);color:var(--faint)}
+/* T 测试表 */
+.tgroup{margin-bottom:22px}
+.tg-h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;padding:8px 0 8px}
+.tg-h .cnt{font-size:10.5px;color:var(--dim);font-weight:400}
+.trow{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--border);border-radius:var(--rs);padding:9px 12px;margin-bottom:6px}
+.trow .id{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--blue);flex-shrink:0;width:44px;padding-top:1px}
+.trow .body{flex:1;min-width:0}
+.trow .name{font-size:12.5px;font-weight:600}
+.trow .path{font-size:11px;color:var(--dim);margin-top:2px}
+.trow .path b{color:var(--fg);font-weight:500}
+.trow .expect{font-size:11px;color:var(--dim);margin-top:2px;display:flex;gap:5px}
+.trow .expect::before{content:"→";color:var(--faint)}
+/* U 界面卡 */
+.ucards{display:flex;gap:11px;flex-wrap:wrap}
+.ucard{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:12px 13px;width:262px;display:flex;flex-direction:column;gap:6px}
+.ucard .h{display:flex;align-items:center;gap:7px}
+.ucard .uid{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--purple);background:#f5f0ff;border:1px solid #e2d6ff;border-radius:5px;padding:0 6px}
+.ucard .n{font-size:12.5px;font-weight:600;flex:1}
+.ucard .d{font-size:10.5px;color:var(--dim);line-height:1.6}
+.ucard .f{display:flex;align-items:center;gap:6px;margin-top:2px}
+.ustatus{font-size:10px;padding:1px 8px;border-radius:99px}
+.ustatus.new{background:var(--accent);color:var(--blue)}
+.ustatus.exist{background:var(--surface);color:var(--dim)}
+.ustatus.fz{background:var(--surface);color:var(--faint)}
+.umile{font-size:10px;color:var(--dim);margin-left:auto;display:flex;align-items:center;gap:3px}
+/* 图例 */
+.legend{display:flex;gap:14px;font-size:11px;color:var(--dim);margin-bottom:14px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></symbol>
+<symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></symbol>
+<symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-rotate-cw" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
+</defs></svg>
+
+<div id="win">
+  <div id="titlebar">
+    <div class="tl"><i></i><i></i><i></i></div>
+    <div id="title">spec v2.1 执行看板 <small>进度 × 界面分解 · 人工检查 · 状态本地保存</small></div>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="btnReset"><svg class="ic ic13"><use href="#i-rotate-cw"/></svg>重置</button>
+    <button class="btn primary" id="btnExport"><svg class="ic ic13"><use href="#i-copy"/></svg>导出检查报告</button>
+  </div>
+  <div id="content">
+    <div id="mileCol">
+      <div class="overall">
+        <div class="t">总体进度（按 T 测试 + 界面项计）</div>
+        <div class="pbar"><div id="ovBar" style="width:0%"></div></div>
+        <div class="pnum"><span id="ovNum">0</span><small> / <span id="ovDen">0</span> 项完成</small></div>
+      </div>
+      <div id="mileList"></div>
+    </div>
+    <div id="main">
+      <div id="tabs">
+        <div class="tab on" data-v="tasks"><svg class="ic ic13"><use href="#i-flag"/></svg>任务进度 · T 测试清单</div>
+        <div class="tab" data-v="ui"><svg class="ic ic13"><use href="#i-monitor"/></svg>界面分解 · U1-U14</div>
+      </div>
+      <div id="view"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const I=(n,c)=>`<svg class="ic ${c||''}"><use href="#i-${n}"/></svg>`;
+/* ============ 数据（与 spec §15 / §7.3 一致） ============ */
+const MILES=[
+ {id:'M0',icon:'clock',date:'10-13 上午',name:'M0 环境基线',desc:'基线三绿；红则先修基线',tests:[
+   {id:'M0.1',name:'环境基线三绿',path:'check-workspace-freshness → pnpm typecheck → pnpm lint',expect:'三项全绿'}]},
+ {id:'C0',icon:'bot',date:'10-13',name:'C0 模型就绪',desc:'配脑：向导+冒烟（半天）',tests:[
+   {id:'T0.1',name:'向导闭环',path:'设置→模型提供商→选厂商→key→验证→选模型→完成',expect:'供应商绿色「可用」徽标'},
+   {id:'T0.2',name:'员工活着',path:'新建会话→发「你好」',expect:'回复出现，模型名一致'},
+   {id:'T0.3',name:'员工会用手',path:'让它调一个既有 MCP 工具',expect:'工具卡出现且结果回填'},
+   {id:'T0.4',name:'脑在耗电',path:'设置→用量统计',expect:'token 计数增长'}]},
+ {id:'S1',icon:'plug',date:'10-13~15',name:'S1 注册表+OpenCode 包',desc:'注册表 v1+连接器接口+oc-pack',tests:[
+   {id:'T1.1',name:'装包',path:'员工管理中心→接入页→OpenCode→安装',expect:'进度→sha256 通过→「已装·6 工具」'},
+   {id:'T1.2',name:'工具面落位',path:'小艾配置页→能力分区',expect:'oc_* 勾选项出现'},
+   {id:'T1.3',name:'闭环调用',path:'对它说「用 OpenCode 跑：列出 /tmp 目录文件」',expect:'oc 工具卡→回复回填；任务分组出现会话'},
+   {id:'T1.4',name:'插拔-装生效',path:'装完后查侧栏',expect:'「智能体任务」分组随安装出现'},
+   {id:'T1.5',name:'插拔-卸回收',path:'卸载 oc-pack→查配置页与侧栏',expect:'oc_* 即时消失；旧会话标「连接器已卸载」'},
+   {id:'T1.6',name:'通道健康不静默',path:'停 opencode serve→再调→恢复 serve→重试',expect:'人话报错+「无法确认」→恢复后重试成功'}]},
+ {id:'S2',icon:'spark',date:'10-16~17',name:'S2 MobileWork 包',desc:'T0a 通道；前置=用户登录一次',tests:[
+   {id:'T2.1',name:'登录后健康',path:'用户登录 MobileWork→打开接入中心',expect:'卡片灯绿；snapshot 可见当前路由'},
+   {id:'T2.2',name:'派任务闭环',path:'「让 MobileWork 数字员工生成一页摘要」',expect:'mw_create_task→运行→read_transcript 回执'},
+   {id:'T2.3',name:'跨应用回验',path:'人工打开 MobileWork App 核对',expect:'任务真实存在于 App 界面'},
+   {id:'T2.4',name:'token 刷新自愈',path:'重启 MobileWork（token 必变）→立即再派任务',expect:'仍成功（操作前重读发现文件）'}]},
+ {id:'S3',icon:'layers',date:'10-20~24',name:'S3 MOA 包+铃铛+审计',desc:'41 脚本收编+SIGUSR1 开关+审批/审计',tests:[
+   {id:'T3.1',name:'装包',path:'安装 moa-pack',expect:'「已装·9 工具」；能力分区出现 moa_*'},
+   {id:'T3.2',name:'审批-批准',path:'「给联系人A发：周报好了」→铃铛',expect:'红点+1→严档审批卡→批准→镜像会话出消息+✓库回验→铃铛清零'},
+   {id:'T3.3',name:'审批-拒绝',path:'同上演到审批卡→拒绝',expect:'消息未发；小艾收到反馈；审计留「已拒绝」'},
+   {id:'T3.4',name:'审批-转草稿',path:'转草稿→稍后再批准',expect:'草稿不丢；批准后发出带回验'},
+   {id:'T3.5',name:'审计留痕',path:'顶栏审计/右键会话→查看审计',expect:'T3.2-3.4 每步一条可检索'},
+   {id:'T3.6',name:'依赖缺失提示',path:'退出移动办公→再发→重开',expect:'黄灯+「打开一次移动办公」不静默；重开自愈'}]},
+ {id:'M5',icon:'flag',date:'10-25',name:'M5 收口终检',desc:'四终检+全量回归',tests:[
+   {id:'Z1',name:'核心零专有 grep',path:'grep -ri "mobilework|opencode|com.moa|moa_send" packages/',expect:'核心 0 命中（只许在操作包/注册表数据内）'},
+   {id:'Z2',name:'插拔终检',path:'三包各装/卸一轮（含冷重启）',expect:'工具面与授权同步出现/回收'},
+   {id:'Z3',name:'验收回归',path:'§11 未冻结条目',expect:'全绿（预期 10 条）'},
+   {id:'Z4',name:'门禁四绿',path:'typecheck / lint / fmt / architecture',expect:'四绿'}]},
+];
+const UIS=[
+ {id:'U1',n:'侧栏双栏+过滤条',d:'会话=本机+智能体任务；即时聊天=镜像+员工；全部/未读/置顶/多选',s:'new',m:'S1'},
+ {id:'U2',n:'会话项五要素+标记',d:'图标/名/预览/时间戳/未读点；置顶📌免打扰🔕只读🔒',s:'new',m:'S1→S3'},
+ {id:'U3',n:'顶栏动作+铃铛工作项',d:'📌/🔕/🧾审计按钮；待决策置顶、进度折叠',s:'new',m:'S3'},
+ {id:'U4',n:'聊天流四件',d:'悬停操作（复制/引用/转发/重试）+未读分隔线+回验角标+失败标红',s:'new',m:'S3'},
+ {id:'U5',n:'任务会话卡+工具卡',d:'三值状态/成本实时/产出/取消；工具卡=ToolCallBlocks 既有形态',s:'new',m:'S1'},
+ {id:'U6',n:'右区停靠六 tab',d:'Git/浏览器/终端（既有）+L0 画面/审计时间线/任务详情（新增）；折叠 30px 竖条',s:'new',m:'S1→S3'},
+ {id:'U7',n:'接入中心两组卡片',d:'健康灯/通道徽标/L0 标签/操作包状态+工具清单+装卸',s:'new',m:'S1'},
+ {id:'U8',n:'操作包安装三态',d:'下载进度→sha256 通过→工具面落位 / 失败拒绝（fail-closed）',s:'new',m:'S1'},
+ {id:'U9',n:'断线横幅+L0 占用条',d:'🔴断开→🟡补齐→🟢恢复 不静默；占用倒计时可取消',s:'new',m:'S3'},
+ {id:'U10',n:'铃铛审批卡',d:'草稿预览+严档警示+批准/转草稿/拒绝（R22 的 UI 面）',s:'new',m:'S3'},
+ {id:'U11',n:'录制条→技能固化卡',d:'W7 Record&Replay 的 UI，已定稿未实施',s:'fz',m:'冻结(W7)'},
+ {id:'U12',n:'连接共享弹窗',d:'同事视角三步图解，MCP 出口的 UI，已定稿未实施',s:'fz',m:'冻结(C2)'},
+ {id:'U13',n:'货架/自动化/浏览器/底座页',d:'货架页=S1 装包入口；其余为盘点展示页',s:'new',m:'S1'},
+ {id:'U14',n:'身份卡+员工状态点',d:'侧栏底 getIdentity 身份卡；●忙/○闲',s:'new',m:'S2→S3'},
+];
+const P3=['转发桥接弹窗','只读拦截提示','免打扰时段菜单','多选批量条'];
+/* ============ 状态（localStorage） ============ */
+const KEY='fc-spec-v21-progress';
+let st=JSON.parse(localStorage.getItem(KEY)||'{}');
+const save=()=>localStorage.setItem(KEY,JSON.stringify(st));
+const tKey=id=>'t:'+id, uKey=id=>'u:'+id;
+const T_ST=['todo','pass','fail'];const U_ST=['todo','done2','pass'];
+function cycleT(id){const c=T_ST.indexOf(st[tKey(id)]||'todo');st[tKey(id)]=T_ST[(c+1)%3];save();render()}
+function cycleU(id){const c=U_ST.indexOf(st[uKey(id)]||'todo');st[uKey(id)]=U_ST[(c+1)%3];save();render()}
+/* ============ 渲染 ============ */
+let curView='tasks';
+function stats(mile){
+  const ts=mile.tests.map(t=>st[tKey(t.id)]||'todo');
+  return {pass:ts.filter(x=>x==='pass').length,total:ts.length}}
+function render(){
+  const allT=MILES.flatMap(m=>m.tests);
+  const tPass=allT.filter(t=>(st[tKey(t.id)]||'todo')==='pass').length;
+  const uAll=UIS.filter(u=>u.s!=='fz');
+  const uPass=uAll.filter(u=>(st[uKey(u.id)]||'todo')==='pass').length;
+  const den=allT.length+uAll.length, num=tPass+uPass;
+  document.getElementById('ovNum').textContent=num;document.getElementById('ovDen').textContent=den;
+  document.getElementById('ovBar').style.width=(den?Math.round(num/den*100):0)+'%';
+  /* 左列 */
+  document.getElementById('mileList').innerHTML=MILES.map(m=>{
+    const s=stats(m);
+    return `<div class="mile ${curView==='tasks'&&curMile===m.id?'on':''}" onclick="curMile='${m.id}';curView='tasks';render()">
+      <div class="mile-h">${I(m.icon==='spark'?'sparkles':m.icon,'ic13')}<b>${m.name}</b>
+      <span class="mdate">${I('calendar','ic12')}${m.date}</span></div>
+      <div class="pbar"><div style="width:${s.total?Math.round(s.pass/s.total*100):0}%;background:${s.pass===s.total?'var(--green)':'var(--amber)'}"></div></div>
+      <div class="sub">${s.pass}/${s.total} 通过 · ${m.desc}</div></div>`}).join('');
+  /* 主区 */
+  const v=document.getElementById('view');
+  if(curView==='tasks'){
+    v.innerHTML=`<div class="legend"><span>点右侧状态徽章循环：<span class="st todo">待办</span>→<span class="st pass">通过</span>→<span class="st fail">不通过</span></span><span style="color:var(--faint)">数据=spec §15；通过后当日固化 E2E</span></div>`+
+    MILES.map(m=>{
+      const s=stats(m);
+      return `<div class="tgroup" id="g-${m.id}">
+        <div class="tg-h">${I(m.icon==='spark'?'sparkles':m.icon,'ic13')}${m.name} <span class="mdate">${I('calendar','ic12')}${m.date}</span><span class="cnt">${s.pass}/${s.total} 通过</span></div>`+
+      m.tests.map(t=>{
+        const cs=st[tKey(t.id)]||'todo';
+        return `<div class="trow" ${curMile&&curMile!==m.id?'style="opacity:.55"':''}>
+          <span class="id">${t.id}</span>
+          <div class="body"><div class="name">${t.name}</div>
+          <div class="path"><b>操作：</b>${t.path}</div>
+          <div class="expect">${t.expect}</div></div>
+          <span class="st ${cs}" onclick="cycleT('${t.id}')">${cs==='pass'?I('check','ic12'):cs==='fail'?I('x','ic12'):I('clock','ic12')}${cs==='pass'?'通过':cs==='fail'?'不通过':'待办'}</span>
+        </div>`}).join('')+`</div>`}).join('');
+  }else{
+    v.innerHTML=`<div class="legend"><span>点右侧状态循环：<span class="st todo">未开始</span>→<span class="st done2">已实现</span>→<span class="st pass">已验证</span></span><span style="color:var(--faint)">数据=spec §7.3 U 表；视觉对照基准原型</span></div>
+    <div class="ucards">`+UIS.map(u=>{
+      const cs=st[uKey(u.id)]||'todo';
+      return `<div class="ucard">
+        <div class="h"><span class="uid">${u.id}</span><span class="n">${u.n}</span></div>
+        <div class="d">${u.d}</div>
+        <div class="f"><span class="ustatus ${u.s}">${u.s==='new'?'新增':u.s==='exist'?'既有':'冻结·UI 定稿'}</span>
+        <span class="umile">${I('calendar','ic12')}${u.m}</span></div>
+        ${u.s!=='fz'?`<div style="display:flex;justify-content:flex-end"><span class="st ${cs}" onclick="cycleU('${u.id}')">${cs==='pass'?I('check','ic12'):cs==='done2'?I('layers','ic12'):I('clock','ic12')}${cs==='pass'?'已验证':cs==='done2'?'已实现':'未开始'}</span></div>`:''}
+      </div>`}).join('')+
+    `</div><div class="tg-h" style="margin-top:18px">${I('clock','ic13')}冻结 P3（§14.2，UI 已实装暂不实施）</div>
+    <div class="legend" style="margin:0">${P3.map(x=>`<span class="st frozen">${x}</span>`).join('')}</div>`;
+  }
+}
+let curMile=null;
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{curView=t.dataset.v;curMile=null;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));render()});
+document.getElementById('btnReset').onclick=()=>{if(confirm('清空全部检查状态？')){st={};save();render()}};
+document.getElementById('btnExport').onclick=async()=>{
+  const L=[];
+  L.push('# spec v2.1 执行检查报告');
+  L.push('> 导出时间：'+new Date().toLocaleString('zh-CN'));
+  const allT=MILES.flatMap(m=>m.tests);
+  const tPass=allT.filter(t=>(st[tKey(t.id)]||'todo')==='pass').length;
+  const tFail=allT.filter(t=>(st[tKey(t.id)]||'todo')==='fail').length;
+  L.push(`> 任务测试：${tPass}/${allT.length} 通过，${tFail} 不通过；界面：见下表`);
+  L.push('');
+  for(const m of MILES){const s=stats(m);
+    L.push(`## ${m.name}（${m.date}）· ${s.pass}/${s.total} 通过`);
+    for(const t of m.tests){const cs=st[tKey(t.id)]||'todo';
+      L.push(`- [${cs==='pass'?'x':' '}] ${t.id} ${t.name}${cs==='fail'?' ⚠️不通过':''}`)}
+    L.push('')}
+  L.push('## 界面分解（U 表）');
+  for(const u of UIS){if(u.s==='fz'){L.push(`- 🔒 ${u.id} ${u.n}（冻结·UI 定稿）`);continue}
+    const cs=st[uKey(u.id)]||'todo';
+    L.push(`- ${cs==='pass'?'✅':cs==='done2'?'🟦':'⬜'} ${u.id} ${u.n}（落地：${u.m}）${cs==='pass'?' 已验证':cs==='done2'?' 已实现':''}`)}
+  const md=L.join('\n');
+  try{await navigator.clipboard.writeText(md);alert('检查报告已复制到剪贴板，可直接粘贴给 ZCode 更新 spec/排期')}catch(e){
+    const w=window.open('','_blank');w.document.write('<pre style="font:12px monospace;padding:20px;white-space:pre-wrap">'+md.replace(/</g,'&lt;')+'</pre>')}
+};
+render();
+</script>
+</body>
+</html>

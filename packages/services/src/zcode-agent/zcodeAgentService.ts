@@ -3162,6 +3162,8 @@ export function createZCodeAgentService(
           deliveryKind: params.deliveryKind,
           messageLimit: params.messageLimit,
           afterSeq: params.afterSeq,
+          // U2-3b：index 档透传给 CLI 出口削重；省略=full。
+          ...(params.contentProfile ? { contentProfile: params.contentProfile } : {}),
         },
         zcodeSessionStateSnapshotSchema,
       );

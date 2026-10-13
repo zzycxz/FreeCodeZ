@@ -7,6 +7,7 @@
 // 除 optimistic overlay（pending 命令展示）外，本 store 不产生任何 conversation 事实。
 import {
   applyConversationDeltas,
+  isContentAssemblyFaultReason,
   parseConversationTopic,
   PROTOCOL_V4_LIMITS,
   type ConversationRow,
@@ -292,6 +293,10 @@ export class ConversationProjectionStore {
    * 因为 notification 可在 ACK Promise resolve 后异步到达。
    */
   private awaitingInitial: { subscriptionId: string; mode: "snapshot" | "resume" } | null = null;
+  // U2-3c（自研加固，非上游——见 docs/spec/upstream-port-3.15.1-u2.md）：subscribe ACK
+  // 后 initial 帧看门狗。initial 若因坏消息在产出侧构建失败/永不到达（不产生 fault），
+  // 旧实现会无限停在加载态=「会话加载卡住」的形态；超时转 error 让用户可重连。
+  private awaitingInitialWatchdog: ReturnType<typeof setTimeout> | null = null;
   /** 当前 subscription 是否已由旧 applied base 或本代 logical frame 证明水位有效。 */
   private subscriptionHasAppliedBase = false;
   private recovery: {
@@ -304,6 +309,11 @@ export class ConversationProjectionStore {
     forceSnapshot: boolean;
     postRecoveryGapPending: boolean;
     frameDeadline: ReturnType<typeof setTimeout> | null;
+    // U2-3a（移植自 ZCode 3.14.3 上游语义）：恢复由「内容坏」故障触发时置位。
+    // 内容坏=帧不过 zod 校验，继续按链路故障重试只会循环失败；终态据此升级为
+    // fault.subscription.contentRejected（index 版还停自动重试）。已有 recovery 在途
+    // 时只置位不清除（粘性）。
+    contentFault: boolean;
   } | null = null;
   private readonly offAssemblyFault: () => void;
   private readonly offRuntimeRestart: (() => void) | null = null;
@@ -334,7 +344,7 @@ export class ConversationProjectionStore {
     liveProjectionStores.add(this);
     this.offAssemblyFault = transport.onAssemblyFault((fault) => {
       if (fault.topic === this.topic) {
-        this.handleAssemblyFault(fault.subscriptionId, fault.deliveryKind);
+        this.handleAssemblyFault(fault.subscriptionId, fault.deliveryKind, fault.reasonCode);
       }
     });
     // runtime 换代（CLI 进程换代）按 sessionsIndexStore 的约定优先走 lifecycle：dispose
@@ -458,6 +468,7 @@ export class ConversationProjectionStore {
         subscriptionId: result.ack.subscriptionId,
         mode: result.ack.mode,
       };
+      this.armAwaitingInitialWatchdog(result.ack.subscriptionId);
       this.transport.activate(result.ack.subscriptionId);
       logger.lifecycle.info("v4 conversation store connect completed", {
         durationMs: roundedDuration(subscribeStartedAt, monotonicNow()),
@@ -612,6 +623,7 @@ export class ConversationProjectionStore {
     const initial = deliveryKind === "initial" ? awaitingInitial : null;
     if (initial || (deliveryKind === "recovery" && awaitingInitial)) {
       this.awaitingInitial = null;
+      this.clearAwaitingInitialWatchdog();
     }
     if (deliveryKind === "online" && this.recovery && frame.payload.kind === "snapshot") {
       // online overflow snapshot 本身是完整权威状态，可建立 applied base；但它不冒充
@@ -766,7 +778,11 @@ export class ConversationProjectionStore {
   }
 
   /** physical assembly fault：旧 projection 保持可见，active sub 上 single-flight 恢复。 */
-  handleAssemblyFault(subscriptionId: string, deliveryKind?: TopicFrameDeliveryKind): void {
+  handleAssemblyFault(
+    subscriptionId: string,
+    deliveryKind?: TopicFrameDeliveryKind,
+    reasonCode?: string,
+  ): void {
     if (this.closed || subscriptionId !== this.state.subscriptionId) return;
     if (
       this.awaitingInitial?.subscriptionId === subscriptionId &&
@@ -778,6 +794,12 @@ export class ConversationProjectionStore {
     // 必须 fail closed/升级，不能把坏 recovery 当普通 burst 后永远等待。
     const recoveryFault =
       deliveryKind === "recovery" || (deliveryKind === undefined && this.recovery !== null);
+    // U2-3a（上游 Su 守卫）：内容坏故障走专用恢复意图——后续 failRecovery 终态升级为
+    // contentRejected；requestRecovery(true) 同时沿用「升级 force snapshot」路径。
+    if (isContentAssemblyFaultReason(reasonCode)) {
+      this.requestRecovery(true, { contentFault: true });
+      return;
+    }
     if (deliveryKind === "online" && this.recovery) {
       this.recovery.postRecoveryGapPending ||= this.recovery.validFrameSeen;
       return;
@@ -785,7 +807,10 @@ export class ConversationProjectionStore {
     this.requestRecovery(recoveryFault);
   }
 
-  private requestRecovery(recoveryEvent = false): void {
+  private requestRecovery(
+    recoveryEvent = false,
+    options: { contentFault?: boolean } = {},
+  ): void {
     if (this.closed) return;
     const subscriptionId = this.state.subscriptionId;
     if (!subscriptionId) {
@@ -794,6 +819,8 @@ export class ConversationProjectionStore {
     }
     const existing = this.recovery;
     if (existing) {
+      // 粘性置位：恢复途中再次收到内容坏证据，终态升级判定保留。
+      if (options.contentFault) existing.contentFault = true;
       if (!recoveryEvent) return;
       if (existing.forceSnapshot) {
         this.failRecovery("fault.subscription.recoveryFailed");
@@ -819,6 +846,7 @@ export class ConversationProjectionStore {
       forceSnapshot: false,
       postRecoveryGapPending: false,
       frameDeadline: null,
+      contentFault: options.contentFault === true,
     };
     this.recovery = recovery;
     this.issueRecovery(recovery, false);
@@ -908,7 +936,8 @@ export class ConversationProjectionStore {
       recovery.frameDeadline = null;
       if (this.closed || this.recovery !== recovery || recovery.validFrameSeen) return;
       if (!recovery.forceSnapshot) this.issueRecovery(recovery, true);
-      else this.failRecovery("fault.subscription.recoveryFrameTimedOut");
+      // U2-3a：帧超时属链路问题而非内容坏——显式声明不参与 contentRejected 升级。
+      else this.failRecovery("fault.subscription.recoveryFrameTimedOut", { contentEligible: false });
     }, PROTOCOL_V4_LIMITS.logicalFrameAssemblyTimeoutMs);
   }
 
@@ -920,16 +949,47 @@ export class ConversationProjectionStore {
     recovery.frameDeadline = null;
   }
 
+  /**
+   * U2-3c：initial 帧看门狗。仅在 awaitingInitial 仍是同一 subscription 时生效——
+   * 帧到达/故障/换代都会先清 awaitingInitial，过期触发器自然变 no-op。
+   */
+  private armAwaitingInitialWatchdog(subscriptionId: string): void {
+    this.clearAwaitingInitialWatchdog();
+    this.awaitingInitialWatchdog = setTimeout(() => {
+      this.awaitingInitialWatchdog = null;
+      if (this.closed || this.awaitingInitial?.subscriptionId !== subscriptionId) return;
+      logger.warn(`[v4-store] ${this.topic} initial frame watchdog fired (load stuck)`);
+      this.awaitingInitial = null;
+      this.discardRecovery();
+      this.setState({ status: "error", lastError: "fault.subscription.initialFrameTimedOut" });
+    }, PROTOCOL_V4_LIMITS.logicalFrameAssemblyTimeoutMs);
+  }
+
+  private clearAwaitingInitialWatchdog(): void {
+    if (!this.awaitingInitialWatchdog) return;
+    clearTimeout(this.awaitingInitialWatchdog);
+    this.awaitingInitialWatchdog = null;
+  }
+
   private discardRecovery(): void {
     if (this.recovery) this.clearRecoveryDeadline(this.recovery);
     this.recovery = null;
   }
 
-  private failRecovery(reasonCode: string): void {
+  private failRecovery(
+    reasonCode: string,
+    options: { contentEligible?: boolean } = {},
+  ): void {
     if (!this.recovery) return;
+    // U2-3a（移植自 ZCode 3.14.3 上游 failRecovery 裁决）：恢复由内容坏触发时，
+    // 终态升级为 contentRejected（内容问题，重试无意义）；链路原因保持原码。
+    const effectiveReason =
+      this.recovery.contentFault && options.contentEligible !== false
+        ? "fault.subscription.contentRejected"
+        : reasonCode;
     this.discardRecovery();
-    logger.warn(`[v4-store] ${this.topic} recovery fail-closed: ${reasonCode}`);
-    this.setState({ status: "error", lastError: reasonCode });
+    logger.warn(`[v4-store] ${this.topic} recovery fail-closed: ${effectiveReason}`);
+    this.setState({ status: "error", lastError: effectiveReason });
   }
 
   private handleRuntimeRestart(reason?: "runtimeRestart" | "transportReplaced"): void {
@@ -939,6 +999,7 @@ export class ConversationProjectionStore {
     this.generation += 1;
     this.discardRecovery();
     this.awaitingInitial = null;
+    this.clearAwaitingInitialWatchdog();
     this.subscriptionHasAppliedBase = false;
     this.setState({ status: "connecting", subscriptionId: null });
     // proxy handoff 不等于 CLI runtime 重启；强制 snapshot 会把用户已加载的
@@ -1323,6 +1384,7 @@ export class ConversationProjectionStore {
     this.modelTransitionListeners.clear();
     this.discardRecovery();
     this.awaitingInitial = null;
+    this.clearAwaitingInitialWatchdog();
     this.subscriptionHasAppliedBase = false;
     this.generation++;
     const { subscriptionId } = this.state;

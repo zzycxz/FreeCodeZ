@@ -16,6 +16,7 @@ import { errorAttributionSchema } from "./zcode-protocol-v4/snapshot.js";
 const nonEmptyString = z.string().trim().min(1);
 const zcodeTaskModeRealtimeValues = [
   "yolo",
+  "guarded",
   "plan",
   "edit",
   "auto",

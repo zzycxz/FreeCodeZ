@@ -188,6 +188,8 @@ export function V4InteractionDialogs({
         freeText?: string;
         action?: "accept" | "decline" | "cancel";
         content?: Record<string, unknown>;
+        /** U2-5 创建前调参：allow 应答携带的载荷改写（broker 按 decision=modify 并回）。 */
+        inputAdjustments?: Record<string, unknown>;
       },
     ) => {
       const envelope = createCommandEnvelope({
@@ -328,7 +330,12 @@ export function V4InteractionDialogs({
             ? intl.formatMessage({ id: "chat.permission.responseFailed" })
             : undefined
         }
-        onRespond={(_requestId, option: ZCodePermissionOption, feedback?: string) => {
+        onRespond={(
+          _requestId,
+          option: ZCodePermissionOption,
+          feedback?: string,
+          inputAdjustments?: Record<string, unknown>,
+        ) => {
           if (permissionResponseFlight.current === pending.interactionId) return;
           // 第四批 22①：被拒权限计数（deny 决策入账——UI 状态面板消费 denialDisplayData）。
           recordPermissionDenial(sessionId, option.response?.decision);
@@ -338,6 +345,7 @@ export function V4InteractionDialogs({
           void resolveInteraction(interactionId, {
             optionId: option.optionId,
             ...(feedback ? { freeText: feedback } : {}),
+            ...(inputAdjustments ? { inputAdjustments } : {}),
           }).then((accepted) => {
             if (permissionResponseFlight.current !== interactionId) return;
             permissionResponseFlight.current = null;

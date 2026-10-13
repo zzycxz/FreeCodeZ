@@ -406,7 +406,11 @@ export function registerDeepLinkProtocol(
 
   if (process.defaultApp && process.argv.length >= 2) {
     const entry = resolve(process.argv[1]!);
-    const ok = app.setAsDefaultProtocolClient(scheme, process.execPath, [entry]);
+    // U1-2（移植自 ZCode 3.15.1，上游 main@≈373022）：Windows 协议激活会把 URL 追加到
+    // 命令行尾部，注册命令缺 "--" 分隔符时，链接内容可能被 Chromium 当作命令行开关解析
+    // （参数注入）。win32 下补尾部 "--"，非 win32 注册形态不变。
+    const protocolArgs = process.platform === "win32" ? [entry, "--"] : [entry];
+    const ok = app.setAsDefaultProtocolClient(scheme, process.execPath, protocolArgs);
     if (!ok) {
       logger.warn("[deep-link] 注册协议失败（defaultApp）", {
         scheme,
@@ -423,7 +427,12 @@ export function registerDeepLinkProtocol(
     return;
   }
 
-  const ok = app.setAsDefaultProtocolClient(scheme);
+  // 同 U1-2：packaged 形态在 win32 下显式携带 "--"（Electron 官方建议的协议注册形态），
+  // 防止协议链接内容被解析为命令行开关；非 win32 维持裸注册。
+  const ok =
+    process.platform === "win32"
+      ? app.setAsDefaultProtocolClient(scheme, process.execPath, ["--"])
+      : app.setAsDefaultProtocolClient(scheme);
   if (!ok) {
     logger.warn("[deep-link] 注册协议失败", { scheme });
   } else {
