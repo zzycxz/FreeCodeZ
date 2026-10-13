@@ -237,6 +237,8 @@ export function createRelayFrameAssembler(options: RelayFrameAssemblerOptions) {
 
 // ---------- 重放缓冲（batches[i] 对应 messageSeq = i + 1，累计释放 + 前缀压缩） ----------
 
+export type RelayReplayBuffer = ReturnType<typeof createRelayReplayBuffer>;
+
 export function createRelayReplayBuffer(options: { maxBytes: number; now(): number }) {
   let batches: Array<OutboundBatch | undefined> = [];
   let headIndex = 0;

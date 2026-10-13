@@ -98,9 +98,9 @@ import {
 import { BroadcastHub } from "./broadcastHub.js";
 
 // ---- FreeCodeZ fork 更新链空壳(P3 §3.6):autoUpdater 已删,以下符号改为本地 no-op ----
-type AutoUpdaterStateLike = { status: string; [key: string]: unknown };
-let cachedAutoUpdaterState: AutoUpdaterStateLike = { status: "idle" };
-function getAutoUpdaterState(): AutoUpdaterStateLike {
+// 桩形状对齐 UpdateStatePayload（下游菜单/标题栏按 kind 判读；idle+disabled=静默）。
+let cachedAutoUpdaterState: UpdateStatePayload = { kind: "idle", enabled: false };
+function getAutoUpdaterState(): UpdateStatePayload {
   return cachedAutoUpdaterState;
 }
 function refreshAutoUpdaterReleaseChannel(..._a: unknown[]): void {}
@@ -735,7 +735,9 @@ const updateCheckerDeps = {
 const mainSettingService = createSettingService();
 const resolveEndpointOrigin = (): string =>
   resolveZCodeEndpointOrigin({
-    env: hostProcessLocalEnv,
+    // 此处要的是后端环境轴（"test"|"production"），不是宿主 env 记录——
+    // 曾误传 Record<string,string>（运行时恰好被 falsy 分支忽略，类型面暴露）。
+    env: ZCODE_ENV,
     overrideOrigin: undefined,
   });
 let updateChecker = createUpdateChecker({
@@ -1901,7 +1903,7 @@ function createWindowInstance(startupBootstrap: StartupWindowBootstrap = {}) {
     initialWindowSize: currentDesktopWindowSize,
     currentApplicationLocale: () => currentApplicationLocale,
     resolveBrowserViewOwner: (webContentsId) =>
-      browserGuestManager.getTabOwnerByWebContentsId(webContentsId),
+      browserGuestManager.getTabOwnerByWebContentsId(webContentsId) ?? undefined,
     persistWindowSize: async (state) => {
       currentDesktopWindowSize = state;
       await mainSettingService.update({ desktopWindowSize: state });
@@ -2316,7 +2318,7 @@ app.whenReady().then(async () => {
     getDesktopSessionActivity: () => ({
       runningAgentSessionCount: getRunningAgentSessionCount(),
     }),
-    syncAppSettings: syncImmediateAppSettings,
+    syncAppSettings: (patch) => syncImmediateAppSettings(patch as Partial<AppSettings>),
     setShortcutRecordingActive,
     deviceMid,
   });
@@ -2359,7 +2361,7 @@ app.whenReady().then(async () => {
   });
 
   const protocolUrl = extractDeepLinkUrlFromArgs(process.argv);
-  if (startupDeepLinkConsumptionGate.shouldHandleReadyProtocolUrl(protocolUrl)) {
+  if (protocolUrl && startupDeepLinkConsumptionGate.shouldHandleReadyProtocolUrl(protocolUrl)) {
     handleDeepLink(protocolUrl, logger, {
       confirmationCopy: resolveExternalWorkspaceConfirmationCopy(),
       resolveApplicationWindow: () => getVisibleApplicationWindows()[0] ?? null,

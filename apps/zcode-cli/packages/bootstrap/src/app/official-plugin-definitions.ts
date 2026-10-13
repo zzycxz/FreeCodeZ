@@ -186,7 +186,10 @@ export const OFFICIAL_PLUGIN_DEFINITIONS: readonly OfficialPluginDefinition[] = 
         `../../${name}-plugin`,
         `../../../${name}-plugin`,
       ],
-      version: "0.1.7",
+      // 0.1.8：agents/visual-judge.md 账号套餐模型 pin 改为 inherit+requiresVision
+      //（docs/spec/search-vision-settings.md §4.6）；package/manifest/definition 三处
+      // 版本必须同步，否则继续加载旧缓存目录。
+      version: "0.1.8",
     }),
   ),
   {

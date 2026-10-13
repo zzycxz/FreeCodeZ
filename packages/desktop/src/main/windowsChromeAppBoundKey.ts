@@ -75,6 +75,9 @@ interface HelperProcessResult {
 
 interface ReadAppBoundKeyOptions {
   appExecutablePath?: string;
+  /** 期望的 app 版本/构建提交（缺省取编译期常量；--version 校验用）。 */
+  expectedAppVersion?: string;
+  expectedBuildCommit?: string;
   chromeExecutablePath: string;
   helperPath?: string;
   isPackaged?: boolean;

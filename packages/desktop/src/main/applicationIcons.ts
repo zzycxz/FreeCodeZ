@@ -73,7 +73,8 @@ async function buildApplicationPathIndex(
   let cursor = 0;
   const worker = async () => {
     while (cursor < appPaths.length) {
-      const appPath = appPaths[cursor++];
+      // noUncheckedIndexedAccess：索引读出 string|undefined；cursor<len 守卫已保证在场。
+      const appPath = appPaths[cursor++]!;
       const remainingMs = deadline - dependencies.now();
       if (remainingMs <= 0) return;
       try {

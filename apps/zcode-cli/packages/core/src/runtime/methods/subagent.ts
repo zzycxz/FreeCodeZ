@@ -27,6 +27,7 @@ import { AgentRuntime } from "../agent-runtime.js";
 import type { AgentRuntimeInternal } from "../internal.js";
 import { cloneModelSelection } from "../model-selection.js";
 import { resolveSubagentSelection } from "../helpers/subagent-selection.js";
+import { parseModelPickerValue } from "@zcode/shared/model-selection";
 import type { AgentRuntimeDeps } from "../types.js";
 import { toMcpToolName } from "../../mcp/index.js";
 import { createBorrowedSubagentMcpAccess } from "../../subagent/borrowed-mcp-port.js";
@@ -99,9 +100,17 @@ export function createDefaultSubagentPort(
       const modelOverride = options?.modelOverride;
       const inheritedModel = !modelOverride && !hasConcreteModel ? options?.model : undefined;
       // Core Server override 优先于持久化 profile 与父模型继承，但仍只是标准 Selection。
-      const childSelection = inheritedModel
+      const baseChildSelection = inheritedModel
         ? modelSelectionFromActiveModel(inheritedModel)
         : profileChildSelection;
+      // FreeCodeZ fork(docs/spec/search-vision-settings.md §4.6)：requiresVision 声明的子代理
+      // （如四个办公插件的 visual-judge）需要图片理解能力。主模型不支持图片输入时替换为
+      // 「搜索与视觉」分区绑定的视觉模型；无处可降时保持原选择诚实回退。Core Server 显式
+      // modelOverride 是用户选择，不参与替换。
+      const childSelection =
+        !modelOverride && request.profile.requiresVision === true
+          ? resolveVisionRequiredSubagentSelection(this, baseChildSelection, inheritedModel)
+          : baseChildSelection;
       const embeddedSearchEnabled = resolveSubagentEmbeddedSearchEnabled();
       const baseChildEnvInfo = this.contextSourceSnapshot?.envInfo ??
         this.config.envInfo ?? {
@@ -426,6 +435,89 @@ function createInheritedSubagentModelFactory(
     }
     return fallbackFactory(target);
   };
+}
+
+/**
+ * FreeCodeZ fork(docs/spec/search-vision-settings.md §4.6)：视觉子代理模型降级链。
+ * 一级=入参 selection（主模型/显式 inherit）支持图片则原样返回；
+ * 二级=替换为设置绑定的 visionUnderstandModel（经 modelFactory 校验，与 §4.3e
+ * 裸串补档同路径）；三级=视觉模型未绑定或不可用时保持原选择并 warn 留痕——
+ * visual-judge 这类代理对读不了的图报 Unverified，不静默假装通过。
+ * 顺序与 ImageUnderstand 工具链（视觉模型优先）相反是有意的：这里是资格判定，
+ * 主模型能看图就不换，保持审图者与交付物产出模型一致。
+ */
+function resolveVisionRequiredSubagentSelection(
+  runtime: AgentRuntimeInternal,
+  selection: ModelSelection,
+  inheritedModel: Model | undefined,
+): ModelSelection {
+  // inheritedModel 在场时它就是主模型本体，直接读能力位，避免重复构建句柄。
+  const primarySupportsImage =
+    inheritedModel !== undefined
+      ? inheritedModel.properties.inputFormat?.supportsImage === true
+      : modelSelectionSupportsImage(runtime, selection);
+  if (primarySupportsImage) return selection;
+
+  const visionRef = runtime.config.visionUnderstandModel;
+  if (!visionRef) {
+    runtime.logger?.warn(
+      "Vision-required subagent has no vision-capable model; keeping session model (expect Unverified verdicts)",
+      {
+        event: "subagent.vision_fallback_unavailable",
+        module: "core.subagent",
+        sessionModel: `${selection.providerId}/${selection.modelId}`,
+      },
+    );
+    return selection;
+  }
+  try {
+    const candidate = parseModelPickerValue(visionRef);
+    if (!modelSelectionSupportsImage(runtime, candidate)) {
+      // 设置页下拉已按 supportsImage 过滤，走到这里多为手改数据；留痕不替换。
+      runtime.logger?.warn(
+        "Configured vision model does not support images; keeping session model",
+        {
+          event: "subagent.vision_fallback_unavailable",
+          module: "core.subagent",
+          visionUnderstandModel: visionRef,
+          sessionModel: `${selection.providerId}/${selection.modelId}`,
+        },
+      );
+      return selection;
+    }
+    runtime.logger?.info("Vision-required subagent switched to configured vision model", {
+      event: "subagent.vision_model_substituted",
+      module: "core.subagent",
+      fromModel: `${selection.providerId}/${selection.modelId}`,
+      visionUnderstandModel: visionRef,
+    });
+    return candidate;
+  } catch (error) {
+    // ref 失效（provider 已删/modelId 失效/构造异常）与 runtime-tools 视觉绑定解析
+    // 失败同类：warn 留痕、回退原选择，不在子代理启动路径抛错阻断。
+    runtime.logger?.warn("Vision model binding failed to resolve; keeping session model", {
+      event: "subagent.vision_binding_resolve_failed",
+      module: "core.subagent",
+      visionUnderstandModel: visionRef,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return selection;
+  }
+}
+
+/** 探测 selection 对应模型是否支持图片输入；工厂缺失或探测失败按"不支持"处理。 */
+function modelSelectionSupportsImage(
+  runtime: AgentRuntimeInternal,
+  selection: ModelSelection,
+): boolean {
+  if (!runtime.modelFactory) return false;
+  try {
+    return runtime.modelFactory({ selection }).properties.inputFormat?.supportsImage === true;
+  } catch {
+    // 探测异常不在这里吞根因：若正式创建同样失败，后续 childModel 构造会走
+    // subagent 既有的 ConfigurationError 路径报出真实原因。
+    return false;
+  }
 }
 
 function modelSelectionFromActiveModel(model: Model): ModelSelection {

@@ -289,7 +289,8 @@ export function openResourceManager(): void {
 
   instance.on("closed", () => {
     stopResourceUsageSampling();
-    stopResourceManagerNetwork();
+    // stopResourceManagerNetwork 需要 notifyHosts 回调（stage 2 接线；本阶段 no-op）。
+    stopResourceManagerNetwork(() => {});
     instance = null;
   });
   instance.webContents.on("render-process-gone", stopResourceUsageSampling);

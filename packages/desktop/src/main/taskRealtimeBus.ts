@@ -252,7 +252,9 @@ export class TaskRealtimeBus {
 
     switch (parsed.data.type) {
       case HostResponseTypes.TaskRealtimePublish:
-        this.handleRealtimePublish(origin, parsed.data.event);
+        // zod 推断的 wire 面与手写 TaskRealtimeEvent 存在 optional/undefined 细差；
+        // 数据已经 schema 解析校验——边界断言（语义零变化）。
+        this.handleRealtimePublish(origin, parsed.data.event as TaskRealtimeEvent);
         break;
       case HostResponseTypes.TaskRunLeaseAcquire:
         this.handleLeaseAcquire(origin, parsed.data.request);
@@ -261,7 +263,11 @@ export class TaskRealtimeBus {
         this.releaseLease(origin.hostId, parsed.data.target);
         break;
       case HostResponseTypes.TaskStreamOpPublish:
-        this.handleStreamOpPublish(origin, parsed.data.target, parsed.data.op);
+        this.handleStreamOpPublish(
+          origin,
+          parsed.data.target as TaskRunLeaseTarget,
+          parsed.data.op as TaskStreamMirrorPublishOp,
+        );
         break;
       case HostResponseTypes.TaskOwnerCommandRequest:
         this.handleOwnerCommandRequest(origin, parsed.data.command);
@@ -605,12 +611,18 @@ export class TaskRealtimeBus {
     const coalesced: TaskStreamMirrorPublishOp[] = [];
     for (const op of ops) {
       const previous = coalesced[coalesced.length - 1];
-      if (this.canMergeTextChunk(previous, op)) {
+      if (previous && this.canMergeTextChunk(previous, op)) {
+        // 谓词只保证 previous 形状；op 的 event 面由同谓词的 op 参数在运行时核过
+        //（canMergeTextChunk 内部读 op.event.content），这里收窄读取。
+        const chunkOp = op as unknown as {
+          kind: "stream_event";
+          event: { content: string; [key: string]: unknown };
+        };
         coalesced[coalesced.length - 1] = {
           kind: "stream_event",
           event: {
             ...previous.event,
-            content: previous.event.content + op.event.content,
+            content: previous.event.content + chunkOp.event.content,
           },
         };
         continue;

@@ -174,7 +174,8 @@ function pruneCrashDumpArchive(
   const dumpsToDelete: typeof dumps = [];
 
   while (keptCount > 1 && (keptCount > maxFiles || keptBytes > maxTotalBytes)) {
-    const dump = dumps[keptCount - 1];
+    // noUncheckedIndexedAccess：keptCount>1 守卫保证索引在场。
+    const dump = dumps[keptCount - 1]!;
     dumpsToDelete.push(dump);
     keptCount -= 1;
     keptBytes -= dump.size;

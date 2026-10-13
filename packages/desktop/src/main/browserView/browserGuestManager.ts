@@ -1950,7 +1950,8 @@ export class BrowserGuestManager {
    */
   private isInFlightScreenshotAlive(tracked: InFlightScreenshot): boolean {
     const running = this.runningRequests.get(tracked.requestId);
-    return Boolean(running) && !running.controller.signal.aborted;
+    // Boolean() 不收窄；显式 !== undefined 让下方 running.controller 可达。
+    return running !== undefined && !running.controller.signal.aborted;
   }
 
   private createRecordingEntry(
@@ -2219,18 +2220,28 @@ export class BrowserGuestManager {
           throw new Error(`recording action timed out: ${result.reason}`);
         return;
       }
-      if (typeof action.x !== "number" || typeof action.y !== "number") {
+      // 判别联合的坐标路径（click 坐标变体等）：联合上 x/y/button/doubleClick 只在
+      // 部分成员工，宽化一次让可选面可见——运行时守卫仍是下方 typeof 检查（语义零变化）。
+      const pointerAction = action as {
+        x?: number;
+        y?: number;
+        button?: "left" | "right" | "middle";
+        doubleClick?: boolean;
+      };
+      if (typeof pointerAction.x !== "number" || typeof pointerAction.y !== "number") {
         throw new Error("recording click requires selector or (x,y)");
       }
       await this.executeRecordingBrowserCommand(view, {
         method: "click",
-        x: action.x,
-        y: action.y,
-        ...(action.button ? { button: action.button } : {}),
-        ...(action.doubleClick !== undefined ? { doubleClick: action.doubleClick } : {}),
+        x: pointerAction.x,
+        y: pointerAction.y,
+        ...(pointerAction.button ? { button: pointerAction.button } : {}),
+        ...(pointerAction.doubleClick !== undefined
+          ? { doubleClick: pointerAction.doubleClick }
+          : {}),
       });
-      pointer.x = action.x;
-      pointer.y = action.y;
+      pointer.x = pointerAction.x;
+      pointer.y = pointerAction.y;
       return;
     }
     if (action.type === "hover") {
@@ -2625,7 +2636,11 @@ export class BrowserGuestManager {
       // 如果 destroyed/mismatch 已经发起过重绑，沿用该请求，避免同一 tab 重复创建 webview。
       if (!tab.rebindRequested) this.onOpenTabRequested?.(tab.tabId, tab.owner);
       // 某些测试/旧 renderer 会在 Ready 回调内同步 attach；不能在 attach 已成功后再注册 waiter。
-      if (tab.guest && !safeBool(() => tab.guest.isDestroyed(), true)) return tab.guest;
+      // 闭包内 tab.guest 不会被外层真值检查收窄（TS 保守）；捕获到局部后守卫可达。
+      const currentGuest = tab.guest;
+      if (currentGuest && !safeBool(() => currentGuest.isDestroyed(), true)) {
+        return currentGuest;
+      }
       const guest = await this.waitForGuest(tab.tabId);
       if (guest && !safeBool(() => guest.isDestroyed(), true)) return guest;
       if (attempt === 0 && !tab.hasAttachedGuest && !tab.attachFailure) return null;
@@ -2782,7 +2797,11 @@ export class BrowserGuestManager {
       title: tab.cachedTitle,
       viewport: await this.readTabViewport(tab),
       ...(this.effectiveActiveTabId(tab.owner) === tab.tabId ? { active: true } : {}),
-      ...(tab.lifecycle !== "active" ? { lifecycle: tab.lifecycle } : {}),
+      // wire 的 BrowserTabSummary lifecycle 只收 active|deliverable|handoff（closed
+      // 走独立关闭事件）——closed 兜底不进字段，否则 strict schema 在运行时拒收整包。
+      ...(tab.lifecycle !== "active" && tab.lifecycle !== "closed"
+        ? { lifecycle: tab.lifecycle }
+        : {}),
     };
   }
 
@@ -3852,8 +3871,12 @@ export class BrowserGuestManager {
   ): Promise<GuestWebContents | null> {
     if (tab.lifecycle === "closed" || tab.guest !== guest) return null;
     const restored = await this.restoreGuestState(tab, guest);
-    if (!restored || tab.lifecycle === "closed" || tab.guest !== guest) {
-      if (tab.lifecycle !== "closed" && tab.guest === guest) {
+    // await 期间 lifecycle/guest 可能并发变更（关闭/换绑）；TS 的属性收窄会跨 await
+    // 携带导致「永假比较」误报——用全宽标注的局部重读还原运行时真值。
+    const lifecycleAfterRestore = tab.lifecycle as TabLifecycle;
+    const guestAfterRestore = tab.guest as GuestWebContents | undefined;
+    if (!restored || lifecycleAfterRestore === "closed" || guestAfterRestore !== guest) {
+      if (lifecycleAfterRestore !== "closed" && guestAfterRestore === guest) {
         this.warn(`browser tab guest rebind restore failed tabId=${tab.tabId}`);
       }
       return null;

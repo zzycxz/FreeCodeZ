@@ -31,6 +31,12 @@ export interface AgentProfile {
   name: string;
   path?: string;
   permissionMode?: AgentPermissionMode;
+  /**
+   * FreeCodeZ fork(docs/spec/search-vision-settings.md §4.6)：声明该代理需要图片理解能力。
+   * 运行时据此做两级降级（主模型→「搜索与视觉」绑定的视觉模型），代理只声明需求、
+   * 不拥有降级逻辑；未声明（缺省）的子代理行为不变。
+   */
+  requiresVision?: boolean;
   skills?: readonly string[];
   source: AgentProfileSource;
   systemPrompt: string;
@@ -221,6 +227,7 @@ export function parseAgentProfileFromMarkdown(input: {
       ...optionalList("skills", frontmatter.skills),
       ...optionalBoolean("background", frontmatter.background),
       ...optionalBoolean("injectAgentsMd", frontmatter.injectAgentsMd),
+      ...optionalBoolean("requiresVision", frontmatter.requiresVision),
       ...(mcpServers === undefined ? {} : { mcpServers }),
     },
   };
@@ -280,7 +287,7 @@ function optionalList(
 }
 
 function optionalBoolean(
-  key: "background" | "injectAgentsMd",
+  key: "background" | "injectAgentsMd" | "requiresVision",
   value: unknown,
 ): Partial<AgentProfile> {
   if (typeof value === "boolean") return { [key]: value };

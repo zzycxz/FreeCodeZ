@@ -31,7 +31,11 @@ export function createWindow(options: {
   spawnHostProcess: (
     win: BrowserWindow,
     label: string,
-    initMessage: HostInitMessage,
+    // index.ts 的包装处负责补 zcodeBuiltinProviderConfigFilePath（Electron 安装布局
+    // 感知只在 main 装配层）；lifecycle 传的是 init 主体——参数面放宽为可序列化载体。
+    initMessage: Omit<HostInitMessage, "zcodeBuiltinProviderConfigFilePath"> & {
+      zcodeBuiltinProviderConfigFilePath?: string;
+    },
   ) => ElectronUtilityProcess;
   disposeHostProcess: (
     child: ElectronUtilityProcess,

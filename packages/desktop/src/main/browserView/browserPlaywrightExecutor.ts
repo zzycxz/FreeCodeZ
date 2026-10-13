@@ -1,4 +1,34 @@
 /* eslint-disable max-lines, @typescript-eslint/no-explicit-any -- 该函数会序列化后在隔离的浏览器页面上下文执行，不能引用 host 闭包。 */
+// ── 序列化浏览器运行时的最小 DOM 类型面 ──
+// elementInfoRuntime/overlayRuntime 经 serializeRuntimeCall（fn.toString 序列化）在页面
+// 上下文求值；它们在本 main 程序编译但只引用页面 DOM。不引 lib "dom"——那会给整个
+// main 程序引入 DOM 全局（掩蔽 main 侧 window/document 误用，且与 @types/node 的
+// Request/Response 等重叠易冲突）——改为文件级最小声明（2026-10-13 typecheck 清欠）。
+interface Element {
+  id: string;
+  tagName: string;
+  outerHTML: string;
+  getAttribute(name: string): string | null;
+  matches(selector: string): boolean;
+  getBoundingClientRect(): { x: number; y: number; width: number; height: number };
+  append(...children: Element[]): void;
+  remove(): void;
+  readonly style?: { cssText: string };
+}
+interface HTMLElement extends Element {
+  readonly innerText?: string;
+  readonly style: { cssText: string };
+}
+interface HTMLInputElement extends HTMLElement {
+  value: string;
+}
+declare const document: {
+  readonly readyState: string;
+  readonly documentElement: HTMLElement;
+  elementsFromPoint(x: number, y: number): Element[];
+  getElementById(id: string): Element | null;
+  createElement(tag: string): HTMLElement;
+};
 import type { BrowserCommandResult, BrowserPlaywrightAction } from "@zcode/shared";
 import { buildViewportScreenshotParams } from "./browserCommandPageHandlers.js";
 import type { ControlledView } from "./browserCommandTypes.js";
@@ -17,7 +47,9 @@ function serializeRuntimeCall(fn: (...args: any[]) => unknown, ...args: unknown[
 
 function elementInfoRuntime(options: { x: number; y: number; includeNonInteractable?: boolean }) {
   const cssEscape = (value: string) =>
-    globalThis.CSS?.escape?.(value) ?? value.replace(/[^\w-]/g, "\\$&");
+    // globalThis 类型面无 CSS（未引 lib dom）——运行时存在性照旧，这里仅类型断言。
+    (globalThis as { CSS?: { escape?: (value: string) => string } }).CSS?.escape?.(value) ??
+    value.replace(/[^\w-]/g, "\\$&");
   const candidatesFor = (element: Element) => {
     const values: string[] = [];
     if (element.id) values.push(`#${cssEscape(element.id)}`);

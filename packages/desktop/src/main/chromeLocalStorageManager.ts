@@ -1,5 +1,9 @@
 /* eslint-disable max-lines -- Chrome helper、CDP 传输和 Electron 目标写入必须共享同一套敏感数据边界。 */
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import {
+  spawn,
+  type ChildProcessByStdio,
+} from "node:child_process";
+import type { Readable } from "node:stream";
 import { cp, copyFile, mkdir, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, sep as pathSeparator } from "node:path";
@@ -328,7 +332,9 @@ async function navigateToStorageOrigin(transport: CdpTransport, origin: string):
   }
 }
 
-async function waitForChromeDebuggerUrl(child: ChildProcessWithoutNullStreams): Promise<string> {
+async function waitForChromeDebuggerUrl(
+  child: ChildProcessByStdio<null, Readable, Readable>,
+): Promise<string> {
   return withTimeout(
     new Promise<string>((resolve, reject) => {
       let stderr = "";
@@ -379,7 +385,9 @@ async function findChromePageTarget(browserDebuggerUrl: string): Promise<string>
   throw new Error("chrome_helper_page_missing");
 }
 
-async function stopChromeHelper(child: ChildProcessWithoutNullStreams): Promise<void> {
+async function stopChromeHelper(
+  child: ChildProcessByStdio<null, Readable, Readable>,
+): Promise<void> {
   if (child.exitCode !== null) return;
   const exited = new Promise<void>((resolve) => child.once("exit", () => resolve()));
   child.kill();

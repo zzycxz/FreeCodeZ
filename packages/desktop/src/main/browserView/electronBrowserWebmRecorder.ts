@@ -373,12 +373,15 @@ export async function createElectronBrowserWebmRecorder(
     if (!closed) fail(recorderError(`recorder renderer exited: ${details.reason ?? "unknown"}`));
   };
   recorderWindow.webContents.on("render-process-gone", onRendererGone);
+  // Electron console-message 事件签名（event, level, message, ...)——旧 details 对象
+  // 形态是渲染侧遗留；对齐位置参数后 removeListener 同一引用可过类型。
   const onConsoleMessage = (
     _event: unknown,
-    details: { level?: string; message?: string },
+    level?: unknown,
+    message?: unknown,
   ): void => {
     debug?.(
-      `[browser-recording] recorder console level=${details.level ?? "unknown"} message=${details.message ?? ""}`,
+      `[browser-recording] recorder console level=${String(level ?? "unknown")} message=${String(message ?? "")}`,
     );
   };
   recorderWindow.webContents.on("console-message", onConsoleMessage);
