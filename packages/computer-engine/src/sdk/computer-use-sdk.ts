@@ -68,6 +68,24 @@ export interface ComputerUseSdkOptions {
    *（listApps 缓存→getAppState 目标解析，防模型自报伪造），桥接会话据此盖
    * toolCallRow.cuaApp（UI 分组/App 图标）。旁路：异常不折断观测本体。 */
   onCuaApp?: (app: CuaAppIdentity) => void;
+  /** V1.21 P4b：每次 SDK 操作（观测/动作）的展示上报——调用方经 buildCuaToolDisplay
+   * 投影为 kind:"cua" display（聊天电脑操作卡输入源）。成功带结果对象、失败带 G.2
+   * 错误码（含未触达引擎的 actions_disabled/user_active/CUA_NOT_READY）；params 供
+   * 动作详情行（元素索引/按键/文本）。旁路：异常不折断操作本体。 */
+  onCuaOperation?: (op: CuaOperationReport) => void;
+}
+
+/** P4b 展示上报载荷（形状对齐 buildCuaToolDisplay 输入面）。 */
+export interface CuaOperationReport {
+  /** 引擎方法名（getAppState/leftClick/...）。 */
+  method: string;
+  ok: boolean;
+  /** G.2 SDK 错误码（失败时）。 */
+  errorCode?: string;
+  /** 引擎结果对象（成功时）。 */
+  result?: unknown;
+  /** 本次调用参数（展示层动作详情来源）。 */
+  params?: Record<string, unknown>;
 }
 
 /** typeText 单次上限（UTF-16 code units，G.1 拆分教学）。 */
@@ -84,6 +102,7 @@ export class ComputerUseSdk {
   private readonly actionsEnabled: boolean;
   private readonly onCuaApp: ((app: CuaAppIdentity) => void) | undefined;
   private lastReportedCuaAppPid: number | undefined;
+  private readonly onCuaOperation: ((op: CuaOperationReport) => void) | undefined;
 
   constructor(options: ComputerUseSdkOptions) {
     this.transport = options.transport;
@@ -95,6 +114,7 @@ export class ComputerUseSdk {
     this.onInputEvent = options.onInputEvent;
     this.actionsEnabled = options.actionsEnabled !== false;
     this.onCuaApp = options.onCuaApp;
+    this.onCuaOperation = options.onCuaOperation;
     if (options.docsRoot) setAppInstructionsRoot(options.docsRoot);
   }
 
@@ -486,11 +506,22 @@ export class ComputerUseSdk {
     "getAppState",
   ]);
 
+  /** P4b：展示上报旁路——回调异常不折断操作本体（同 onCuaApp 口径）。 */
+  private reportOperation(op: CuaOperationReport): void {
+    if (!this.onCuaOperation) return;
+    try {
+      this.onCuaOperation(op);
+    } catch {
+      // 展示旁路失败不影响操作。
+    }
+  }
+
   private async call(method: string, params: Record<string, unknown>): Promise<unknown> {
     this.gate.assertMethodAllowed(method);
     // V1.19 P1：动作层设置门——动作面拒 actions_disabled（观测面豁免=「只能看不能动」），
     // 先于活动闸与引擎调用，不触达 sidecar。
     if (!this.actionsEnabled && !ComputerUseSdk.OBSERVE_METHODS.has(method)) {
+      this.reportOperation({ method, ok: false, errorCode: "actions_disabled", params });
       throw new ComputerUseSdkError(
         { sdkCode: "actions_disabled", retry: "never", possiblySent: false },
         "Computer actions are turned off in FreeCodeZ settings (observation still works). " +
@@ -500,6 +531,7 @@ export class ComputerUseSdk {
     if (!ComputerUseSdk.OBSERVE_METHODS.has(method)) {
       const quiet = await waitForUserQuiet(this.readUserActivity, this.activityGate);
       if (!quiet.ok) {
+        this.reportOperation({ method, ok: false, errorCode: "user_active", params });
         throw new ComputerUseSdkError(
           { sdkCode: "user_active", retry: "retry", possiblySent: false },
           quiet.error.message,
@@ -511,6 +543,7 @@ export class ComputerUseSdk {
       payload = await this.transport.request(method, params);
     } catch (error) {
       // 传输级失败（sidecar 死/不可达）= 引擎不可用（R7 fail-closed：显式拒，不空转）。
+      this.reportOperation({ method, ok: false, errorCode: "CUA_NOT_READY", params });
       throw new ComputerUseSdkError(
         { sdkCode: "CUA_NOT_READY", retry: "retry", possiblySent: false },
         `computer engine unreachable: ${error instanceof Error ? error.message : String(error)}`,
@@ -518,11 +551,13 @@ export class ComputerUseSdk {
     }
     const response = payload as { ok?: boolean; result?: unknown; error?: { code?: string; message?: string } };
     if (response && response.ok === true) {
+      this.reportOperation({ method, ok: true, result: response.result, params });
       return response.result;
     }
     const code = response?.error?.code;
     const message = response?.error?.message ?? `engine error in ${method}`;
     const mapping: SdkErrorMapping = mapEngineError(code ?? "invalid_argument", message);
+    this.reportOperation({ method, ok: false, errorCode: mapping.sdkCode, params });
     // V1.19 P2：恢复剧本随错误信封下发（orca CLI 句已改写为本 API 面）——
     // 模型在 js 异常文本里直接看到下一步指导，不必查表。
     const recovery = computerUseErrorRecoveryData(code ?? "", message);

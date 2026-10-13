@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { createSocket, type Socket } from "node:dgram";
 import type { NodeReplRequestMeta } from "@zcode/core/repl";
 import {
+  buildCuaToolDisplay,
   createEngineSdk,
   createSidecarHarness,
   type SidecarHarness,
@@ -108,6 +109,8 @@ export function createComputerBridgeGlobals(input: {
   let sdk: unknown;
   // W-28/P3：HUD 帧广播器随桥生命周期（dispose 收口关 socket）。
   const cursorHud = createCursorHudBroadcaster();
+  // P4b：最近上报的 CUA 目标应用（display.targetApp 来源——图标定位与卡片标题）。
+  let lastCuaApp: { pid: number; name: string; bundleId?: string } | undefined;
 
   const assertAvailable = (): ActiveComputerCall => {
     const active = input.getActiveCall();
@@ -157,7 +160,35 @@ export function createComputerBridgeGlobals(input: {
         // 观测目标身份上报（V1.19 P4，W-30/S6 重建）：真实引擎快照解析（防自报伪造），
         // 经 responseMeta 下行（_meta 通道）→ 行装配盖 toolCallRow.cuaApp → UI 分组/图标。
         onCuaApp: (app: { pid: number; name: string; bundleId?: string }) => {
+          lastCuaApp = app;
           input.session().mergeResponseMeta({ "freecodez/nodeReplCuaApp": app });
+        },
+        // P4b（display 复产）：每次 SDK 操作经 buildCuaToolDisplay 投影 kind:"cua"
+        // display → responseMeta 下行 → executor 透传 → UI 渲染器换源消费。同步旁路
+        // （回调内完成投影与下行；异步会把 display 落进错误的 run 上下文）。
+        onCuaOperation: (op: {
+          method: string;
+          ok: boolean;
+          errorCode?: string;
+          result?: unknown;
+          params?: Record<string, unknown>;
+        }) => {
+          const display = buildCuaToolDisplay({
+            toolName: op.method,
+            status: op.ok ? "success" : "failed",
+            ...(op.result !== undefined ? { result: op.result } : {}),
+            ...(op.errorCode !== undefined ? { errorCode: op.errorCode } : {}),
+            ...(op.params !== undefined ? { params: op.params } : {}),
+            ...(lastCuaApp
+              ? {
+                  targetApp: {
+                    ...(lastCuaApp.name ? { displayName: lastCuaApp.name } : {}),
+                    ...(lastCuaApp.bundleId ? { bundleId: lastCuaApp.bundleId } : {}),
+                  },
+                }
+              : {}),
+          });
+          input.session().mergeResponseMeta({ "freecodez/nodeReplCuaDisplay": display });
         },
         ...(existsSync(docsRoot) ? { docsRoot } : {}),
       }).then((created) => {

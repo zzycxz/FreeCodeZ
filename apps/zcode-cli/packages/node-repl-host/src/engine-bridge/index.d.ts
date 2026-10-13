@@ -13,6 +13,14 @@ export interface EngineSdkOptions {
   /** V1.19 P4（W-30/S6 重建）：观测目标应用身份上报（真实快照解析）。透传
    * ComputerUseSdkOptions.onCuaApp。 */
   onCuaApp?: (app: { pid: number; name: string; bundleId?: string }) => void;
+  /** P4b：每次 SDK 操作的展示上报（透传 ComputerUseSdkOptions.onCuaOperation）。 */
+  onCuaOperation?: (op: {
+    method: string;
+    ok: boolean;
+    errorCode?: string;
+    result?: unknown;
+    params?: Record<string, unknown>;
+  }) => void;
 }
 export declare function createEngineSdk(options: EngineSdkOptions): Promise<unknown>;
 export interface SidecarHarnessOptions {
@@ -24,3 +32,32 @@ export interface SidecarHarness {
   stop(): Promise<void>;
 }
 export declare function createSidecarHarness(options: SidecarHarnessOptions): Promise<SidecarHarness>;
+
+/** P4b：SDK 操作 → kind:"cua" display 投影（同步；形状对齐 engine CuaToolDisplay）。 */
+export declare function buildCuaToolDisplay(input: {
+  toolName: string;
+  status: "success" | "failed";
+  result?: unknown;
+  errorCode?: string;
+  text?: string;
+  screenshot?: { mimeType: string; data: string } | undefined;
+  targetApp?: { displayName?: string; bundleId?: string };
+  params?: Record<string, unknown> | undefined;
+}): {
+  kind: "cua";
+  schemaVersion: 1;
+  toolName: string;
+  status: "success" | "failed";
+  input?: string;
+  structuredContent?: string;
+  text?: string;
+  errorCode?: string;
+  suggestedAction?: string;
+  targetApp?: {
+    schemaVersion: 1;
+    displayName?: string;
+    iconLocators?: Array<{ kind: "darwin-bundle-id" | "windows-executable-path" | "windows-aumid"; value: string }>;
+  };
+  media?: Array<{ mimeType: string; data?: string; artifactUri?: string }>;
+  truncated?: boolean;
+};

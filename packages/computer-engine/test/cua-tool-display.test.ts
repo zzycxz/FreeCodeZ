@@ -34,3 +34,69 @@ describe("渲染器输入源投影（W-30）", () => {
     assert.ok(display.suggestedAction?.includes("re-observe"));
   });
 });
+
+describe("P4b 换源：新 SDK 形状投影", () => {
+  it("camelCase 方法名归一 snake_case 动词（渲染器词表）", () => {
+    assert.strictEqual(buildCuaToolDisplay({ toolName: "getAppState", status: "success" }).toolName, "get_app_state");
+    assert.strictEqual(buildCuaToolDisplay({ toolName: "leftClick", status: "success" }).toolName, "left_click");
+    assert.strictEqual(buildCuaToolDisplay({ toolName: "elementAtPoint", status: "success" }).toolName, "element_at_point");
+  });
+
+  it("params 投影为 display.input，elementIndex 补 target 兼容映射", () => {
+    const display = buildCuaToolDisplay({
+      toolName: "leftClick",
+      status: "success",
+      params: { app: "TextEdit", elementIndex: 7 },
+    });
+    const parsed = JSON.parse(display.input ?? "{}");
+    assert.strictEqual(parsed.elementIndex, 7);
+    assert.deepStrictEqual(parsed.target, { type: "element", index: 7 });
+    // 原键保留（两个形态共存）。
+    assert.strictEqual(parsed.app, "TextEdit");
+  });
+
+  it("snapshot 内 treeText 进 text；截图从结果抽离进 media 并从结构化内容抹除", () => {
+    const display = buildCuaToolDisplay({
+      toolName: "getAppState",
+      status: "success",
+      result: {
+        snapshot: { id: "s1", treeText: "App=TextEdit (pid 42)", screenshotPngBase64: "aGVsbG8=" },
+      },
+    });
+    assert.strictEqual(display.text, "App=TextEdit (pid 42)");
+    assert.deepStrictEqual(display.media, [{ mimeType: "image/png", data: "aGVsbG8=" }]);
+    // base64 不得双携带进 structuredContent。
+    assert.ok(!display.structuredContent?.includes("aGVsbG8="));
+    assert.ok(display.structuredContent?.includes("treeText"));
+  });
+
+  it("dataUrl/mimeType+data 两形态截图同样抽离；超限截图丢弃不炸", () => {
+    const a = buildCuaToolDisplay({
+      toolName: "screenshot",
+      status: "success",
+      result: { dataUrl: "data:image/png;base64,aGk=" },
+    });
+    assert.deepStrictEqual(a.media, [{ mimeType: "image/png", data: "aGk=" }]);
+    const b = buildCuaToolDisplay({
+      toolName: "getAppState",
+      status: "success",
+      result: { shot: { mimeType: "image/jpeg", data: "aGk=" } },
+    });
+    assert.deepStrictEqual(b.media, [{ mimeType: "image/jpeg", data: "aGk=" }]);
+    const huge = "x".repeat(400_000);
+    const c = buildCuaToolDisplay({
+      toolName: "getAppState",
+      status: "success",
+      result: { snapshot: { treeText: "t", screenshotPngBase64: huge } },
+    });
+    assert.strictEqual(c.media, undefined);
+    assert.ok(!c.structuredContent?.includes(huge.slice(0, 50)));
+  });
+
+  it("params 不可序列化时省略 input（宁缺勿错）", () => {
+    const cyclic: Record<string, unknown> = {};
+    cyclic.self = cyclic;
+    const display = buildCuaToolDisplay({ toolName: "scroll", status: "success", params: cyclic });
+    assert.strictEqual(display.input, undefined);
+  });
+});

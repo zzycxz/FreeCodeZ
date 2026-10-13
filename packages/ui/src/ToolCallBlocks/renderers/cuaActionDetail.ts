@@ -44,7 +44,8 @@ function formatShortcut(value: string): string {
 export function readCuaActionDetail(toolName: string | null, input: unknown): string | null {
   const record = asRecord(input);
   if (toolName === "open_application") return readOpenTarget(input);
-  if (toolName === "key" || toolName === "hold_key") {
+  // P4b：新 SDK 词形（press_key/hotkey）与旧词形同享快捷键渲染。
+  if (toolName === "key" || toolName === "hold_key" || toolName === "press_key" || toolName === "hotkey") {
     const shortcut = readText(record, "key") ?? readText(record, "text");
     return shortcut ? formatShortcut(shortcut) : null;
   }

@@ -1,4 +1,13 @@
 export const CUA_TOOL_SUMMARY_IDS: Record<string, string> = {
+  // P4b（orca 新 SDK 词形，wire/public 双形态并收——与旧词形同映射，历史行零影响）：
+  capabilities: "chat.toolCall.cua.capabilities",
+  click: "chat.toolCall.cua.leftClick",
+  type_text: "chat.toolCall.cua.type",
+  press_key: "chat.toolCall.cua.key",
+  hotkey: "chat.toolCall.cua.hotkey",
+  paste: "chat.toolCall.cua.paste",
+  paste_text: "chat.toolCall.cua.paste",
+  drag: "chat.toolCall.cua.drag",
   request_access: "chat.toolCall.cua.requestAccess",
   list_apps: "chat.toolCall.cua.listApps",
   list_windows: "chat.toolCall.cua.listWindows",

@@ -31,6 +31,13 @@ function parseCuaTextAppState(value: string): Record<string, unknown> | null {
   return { app: { bundle_id: bundleId, name } };
 }
 
+/** P4b（orca 新树头）：`App=Name (pid N)` 首行——树文本形态与旧 `app: bundle pid=N "Name"` 并收。 */
+function parseCuaEngineTreeAppState(value: string): Record<string, unknown> | null {
+  const match = /^App=(.+?)\s+\(pid\s+\d+\)/mu.exec(value);
+  if (!match) return null;
+  return { app: { name: match[1] } };
+}
+
 function parseCuaResultState(value: unknown): Record<string, unknown> | null {
   if (typeof value !== "string") return null;
   const structuredMarker = "Structured content:";
@@ -68,7 +75,7 @@ function parseCuaResultState(value: unknown): Record<string, unknown> | null {
     } catch {
       // get_app_state 的成功结果可能是面向模型的文本状态而非 JSON；
       // 其稳定 app 头部已包含唯一目标应用，忽略它会让摘要错误降级为 Computer Use。
-      const textState = parseCuaTextAppState(candidate);
+      const textState = parseCuaTextAppState(candidate) ?? parseCuaEngineTreeAppState(candidate);
       if (textState) return textState;
     }
   }
@@ -83,7 +90,12 @@ export function readCuaResultBundleId(
   const rawOutput = readText(asRecord(toolCall.raw), "rawOutput");
   const result = parseCuaResultState(toolCall.output) ?? parseCuaResultState(rawOutput);
   const resultApp = asRecord(result?.app) ?? asRecord(result?.owner) ?? result;
-  return readText(resultApp, "bundle_id") ?? readText(resultApp, "bundleId");
+  // P4b：新行的权威 bundleId 在 row.cuaApp（engine 快照解析）——结果缺 app 形状时回退。
+  return (
+    readText(resultApp, "bundle_id") ??
+    readText(resultApp, "bundleId") ??
+    readText(asRecord(asRecord(toolCall.raw)?.cuaApp), "bundleId")
+  );
 }
 
 function readCuaInputApp(input: unknown): Record<string, unknown> | null {

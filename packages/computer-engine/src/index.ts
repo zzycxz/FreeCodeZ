@@ -3,5 +3,6 @@ export * from "./shared/computer-use-runtime-types";
 export * from "./shared/rpc-contract/computer-schemas-params";
 export * from "./main/computer/sidecar-client";
 export * from "./sdk/computer-use-sdk";
+export * from "./sdk/cua-tool-display";
 export * from "./sdk/errors";
 export * from "./sdk/setup";

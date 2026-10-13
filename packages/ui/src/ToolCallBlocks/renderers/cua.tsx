@@ -88,6 +88,38 @@ function collectToolNames(
   return [toolCall.toolName, toolCall.kind, toolCall.title, readRawToolName(toolCall.raw)];
 }
 
+/**
+ * P4b 换源：行动词解析三级——①display.toolName（桥投影已归一 snake_case 动词，
+ * get_app_state 等）②历史 display 的旧整名（含 computer_use 前缀，剥前缀取尾词）
+ * ③历史行的工具名/标题（无 display 的归档行）。未知词照常返回（摘要回 default 文案）。
+ */
+function resolveCuaActionName(
+  toolCall: ToolCallBlockRenderContext["toolCallNode"]["toolCall"],
+  cuaDisplay: { toolName?: unknown } | null,
+): string | null {
+  const displayRaw = typeof cuaDisplay?.toolName === "string" ? cuaDisplay.toolName : null;
+  if (displayRaw) {
+    const stripped = readCuaToolName(displayRaw);
+    if (stripped) return stripped;
+    const word = normalizeCuaToolName(displayRaw);
+    if (/^[a-z0-9_]+$/u.test(word)) return word;
+  }
+  return collectToolNames(toolCall).map(readCuaToolName).find(Boolean) ?? null;
+}
+
+/** P4b 换源：display.input（投影的动作参数 JSON）→ 动作详情行输入；历史行回退 row.input。 */
+function parseDisplayParams(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "string" || value.trim().length === 0) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function readBundleId(input: unknown): string | null {
   const record = asRecord(input);
   for (const container of [asRecord(record?.app), asRecord(record?.app_ref), record]) {
@@ -162,13 +194,25 @@ function buildCuaDetailsModel(
   toolCall: ToolCallBlockRenderContext["toolCallNode"]["toolCall"],
   formatTarget: (id: string, values: Record<string, string>) => string,
 ): CuaDetailsModel {
-  const input = asRecord(toolCall.input);
+  const display = readToolResultDisplay(toolCall.raw);
+  const cuaDisplay = display?.kind === "cua" ? display : undefined;
+  // P4b 换源：动作参数来自 display.input（桥投影的 SDK 调用参数 JSON）；
+  // 历史行无 display 时回退 row.input（旧 MCP 的 params 形态）。
+  const input = parseDisplayParams(cuaDisplay?.input) ?? asRecord(toolCall.input);
   const result = readCuaResultState(toolCall);
-  const appName = readCuaAppName(input, result);
+  // P4b：新行的权威应用身份在 row.cuaApp（engine 快照解析、防自报伪造），
+  // 结果对象没有 app.name 时以其为准（旧结果的 app.name/display_name 路径保持）。
+  const cuaAppIdentity = asRecord(asRecord(toolCall.raw)?.cuaApp);
+  const appName =
+    readCuaAppName(input, result) ?? readText(cuaAppIdentity, "name") ?? null;
   const stateRows: CuaDetailRow[] = [];
   const actionRows: CuaDetailRow[] = [];
   const actionDetail = readCuaActionDetail(toolName, input);
-  const typedText = toolName === "type" ? readText(input, "text") : null;
+  // P4b：新 SDK 词形（type_text/paste/paste_text）与旧词形同享文本预览。
+  const typedText =
+    toolName === "type" || toolName === "type_text" || toolName === "paste" || toolName === "paste_text"
+      ? readText(input, "text")
+      : null;
   const openUrl = readText(asRecord(input?.app), "url");
   const target = readTargetDescription(input);
   const list = buildCuaDetailList(toolName, toolCall);
@@ -181,8 +225,6 @@ function buildCuaDetailsModel(
       ? buildCuaScreenshotDetails(toolCall)
       : undefined;
   const error = readCuaErrorDetails(toolCall);
-  const display = readToolResultDisplay(toolCall.raw);
-  const cuaDisplay = display?.kind === "cua" ? display : undefined;
   const waitDuration = toolName === "wait" ? readNumber(input, "duration") : null;
 
   if (!appName && error?.targetAppName)
@@ -332,6 +374,12 @@ function buildCuaDetailsModel(
 export function isCuaToolCall(
   toolCall: ToolCallBlockRenderContext["toolCallNode"]["toolCall"],
 ): boolean {
+  // P4b 换源：新架构 CUA 跑在 mcp__node_repl__js 行里——工具名不再含 computer-use，
+  // 判定改走 display.kind:"cua"（桥投影）与 row.cuaApp（身份投影）双信号。
+  // 旧命名（mcp__computer_use__*/plugin 命名空间）走历史兼容分支只渲染。
+  const display = readToolResultDisplay(toolCall.raw);
+  if (display?.kind === "cua") return true;
+  if (asRecord(toolCall.raw)?.cuaApp !== undefined) return true;
   return collectToolNames(toolCall).some(isZCodeCuaToolName);
 }
 
@@ -353,9 +401,9 @@ export function buildCuaSummaryPresentation(
   intl: CuaIntl,
   options?: { fallbackErrorText?: string; appIconClassName?: "size-4" | "size-5" },
 ): CuaSummaryPresentation {
-  const toolName = collectToolNames(toolCall).map(readCuaToolName).find(Boolean) ?? null;
   const display = readToolResultDisplay(toolCall.raw);
   const cuaDisplay = display?.kind === "cua" ? display : null;
+  const toolName = resolveCuaActionName(toolCall, cuaDisplay);
   const isFailed = cuaDisplay ? cuaDisplay.status === "failed" : toolCall.status === "failed";
   const failureText =
     cuaDisplay?.status === "failed"

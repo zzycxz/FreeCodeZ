@@ -47,6 +47,8 @@ interface CuaToolResultDisplay {
   schemaVersion: 1;
   toolName: string;
   status: "success" | "failed";
+  /** P4b：动作参数 JSON（桥投影写入；渲染器动作详情行输入源）。 */
+  input?: string;
   structuredContent?: string;
   text?: string;
   errorCode?: string;
@@ -243,6 +245,7 @@ function parseDisplay(value: unknown): ToolResultDisplay | undefined {
       schemaVersion: 1,
       toolName,
       status: value.status,
+      ...(legacyInput !== undefined ? { input: legacyInput } : {}),
       ...(structuredContent !== undefined ? { structuredContent } : {}),
       ...(text !== undefined ? { text } : {}),
       ...(errorCode !== undefined ? { errorCode } : {}),

@@ -191,13 +191,10 @@ function boundMcpDisplayText(value: string, maxChars: number): string | undefine
 }
 
 
-function createNodeReplDisplay(
-  toolName: string,
-  output: unknown,
-): ToolResultDisplayPayload | undefined {
-  if (toolName !== "js" && toolName !== "mcp__node_repl__js") return undefined;
-  if (!isRecord(output)) return undefined;
-
+function collectNodeReplImages(output: Record<string, unknown>): {
+  images: Array<{ base64: string; mimeType: string }>;
+  truncated: boolean;
+} {
   const candidates = [
     ...(Array.isArray(output.images) ? output.images : []),
     ...(Array.isArray(output.content) ? output.content : []),
@@ -232,7 +229,111 @@ function createNodeReplDisplay(
     }
     images.push({ base64, mimeType });
   }
+  return { images, truncated };
+}
 
+/** P4b CUA display 字段限界（display 不经 tool result budget，入流前单独限长）。 */
+const MAX_CUA_DISPLAY_FIELD_CHARS = 16 * 1024;
+const MAX_CUA_DISPLAY_MEDIA_ENTRIES = 4;
+const MAX_CUA_DISPLAY_MEDIA_DATA_CHARS = 349_528;
+
+function boundCuaDisplayString(value: unknown, cap: number): string | undefined {
+  return typeof value === "string" && value.length > 0
+    ? value.length <= cap
+      ? value
+      : value.slice(0, cap)
+    : undefined;
+}
+
+/** 读取桥下行的 CUA 操作投影（freecodez/nodeReplCuaDisplay）。只收
+ * kind:"cua"+schemaVersion:1 的完整形状；缺件/越界字段裁剪，媒体条目限 4、
+ * 单条限 349528（schema 口径）。误收防护：其余 kind 一律拒绝（走图片/无 display 路径）。 */
+function readCuaDisplayMeta(output: Record<string, unknown>): Record<string, unknown> | undefined {
+  const meta = output.responseMeta;
+  if (!isRecord(meta)) return undefined;
+  const display = meta["freecodez/nodeReplCuaDisplay"];
+  if (!isRecord(display)) return undefined;
+  if (display.kind !== "cua" || display.schemaVersion !== 1) return undefined;
+  if (typeof display.toolName !== "string" || display.toolName.length === 0) return undefined;
+  if (display.status !== "success" && display.status !== "failed") return undefined;
+
+  const media: Array<{ mimeType: string; data?: string; artifactUri?: string }> = [];
+  if (Array.isArray(display.media)) {
+    for (const entry of display.media.slice(0, MAX_CUA_DISPLAY_MEDIA_ENTRIES)) {
+      if (!isRecord(entry)) continue;
+      const mimeType = entry.mimeType;
+      if (typeof mimeType !== "string" || mimeType.length === 0) continue;
+      const data = entry.data;
+      if (typeof data === "string") {
+        if (data.length > 0 && data.length <= MAX_CUA_DISPLAY_MEDIA_DATA_CHARS) {
+          media.push({ mimeType, data });
+        }
+        continue;
+      }
+      if (typeof entry.artifactUri === "string") {
+        media.push({ mimeType, artifactUri: entry.artifactUri });
+      }
+    }
+  }
+  return {
+    kind: "cua",
+    schemaVersion: 1,
+    toolName: display.toolName.slice(0, 256),
+    status: display.status,
+    ...(boundCuaDisplayString(display.input, MAX_CUA_DISPLAY_FIELD_CHARS)
+      ? { input: boundCuaDisplayString(display.input, MAX_CUA_DISPLAY_FIELD_CHARS) }
+      : {}),
+    ...(boundCuaDisplayString(display.structuredContent, MAX_CUA_DISPLAY_FIELD_CHARS)
+      ? { structuredContent: boundCuaDisplayString(display.structuredContent, MAX_CUA_DISPLAY_FIELD_CHARS) }
+      : {}),
+    ...(boundCuaDisplayString(display.text, MAX_CUA_DISPLAY_FIELD_CHARS)
+      ? { text: boundCuaDisplayString(display.text, MAX_CUA_DISPLAY_FIELD_CHARS) }
+      : {}),
+    ...(boundCuaDisplayString(display.errorCode, 512) ? { errorCode: boundCuaDisplayString(display.errorCode, 512) } : {}),
+    ...(boundCuaDisplayString(display.suggestedAction, 1024)
+      ? { suggestedAction: boundCuaDisplayString(display.suggestedAction, 1024) }
+      : {}),
+    ...(isRecord(display.targetApp) ? { targetApp: display.targetApp } : {}),
+    ...(media.length > 0 ? { media } : {}),
+  };
+}
+
+/** 混合 run（CUA 操作 + 浏览器截图）：浏览器图片并入 cua display 的 media
+ *（schema 允许 4 条），丢弃会让纯浏览器截图段失渲染。 */
+function appendImagesToCuaDisplay(
+  cuaDisplay: Record<string, unknown>,
+  extra: { images: Array<{ base64: string; mimeType: string }>; truncated: boolean },
+): ToolResultDisplayPayload {
+  const existing = Array.isArray(cuaDisplay.media) ? cuaDisplay.media : [];
+  const room = MAX_CUA_DISPLAY_MEDIA_ENTRIES - existing.length;
+  const appended = extra.images.slice(0, Math.max(room, 0)).map((image) => ({
+    mimeType: image.mimeType,
+    data: image.base64,
+  }));
+  const merged = [...existing, ...appended];
+  return {
+    ...(cuaDisplay as unknown as ToolResultDisplayPayload),
+    ...(merged.length > 0 ? { media: merged } : {}),
+    ...(extra.truncated && appended.length < extra.images.length ? { truncated: true } : {}),
+  } as ToolResultDisplayPayload;
+}
+
+function createNodeReplDisplay(
+  toolName: string,
+  output: unknown,
+): ToolResultDisplayPayload | undefined {
+  if (toolName !== "js" && toolName !== "mcp__node_repl__js") return undefined;
+  if (!isRecord(output)) return undefined;
+
+  // P4b（display 复产）：桥经 freecodez/nodeReplCuaDisplay 下行的操作投影
+  //（computer-bridge onCuaOperation → buildCuaToolDisplay）。校验 kind 防误收，
+  // 字段限界与 node_repl_images 同口径（display 不经 tool result budget）。
+  const cuaDisplay = readCuaDisplayMeta(output);
+  if (cuaDisplay) {
+    return appendImagesToCuaDisplay(cuaDisplay, collectNodeReplImages(output));
+  }
+
+  const { images, truncated } = collectNodeReplImages(output);
   if (images.length === 0) return undefined;
   return {
     kind: "node_repl_images",
