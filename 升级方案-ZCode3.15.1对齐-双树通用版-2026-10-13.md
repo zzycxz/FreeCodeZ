@@ -271,4 +271,14 @@ U1（5 项止血，立即）→ U2（先出作业手册；U2-1/U2-2/U2-3 可并�
 ## 附：两份 ⚠️ 项的再深挖路径（可选，各约半天）
 
 - F2（工作流状态显示错误）：对 vendored CLI 同源模块（workflow reducer/resume·amend 事件处理）逐函数解码 zcode.cjs 对应区，有机会找到上游修复点升 ✅。
+
+## ⚠️ 2026-10-13 晚增补：orca 底座适配说明（本方案写作时的底座假设已过时）
+
+**事实变化**：本方案写作时假设两树都是 ZCode 衍生 CUA 旧栈（koffi+R19 Helper）。2026-10-13 FreeCodeZ 已完成 orca 完全平替合并（main=904d5742 起，规格书见《规格书-FreeCodeZ-orca合并与3151重放-2026-10-13.md》），U1/U2/U3 移植批已重放到 orca 底座上（零丢失审计通过）。**quartet 若沿用本方案，底座假设需按本节校正。**
+
+对 quartet 的三点影响：
+
+1. **§3 判定矩阵的 CUA 相关行已过时**：矩阵基于旧栈 CLI 树。quartet 若也已切 orca（或计划切），凡涉及 CUA 面的判定（引擎、helper、权限、HUD、卡片渲染）以 orca 分支形态为准重查；若 quartet 仍是旧栈，本方案 CUA 无关批次（U1-1 文件打开、U2-2 滚动、U2-3 会话解码、U2-4 站点权限、U2-5 工作流调参、U2-6 网络、U3-0 沙箱、U3-4 托盘）**不受影响可直接执行**——这些批次在 FC 侧已验证与 CUA 引擎无耦合。
+2. **移植来源建议**：quartet 做 U1/U2 时，**直接从 FC 合并后的 main 搬运**（已含全部移植+orca 适配），不从上游反编译重做——FC 的 23 个重叠文件处置表（重放语义）就是现成的移植参考。
+3. **重放技术要点（FC 实证）**：若 quartet 走"先 orca 后移植"路线，注意行尾坑（旧线=CRLF、orca 线=LF，补丁重放需 `sed 's/\r$//'` + `git apply --ignore-whitespace`）与 CLI 树 dist 重建坑（tsc 不清孤儿产物，旧 dist 残留已删包的 import 会炸测试，按 contracts→adapters→core→bootstrap→cli/tui/node-repl-host 顺序清后重建）。
 - F10（会话加载卡住）：定点解码 zcode.cjs 的 session load/decode 链路（对照树内 CLI 同源模块），有机会找到上游容错实现、消掉 codecs 自研例外。
