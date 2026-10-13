@@ -1,4 +1,4 @@
-import { rm } from "node:fs/promises";
+import { readdir, rm } from "node:fs/promises";
 import process from "node:process";
 import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
@@ -40,6 +40,15 @@ export async function cleanDesktopProductionOutput({ cwd }) {
     resolveDesktopProductionCleanPaths(cwd).map((targetPath) =>
       rm(targetPath, { force: true, recursive: true }),
     ),
+  );
+  // out/ 根层散落的 *.node（esbuild copy-loader 哈希产物）不在任何子目录清单里，
+  // 2026-10-13 实测 18 份 koffi 全平台二进制化石（33MB）自 10-03 起随每包分发；
+  // 目录级 rm 管不到单文件，这里单独清 out 根的原生模块散件防复发。
+  const outRootEntries = await readdir(resolve(cwd, "out"), { withFileTypes: true }).catch(() => []);
+  await Promise.all(
+    outRootEntries
+      .filter((entry) => entry.isFile() && /\.node$/i.test(entry.name))
+      .map((entry) => rm(resolve(cwd, "out", entry.name), { force: true })),
   );
 }
 
